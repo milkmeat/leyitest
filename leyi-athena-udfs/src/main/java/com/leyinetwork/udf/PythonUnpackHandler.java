@@ -107,7 +107,7 @@ public class PythonUnpackHandler extends UserDefinedFunctionHandler {
         return l;
     }
 
-    public List<Long> unpackFlat(String pattern, String data) {
+    public List<Long> unpackflat(String pattern, String data) {
         List<List<Long>> result = unpack(pattern, data);
         ArrayList<Long> flat = new ArrayList<Long>();
 
