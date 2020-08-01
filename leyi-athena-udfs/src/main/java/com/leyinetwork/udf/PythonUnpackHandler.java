@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.amazonaws.athena.connector.lambda.handlers.UserDefinedFunctionHandler;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class PythonUnpackHandler extends UserDefinedFunctionHandler {
     private static final String SOURCE_TYPE = "leyinetwork";
@@ -25,6 +27,10 @@ public class PythonUnpackHandler extends UserDefinedFunctionHandler {
         super(SOURCE_TYPE);
     }
 
+    public String test_json(Integer p) {
+        return "[1, 2, 3]";
+    }
+
     public List test1(Integer p) {
         ArrayList<Long> sub1 = new ArrayList<Long>();
         sub1.add(1L);
@@ -36,7 +42,7 @@ public class PythonUnpackHandler extends UserDefinedFunctionHandler {
     public List<HashMap<String, Integer>> testrowarray(Integer p) {
         ArrayList<HashMap<String, Integer>> l = new ArrayList<HashMap<String, Integer>>();
 
-        HashMap<String, Integer> r= new HashMap<String, Integer>();
+        HashMap<String, Integer> r = new HashMap<String, Integer>();
 
         r.put("bob", 1);
         l.add(r);
@@ -44,24 +50,22 @@ public class PythonUnpackHandler extends UserDefinedFunctionHandler {
         return l;
     }
 
-
-    public Map<String, Integer> testrow(Integer p){
-        Map<String, Integer> r= new HashMap<String, Integer>();
+    public Map<String, Integer> testrow(Integer p) {
+        Map<String, Integer> r = new HashMap<String, Integer>();
 
         r.put("bob", 1);
 
         return r;
     }
 
-    public Map<String, Integer> testrow2(Integer p){
-        Map<String, Integer> r= new HashMap<String, Integer>();
+    public Map<String, Integer> testrow2(Integer p) {
+        Map<String, Integer> r = new HashMap<String, Integer>();
 
         r.put("bob", 1);
         r.put("wg", 2);
 
         return r;
     }
-
 
     public Integer test2(Integer p) {
         return 100;
@@ -107,12 +111,12 @@ public class PythonUnpackHandler extends UserDefinedFunctionHandler {
             int patternIndex = 0;
             ArrayList<Long> child = new ArrayList<Long>();
             while (pattern.length() > patternIndex) {
-                String code = pattern.substring(patternIndex, patternIndex+1);
+                String code = pattern.substring(patternIndex, patternIndex + 1);
 
                 // see python struct coding at https://docs.python.org/3/library/struct.html
                 if (code == "x") { // padding
                     readIndex += 1;
-                } else if (codeSize.containsKey(code)) { 
+                } else if (codeSize.containsKey(code)) {
                     int size = codeSize.get(code);
                     child.add(extractBySize(decodedBytes, readIndex, size));
                     readIndex += size;
@@ -166,4 +170,28 @@ public class PythonUnpackHandler extends UserDefinedFunctionHandler {
 
         return result;
     }
+
+    public String buildingjson(String data) {
+        List<List<Long>> raw = unpack("IHH", data);
+        HashMap<String, Long> result = new HashMap<String, Long>();
+
+        for (List<Long> sub : raw) {
+            String buindingId = sub.get(1).toString();
+            Long buildingLevel = sub.get(2);
+
+            result.put(buindingId, buildingLevel);
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            return mapper.writeValueAsString(result);
+        } catch (JsonProcessingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return "";
+        }
+
+    }
+
+
 }
