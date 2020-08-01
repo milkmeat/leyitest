@@ -12,6 +12,14 @@ import com.amazonaws.athena.connector.lambda.handlers.UserDefinedFunctionHandler
 
 public class PythonUnpackHandler extends UserDefinedFunctionHandler {
     private static final String SOURCE_TYPE = "leyinetwork";
+    private HashMap<String, Integer> codeSize = new HashMap<String, Integer>() {
+        {
+            put("I", 4); // unsigned int, 4 bytes
+            put("H", 2); // unsigned short, 2 bytes
+            put("q", 8); // long long, 8 bytes
+            put("B", 1); // unsigned char, 1 bytes
+        }
+    };
 
     public PythonUnpackHandler() {
         super(SOURCE_TYPE);
@@ -69,25 +77,13 @@ public class PythonUnpackHandler extends UserDefinedFunctionHandler {
             int patternIndex = 0;
             ArrayList<Long> child = new ArrayList<Long>();
             while (pattern.length() > patternIndex) {
-                char code = pattern.charAt(patternIndex);
+                String code = pattern.substring(patternIndex, patternIndex+1);
 
                 // see python struct coding at https://docs.python.org/3/library/struct.html
-                if (code == 'x') {
+                if (code == "x") { // padding
                     readIndex += 1;
-                } else if (code == 'I') { // unsigned int, 4 bytes
-                    int size = 4;
-                    child.add(extractBySize(decodedBytes, readIndex, size));
-                    readIndex += size;
-                } else if (code == 'H') { // unsigned short, 2 bytes
-                    int size = 2;
-                    child.add(extractBySize(decodedBytes, readIndex, size));
-                    readIndex += size;
-                } else if (code == 'q') { // long long, 8 bytes
-                    int size = 8;
-                    child.add(extractBySize(decodedBytes, readIndex, size));
-                    readIndex += size;
-                } else if (code == 'B') { // unsigned char, 1 bytes
-                    int size = 1;
+                } else if (codeSize.containsKey(code)) { 
+                    int size = codeSize.get(code);
                     child.add(extractBySize(decodedBytes, readIndex, size));
                     readIndex += size;
                 } else {
