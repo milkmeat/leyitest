@@ -33,6 +33,36 @@ public class PythonUnpackHandler extends UserDefinedFunctionHandler {
         return sub1;
     }
 
+    public List<HashMap<String, Integer>> testrowarray(Integer p) {
+        ArrayList<HashMap<String, Integer>> l = new ArrayList<HashMap<String, Integer>>();
+
+        HashMap<String, Integer> r= new HashMap<String, Integer>();
+
+        r.put("bob", 1);
+        l.add(r);
+
+        return l;
+    }
+
+
+    public Map<String, Integer> testrow(Integer p){
+        Map<String, Integer> r= new HashMap<String, Integer>();
+
+        r.put("bob", 1);
+
+        return r;
+    }
+
+    public Map<String, Integer> testrow2(Integer p){
+        Map<String, Integer> r= new HashMap<String, Integer>();
+
+        r.put("bob", 1);
+        r.put("wg", 2);
+
+        return r;
+    }
+
+
     public Integer test2(Integer p) {
         return 100;
     }
@@ -120,15 +150,18 @@ public class PythonUnpackHandler extends UserDefinedFunctionHandler {
         return flat;
     }
 
-    public Map<String, Long> building(String data) {
+    public List<HashMap<String, Long>> building(String data) {
         List<List<Long>> raw = unpack("IHH", data);
-        HashMap<String, Long> result = new HashMap<String, Long>();
+        List<HashMap<String, Long>> result = new ArrayList<HashMap<String, Long>>();
 
         for (List<Long> sub : raw) {
             String buindingId = sub.get(1).toString();
             Long buildingLevel = sub.get(2);
 
-            result.put(buindingId, buildingLevel);
+            HashMap<String, Long> row = new HashMap<String, Long>();
+            row.put(buindingId, buildingLevel);
+
+            result.add(row);
         }
 
         return result;
