@@ -10,14 +10,18 @@
 
   <properties>
     <aws-athena-federation-sdk.version>2020.19.1</aws-athena-federation-sdk.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
+    <junit.jupiter.version>5.6.2</junit.jupiter.version>    
   </properties>
 
   <dependencies>
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>3.8.1</version>
-      <scope>test</scope>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <version>${junit.jupiter.version}</version>
+        <scope>test</scope>
     </dependency>
     <dependency>
         <groupId>com.amazonaws</groupId>
@@ -28,13 +32,9 @@
 
 <build>
     <plugins>
-        <plugin>    <!--plugins要写在build标签下，不然无法识别 -->
-                <artifactId>maven-compiler-plugin</artifactId>   
-                <version>3.1</version>    <!--maven-compiler-plugin版本写一个中央仓库有的版本，保存后它会自动下载 -->
-                <configuration>   
-                    <source>10</source>    <!--我的jdk是10.0.1的，写成10.0.1不好用，所以就写成10了 -->
-                    <target>10</target>   
-                </configuration>   
+        <plugin>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.8.1</version>
         </plugin> 
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
