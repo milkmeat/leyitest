@@ -52,11 +52,21 @@ public class PythonUnpackHandler
         return result;
     }
 
+    /**
+     * 数据类型通常会以一个模式重复出现，例如解码模式为IHH, 则返回 [[I,H,H],[I,H,H],...] 这样的数据，直到buffer取完
+     * 
+     * java 中没有 unsigned，所以为了实现 unsigned，需要使用比原本类型更大的类型，通过位运算获取其 unsigned 的值
+     * 例如 unsigned byte & short -> int，unsigned int -> long
+     * 在这里我把所有整数都转换到Long，这样不需要额外处理unsigned 的问题
+     * 
+     * 这个函数返回嵌套的list，无法被athena解析，因此不能直接暴露给UDF使用
+     *
+     * @param pattern 例如 IHH
+     * @param data 一个base64字符串
+     * @return List<List<Long>>
+     */
     public List unpack(String pattern, String data)
     {
-        // java 中没有 unsigned，所以为了实现 unsigned，需要使用比原本类型更大的类型，通过位运算获取其 unsigned 的值
-        // unsigned byte & short -> int，unsigned int -> long
-        //所有整数都转换到Long，这样不需要额外处理unsigned 的问题
         ArrayList<ArrayList<Long>> result=new ArrayList<ArrayList<Long> >();
 
         byte[] decodedBytes = Base64.getDecoder().decode(data);
@@ -114,5 +124,22 @@ public class PythonUnpackHandler
         Long l = bb.getLong(0);
 
         return l;
+    }
+
+    public List<Long> unpackFlat(String pattern, String data)
+    {
+        List<List<Long>> result = unpack(pattern, data);
+        ArrayList<Long> flat = new ArrayList<Long>();
+
+        for (List<Long> sub : result)
+        {
+            for (Long l:sub)
+            {
+                flat.add(l);
+            }
+
+        }
+
+        return flat;
     }
 }
