@@ -3,6 +3,7 @@ package com.leyinetwork.udf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
@@ -36,5 +37,17 @@ class PythonUnpackHandlerTest
         assertEquals(2, result.get(37));
         assertEquals(1, result.get(38));
     }    
+
+    @Test
+    public void testBuilding()
+    {
+        Map<String, Long> result = handler.building("ZQAAAAAAAgCBAAAAMgABAIIAAAAzAAEAgwAAADQAAQCEAAAANQABAHkAAAATAAEAdgAAAAwAAQDNAAAADwABAMsAAAAQAAEAzAAAABEAAQDOAAAAEgABAHsAAAAFAAEAZgAAAAIAAQA=");
+        System.out.println(result);
+        assertEquals(13, result.size());
+        assertEquals(2, result.get("0"));
+        assertEquals(1, result.get("2"));
+        assertEquals(1, result.get("17"));
+        assertEquals(1, result.get("19"));
+    }     
 }
 
