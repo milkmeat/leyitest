@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "phone-agent": {
+      "type": "stdio",
+      "command": "python",
+      "args": [
+        "phone_mcp_server.py"
+      ],
+      "cwd": "/home/ying/claude/Open-AutoGLM",
+      "env": {
+        "ADB_PATH": "/usr/bin/adb",
+        "PHONE_DEVICE_ID": "192.168.240.112:5555",
+        "PYTHONIOENCODING": "utf-8"
+      }
+    }
+  }
+}

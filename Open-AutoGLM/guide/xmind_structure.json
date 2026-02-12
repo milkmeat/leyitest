@@ -1,0 +1,2573 @@
+[
+  {
+    "sheet": "画布 1",
+    "content": {
+      "title": "新手教程步骤",
+      "children": [
+        {
+          "title": "打开游戏进入对应环境"
+        },
+        {
+          "title": "cg",
+          "children": [
+            {
+              "title": "播放一段动画，观看即可"
+            }
+          ]
+        },
+        {
+          "title": "第1步：进入游戏，触发第一场入侵战",
+          "children": [
+            {
+              "title": "出现摇杆战时，滑动屏幕去找敌人，完成全部战斗，返回城镇"
+            }
+          ]
+        },
+        {
+          "title": "第2步：入侵战结束，触发升级炮塔tl",
+          "children": [
+            {
+              "title": "出现对话时点击对话，出灭火气泡（水桶）时点击手指指向的地方，播放动画后点击出现的对话框，出修复气泡（锤子），点击手指指向的地方，出现对话框点击对话框，等待动画播放完成，点击出现的对话框"
+            }
+          ]
+        },
+        {
+          "title": "第3步：炮塔1级后，章节任务解锁",
+          "children": [
+            {
+              "title": "潜入战胜，带走图纸，被发现慌忙逃窜"
+            },
+            {
+              "title": "开始自由操作",
+              "children": [
+                {
+                  "title": "士兵开始往前去进攻，敌人头顶出！从上述巡逻、坐着状态机切换至战斗",
+                  "children": [
+                    {
+                      "title": "门前掉图纸的小兵不移动，死后尸体不消失"
+                    }
+                  ]
+                },
+                {
+                  "title": "对话气泡",
+                  "children": [
+                    {
+                      "title": "敌人",
+                      "children": [
+                        {
+                          "title": "Enemy attack!"
+                        },
+                        {
+                          "title": "有敌袭！"
+                        }
+                      ]
+                    },
+                    {
+                      "title": "男平民",
+                      "children": [
+                        {
+                          "title": "Screw you bastards!"
+                        },
+                        {
+                          "title": "去死吧你们这群狗杂种"
+                        }
+                      ]
+                    },
+                    {
+                      "title": "女平民",
+                      "children": [
+                        {
+                          "title": "Help！"
+                        },
+                        {
+                          "title": "救救我"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "战斗结束"
+            },
+            {
+              "title": "c1第4段tl",
+              "children": [
+                {
+                  "title": "对话",
+                  "children": [
+                    {
+                      "title": "女平民",
+                      "children": [
+                        {
+                          "title": "Thank God, you really came to save me"
+                        },
+                        {
+                          "title": "谢天谢地，还好你们来了",
+                          "children": [
+                            {
+                              "title": "对话立绘：虚弱惊喜"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "title": "领主",
+                      "children": [
+                        {
+                          "title": "Come on, we’re taking you home."
+                        },
+                        {
+                          "title": "我们现在就带你回家",
+                          "children": [
+                            {
+                              "title": "对话立绘：微笑"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "title": "女平民",
+                      "children": [
+                        {
+                          "title": "Wait i just saw the defense blueprint on him "
+                        },
+                        {
+                          "title": "我刚看这B身上有城防图",
+                          "children": [
+                            {
+                              "title": "对话立绘：严肃"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "title": "搜刮尸体，拿到图纸"
+                },
+                {
+                  "title": "展示图纸",
+                  "children": [
+                    {
+                      "title": "类似远征引入地图"
+                    },
+                    {
+                      "title": "打断指引",
+                      "children": [
+                        {
+                          "title": "点击界面其他地方",
+                          "children": [
+                            {
+                              "title": "无法点击，无法打断指引"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "退出游戏",
+                          "children": [
+                            {
+                              "title": "重新进入游戏指引重新触发"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "断网",
+                          "children": [
+                            {
+                              "title": "重连后指引重新触发"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "主城被动移城",
+                          "children": [
+                            {
+                              "title": "无任何表现，指引继续，不弹出被动移城弹窗"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "title": "对话",
+                  "children": [
+                    {
+                      "title": "这图纸是好东西啊"
+                    }
+                  ]
+                },
+                {
+                  "title": "大灯照射（迷雾下的城内建筑全亮灯",
+                  "children": [
+                    {
+                      "title": "在女主射击完时说"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "第4步：章节任务解锁后，修城墙",
+          "children": [
+            {
+              "title": "1.",
+              "children": [
+                {
+                  "title": "场景氛围",
+                  "children": [
+                    {
+                      "title": "白天小镇"
+                    }
+                  ]
+                },
+                {
+                  "title": "领主带着2士兵+女平民回来",
+                  "children": [
+                    {
+                      "title": "镜头跟随，从城外进入，停在主城前，下马面对面开始对话"
+                    }
+                  ]
+                },
+                {
+                  "title": "对话气泡",
+                  "children": [
+                    {
+                      "title": "男平民",
+                      "children": [
+                        {
+                          "title": "Uggh...that was closed"
+                        },
+                        {
+                          "title": "呕...好险"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "title": "立绘对话",
+                  "children": [
+                    {
+                      "title": "女平民",
+                      "children": [
+                        {
+                          "title": "Their town is absolutely spectacular."
+                        },
+                        {
+                          "title": "不得不说...他们的城镇太壮观了，简直就是钢铁森林"
+                        }
+                      ]
+                    },
+                    {
+                      "title": "领主",
+                      "children": [
+                        {
+                          "title": "You’re totally right! With those blueprints, we’re going to build a rock-solid city ourselves！"
+                        },
+                        {
+                          "title": "你说的没错！凭借缴获的建筑蓝图，我们也会建造一座属于我们自己的超级强大坚固的小镇！"
+                        },
+                        {
+                          "title": "Alright ,let me check it out. Let;s start with the lumber mill！"
+                        },
+                        {
+                          "title": "现在让我来看看...嗯，千里之行始于足下，我们先从伐木场开始吧！"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "2.",
+              "children": [
+                {
+                  "title": "出立绘对话",
+                  "children": [
+                    {
+                      "title": "领主",
+                      "children": [
+                        {
+                          "title": "我们得先把城墙修复了，以免达利帮突袭！"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "3.",
+              "children": [
+                {
+                  "title": "镜头定位到城门，出缺木头气泡",
+                  "children": [
+                    {
+                      "title": "使用通用镜头节奏，现在是先横移，再竖移"
+                    },
+                    {
+                      "title": ""
+                    },
+                    {
+                      "title": "文本改成0/5"
+                    }
+                  ]
+                },
+                {
+                  "title": "出立绘对话",
+                  "children": [
+                    {
+                      "title": "平民",
+                      "children": [
+                        {
+                          "title": "我们的木头不够了，得先去修建伐木场"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "4.",
+              "children": [
+                {
+                  "title": "指引点击章节任务左侧的按钮，打开章节任务界面"
+                },
+                {
+                  "title": "指引点第二个任务（修复伐木场）的前往",
+                  "children": [
+                    {
+                      "title": "打断指引",
+                      "children": [
+                        {
+                          "title": "点击界面其他地方",
+                          "children": [
+                            {
+                              "title": "无法点击，无法打断指引"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "退出游戏",
+                          "children": [
+                            {
+                              "title": "重新进入游戏指引重新触发"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "断网",
+                          "children": [
+                            {
+                              "title": "重连后指引重新触发"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "主城被动移城",
+                          "children": [
+                            {
+                              "title": "无任何表现，指引继续，不弹出被动移城弹窗"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "title": "异常场景",
+                      "children": [
+                        {
+                          "title": "建造建筑资源不足",
+                          "children": [
+                            {
+                              "title": "不存在这种情况"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "5.",
+              "children": [
+                {
+                  "title": "镜头定位到伐木场，直接打开对应的修复界面"
+                },
+                {
+                  "title": "指引点击修复"
+                },
+                {
+                  "title": "等待修复完成"
+                }
+              ]
+            },
+            {
+              "title": "6.",
+              "children": [
+                {
+                  "title": "指引点击伐木场"
+                },
+                {
+                  "title": "指引点击工人tab"
+                },
+                {
+                  "title": "指引点击+号按钮上阵一个工人",
+                  "children": [
+                    {
+                      "title": "打断指引",
+                      "children": [
+                        {
+                          "title": "点击界面其他地方",
+                          "children": [
+                            {
+                              "title": "无法点击，无法打断指引"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "退出游戏",
+                          "children": [
+                            {
+                              "title": "重新进入游戏指引重新触发"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "断网",
+                          "children": [
+                            {
+                              "title": "重连后指引重新触发"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "主城被动移城",
+                          "children": [
+                            {
+                              "title": "无任何表现，指引继续，不弹出被动移城弹窗"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "title": "异常场景",
+                      "children": [
+                        {
+                          "title": "工人数量不足",
+                          "children": [
+                            {
+                              "title": "看一下正常能不能出现这种情况"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "7.",
+              "children": [
+                {
+                  "title": "上阵后，关闭建筑UI，开始播放工人伐木表演",
+                  "children": [
+                    {
+                      "title": "开始伐木之后，隐藏主界面章节任务，木材采完，立绘对话【可以造墙了】，展示章节任务，指引领取，指引点击【去掉相关上阵任务】"
+                    },
+                    {
+                      "title": "1.",
+                      "children": [
+                        {
+                          "title": "跑到伐木点前，头顶顶着缺木头气泡",
+                          "children": [
+                            {
+                              "title": ""
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "title": "2.",
+                      "children": [
+                        {
+                          "title": "开始砍伐后，脑袋上循环播放快速转圈气泡（转3圈）",
+                          "children": [
+                            {
+                              "title": ""
+                            }
+                          ]
+                        },
+                        {
+                          "title": "伐木场砍木头表演",
+                          "children": [
+                            {
+                              "title": "表演结束后，需要真实获得X点资源",
+                              "children": [
+                                {
+                                  "title": "X=数值配置"
+                                },
+                                {
+                                  "title": "需保证满足修城墙资源"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "title": "3.",
+                      "children": [
+                        {
+                          "title": "砍伐过程中，每转一圈，播放一次木头资源飞入动画，从工人处飞到顶部资源图标",
+                          "children": [
+                            {
+                              "title": ""
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "title": "4.",
+                      "children": [
+                        {
+                          "title": "砍伐结束后，出立绘对话",
+                          "children": [
+                            {
+                              "title": "领主",
+                              "children": [
+                                {
+                                  "title": "这么多木材应该就够我们修复城墙了"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "8.",
+              "children": [
+                {
+                  "title": "镜头拉到城墙，城墙展示资源充足气泡，指引点击气泡",
+                  "children": [
+                    {
+                      "title": ""
+                    },
+                    {
+                      "title": "修城墙气泡展示的资源",
+                      "children": [
+                        {
+                          "title": "需读取数值当前真实值和实际消耗值"
+                        }
+                      ]
+                    },
+                    {
+                      "title": "异常场景",
+                      "children": [
+                        {
+                          "title": "修城墙所需资源不足",
+                          "children": [
+                            {
+                              "title": "数值保证"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "title": "建筑修复完成后，立即触发一次指引点击章节任务的空闲指引",
+                  "children": [
+                    {
+                      "title": "章节任务解锁后，一直到城墙修复完成前，期间全为强指引，不能让玩家中途点击其他内容"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "第5步：城墙修建后，农场表演",
+          "children": [
+            {
+              "title": "1.",
+              "children": [
+                {
+                  "title": "农场上阵完工人后，触发农场采集表演，工人跑去农场旁进行收割，头顶播放快速转圈气泡（3圈）"
+                }
+              ]
+            },
+            {
+              "title": "2.",
+              "children": [
+                {
+                  "title": "采集过程中，气泡每转一圈，播放一次粮食飞入动画，从工人处飞到顶部资源图标处"
+                }
+              ]
+            },
+            {
+              "title": "3.",
+              "children": [
+                {
+                  "title": "出立绘对话",
+                  "children": [
+                    {
+                      "title": "领主",
+                      "children": [
+                        {
+                          "title": "我们现在有足够的粮食了，我们先去把食堂建出来吧"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "4.",
+              "children": [
+                {
+                  "title": "镜头定位到食堂"
+                },
+                {
+                  "title": "指引点击地块"
+                },
+                {
+                  "title": "指引点击修复按钮",
+                  "children": [
+                    {
+                      "title": "打断指引",
+                      "children": [
+                        {
+                          "title": "点击界面其他地方",
+                          "children": [
+                            {
+                              "title": "无法点击，无法打断指引"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "退出游戏",
+                          "children": [
+                            {
+                              "title": "重新进入游戏指引重新触发"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "断网",
+                          "children": [
+                            {
+                              "title": "重连后指引重新触发"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "主城被动移城",
+                          "children": [
+                            {
+                              "title": "无任何表现，指引继续，不弹出被动移城弹窗"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "title": "异常场景",
+                      "children": [
+                        {
+                          "title": "建造建筑资源不足",
+                          "children": [
+                            {
+                              "title": "不存在这种情况"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "title": "等待修复完成后"
+                },
+                {
+                  "title": "指引点击食堂，指引点击上阵工人"
+                },
+                {
+                  "title": "接吃饭TL"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "第6步：食堂修复后，触发吃饭",
+          "children": [
+            {
+              "title": "食堂修复建筑后触发",
+              "children": [
+                {
+                  "title": "打断指引",
+                  "children": [
+                    {
+                      "title": "点击界面其他地方",
+                      "children": [
+                        {
+                          "title": "无法点击，无法打断指引"
+                        }
+                      ]
+                    },
+                    {
+                      "title": "退出游戏",
+                      "children": [
+                        {
+                          "title": "重新进入游戏指引重新触发"
+                        }
+                      ]
+                    },
+                    {
+                      "title": "断网",
+                      "children": [
+                        {
+                          "title": "重连后指引重新触发"
+                        }
+                      ]
+                    },
+                    {
+                      "title": "主城被动移城",
+                      "children": [
+                        {
+                          "title": "无任何表现，指引继续，不弹出被动移城弹窗"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "title": "异常场景",
+                  "children": [
+                    {
+                      "title": "建造建筑资源不足",
+                      "children": [
+                        {
+                          "title": "不存在这种情况"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "对话气泡",
+              "children": [
+                {
+                  "title": "男平民b",
+                  "children": [
+                    {
+                      "title": "搞了大半天，饿死了"
+                    },
+                    {
+                      "title": "Im so hungry, just give me somthing, anything！"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "指引上平民",
+              "children": [
+                {
+                  "title": "打断指引",
+                  "children": [
+                    {
+                      "title": "点击界面其他地方",
+                      "children": [
+                        {
+                          "title": "无法点击，无法打断指引"
+                        }
+                      ]
+                    },
+                    {
+                      "title": "退出游戏",
+                      "children": [
+                        {
+                          "title": "重新进入游戏指引重新触发"
+                        }
+                      ]
+                    },
+                    {
+                      "title": "断网",
+                      "children": [
+                        {
+                          "title": "重连后指引重新触发"
+                        }
+                      ]
+                    },
+                    {
+                      "title": "主城被动移城",
+                      "children": [
+                        {
+                          "title": "无任何表现，指引继续，不弹出被动移城弹窗"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "title": "异常场景",
+                  "children": [
+                    {
+                      "title": "没有平民可以上阵",
+                      "children": [
+                        {
+                          "title": "数值保证"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "吃饭"
+            },
+            {
+              "title": "平民投奔",
+              "children": [
+                {
+                  "title": "复用现有",
+                  "children": [
+                    {
+                      "title": "对话内容改成叛军即将到来"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "在吃饭TL结束后，才把各微观建筑的工人展示出来，再次之前隐藏，避免影响TL表达"
+            }
+          ]
+        },
+        {
+          "title": "第7步：章节任务至主城升2级",
+          "children": [
+            {
+              "title": "C2升级完成时",
+              "children": [
+                {
+                  "title": "需要镜头拉高，播放小型城镇动画，同时播放地表切换动画，切换美术地表"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "第8步：地表切换动画结束触发特殊来平民",
+          "children": [
+            {
+              "title": "黑幕，结束时，镜头切到外城表演位置，TL表演：",
+              "children": [
+                {
+                  "title": "SLG视角两个平民奔跑（冒汗特效），后面一直巨熊追逐，其中一个平民摔倒"
+                },
+                {
+                  "title": "对话气泡",
+                  "children": [
+                    {
+                      "title": "HELP!!"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "切到平民第一人称视角，看到熊扑上来（慢动作）",
+              "children": [
+                {
+                  "title": "（回归正常速度）突然被一颗向后而来的子弹射杀了熊，血花四溅"
+                },
+                {
+                  "title": ""
+                }
+              ]
+            },
+            {
+              "title": "回到SLG视角， 熊倒在一边，男主从右上入镜，两个平民转身"
+            },
+            {
+              "title": "立绘对话",
+              "children": [
+                {
+                  "title": "领主",
+                  "children": [
+                    {
+                      "title": "What are you doing here?! Daly gang and beasts are all around!"
+                    },
+                    {
+                      "title": "你们怎么在这，不知道周围都是达利帮和野兽吗？"
+                    }
+                  ]
+                },
+                {
+                  "title": "难民男",
+                  "children": [
+                    {
+                      "title": "Help us! The Daly gang's hitting our town hard!"
+                    },
+                    {
+                      "title": "救救我们！达利帮攻陷了我们的小镇！"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "镜头拉回主城居中位置，打开特殊平民到来弹窗【当前已有功能】，指引点击下面条目的前往按钮",
+              "children": [
+                {
+                  "title": "弹窗盖住场景的时候，把平民刷在城门口展示，头顶带气泡【当前已有功能】"
+                }
+              ]
+            },
+            {
+              "title": "打开平民弹窗后，立绘对话",
+              "children": [
+                {
+                  "title": "领主",
+                  "children": [
+                    {
+                      "title": "We need more beds to fit the new folks."
+                    },
+                    {
+                      "title": "我们需要更多的床位来容纳新的成员"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "后续完成特殊平民任务项",
+              "children": [
+                {
+                  "title": "强指引",
+                  "children": [
+                    {
+                      "title": "点击空白处",
+                      "children": [
+                        {
+                          "title": "不会打断指引"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "title": "指引流程",
+                  "children": [
+                    {
+                      "title": "指引玩家领取平民"
+                    }
+                  ]
+                },
+                {
+                  "title": "打断指引",
+                  "children": [
+                    {
+                      "title": "点击界面其他地方",
+                      "children": [
+                        {
+                          "title": "无法点击，无法打断指引"
+                        }
+                      ]
+                    },
+                    {
+                      "title": "退出游戏",
+                      "children": [
+                        {
+                          "title": "重新进入游戏指引重新触发"
+                        }
+                      ]
+                    },
+                    {
+                      "title": "断网",
+                      "children": [
+                        {
+                          "title": "重连后指引重新触发"
+                        }
+                      ]
+                    },
+                    {
+                      "title": "主城被动移城",
+                      "children": [
+                        {
+                          "title": "无任何表现，指引继续，不弹出被动移城弹窗"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "领取后立绘对话：",
+              "children": [
+                {
+                  "title": "难民男",
+                  "children": [
+                    {
+                      "title": "Whew! Glad you got us outta the Daly gang’s bullet storm."
+                    },
+                    {
+                      "title": "呼！感谢上帝，要不是你收留我们，我们就要死在达利帮的子弹下了"
+                    }
+                  ]
+                },
+                {
+                  "title": "难民女",
+                  "children": [
+                    {
+                      "title": "They are planing to attack your town tonight!"
+                    },
+                    {
+                      "title": "他们还计划在今晚进攻你们！"
+                    }
+                  ]
+                },
+                {
+                  "title": "接威胁来袭横幅+飞入"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "第9步：领取完平民后，触发特殊威胁",
+          "children": [
+            {
+              "title": "插入一段【纯美术CG】"
+            },
+            {
+              "title": "领取后平民出对话，同时有气泡插图",
+              "children": [
+                {
+                  "title": "气泡插图延迟Xs出",
+                  "children": [
+                    {
+                      "title": "X=产品配置",
+                      "children": [
+                        {
+                          "title": ""
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "对话",
+              "children": [
+                {
+                  "title": "平民",
+                  "children": [
+                    {
+                      "title": "Whew! Thank goodness you pulled us outta the Dali gang’s hail of bullets."
+                    },
+                    {
+                      "title": "呼！感谢上帝，要不是你收留我们，我们就要死在达利帮的子弹下了"
+                    }
+                  ]
+                },
+                {
+                  "title": "领主",
+                  "children": [
+                    {
+                      "title": "Come quick, but I reckon the Dali gang’re after me, not you."
+                    },
+                    {
+                      "title": "你们快进来吧...但是恐怕达利帮的目标根本不是你们，而是我"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "接威胁来袭全屏横幅+飞入+变成左上角入口",
+              "children": [
+                {
+                  "title": ""
+                }
+              ]
+            },
+            {
+              "title": "本次威胁为特殊威胁，特殊逻辑：",
+              "children": [
+                {
+                  "title": "弹窗逻辑特殊处理",
+                  "children": [
+                    {
+                      "title": ""
+                    },
+                    {
+                      "title": "条件全完成后，红框区域展示固定文本：",
+                      "children": [
+                        {
+                          "title": "We’re all set—the win’s pretty much in the bag."
+                        },
+                        {
+                          "title": "我们已经做好万全准备，胜券在握"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "title": "异常场景",
+                  "children": [
+                    {
+                      "title": "倒计时结束",
+                      "children": [
+                        {
+                          "title": "永不过期，倒计时循环播放"
+                        }
+                      ]
+                    },
+                    {
+                      "title": "主动开战",
+                      "children": [
+                        {
+                          "title": "玩家无法主动开战【客户端入口删除】"
+                        }
+                      ]
+                    },
+                    {
+                      "title": "退出威胁",
+                      "children": [
+                        {
+                          "title": "删除退出入口"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "第10步：主城升3级，触发防御塔建造",
+          "children": [
+            {
+              "title": "平民",
+              "children": [
+                {
+                  "title": "Boss! We got enough stuff now to build some defense towers."
+                },
+                {
+                  "title": "老大！我们现在有充足的资源储备，可以根据城防图尝试建造防御塔了！"
+                }
+              ]
+            },
+            {
+              "title": "防御塔建造指引",
+              "children": [
+                {
+                  "title": "镜头移动至防御塔1地基位置"
+                },
+                {
+                  "title": "对话",
+                  "children": [
+                    {
+                      "title": "领主",
+                      "children": [
+                        {
+                          "title": "Here it is—let’s cook up a little surprise for them Dali."
+                        },
+                        {
+                          "title": "就这儿吧，给杂种达利帮准备点见面礼"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "title": "指引点击地基",
+                  "children": [
+                    {
+                      "title": "打开2选1防御塔弹窗"
+                    },
+                    {
+                      "title": "指引点击燃油瓶防御塔"
+                    },
+                    {
+                      "title": "通用建筑新建流程",
+                      "children": [
+                        {
+                          "title": "脚手架"
+                        },
+                        {
+                          "title": "建造完成光效"
+                        }
+                      ]
+                    },
+                    {
+                      "title": "打断指引",
+                      "children": [
+                        {
+                          "title": "点击界面其他地方",
+                          "children": [
+                            {
+                              "title": "无法点击，无法打断指引"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "退出游戏",
+                          "children": [
+                            {
+                              "title": "重新进入游戏指引重新触发"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "断网",
+                          "children": [
+                            {
+                              "title": "重连后指引重新触发"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "主城被动移城",
+                          "children": [
+                            {
+                              "title": "无任何表现，指引继续，不弹出被动移城弹窗"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "title": "异常情况",
+                      "children": [
+                        {
+                          "title": "在此指引之前点击地基建造",
+                          "children": [
+                            {
+                              "title": "屏蔽防御塔地基展示，不允许玩家点击"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "切换防御塔样式",
+                          "children": [
+                            {
+                              "title": "拦截玩家切换防御塔样式，TIPS：主城等级4级前无法切换防御塔"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "建造建筑资源不足",
+                          "children": [
+                            {
+                              "title": "不存在这种情况"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "title": "TL",
+                  "children": [
+                    {
+                      "title": "平民跑上燃油瓶防御塔，周围群众来围观，平民尝试丢出一个燃油瓶，差点烧伤围观群众",
+                      "children": [
+                        {
+                          "title": "跑上防御塔时对话气泡",
+                          "children": [
+                            {
+                              "title": "Leave it to me！"
+                            },
+                            {
+                              "title": "包在我身上！"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "准备投掷燃烧瓶时对话气泡",
+                          "children": [
+                            {
+                              "title": "Heads up! Here comes a big boom!"
+                            },
+                            {
+                              "title": "走你！"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "title": "结束"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "第11步：防御塔建造完成后，触发特殊入侵战",
+          "children": [
+            {
+              "title": "入侵战女主出场TL",
+              "children": [
+                {
+                  "title": "屏幕震动，立绘对话【晚点细化完再变更上来】",
+                  "children": [
+                    {
+                      "title": "男士兵A：卧槽又来了..."
+                    }
+                  ]
+                },
+                {
+                  "title": "女主带着达利帮士兵登场",
+                  "children": [
+                    {
+                      "title": "入场TL【纯美术优化，开发配合接入】",
+                      "children": [
+                        {
+                          "title": "先是男主背后特写，女主从侧面出来，站住，单手持枪",
+                          "children": [
+                            {
+                              "title": "期间有一只鸟飞过"
+                            },
+                            {
+                              "title": "颜色氛围出来此图，目前的颜色饱和度太高 地表肌理太形式感",
+                              "children": [
+                                {
+                                  "title": "颜色氛围出来此图，目前的颜色饱和度太高 地表肌理太形式感"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "title": "镜头在拉回到操作视角，开始倒计时"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "title": "立绘对话",
+                  "children": [
+                    {
+                      "title": "女主【自信】",
+                      "children": [
+                        {
+                          "title": "You escaped before, but now you’ve got nowhere to hide."
+                        },
+                        {
+                          "title": "上次让你小子溜了，算你运气好，这次没地方跑了吧！"
+                        }
+                      ]
+                    },
+                    {
+                      "title": "达利帮小兵【贪婪疯狂】",
+                      "children": [
+                        {
+                          "title": "Women! I’m grabbing god damn every last one of you!"
+                        },
+                        {
+                          "title": "女人！老子要把城里所有女人都抢走！哈哈哈哈！"
+                        }
+                      ]
+                    },
+                    {
+                      "title": "女主【暗怒】",
+                      "children": [
+                        {
+                          "title": "Shut the fuck up. You idiot with a dick for a brain"
+                        },
+                        {
+                          "title": "闭嘴，你这个屌长脑袋上的蠢货"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "title": "女主一枪崩了小兵，震惊周围其他小兵，女主出对话气泡",
+                  "children": [
+                    {
+                      "title": "女主：",
+                      "children": [
+                        {
+                          "title": "Charge!"
+                        },
+                        {
+                          "title": "全军出击！"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "title": "在当前女主击毙小兵后，新增美术表现",
+                  "children": [
+                    {
+                      "title": "一发子弹爆头另一个小兵【或射掉女主帽子】"
+                    },
+                    {
+                      "title": "镜头拉回我方防御塔2位置，枪口冒烟",
+                      "children": [
+                        {
+                          "title": "对话",
+                          "children": [
+                            {
+                              "title": "平民",
+                              "children": [
+                                {
+                                  "title": "Go to heck, Dali gang!"
+                                },
+                                {
+                                  "title": "去死吧！达利帮！"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "title": "镜头移动至开战位置，高斯模糊，接C4特殊入侵战"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "入侵战结束时",
+              "children": [
+                {
+                  "title": "女英雄最后出场被打败"
+                },
+                {
+                  "title": "女主入侵战中最后一击加入慢动作，死亡动作改为跪地（动作提供）同时黑幕"
+                },
+                {
+                  "title": "黑幕渐现，特写 女主跪倒在城门外，男主与民兵一起入镜，开始对话，对话完后，进入决斗"
+                }
+              ]
+            },
+            {
+              "title": "对话",
+              "children": [
+                {
+                  "title": "平民",
+                  "children": [
+                    {
+                      "title": "Boss, the enemies are coming again!"
+                    },
+                    {
+                      "title": "老大，敌人又来了",
+                      "children": [
+                        {
+                          "title": "对话立绘：严肃大喊"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "title": "领主",
+                  "children": [
+                    {
+                      "title": "Fellas, arms up!"
+                    },
+                    {
+                      "title": "带齐家伙，跟我上",
+                      "children": [
+                        {
+                          "title": "对话立绘：正常严肃"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "第12步：主城升至4级，触发女主加入",
+          "children": [
+            {
+              "title": "C4女主加入流程",
+              "children": [
+                {
+                  "title": "C4后，立刻黑屏接入一段【纯美术CG】",
+                  "children": [
+                    {
+                      "title": "参考上个版本的女主来袭部分镜头"
+                    }
+                  ]
+                },
+                {
+                  "title": "黑幕结束，镜头定位主城门口",
+                  "children": [
+                    {
+                      "title": "士兵A跑向领主",
+                      "children": [
+                        {
+                          "title": "立绘对话",
+                          "children": [
+                            {
+                              "title": "士兵A",
+                              "children": [
+                                {
+                                  "title": "Boss! There's a fine-looking lady outside wanting to throw down in a duel with you."
+                                },
+                                {
+                                  "title": "老大，外面有个美女说要来和你决斗"
+                                }
+                              ]
+                            },
+                            {
+                              "title": "领主",
+                              "children": [
+                                {
+                                  "title": "What the heck...?"
+                                },
+                                {
+                                  "title": "什么情况..？"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "title": "男主走出城门，女主入镜"
+                },
+                {
+                  "title": "黑幕，切全屏TL：复用当前决斗出场动画，落位结束后",
+                  "children": [
+                    {
+                      "title": "立绘对话",
+                      "children": [
+                        {
+                          "title": "女主",
+                          "children": [
+                            {
+                              "title": "Ruthless murderer—go burn in hell!"
+                            },
+                            {
+                              "title": "十恶不赦的杀人魔，今天我要替天行道"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "领主",
+                          "children": [
+                            {
+                              "title": "Hey, take it easy. Maybe there's been a misunderstanding?"
+                            },
+                            {
+                              "title": "嘿，你先冷静，这其中是不是有什么误会"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "女主",
+                          "children": [
+                            {
+                              "title": "Enough talk, draw your gun!"
+                            },
+                            {
+                              "title": "够了，拔枪吧"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "title": "接决斗玩法，决斗结束后，黑幕切回SLG镜头视角，女主跪倒，男主站在马旁边",
+                  "children": [
+                    {
+                      "title": "立绘对话",
+                      "children": [
+                        {
+                          "title": "领主",
+                          "children": [
+                            {
+                              "title": "Whew, can we settle down and have a calm talk now?"
+                            },
+                            {
+                              "title": "呼，现在我们可以冷静下来交谈了吗？"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "女主",
+                          "children": [
+                            {
+                              "title": "Why? Why didn't you just kill me? That's pure nonsense."
+                            },
+                            {
+                              "title": "为什么？你为什么不直接杀了我？这和传闻不一样！"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "平民男",
+                          "children": [
+                            {
+                              "title": "There's gotta be some misunderstanding—our boss ain't no murderer guy"
+                            },
+                            {
+                              "title": "这其中一定有什么误会，我们的镇长可不是滥杀无辜之人"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "女主",
+                          "children": [
+                            {
+                              "title": "Damn it! Daly tricked me, and I’m gonna make them pay."
+                            },
+                            {
+                              "title": "操！达利帮，敢耍我！你们会付出代价的"
+                            },
+                            {
+                              "title": "Please let me join,I wanna fight Daly alongside you."
+                            },
+                            {
+                              "title": "请让我加入！我想和你们一对抗达利帮，我不会放过他们的！、"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "title": "接新英雄解锁弹窗，女主加入"
+                },
+                {
+                  "title": "解锁远征动画，指引点击远征【后续复用】",
+                  "children": [
+                    {
+                      "title": "解锁远征功能后",
+                      "children": [
+                        {
+                          "title": "立绘对话",
+                          "children": [
+                            {
+                              "title": "领主",
+                              "children": [
+                                {
+                                  "title": "It's time to teach those Daly Gang some lessons"
+                                },
+                                {
+                                  "title": "被动防守不如主动进攻！是时候给达利帮的杂种们上一课了"
+                                }
+                              ]
+                            },
+                            {
+                              "title": "女主",
+                              "children": [
+                                {
+                                  "title": "I got this!"
+                                },
+                                {
+                                  "title": "交给我吧！"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "title": "对话结束指引点击远征"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "qte玩法",
+              "children": [
+                {
+                  "title": "功能点",
+                  "children": [
+                    {
+                      "title": "流程",
+                      "children": [
+                        {
+                          "title": "入场镜头",
+                          "children": [
+                            {
+                              "title": "开场播放运镜",
+                              "children": [
+                                {
+                                  "title": "具体美术设计"
+                                }
+                              ]
+                            },
+                            {
+                              "title": "镜头最终定位至男主身后，第三人称过肩视角"
+                            },
+                            {
+                              "title": "镜头运镜完成后，UI切出"
+                            }
+                          ]
+                        },
+                        {
+                          "title": "提示攻击教学"
+                        },
+                        {
+                          "title": "射击按钮自动循环至完美过程"
+                        },
+                        {
+                          "title": "点击射击后播放子弹时间特效"
+                        },
+                        {
+                          "title": "子弹时间结束后，渐黑淡出场景回到主界面"
+                        },
+                        {
+                          "title": "打断指引",
+                          "children": [
+                            {
+                              "title": "点击界面其他地方",
+                              "children": [
+                                {
+                                  "title": "无法点击，无法打断指引"
+                                }
+                              ]
+                            },
+                            {
+                              "title": "qte玩法未结束时退出游戏",
+                              "children": [
+                                {
+                                  "title": "重新进入游戏指引重新触发"
+                                }
+                              ]
+                            },
+                            {
+                              "title": "qte玩法未结束时断网",
+                              "children": [
+                                {
+                                  "title": "重连后指引重新触发"
+                                }
+                              ]
+                            },
+                            {
+                              "title": "主城被动移城",
+                              "children": [
+                                {
+                                  "title": "无任何表现，指引继续，不弹出被动移城弹窗"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "title": "决斗玩法",
+                      "children": [
+                        {
+                          "title": "玩法",
+                          "children": [
+                            {
+                              "title": "双方单位动作",
+                              "children": [
+                                {
+                                  "title": "敌方",
+                                  "children": [
+                                    {
+                                      "title": "女主动作",
+                                      "children": [
+                                        {
+                                          "title": "默认动作",
+                                          "children": [
+                                            {
+                                              "title": "站立原地，准备拔枪动作，不移动"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "title": "玩家瞄准时",
+                                          "children": [
+                                            {
+                                              "title": "女主做拔枪动作，时间静止"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "title": "玩家胜利时",
+                                          "children": [
+                                            {
+                                              "title": "进入流程TL"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "title": "玩家失败时",
+                                          "children": [
+                                            {
+                                              "title": "女主拔枪射击"
+                                            },
+                                            {
+                                              "title": "接失败TL，黑幕，玩法重开"
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "title": "移动",
+                                      "children": [
+                                        {
+                                          "title": "在瞄准时",
+                                          "children": [
+                                            {
+                                              "title": "女主不会移动"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "title": "在决斗界面时",
+                                          "children": [
+                                            {
+                                              "title": "女主不会移动"
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "title": "我方",
+                                  "children": [
+                                    {
+                                      "title": "领主动作",
+                                      "children": [
+                                        {
+                                          "title": "默认动作",
+                                          "children": [
+                                            {
+                                              "title": "站立原地，准备拔枪动作，不移动"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "title": "玩家瞄准时",
+                                          "children": [
+                                            {
+                                              "title": "长按瞄准，进入瞄准表现"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "title": "玩家胜利时",
+                                          "children": [
+                                            {
+                                              "title": "接胜利TL，射掉女主手枪，黑幕结束"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "title": "玩家失败时",
+                                          "children": [
+                                            {
+                                              "title": "接失败TL，黑幕，玩法重开"
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "title": "移动",
+                                      "children": [
+                                        {
+                                          "title": "在瞄准时",
+                                          "children": [
+                                            {
+                                              "title": "领主不会移动"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "title": "在决斗界面时",
+                                          "children": [
+                                            {
+                                              "title": "领主不会移动"
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "title": "胜利失败逻辑",
+                              "children": [
+                                {
+                                  "title": "射击区域判定",
+                                  "children": [
+                                    {
+                                      "title": "假设玩家在4s时射击"
+                                    },
+                                    {
+                                      "title": "射击范围在区域内",
+                                      "children": [
+                                        {
+                                          "title": "决斗胜利，进入tl"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "title": "射击范围在区域边缘",
+                                      "children": [
+                                        {
+                                          "title": "决斗胜利，进入tl"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "title": "射击范围不在区域内",
+                                      "children": [
+                                        {
+                                          "title": "决斗失败，接失败TL，黑幕，玩法重开"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "title": "时间限制",
+                                  "children": [
+                                    {
+                                      "title": "假设玩家射击在区域范围内"
+                                    },
+                                    {
+                                      "title": "在4s时松手射击",
+                                      "children": [
+                                        {
+                                          "title": "决斗胜利，进入tl"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "title": "在5s时松手射击",
+                                      "children": [
+                                        {
+                                          "title": "决斗胜利，进入tl"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "title": "在6s时松手射击",
+                                      "children": [
+                                        {
+                                          "title": "决斗失败，接失败TL，黑幕，玩法重开"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "title": "瞄准逻辑",
+                              "children": [
+                                {
+                                  "title": "默认瞄准",
+                                  "children": [
+                                    {
+                                      "title": "首次按住瞄准按钮",
+                                      "children": [
+                                        {
+                                          "title": "瞄准女主胸口位置"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "title": "瞄准移动",
+                                  "children": [
+                                    {
+                                      "title": "按照方向移动准星"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "title": "瞄准表现",
+                                  "children": [
+                                    {
+                                      "title": "屏幕周围出时间静止特效"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "title": "瞄准区域限制",
+                                  "children": [
+                                    {
+                                      "title": "准星移动区域",
+                                      "children": [
+                                        {
+                                          "title": "胜利区域",
+                                          "children": [
+                                            {
+                                              "title": "可以瞄准在该区域松手射击时",
+                                              "children": [
+                                                {
+                                                  "title": "决斗胜利，进入tl"
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "title": "非胜利区域",
+                                          "children": [
+                                            {
+                                              "title": "可以瞄准在该区域松手射击时",
+                                              "children": [
+                                                {
+                                                  "title": "决斗失败，接失败TL，黑幕，玩法重开"
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "title": "非准星移动区域",
+                                      "children": [
+                                        {
+                                          "title": "无法移动至非准星移动区域"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "title": "UI相关",
+                          "children": [
+                            {
+                              "title": "QTE射击按钮",
+                              "children": [
+                                {
+                                  "title": "假设配置循环时间为4s，0-3s为普通射击，3-4s为完美射击"
+                                },
+                                {
+                                  "title": "普通射击按钮样式",
+                                  "children": [
+                                    {
+                                      "title": "未射击",
+                                      "children": [
+                                        {
+                                          "title": "进度条为淡黄色",
+                                          "children": [
+                                            {
+                                              "title": "0s时",
+                                              "children": [
+                                                {
+                                                  "title": "进度条为空"
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "title": "1s时",
+                                              "children": [
+                                                {
+                                                  "title": "进度条为四分之一"
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "title": "2s时",
+                                              "children": [
+                                                {
+                                                  "title": "进度条为一半"
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "title": "播放弱光效"
+                                        },
+                                        {
+                                          "title": "射击图标"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "title": "已射击",
+                                      "children": [
+                                        {
+                                          "title": "射击图标"
+                                        },
+                                        {
+                                          "title": "进度条为淡黄色",
+                                          "children": [
+                                            {
+                                              "title": "0s时",
+                                              "children": [
+                                                {
+                                                  "title": "进度条为空"
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "title": "1s时",
+                                              "children": [
+                                                {
+                                                  "title": "进度条为四分之一"
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "title": "2s时",
+                                              "children": [
+                                                {
+                                                  "title": "进度条为一半"
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "title": "5s时",
+                                              "children": [
+                                                {
+                                                  "title": "由完美射击变为普通射击按钮"
+                                                },
+                                                {
+                                                  "title": "进度条为四分之一"
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "title": "播放弱光效"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "title": "完美射击按钮样式",
+                                  "children": [
+                                    {
+                                      "title": "未射击",
+                                      "children": [
+                                        {
+                                          "title": "进度条为红色",
+                                          "children": [
+                                            {
+                                              "title": "3s时",
+                                              "children": [
+                                                {
+                                                  "title": "由普通射击变为完美射击按钮"
+                                                },
+                                                {
+                                                  "title": "进度条为四分之三"
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "title": "4s时",
+                                              "children": [
+                                                {
+                                                  "title": "进度条为满"
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "title": "8s时",
+                                              "children": [
+                                                {
+                                                  "title": "进度条为满"
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "title": "射击图标"
+                                        },
+                                        {
+                                          "title": "播放强光效"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "title": "已射击",
+                                      "children": [
+                                        {
+                                          "title": "射击图标"
+                                        },
+                                        {
+                                          "title": "强黄色光效"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "title": "射击提示气泡",
+                              "children": [
+                                {
+                                  "title": "展示逻辑",
+                                  "children": [
+                                    {
+                                      "title": "QTE射击按钮出现时",
+                                      "children": [
+                                        {
+                                          "title": "出现文案提示气泡",
+                                          "children": [
+                                            {
+                                              "title": "文案内容",
+                                              "children": [
+                                                {
+                                                  "title": "点击屏幕射击"
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "title": "消失逻辑",
+                                  "children": [
+                                    {
+                                      "title": "气泡持续2s后",
+                                      "children": [
+                                        {
+                                          "title": "自动消失"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "title": "界面上移除：",
+                              "children": [
+                                {
+                                  "title": "1.子弹数量展示"
+                                },
+                                {
+                                  "title": "2.敌方海报+敌方血量"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "title": "开枪动画",
+                          "children": [
+                            {
+                              "title": "点击射击后，视角变化，镜头聚焦子弹，保持跟随运镜",
+                              "children": [
+                                {
+                                  "title": "参考滑屏tps子弹时间表现"
+                                },
+                                {
+                                  "title": "后续表演为，击中女主帽子"
+                                }
+                              ]
+                            },
+                            {
+                              "title": "子弹时间结束后，淡黑切出，回到主场景，接后续流程"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "第13步：获得女主新英雄后，解锁远征",
+          "children": [
+            {
+              "title": "远征解锁飞入"
+            },
+            {
+              "title": "指引进入远征"
+            },
+            {
+              "title": "第一关远征，英雄技能倒计时结束",
+              "children": [
+                {
+                  "title": "远征首次指引放技能",
+                  "children": [
+                    {
+                      "title": "使用通用手指节奏"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "打断指引",
+              "children": [
+                {
+                  "title": "点击界面其他地方",
+                  "children": [
+                    {
+                      "title": "无法点击，无法打断指引"
+                    }
+                  ]
+                },
+                {
+                  "title": "退出游戏",
+                  "children": [
+                    {
+                      "title": "重新进入游戏指引重新触发"
+                    }
+                  ]
+                },
+                {
+                  "title": "断网",
+                  "children": [
+                    {
+                      "title": "重连后指引重新触发"
+                    }
+                  ]
+                },
+                {
+                  "title": "主城被动移城",
+                  "children": [
+                    {
+                      "title": "无任何表现，指引继续，不弹出被动移城弹窗"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "第14步：主城升至6级，解锁雷达",
+          "children": [
+            {
+              "title": "触发节点",
+              "children": [
+                {
+                  "title": "主城升至6级高级小镇横幅节奏结束后",
+                  "children": [
+                    {
+                      "title": "立即触发"
+                    }
+                  ]
+                },
+                {
+                  "title": "主城升至6级过程中",
+                  "children": [
+                    {
+                      "title": "不会触发"
+                    }
+                  ]
+                },
+                {
+                  "title": "高级小镇横幅节奏未结束时",
+                  "children": [
+                    {
+                      "title": "不会触发"
+                    }
+                  ]
+                },
+                {
+                  "title": "高级小镇横幅节奏未结束时退出游戏重登",
+                  "children": [
+                    {
+                      "title": "重登后触发"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "指引类型",
+              "children": [
+                {
+                  "title": "强指引",
+                  "children": [
+                    {
+                      "title": "点击空白处",
+                      "children": [
+                        {
+                          "title": "指引不会被打断"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "指引流程",
+              "children": [
+                {
+                  "title": "当前雷达建筑为无悬赏令张贴样式"
+                },
+                {
+                  "title": "美术TL",
+                  "children": [
+                    {
+                      "title": "一个联邦士兵（之前的军装骑兵造型）骑马过来，下马贴了一张通缉令，然后骑马离开，同时男主和士兵入场，看了下墙上的通缉令"
+                    }
+                  ]
+                },
+                {
+                  "title": "立绘对话",
+                  "children": [
+                    {
+                      "title": "领主",
+                      "children": [
+                        {
+                          "title": "Some new wanted posters out—looks like we can make some extra cash from this."
+                        },
+                        {
+                          "title": "有新的通缉令颁布了，看来我们可以靠这个赚点外快了"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "title": "出雷达悬赏气泡，指引点击"
+                },
+                {
+                  "title": "点击后男主骑马跑出城外，镜头拉高，切云，进雷达主界面",
+                  "children": [
+                    {
+                      "title": "接后续雷达流程"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "打断指引",
+              "children": [
+                {
+                  "title": "点击界面其他地方",
+                  "children": [
+                    {
+                      "title": "无法点击，无法打断指引"
+                    }
+                  ]
+                },
+                {
+                  "title": "退出游戏",
+                  "children": [
+                    {
+                      "title": "重新进入游戏指引重新触发"
+                    }
+                  ]
+                },
+                {
+                  "title": "断网",
+                  "children": [
+                    {
+                      "title": "重连后指引重新触发"
+                    }
+                  ]
+                },
+                {
+                  "title": "主城被动移城",
+                  "children": [
+                    {
+                      "title": "无任何表现，指引继续，不弹出被动移城弹窗"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "异常场景",
+              "children": [
+                {
+                  "title": "建造建筑资源不足",
+                  "children": [
+                    {
+                      "title": "不存在这种情况"
+                    }
+                  ]
+                },
+                {
+                  "title": "在此TL前点击修复建筑",
+                  "children": [
+                    {
+                      "title": "隐藏建筑展示，玩家不可点击"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+]
