@@ -6,10 +6,10 @@
       "args": [
         "phone_mcp_server.py"
       ],
-      "cwd": "/home/ying/claude/Open-AutoGLM",
+      "cwd": "C:\\source\\leyitest\\Open-AutoGLM",
       "env": {
-        "ADB_PATH": "/usr/bin/adb",
-        "PHONE_DEVICE_ID": "192.168.240.112:5555",
+        "ADB_PATH": "D:\\Program Files\\Nox\\bin\\nox_adb.exe",
+        "PHONE_DEVICE_ID": "127.0.0.1:62001",
         "PYTHONIOENCODING": "utf-8"
       }
     }

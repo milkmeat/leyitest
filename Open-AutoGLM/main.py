@@ -64,9 +64,17 @@ def check_system_requirements(
         tool_cmd = "idevice_id"
     else:
         tool_name = "ADB" if device_type == DeviceType.ADB else "HDC"
-        tool_cmd = "adb" if device_type == DeviceType.ADB else "hdc"
+        # Support custom ADB path (e.g., for Nox emulator: nox_adb.exe)
+        if device_type == DeviceType.ADB:
+            tool_cmd = os.environ.get("ADB_PATH", "adb")
+        else:
+            tool_cmd = "hdc"
 
     # Check 1: Tool installed
+    # Show ADB path if using custom path (e.g., nox_adb)
+    if device_type == DeviceType.ADB and "ADB_PATH" in os.environ:
+        print(f"   Using custom ADB: {tool_cmd}")
+
     print(f"1. Checking {tool_name} installation...", end=" ")
     if shutil.which(tool_cmd) is None:
         print("❌ FAILED")
@@ -127,7 +135,7 @@ def check_system_requirements(
     try:
         if device_type == DeviceType.ADB:
             result = subprocess.run(
-                ["adb", "devices"], capture_output=True, text=True, timeout=10
+                [tool_cmd, "devices"], capture_output=True, text=True, timeout=10
             )
             lines = result.stdout.strip().split("\n")
             # Filter out header and empty lines, look for 'device' status
@@ -196,7 +204,7 @@ def check_system_requirements(
         print("3. Checking ADB Keyboard...", end=" ")
         try:
             result = subprocess.run(
-                ["adb", "shell", "ime", "list", "-s"],
+                [tool_cmd, "shell", "ime", "list", "-s"],
                 capture_output=True,
                 text=True,
                 timeout=10,
