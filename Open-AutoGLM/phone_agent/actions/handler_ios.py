@@ -118,9 +118,9 @@ class IOSActionHandler:
     def _convert_relative_to_absolute(
         self, element: list[int], screen_width: int, screen_height: int
     ) -> tuple[int, int]:
-        """直接使用绝对像素坐标（保留此函数用于兼容性，但不再转换）。"""
-        x = int(element[0])
-        y = int(element[1])
+        """Convert relative coordinates (0-1000) to absolute pixels."""
+        x = int(element[0] / 1000 * screen_width)
+        y = int(element[1] / 1000 * screen_height)
         return x, y
 
     def _handle_launch(self, action: dict, width: int, height: int) -> ActionResult:
