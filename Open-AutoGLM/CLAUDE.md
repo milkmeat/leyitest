@@ -15,15 +15,12 @@
 - ✅ 正确：`locate_and_tap(description="微信图标")` - 让 AutoGLM 定位并点击
 - ❌ 错误：Claude 直接分析截图图片 - 浪费 token，不如 AutoGLM 准确
 - ❌ 一般错误：`execute_action(tap, element=[150, 450])` - Claude 估算坐标容易失败
-- ⚠️ **例外**：新手指引手指图标必须用 `execute_action(tap, [500, 500])` 直接点击！
+
 
 ## 快速参考：元素定位决策树
 
 ```
 遇到元素需要点击
-    │
-    ├─ 是"手指图标"？
-    │   └─ YES → 直接用 execute_action(tap, [500, 500])  ⚠️ 不要用 locate！
     │
     ├─ 是普通按钮/图标？
     │   └─ YES → 用 locate_and_tap(description="具体描述")
@@ -89,12 +86,11 @@
 | `locate_and_tap` | AutoGLM 定位并点击（推荐！） | ⭐⭐⭐ |
 | `locate_and_type` | AutoGLM 定位输入框并输入文本（推荐！） | ⭐⭐⭐ |
 | `locate_and_swipe` | AutoGLM 定位元素并滑动 | ⭐⭐⭐ |
-| `execute_action` | 直接执行操作（用于 back/home/wait/launch 或新手指引） | ⭐⭐ |
+| `execute_action` | 直接执行操作（用于 back/home/wait/launch ） | ⭐⭐ |
 | `locate_element` | 仅定位元素返回坐标（一般不需要单独使用） | ⭐ |
 
 **重要**：
 - 一般情况：点击和输入操作请使用 `locate_and_*` 系列工具
-- **特殊情况（新手指引手指图标）**：直接使用 `execute_action(tap, element=[坐标])` 点击常见位置
 
 ### 辅助工具
 
@@ -154,7 +150,6 @@ N. end_task_session(task_id, final_result="已发送消息", success=True)
 |-----|---------|------|
 | 了解当前界面 | `analyze_screen` | `analyze_screen(task_context="需要找到设置入口")` |
 | 点击按钮/图标 | `locate_and_tap` | `locate_and_tap(description="发送按钮")` |
-| **新手指引手指图标** | `execute_action` | `execute_action(action="tap", element=[500, 500])` |
 | 输入文本 | `locate_and_type` | `locate_and_type(input_description="搜索框", text="关键词")` |
 | 滑动屏幕 | `locate_and_swipe` | `locate_and_swipe(description="列表区域", direction="up")` |
 | 返回上一页 | `execute_action` | `execute_action(action="back")` |
@@ -162,21 +157,6 @@ N. end_task_session(task_id, final_result="已发送消息", success=True)
 | 等待加载 | `execute_action` | `execute_action(action="wait", duration=2)` |
 | 启动应用 | `execute_action` | `execute_action(action="launch", app="微信")` |
 
-#### 新手指引特殊处理
-
-当 `analyze_screen` 提到"手指图标"/"手指指示"时：
-
-**推荐做法**：直接点击常见位置（以 1080x1920 屏幕为例）
-```python
-execute_action(action="tap", element=[540, 960])   # 屏幕中央
-execute_action(action="tap", element=[540, 1536])  # 中下方
-execute_action(action="tap", element=[540, 1344])  # 中央偏下
-```
-
-注意：实际坐标需要根据具体屏幕分辨率调整。
-
-**不推荐**：使用 `locate_and_tap(description="手指图标")`
-- 原因：AutoGLM 在 analyze_screen 时能识别手指，但 locate 时可能找不到（识别不一致）
 
 ### 推荐的方式
 ```python
@@ -186,10 +166,6 @@ analyze_screen()  # AutoGLM 分析更准确，返回结构化数据
 # ✅ 让 AutoGLM 来定位（普通元素）
 locate_and_tap(description="微信图标")  # AutoGLM 精确定位
 
-# ✅ 新手指引手指图标特殊处理
-if "手指图标" in analysis:
-    execute_action(action="tap", element=[500, 500])  # 直接点击中央位置
-```
 
 ### 不推荐的方式（容易失败或浪费资源）
 
@@ -197,8 +173,6 @@ if "手指图标" in analysis:
 # ❌ 普通元素不要自己估算坐标
 execute_action(action="tap", element=[320, 450])  # Claude 估算的坐标经常不准
 
-# ❌ 新手指引不要用 locate_and_tap
-locate_and_tap(description="手指图标")  # AutoGLM 分析时能识别，定位时可能找不到
 ```
 
 ## 坐标系统
@@ -255,7 +229,6 @@ phone-agent-tasks/
 - 功能 + 特征：`"关闭按钮X"`
 
 **2. 动态/临时元素（优先用 execute_action）**
-- ⚠️ **新手指引手指图标**：不要用 `locate_and_tap`，直接 `execute_action(tap, [500, 500])`
 - ⚠️ 高亮提示/动画：可能识别不稳定
 - ⚠️ 临时弹窗/浮层：优先使用位置描述
 
@@ -270,7 +243,6 @@ phone-agent-tasks/
 
 #### 不好的描述（模糊或不稳定）
 
-- ❌ "手指图标" - 动态元素，应直接点击坐标
 - ❌ "那个按钮" - 太模糊
 - ❌ "左边的东西" - 太模糊
 - ❌ "高亮的地方" - 动态效果，不稳定
@@ -308,34 +280,7 @@ phone-agent-tasks/
 
 ### 常见失败场景及对策
 
-#### 场景1：新手指引手指图标
-
-**症状**：
-- `analyze_screen` 识别到"手指图标"
-- `locate_and_tap(description="手指图标")` 返回"未找到元素"
-
-**原因**：AutoGLM 在分析和定位时的识别逻辑不一致
-
-**对策**（以 1080x1920 屏幕为例）：
-```python
-# ❌ 不要这样
-locate_and_tap(description="手指图标")
-
-# ✅ 直接点击常见位置
-execute_action(action="tap", element=[540, 960])   # 屏幕中央
-# 或
-execute_action(action="tap", element=[540, 1536])  # 中下方
-# 或
-execute_action(action="tap", element=[540, 1344])  # 中央偏下
-```
-
-**常见手指图标位置**（需根据实际屏幕分辨率调整）：
-- 屏幕中央：`[屏幕宽度/2, 屏幕高度/2]`
-- 中央偏下：`[屏幕宽度/2, 屏幕高度*0.7]`
-- 底部中央：`[屏幕宽度/2, 屏幕高度*0.85]`
-- 右下角：`[屏幕宽度*0.75, 屏幕高度*0.85]`
-
-#### 场景2：描述词不够精确
+#### 场景1：描述词不够精确
 
 **症状**：
 - 元素确实存在
@@ -350,7 +295,7 @@ locate_and_tap(description="按钮")
 locate_and_tap(description="底部蓝色的确认按钮")
 ```
 
-#### 场景3：动态UI元素
+#### 场景2：动态UI元素
 
 **症状**：
 - 高亮效果、动画、临时提示
@@ -371,16 +316,14 @@ execute_action(action="tap", element=[972, 192])  # 右上角约90%宽度、10%�
 |--------------|-----------|------|
 | "按钮" | "底部蓝色的确认按钮" | 添加位置+颜色+功能 |
 | "图标" | "右上角的设置图标" | 添加位置+功能 |
-| "手指图标" | 直接点击 `[500, 500]` | 新手指引不用 locate |
 | "那个地方" | "屏幕底部中央区域" | 使用具体位置 |
 | "高亮的按钮" | "底部中央的按钮" | 去掉动态描述，用位置 |
 
 ### 何时使用 execute_action 点击坐标
 
 **必须使用场景**（不要用 locate_and_tap）：
-1. ✅ 新手指引手指图标
-2. ✅ 返回键、Home键等系统操作
-3. ✅ 等待、启动应用
+1. ✅ 返回键、Home键等系统操作
+2. ✅ 等待、启动应用
 
 **可以使用场景**（locate 失败后的降级方案）：
 1. ⚠️ locate_and_tap 多次失败后
@@ -407,8 +350,7 @@ execute_action(action="tap", element=[972, 192])  # 右上角约90%宽度、10%�
 2. **验证码**：遇到验证码等需要人工介入时，会触发 Take_over
 3. **最大步数**：使用旧版 run_phone_task 时默认最多执行 50 步
 4. **界面分析**：优先使用 `analyze_screen()` 让 AutoGLM 分析，比 Claude 直接看图更准确
-5. **新手指引手指图标**：⚠️ 关键！遇到手指图标时，不要用 `locate_and_tap`，直接用 `execute_action(tap, [500, 500])` 点击
-6. **元素定位失败**：如果 `locate_and_tap` 失败，先优化描述词重试，多次失败后再考虑直接点击坐标
+5. **元素定位失败**：如果 `locate_and_tap` 失败，先优化描述词重试，多次失败后再考虑直接点击坐标
 
 ## 故障排除
 

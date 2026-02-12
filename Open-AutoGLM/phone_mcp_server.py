@@ -625,6 +625,11 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent | 
                 locator.analyze_screen, screenshot.base64_data, task_context
             )
 
+            # 调试打印
+            print(f"[DEBUG] Analysis result: {analysis}")
+            print(f"[DEBUG] Analysis type: {type(analysis)}")
+            print(f"[DEBUG] Analysis __dict__: {getattr(analysis, '__dict__', 'N/A')}")
+
             result = {
                 "current_app": current_app,
                 "screen_size": {"width": screenshot.width, "height": screenshot.height},
@@ -634,6 +639,7 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent | 
                     "visible_elements": analysis.visible_elements,
                     "suggested_actions": analysis.suggested_actions,
                 },
+                "autoglm_response": vars(analysis) if hasattr(analysis, '__dict__') else str(analysis),
             }
             if saved_path:
                 result["screenshot_saved_to"] = saved_path
