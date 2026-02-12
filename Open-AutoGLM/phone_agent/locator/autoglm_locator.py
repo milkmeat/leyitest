@@ -88,8 +88,8 @@ class AutoGLMLocator:
         """
         # 构建用户提示，包含屏幕尺寸信息
         user_text = f"请定位: {description}"
-        if screen_width and screen_height:
-            user_text = f"当前屏幕尺寸: {screen_width}x{screen_height} 像素\n\n{user_text}\n\n请返回绝对像素坐标（范围：x: 0-{screen_width}, y: 0-{screen_height}）"
+        # if screen_width and screen_height:
+        #     user_text = f"当前屏幕尺寸: {screen_width}x{screen_height} 像素\n\n{user_text}\n\n请返回绝对像素坐标（范围：x: 0-{screen_width}, y: 0-{screen_height}）"
 
         messages = [
             {"role": "system", "content": self.SYSTEM_PROMPT},

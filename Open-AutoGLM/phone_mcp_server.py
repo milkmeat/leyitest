@@ -54,6 +54,38 @@ _action_handler: ActionHandler | None = None
 _debug_mode_enabled = True
 
 
+def convert_autoglm_coords_to_absolute(
+    relative_coords: tuple[int, int] | list[int],
+    screen_width: int,
+    screen_height: int
+) -> tuple[int, int]:
+    """
+    将 AutoGLM 的相对坐标（0-1000 范围）转换为绝对像素坐标。
+
+    Args:
+        relative_coords: 0-1000 范围的坐标 [x, y]
+        screen_width: 屏幕宽度（像素）
+        screen_height: 屏幕高度（像素）
+
+    Returns:
+        绝对像素坐标 (x, y)
+
+    Note:
+        AutoGLM 返回归一化坐标：
+        - [0, 0] = 屏幕左上角
+        - [1000, 1000] = 屏幕右下角
+        - [500, 500] = 屏幕中心
+    """
+    # 限制在有效范围内，防止异常值
+    x_rel = max(0, min(1000, relative_coords[0]))
+    y_rel = max(0, min(1000, relative_coords[1]))
+
+    # 转换为绝对像素
+    x = int(x_rel / 1000 * screen_width)
+    y = int(y_rel / 1000 * screen_height)
+    return x, y
+
+
 def get_locator() -> AutoGLMLocator:
     """获取或创建 AutoGLMLocator 实例"""
     global _locator
@@ -786,11 +818,18 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent | 
             )
 
             if result.found:
+                # 转换为绝对像素坐标
+                abs_x, abs_y = convert_autoglm_coords_to_absolute(
+                    result.element,
+                    screenshot.width,
+                    screenshot.height
+                )
+
                 return [TextContent(
                     type="text",
                     text=json.dumps({
                         "found": True,
-                        "element": result.element,
+                        "element": [abs_x, abs_y],
                         "thinking": result.thinking,
                     }, ensure_ascii=False)
                 )]
@@ -841,9 +880,12 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent | 
                     }, ensure_ascii=False)
                 )]
 
-            # 执行连续点击（直接使用 AutoGLM 返回的绝对坐标）
-            x = int(result.element[0])
-            y = int(result.element[1])
+            # 执行连续点击（转换 AutoGLM 的相对坐标为绝对像素）
+            x, y = convert_autoglm_coords_to_absolute(
+                result.element,
+                screenshot.width,
+                screenshot.height
+            )
 
             for i in range(tap_count):
                 await asyncio.to_thread(device_factory.tap, x, y, DEFAULT_DEVICE_ID)
@@ -855,6 +897,7 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent | 
             action_detail = {
                 "type": "tap",
                 "element": list(result.element),
+                "x_y":[x,y],
                 "description": description,
                 "tap_count": tap_count,
             }
@@ -931,9 +974,12 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent | 
                     }, ensure_ascii=False)
                 )]
 
-            # 点击输入框（直接使用 AutoGLM 返回的绝对坐标）
-            x = int(result.element[0])
-            y = int(result.element[1])
+            # 点击输入框（转换 AutoGLM 的相对坐标为绝对像素）
+            x, y = convert_autoglm_coords_to_absolute(
+                result.element,
+                screenshot.width,
+                screenshot.height
+            )
             await asyncio.to_thread(device_factory.tap, x, y, DEFAULT_DEVICE_ID)
 
             # 等待键盘弹出
@@ -1018,7 +1064,12 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent | 
                 center_x = screenshot.width // 2
                 center_y = screenshot.height // 2
             else:
-                center_x, center_y = result.element[0], result.element[1]
+                # 转换 AutoGLM 的相对坐标为绝对像素
+                center_x, center_y = convert_autoglm_coords_to_absolute(
+                    result.element,
+                    screenshot.width,
+                    screenshot.height
+                )
 
             # 计算滑动距离（基于屏幕高度的比例）
             # short: 15%, medium: 30%, long: 45%
