@@ -9,7 +9,7 @@ MODEL_PRESETS = {
     "autoglm": {
         "base_url": "https://api.z.ai/api/coding/paas/v4",
         "api_key": "6bf14117ee8944db8da1f9e459932ca3.woLcpLDjyW64Yp6O",
-        "model_name": "AutoGLM-Phone-Multilingual",
+        "model_name": "AutoGLM-Phone-Multilingual-disabled",
         "max_tokens": 4096,
     },
     "zhipu": {

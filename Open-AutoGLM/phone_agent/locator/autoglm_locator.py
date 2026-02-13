@@ -23,12 +23,24 @@ class LocateResult:
 
 
 @dataclass
+class InteractiveElement:
+    """A single interactive UI element on screen."""
+
+    name: str
+    type: str  # button, input, icon, tab, link, switch, other
+    location: str  # e.g. "顶部居中", "底部右侧"
+    state: str  # 可点击, 不可点击, 已选中, 已禁用
+
+
+@dataclass
 class ScreenAnalysis:
     """Result of screen analysis by AutoGLM."""
 
     current_screen: str  # Description of the current screen
-    visible_elements: list[str]  # List of visible UI elements
+    interactive_elements: list[InteractiveElement]  # Interactive UI elements
+    visible_elements: list[str]  # Flat name list (for backward compat)
     suggested_actions: list[str]  # Suggested next actions
+    finger_guide: str | None = None  # Finger guide icon description
     raw_response: str = ""
     error: str | None = None
 
@@ -188,20 +200,20 @@ class AutoGLMLocator:
 
         return result, context
 
-    ANALYZE_SCREEN_PROMPT = """你是手机界面分析专家。用简洁的语言分析屏幕：
+    ANALYZE_SCREEN_PROMPT = """你是手机界面分析专家。分析屏幕截图后，直接输出一个 JSON 对象。
 
-**必须包含的信息：**
-1. 当前界面：简短描述（如：微信聊天列表、淘宝商品详情）
-2. 主要元素：列出5-10个可见的关键UI元素（如：搜索框、发送按钮、返回键等）
-3. 说明每个UI元素所在的坐标中心位置
-4. 有手指图标时一定要说明其指向位置
-5. 建议操作：2-3个合理的下一步操作
+禁止使用 finish()、do() 或任何函数调用格式。禁止输出 markdown。只输出纯 JSON。
 
-**要求：**
-- 描述简洁明了，每项信息1-2句话
-- 聚焦可交互元素，忽略纯装饰性内容
-- 避免冗长分析，直奔主题
-- 总字数控制在200字以内"""
+输出格式：
+{"current_screen": "当前界面简短描述", "interactive_elements": [{"name": "元素名称", "type": "button", "location": "位置描述", "state": "可点击"}], "finger_guide": null, "suggested_actions": ["建议操作1"]}
+
+字段说明：
+- current_screen: 一句话描述当前界面（如"微信聊天列表"、"游戏主界面"）
+- interactive_elements: 5-15 个可交互元素，每个包含 name(名称)、type(button/input/icon/tab/link/switch/other)、location(方位如"顶部居中"/"底部右侧")、state(可点击/不可点击/已选中/已禁用)
+- finger_guide: 手指引导图标指向的位置（没有则为 null）
+- suggested_actions: 2-3 个建议操作
+
+只关注可交互元素，忽略装饰性内容。灰色按钮=不可点击，蓝色/金色按钮=可点击。"""
 
     def analyze_screen(self, screenshot_b64: str, task_context: str = "") -> ScreenAnalysis:
         """
@@ -238,10 +250,38 @@ class AutoGLMLocator:
         except Exception as e:
             return ScreenAnalysis(
                 current_screen="分析失败",
+                interactive_elements=[],
                 visible_elements=[],
                 suggested_actions=[],
                 error=str(e),
             )
+
+    @staticmethod
+    def _try_parse_json(text: str) -> dict | None:
+        """Try to extract a JSON dict from text. Returns None on failure."""
+        import json as json_lib
+
+        # Try ```json ... ``` block
+        m = re.search(r'```json\s*([\s\S]*?)\s*```', text)
+        if m:
+            try:
+                obj = json_lib.loads(m.group(1))
+                if isinstance(obj, dict):
+                    return obj
+            except json_lib.JSONDecodeError:
+                pass
+
+        # Try raw JSON object (greedy match outermost braces)
+        m = re.search(r'\{[\s\S]*\}', text)
+        if m:
+            try:
+                obj = json_lib.loads(m.group(0))
+                if isinstance(obj, dict):
+                    return obj
+            except json_lib.JSONDecodeError:
+                pass
+
+        return None
 
     def _parse_analysis_response(self, content: str) -> ScreenAnalysis:
         """
@@ -253,60 +293,63 @@ class AutoGLMLocator:
         Returns:
             Parsed ScreenAnalysis.
         """
-        import json as json_lib
+        # 1. Try to parse JSON directly from the full content
+        data = self._try_parse_json(content)
 
-        # Try to extract JSON from the response (for backward compatibility)
-        json_match = re.search(r'```json\s*([\s\S]*?)\s*```', content)
-        if json_match:
-            json_str = json_match.group(1)
-            try:
-                data = json_lib.loads(json_str)
-                return ScreenAnalysis(
-                    current_screen=data.get("current_screen", "") or data.get("current_app", "未知界面"),
-                    visible_elements=data.get("visible_elements", []),
-                    suggested_actions=data.get("suggested_actions", []),
-                    raw_response=content,
-                )
-            except json_lib.JSONDecodeError:
-                pass
+        # 2. Fallback: extract content from finish(message="...") and try again
+        if data is None:
+            finish_match = re.search(
+                r'finish\(message=["\'](.+?)["\']\)\s*$', content, re.DOTALL
+            )
+            if finish_match:
+                inner = finish_match.group(1)
+                data = self._try_parse_json(inner)
 
-        # Try to find raw JSON
-        json_match = re.search(r'\{[\s\S]*\}', content)
-        if json_match:
-            try:
-                data = json_lib.loads(json_match.group(0))
-                return ScreenAnalysis(
-                    current_screen=data.get("current_screen", "") or data.get("current_app", "未知界面"),
-                    visible_elements=data.get("visible_elements", []),
-                    suggested_actions=data.get("suggested_actions", []),
-                    raw_response=content,
-                )
-            except json_lib.JSONDecodeError:
-                pass
+        if data and isinstance(data, dict):
+            return self._build_analysis_from_dict(data, content)
 
-        # Parse natural language response (new default)
-        # Extract finish message if present
-        finish_match = re.search(r'finish\(message=["\'](.+?)["\']\)', content, re.DOTALL)
-        if finish_match:
-            description = finish_match.group(1)
-        else:
-            # Use content after thinking, or full content
-            parts = content.split('finish(', 1)
-            if len(parts) > 1:
-                description = parts[1].split(')', 1)[0]
-                # Remove message= prefix if present
-                description = re.sub(r'^message=["\']|["\']$', '', description)
-            else:
-                description = content
-
-        # Clean up and limit length
-        description = description.strip()
+        # Fallback: treat entire content as description
+        description = content.strip()
         if len(description) > 1000:
             description = description[:1000] + "..."
 
         return ScreenAnalysis(
             current_screen=description,
+            interactive_elements=[],
             visible_elements=[],
             suggested_actions=[],
             raw_response=content,
+        )
+
+    @staticmethod
+    def _build_analysis_from_dict(data: dict, raw_content: str) -> ScreenAnalysis:
+        """Build ScreenAnalysis from a parsed JSON dict."""
+        current_screen = (
+            data.get("current_screen", "")
+            or data.get("current_app", "未知界面")
+        )
+
+        # Parse interactive_elements (new format)
+        interactive_elements: list[InteractiveElement] = []
+        for item in data.get("interactive_elements", []):
+            if isinstance(item, dict):
+                interactive_elements.append(InteractiveElement(
+                    name=item.get("name", ""),
+                    type=item.get("type", "other"),
+                    location=item.get("location", ""),
+                    state=item.get("state", "可点击"),
+                ))
+
+        # Build flat visible_elements list for backward compat
+        visible_elements = data.get("visible_elements", [])
+        if not visible_elements and interactive_elements:
+            visible_elements = [e.name for e in interactive_elements]
+
+        return ScreenAnalysis(
+            current_screen=current_screen,
+            interactive_elements=interactive_elements,
+            visible_elements=visible_elements,
+            suggested_actions=data.get("suggested_actions", []),
+            finger_guide=data.get("finger_guide"),
+            raw_response=raw_content,
         )

@@ -1,6 +1,7 @@
 """Model client for AI inference using OpenAI-compatible API."""
 
 import json
+import logging
 import time
 from dataclasses import dataclass, field
 from typing import Any
@@ -8,6 +9,17 @@ from typing import Any
 from openai import OpenAI
 
 from phone_agent.config.i18n import get_message
+
+# 调试日志：写入项目根目录的 model_debug.log
+import os as _os
+_log_path = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(
+    _os.path.abspath(__file__)))), "model_debug.log")
+_debug_logger = logging.getLogger("model_client_debug")
+_debug_logger.setLevel(logging.DEBUG)
+if not _debug_logger.handlers:
+    _fh = logging.FileHandler(_log_path, encoding="utf-8")
+    _fh.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
+    _debug_logger.addHandler(_fh)
 
 
 @dataclass
@@ -63,6 +75,33 @@ class ModelClient:
         Raises:
             ValueError: If the response cannot be parsed.
         """
+        # Debug: 记录完整请求信息
+        _debug_logger.debug("=" * 80)
+        _debug_logger.debug(
+            f">>> REQUEST model={self.config.model_name}, "
+            f"base_url={self.config.base_url}, "
+            f"max_tokens={self.config.max_tokens}, "
+            f"temperature={self.config.temperature}, "
+            f"top_p={self.config.top_p}, "
+            f"frequency_penalty={self.config.frequency_penalty}"
+        )
+        # 记录 messages（图片内容用摘要替代）
+        for i, msg in enumerate(messages):
+            role = msg.get("role", "?")
+            content = msg.get("content", "")
+            if isinstance(content, str):
+                _debug_logger.debug(f">>> messages[{i}] role={role} content={content}")
+            elif isinstance(content, list):
+                parts = []
+                for item in content:
+                    if item.get("type") == "image_url":
+                        url = item.get("image_url", {}).get("url", "")
+                        parts.append(f"[image base64 len={len(url)}]")
+                    elif item.get("type") == "text":
+                        parts.append(item.get("text", ""))
+                for part in parts:
+                    _debug_logger.debug(f">>> messages[{i}] role={role} {part}")
+
         # Start timing
         start_time = time.time()
         time_to_first_token = None
@@ -84,10 +123,17 @@ class ModelClient:
         action_markers = ["finish(message=", "do(action="]
         in_action_phase = False  # Track if we've entered the action phase
         first_token_received = False
+        _response_model_logged = False
 
         for chunk in stream:
             if len(chunk.choices) == 0:
                 continue
+
+            # Debug: 只记录一次响应模型信息
+            if not _response_model_logged and hasattr(chunk, 'model'):
+                _debug_logger.debug(f"<<< RESPONSE model={chunk.model}")
+                _response_model_logged = True
+
             if chunk.choices[0].delta.content is not None:
                 content = chunk.choices[0].delta.content
                 raw_content += content
@@ -166,6 +212,15 @@ class ModelClient:
             flush=True
         )
         print("=" * 50, flush=True)
+
+        # Debug: 记录完整响应
+        _debug_logger.debug(
+            f"<<< DONE model={self.config.model_name}, "
+            f"total_time={total_time:.3f}s, "
+            f"response_len={len(raw_content)} chars"
+        )
+        _debug_logger.debug(f"<<< RAW RESPONSE:\n{raw_content}")
+        _debug_logger.debug("=" * 80)
 
         return ModelResponse(
             thinking=thinking,

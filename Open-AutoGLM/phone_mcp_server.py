@@ -641,12 +641,21 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent | 
                 "current_app": current_app,
                 "screen_size": {"width": screenshot.width, "height": screenshot.height},
                 "is_sensitive": screenshot.is_sensitive,
+                "debug_model_info": {
+                    "provider": _provider,
+                    "model_name": MODEL_CONFIG.model_name,
+                    "base_url": MODEL_CONFIG.base_url,
+                },
                 "analysis": {
                     "current_screen": analysis.current_screen,
+                    "interactive_elements": [
+                        {"name": e.name, "type": e.type, "location": e.location, "state": e.state}
+                        for e in analysis.interactive_elements
+                    ],
                     "visible_elements": analysis.visible_elements,
+                    "finger_guide": analysis.finger_guide,
                     "suggested_actions": analysis.suggested_actions,
                 },
-                "autoglm_response": vars(analysis) if hasattr(analysis, '__dict__') else str(analysis),
             }
             if saved_path:
                 result["screenshot_saved_to"] = saved_path
