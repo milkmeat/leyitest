@@ -334,15 +334,6 @@ execute_action(action="tap", element=[972, 192])  # 右上角约90%宽度、10%�
 2. ❌ 可滚动列表中的元素
 3. ❌ 不同设备位置可能不同的元素
 
-## 设备配置
-
-当前配置（可通过环境变量覆盖）：
-
-| 配置项 | 默认值 | 环境变量 |
-|-------|-------|---------|
-| 设备 ID | emulator-5554 | PHONE_DEVICE_ID |
-| API 地址 | https://api.z.ai/... | AUTOGLM_BASE_URL |
-| 模型 | AutoGLM-Phone-Multilingual | AUTOGLM_MODEL |
 
 ## 注意事项
 

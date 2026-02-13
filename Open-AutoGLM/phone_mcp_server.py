@@ -36,12 +36,19 @@ from phone_agent.locator import AutoGLMLocator
 from phone_agent.actions.handler import ActionHandler, parse_action
 
 # ============ 配置区域（支持环境变量覆盖）============
+from phone_agent.config.model_presets import get_preset, DEFAULT_PROVIDER
+
+_provider = os.environ.get("MODEL_PROVIDER", DEFAULT_PROVIDER)
+_preset = get_preset(_provider)
+
 MODEL_CONFIG = ModelConfig(
-    base_url=os.environ.get("AUTOGLM_BASE_URL", "https://api.z.ai/api/coding/paas/v4"),
-    api_key=os.environ.get("AUTOGLM_API_KEY", "6bf14117ee8944db8da1f9e459932ca3.woLcpLDjyW64Yp6O"),
-    model_name=os.environ.get("AUTOGLM_MODEL", "AutoGLM-Phone-Multilingual"),
-    max_tokens=int(os.environ.get("AUTOGLM_MAX_TOKENS", "4096")),  # AutoGLM API 标准上限
+    base_url=os.environ.get("AUTOGLM_BASE_URL", _preset["base_url"]),
+    api_key=os.environ.get("AUTOGLM_API_KEY", _preset["api_key"]),
+    model_name=os.environ.get("AUTOGLM_MODEL", _preset["model_name"]),
+    max_tokens=int(os.environ.get("AUTOGLM_MAX_TOKENS", str(_preset["max_tokens"]))),
 )
+
+print(f"[phone-agent] provider={_provider}, model={MODEL_CONFIG.model_name}, base_url={MODEL_CONFIG.base_url}", file=sys.stderr)
 
 # 夜神模拟器默认端口是 62001，蓝栈是 5555
 DEFAULT_DEVICE_ID = os.environ.get("PHONE_DEVICE_ID", "127.0.0.1:62001")
