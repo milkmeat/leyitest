@@ -172,6 +172,71 @@ class AutoGLMLocator:
             error="Unable to parse response",
         )
 
+    async def alocate(
+        self,
+        screenshot_b64: str,
+        description: str,
+        screen_width: int | None = None,
+        screen_height: int | None = None
+    ) -> LocateResult:
+        """Async version of locate()."""
+        user_text = f"请定位: {description}"
+        messages = [
+            {"role": "system", "content": self.SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/png;base64,{screenshot_b64}"},
+                    },
+                    {"type": "text", "text": user_text},
+                ],
+            },
+        ]
+
+        try:
+            response = await self.client.arequest(messages)
+            return self._parse_response(response.action, response.thinking)
+        except Exception as e:
+            return LocateResult(
+                found=False,
+                error=str(e),
+                raw_response="",
+            )
+
+    async def aanalyze_screen(self, screenshot_b64: str, task_context: str = "") -> ScreenAnalysis:
+        """Async version of analyze_screen()."""
+        user_prompt = "请分析这个手机屏幕截图。"
+        if task_context:
+            user_prompt += f"\n\n当前任务背景：{task_context}"
+
+        messages = [
+            {"role": "system", "content": self.ANALYZE_SCREEN_PROMPT},
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/png;base64,{screenshot_b64}"},
+                    },
+                    {"type": "text", "text": user_prompt},
+                ],
+            },
+        ]
+
+        try:
+            response = await self.client.arequest(messages)
+            return self._parse_analysis_response(response.raw_content)
+        except Exception as e:
+            return ScreenAnalysis(
+                current_screen="分析失败",
+                interactive_elements=[],
+                visible_elements=[],
+                suggested_actions=[],
+                error=str(e),
+            )
+
     def locate_and_describe(
         self,
         screenshot_b64: str,

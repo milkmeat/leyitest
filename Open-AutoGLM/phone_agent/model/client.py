@@ -6,7 +6,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
-from openai import OpenAI
+from openai import AsyncOpenAI, OpenAI
 
 from phone_agent.config.i18n import get_message
 
@@ -61,6 +61,16 @@ class ModelClient:
     def __init__(self, config: ModelConfig | None = None):
         self.config = config or ModelConfig()
         self.client = OpenAI(base_url=self.config.base_url, api_key=self.config.api_key)
+        self._async_client: AsyncOpenAI | None = None
+
+    @property
+    def async_client(self) -> AsyncOpenAI:
+        """Lazy-init async client (only created when needed)."""
+        if self._async_client is None:
+            self._async_client = AsyncOpenAI(
+                base_url=self.config.base_url, api_key=self.config.api_key
+            )
+        return self._async_client
 
     def request(self, messages: list[dict[str, Any]]) -> ModelResponse:
         """
@@ -214,6 +224,107 @@ class ModelClient:
         print("=" * 50, flush=True)
 
         # Debug: 记录完整响应
+        _debug_logger.debug(
+            f"<<< DONE model={self.config.model_name}, "
+            f"total_time={total_time:.3f}s, "
+            f"response_len={len(raw_content)} chars"
+        )
+        _debug_logger.debug(f"<<< RAW RESPONSE:\n{raw_content}")
+        _debug_logger.debug("=" * 80)
+
+        return ModelResponse(
+            thinking=thinking,
+            action=action,
+            raw_content=raw_content,
+            time_to_first_token=time_to_first_token,
+            time_to_thinking_end=time_to_thinking_end,
+            total_time=total_time,
+        )
+
+    async def arequest(self, messages: list[dict[str, Any]]) -> ModelResponse:
+        """
+        Async version of request(). Uses AsyncOpenAI to avoid blocking the event loop.
+
+        Args:
+            messages: List of message dictionaries in OpenAI format.
+
+        Returns:
+            ModelResponse containing thinking and action.
+        """
+        # Debug: 记录完整请求信息
+        _debug_logger.debug("=" * 80)
+        _debug_logger.debug(
+            f">>> ASYNC REQUEST model={self.config.model_name}, "
+            f"base_url={self.config.base_url}, "
+            f"max_tokens={self.config.max_tokens}, "
+            f"temperature={self.config.temperature}, "
+            f"top_p={self.config.top_p}, "
+            f"frequency_penalty={self.config.frequency_penalty}"
+        )
+        for i, msg in enumerate(messages):
+            role = msg.get("role", "?")
+            content = msg.get("content", "")
+            if isinstance(content, str):
+                _debug_logger.debug(f">>> messages[{i}] role={role} content={content}")
+            elif isinstance(content, list):
+                parts = []
+                for item in content:
+                    if item.get("type") == "image_url":
+                        url = item.get("image_url", {}).get("url", "")
+                        parts.append(f"[image base64 len={len(url)}]")
+                    elif item.get("type") == "text":
+                        parts.append(item.get("text", ""))
+                for part in parts:
+                    _debug_logger.debug(f">>> messages[{i}] role={role} {part}")
+
+        start_time = time.time()
+        time_to_first_token = None
+        time_to_thinking_end = None
+
+        stream = await self.async_client.chat.completions.create(
+            messages=messages,
+            model=self.config.model_name,
+            max_tokens=self.config.max_tokens,
+            temperature=self.config.temperature,
+            top_p=self.config.top_p,
+            frequency_penalty=self.config.frequency_penalty,
+            extra_body=self.config.extra_body,
+            stream=True,
+        )
+
+        raw_content = ""
+        action_markers = ["finish(message=", "do(action="]
+        in_action_phase = False
+        first_token_received = False
+        _response_model_logged = False
+
+        async for chunk in stream:
+            if len(chunk.choices) == 0:
+                continue
+
+            if not _response_model_logged and hasattr(chunk, 'model'):
+                _debug_logger.debug(f"<<< RESPONSE model={chunk.model}")
+                _response_model_logged = True
+
+            if chunk.choices[0].delta.content is not None:
+                token = chunk.choices[0].delta.content
+                raw_content += token
+
+                if not first_token_received:
+                    time_to_first_token = time.time() - start_time
+                    first_token_received = True
+
+                if not in_action_phase:
+                    for marker in action_markers:
+                        if marker in raw_content:
+                            in_action_phase = True
+                            if time_to_thinking_end is None:
+                                time_to_thinking_end = time.time() - start_time
+                            break
+
+        total_time = time.time() - start_time
+        thinking, action = self._parse_response(raw_content)
+
         _debug_logger.debug(
             f"<<< DONE model={self.config.model_name}, "
             f"total_time={total_time:.3f}s, "

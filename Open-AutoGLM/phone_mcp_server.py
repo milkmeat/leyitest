@@ -626,24 +626,9 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent | 
                 except ValueError:
                     pass
 
-            # 使用 AutoGLM 分析屏幕（使用 shield 防止中断）
+            # 使用 AutoGLM 分析屏幕（真正的异步，无需线程池）
             locator = get_locator()
-            try:
-                # 创建一个受保护的任务，即使外部被取消也能完成
-                analysis_task = asyncio.create_task(
-                    asyncio.to_thread(
-                        locator.analyze_screen, screenshot.base64_data, task_context
-                    )
-                )
-                analysis = await asyncio.shield(analysis_task)
-            except asyncio.CancelledError:
-                # 即使被取消，也要等待实际任务完成并返回结果
-                analysis = await analysis_task
-
-            # 调试打印
-            print(f"[DEBUG] Analysis result: {analysis}")
-            print(f"[DEBUG] Analysis type: {type(analysis)}")
-            print(f"[DEBUG] Analysis __dict__: {getattr(analysis, '__dict__', 'N/A')}")
+            analysis = await locator.aanalyze_screen(screenshot.base64_data, task_context)
 
             result = {
                 "current_app": current_app,
@@ -846,17 +831,9 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent | 
                 device_factory.get_screenshot, DEFAULT_DEVICE_ID
             )
 
-            # 使用 AutoGLM 定位（使用 shield 防止中断）
+            # 使用 AutoGLM 定位（真正的异步，无需线程池）
             locator = get_locator()
-            try:
-                locate_task = asyncio.create_task(
-                    asyncio.to_thread(
-                        locator.locate, screenshot.base64_data, description
-                    )
-                )
-                result = await asyncio.shield(locate_task)
-            except asyncio.CancelledError:
-                result = await locate_task
+            result = await locator.alocate(screenshot.base64_data, description)
 
             if result.found:
                 # 转换为绝对像素坐标
@@ -905,17 +882,9 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent | 
                 device_factory.get_screenshot, DEFAULT_DEVICE_ID
             )
 
-            # 定位元素（使用 shield 防止中断）
+            # 定位元素（真正的异步，无需线程池）
             locator = get_locator()
-            try:
-                locate_task = asyncio.create_task(
-                    asyncio.to_thread(
-                        locator.locate, screenshot.base64_data, description
-                    )
-                )
-                result = await asyncio.shield(locate_task)
-            except asyncio.CancelledError:
-                result = await locate_task
+            result = await locator.alocate(screenshot.base64_data, description)
 
             if not result.found:
                 return [TextContent(
@@ -1005,17 +974,9 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent | 
                 device_factory.get_screenshot, DEFAULT_DEVICE_ID
             )
 
-            # 定位输入框（使用 shield 防止中断）
+            # 定位输入框（真正的异步，无需线程池）
             locator = get_locator()
-            try:
-                locate_task = asyncio.create_task(
-                    asyncio.to_thread(
-                        locator.locate, screenshot.base64_data, input_description
-                    )
-                )
-                result = await asyncio.shield(locate_task)
-            except asyncio.CancelledError:
-                result = await locate_task
+            result = await locator.alocate(screenshot.base64_data, input_description)
 
             if not result.found:
                 return [TextContent(
@@ -1106,17 +1067,9 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent | 
                 device_factory.get_screenshot, DEFAULT_DEVICE_ID
             )
 
-            # 定位区域中心点（使用 shield 防止中断）
+            # 定位区域中心点（真正的异步，无需线程池）
             locator = get_locator()
-            try:
-                locate_task = asyncio.create_task(
-                    asyncio.to_thread(
-                        locator.locate, screenshot.base64_data, description
-                    )
-                )
-                result = await asyncio.shield(locate_task)
-            except asyncio.CancelledError:
-                result = await locate_task
+            result = await locator.alocate(screenshot.base64_data, description)
 
             if not result.found:
                 # 如果没找到特定元素，使用屏幕中心
