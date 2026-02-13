@@ -649,7 +649,11 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent | 
                 "analysis": {
                     "current_screen": analysis.current_screen,
                     "interactive_elements": [
-                        {"name": e.name, "type": e.type, "location": e.location, "state": e.state}
+                        {
+                            "name": e.name, "type": e.type,
+                            "location": e.location, "state": e.state,
+                            "center": e.center,
+                        }
                         for e in analysis.interactive_elements
                     ],
                     "visible_elements": analysis.visible_elements,

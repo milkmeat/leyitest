@@ -30,6 +30,7 @@ class InteractiveElement:
     type: str  # button, input, icon, tab, link, switch, other
     location: str  # e.g. "顶部居中", "底部右侧"
     state: str  # 可点击, 不可点击, 已选中, 已禁用
+    center: list[int] | None = None  # 中心点坐标 [x, y]，0-1000 归一化
 
 
 @dataclass
@@ -205,15 +206,21 @@ class AutoGLMLocator:
 禁止使用 finish()、do() 或任何函数调用格式。禁止输出 markdown。只输出纯 JSON。
 
 输出格式：
-{"current_screen": "当前界面简短描述", "interactive_elements": [{"name": "元素名称", "type": "button", "location": "位置描述", "state": "可点击"}], "finger_guide": null, "suggested_actions": ["建议操作1"]}
+{"current_screen": "当前界面简短描述", "interactive_elements": [{"name": "元素名称", "type": "button", "location": "位置描述", "state": "可点击", "center": [500, 300]}], "finger_guide": null, "suggested_actions": ["建议操作1"]}
 
 字段说明：
 - current_screen: 一句话描述当前界面（如"微信聊天列表"、"游戏主界面"）
-- interactive_elements: 5-15 个可交互元素，每个包含 name(名称)、type(button/input/icon/tab/link/switch/other)、location(方位如"顶部居中"/"底部右侧")、state(可点击/不可点击/已选中/已禁用)
+- interactive_elements: 5-15 个可交互元素，每个包含：
+  - name: 元素名称
+  - type: button/input/icon/tab/link/switch/other
+  - location: 方位描述（如"顶部居中"/"底部右侧"）
+  - state: 可点击/不可点击/已选中/已禁用
+  - center: 元素中心点坐标 [x, y]，使用 0-1000 归一化坐标（[0,0]=左上角，[1000,1000]=右下角，[500,500]=屏幕中心）
 - finger_guide: 手指引导图标指向的位置（没有则为 null）
 - suggested_actions: 2-3 个建议操作
 
-只关注可交互元素，忽略装饰性内容。灰色按钮=不可点击，蓝色/金色按钮=可点击。"""
+只关注可交互元素，忽略装饰性内容。灰色按钮=不可点击，蓝色/金色按钮=可点击。
+center 坐标必须精确标注每个元素的视觉中心位置。"""
 
     def analyze_screen(self, screenshot_b64: str, task_context: str = "") -> ScreenAnalysis:
         """
@@ -333,11 +340,17 @@ class AutoGLMLocator:
         interactive_elements: list[InteractiveElement] = []
         for item in data.get("interactive_elements", []):
             if isinstance(item, dict):
+                center = item.get("center")
+                if isinstance(center, list) and len(center) == 2:
+                    center = [int(c) for c in center]
+                else:
+                    center = None
                 interactive_elements.append(InteractiveElement(
                     name=item.get("name", ""),
                     type=item.get("type", "other"),
                     location=item.get("location", ""),
                     state=item.get("state", "可点击"),
+                    center=center,
                 ))
 
         # Build flat visible_elements list for backward compat
