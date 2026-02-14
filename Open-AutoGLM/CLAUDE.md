@@ -16,6 +16,14 @@
 - ❌ 错误：Claude 直接分析截图图片 - 浪费 token，不如 AutoGLM 准确
 - ❌ 一般错误：`execute_action(tap, element=[150, 450])` - Claude 估算坐标容易失败
 
+**⛔ 严禁使用 Read 工具查看截图文件！**
+
+- ❌ **绝对禁止**：`Read("...screenshots/step_XXX_before.png")` - 不要用 Read 工具查看任何截图 PNG 文件
+- ❌ **绝对禁止**：`Read("...screenshots/step_XXX_after.png")` - 不要尝试读取操作后的截图
+- ❌ **绝对禁止**：猜测截图文件路径并尝试读取
+- ✅ **正确做法**：始终通过 `analyze_screen()` 获取界面信息，该工具会让 AutoGLM 分析界面并返回结构化文本描述
+- 📌 **原因**：Claude 直接看截图既浪费大量 token，又不如 AutoGLM 的分析准确。截图文件仅用于事后审计，不应在任务执行过程中被读取
+
 
 ## 快速参考：元素定位决策树
 

@@ -654,8 +654,8 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent | 
                     "suggested_actions": analysis.suggested_actions,
                 },
             }
-            if saved_path:
-                result["screenshot_saved_to"] = saved_path
+            # 不要在返回结果中包含截图路径，避免 Claude 尝试用 Read 工具直接查看截图
+            # 截图已保存到任务目录供事后查看，Claude 应使用 analyze_screen 的结构化分析结果
             if analysis.error:
                 result["analysis"]["error"] = analysis.error
 
