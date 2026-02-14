@@ -66,7 +66,6 @@ app_package_name.py
 test_*.py
 check_*.py
 tap_helper.py
-run_tasks_loop*.sh
 test_verbose_output.sh
 *.bat
 
