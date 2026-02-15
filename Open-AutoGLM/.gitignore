@@ -77,6 +77,9 @@ VERBOSE_OUTPUT_EXAMPLE.md
 # Task loop logs
 task_loop*.log
 
+# Debug images
+debug*.png
+
 .claude/*
 !.claude/commands/
 !.claude/settings.local.json
