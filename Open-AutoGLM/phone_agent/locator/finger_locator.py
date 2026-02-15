@@ -23,6 +23,7 @@ class FingerMatchResult:
     confidence: float = 0.0
     scale: float = 1.0
     angle: float = 0.0
+    flipped: bool = False  # True if matched the horizontally mirrored template
 
 
 class FingerLocator:
@@ -68,10 +69,15 @@ class FingerLocator:
         self._template_mask: np.ndarray | None = None       # binary alpha mask (0/1)
         self._template_mask_255: np.ndarray | None = None   # binary alpha mask (0/255)
 
-        # Cache transformed templates keyed by (scale, angle) to avoid
-        # redundant resize+rotate on repeated calls.
+        # Horizontally flipped versions for mirrored finger detection.
+        self._template_gray_flip: np.ndarray | None = None
+        self._template_raw_gray_flip: np.ndarray | None = None
+        self._template_mask_255_flip: np.ndarray | None = None
+
+        # Cache transformed templates keyed by (scale, angle, flipped)
+        # to avoid redundant resize+rotate on repeated calls.
         self._transform_cache: dict[
-            tuple[float, float], tuple[np.ndarray, np.ndarray | None]
+            tuple[float, float, bool], tuple[np.ndarray, np.ndarray | None]
         ] = {}
         self._cached_base_scale: float | None = None
 
@@ -106,25 +112,34 @@ class FingerLocator:
 
         self._template_gray = gray
 
+        # Pre-compute horizontally flipped templates for mirrored detection.
+        self._template_raw_gray_flip = cv2.flip(self._template_raw_gray, 1)
+        self._template_gray_flip = cv2.flip(gray, 1)
+        if self._template_mask_255 is not None:
+            self._template_mask_255_flip = cv2.flip(self._template_mask_255, 1)
+        else:
+            self._template_mask_255_flip = None
+
     def _get_transformed(
-        self, scale: float, angle: float,
+        self, scale: float, angle: float, flipped: bool = False,
     ) -> tuple[np.ndarray, np.ndarray | None]:
-        """Return (template, mask) for the given scale/angle, using cache."""
-        key = (scale, angle)
+        """Return (template, mask) for the given scale/angle/flip, using cache."""
+        key = (scale, angle, flipped)
         cached = self._transform_cache.get(key)
         if cached is not None:
             return cached
 
         if self._template_mask_255 is not None:
-            tmpl = self._resize_and_rotate(
-                self._template_raw_gray, scale, angle, border_value=0)
-            mask = self._resize_and_rotate(
-                self._template_mask_255, scale, angle, border_value=0)
+            raw = self._template_raw_gray_flip if flipped else self._template_raw_gray
+            mask_src = self._template_mask_255_flip if flipped else self._template_mask_255
+            tmpl = self._resize_and_rotate(raw, scale, angle, border_value=0)
+            mask = self._resize_and_rotate(mask_src, scale, angle, border_value=0)
             mask = (mask > 128).astype(np.uint8) * 255
         else:
-            fill_val = int(self._template_gray.mean())
+            gray = self._template_gray_flip if flipped else self._template_gray
+            fill_val = int(gray.mean())
             tmpl = self._resize_and_rotate(
-                self._template_gray, scale, angle, border_value=fill_val)
+                gray, scale, angle, border_value=fill_val)
             mask = None
 
         self._transform_cache[key] = (tmpl, mask)
@@ -228,42 +243,52 @@ class FingerLocator:
         best_location = None   # match center in search_img coordinates
         best_scale = 1.0       # effective full-resolution scale
         best_angle = 0.0
+        best_flipped = False
         best_topleft = None    # match top-left in search_img (for verification)
 
         # --- Pass 1: Detection ---
-        for angle in angles:
-            if best_confidence >= self._EARLY_EXIT_THRESHOLD:
-                break
-            for scale in scale_factors:
-                if best_confidence >= self._EARLY_EXIT_THRESHOLD:
+        # Try original orientation first, then horizontally flipped.
+        # Early exit is per-orientation: CCORR can score high on false
+        # positives (which CCOEFF later rejects), so we must not let a
+        # strong original-orientation score prevent trying flipped.
+        for flipped in (False, True):
+            orient_best = 0.0
+            for angle in angles:
+                if orient_best >= self._EARLY_EXIT_THRESHOLD:
                     break
+                for scale in scale_factors:
+                    if orient_best >= self._EARLY_EXIT_THRESHOLD:
+                        break
 
-                tmpl, mask = self._get_transformed(scale, angle)
+                    tmpl, mask = self._get_transformed(scale, angle, flipped)
 
-                # Skip if template is larger than search image
-                if (tmpl.shape[0] > search_img.shape[0] or
-                        tmpl.shape[1] > search_img.shape[1]):
-                    continue
+                    # Skip if template is larger than search image
+                    if (tmpl.shape[0] > search_img.shape[0] or
+                            tmpl.shape[1] > search_img.shape[1]):
+                        continue
 
-                if mask is not None:
-                    result = cv2.matchTemplate(
-                        search_img, tmpl, cv2.TM_CCORR_NORMED, mask=mask)
-                else:
-                    result = cv2.matchTemplate(
-                        search_img, tmpl, cv2.TM_CCOEFF_NORMED)
+                    if mask is not None:
+                        result = cv2.matchTemplate(
+                            search_img, tmpl, cv2.TM_CCORR_NORMED, mask=mask)
+                    else:
+                        result = cv2.matchTemplate(
+                            search_img, tmpl, cv2.TM_CCOEFF_NORMED)
 
-                _, max_val, _, max_loc = cv2.minMaxLoc(result)
+                    _, max_val, _, max_loc = cv2.minMaxLoc(result)
 
-                if max_val > best_confidence:
-                    best_confidence = max_val
-                    # max_loc is top-left corner of match; compute center
-                    match_center_x = max_loc[0] + tmpl.shape[1] // 2
-                    match_center_y = max_loc[1] + tmpl.shape[0] // 2
-                    best_location = (match_center_x, match_center_y)
-                    # Record the effective full-resolution scale
-                    best_scale = scale * ds
-                    best_angle = angle
-                    best_topleft = max_loc
+                    if max_val > orient_best:
+                        orient_best = max_val
+                    if max_val > best_confidence:
+                        best_confidence = max_val
+                        # max_loc is top-left corner of match; compute center
+                        match_center_x = max_loc[0] + tmpl.shape[1] // 2
+                        match_center_y = max_loc[1] + tmpl.shape[0] // 2
+                        best_location = (match_center_x, match_center_y)
+                        # Record the effective full-resolution scale
+                        best_scale = scale * ds
+                        best_angle = angle
+                        best_flipped = flipped
+                        best_topleft = max_loc
 
         if best_confidence < confidence_threshold or best_location is None:
             return FingerMatchResult(found=False, confidence=best_confidence)
@@ -271,9 +296,10 @@ class FingerLocator:
         # --- Pass 2: CCOEFF Verification (only when mask was used) ---
         if has_mask:
             verify_scale = best_scale / ds
-            fill_val = int(self._template_gray.mean())
+            gray_src = self._template_gray_flip if best_flipped else self._template_gray
+            fill_val = int(gray_src.mean())
             filled = self._resize_and_rotate(
-                self._template_gray, verify_scale, best_angle,
+                gray_src, verify_scale, best_angle,
                 border_value=fill_val)
 
             if (filled.shape[0] <= search_img.shape[0] and
@@ -295,8 +321,11 @@ class FingerLocator:
         full_center_x = best_location[0] * ds
         full_center_y = best_location[1] * ds
 
-        # Compute fingertip position from match center + rotated/scaled offset
+        # Compute fingertip position from match center + rotated/scaled offset.
+        # When flipped, the x component of the offset is mirrored.
         offset_x, offset_y = self._FINGERTIP_OFFSET
+        if best_flipped:
+            offset_x = -offset_x
         scaled_ox = offset_x * best_scale
         scaled_oy = offset_y * best_scale
 
@@ -318,4 +347,5 @@ class FingerLocator:
             confidence=best_confidence,
             scale=best_scale,
             angle=best_angle,
+            flipped=best_flipped,
         )

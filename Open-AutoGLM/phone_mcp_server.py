@@ -1272,6 +1272,7 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent | 
                 "confidence": round(match.confidence, 4),
                 "scale": round(match.scale, 3),
                 "angle": match.angle,
+                "flipped": match.flipped,
                 "tap_count": tap_count,
             }
             action_result = {"success": True}
@@ -1306,6 +1307,7 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent | 
                     "confidence": round(match.confidence, 4),
                     "scale": round(match.scale, 3),
                     "angle": match.angle,
+                    "flipped": match.flipped,
                     "tap_count": tap_count,
                 }, ensure_ascii=False)
             )]
