@@ -12,7 +12,7 @@ ITERATIONS=${1:-$DEFAULT_ITERATIONS}
 WAIT_TIME=${2:-$DEFAULT_WAIT_TIME}
 
 # 任务指令
-TASK_COMMAND="/phone 查看任务提示栏，完成第一个任务并领取奖励"
+TASK_COMMAND="/phone 按照手指图标指引，完成所有新手教程"
 
 # 日志文件
 LOG_FILE="task_loop_$(date +%Y%m%d_%H%M%S).log"
