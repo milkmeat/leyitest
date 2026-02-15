@@ -20,13 +20,13 @@ MODEL_PRESETS = {
     },
     "aliyun": {
         "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-        "api_key": "",
-        "model_name": "qwen-vl-max",
+        "api_key": "sk-d3c26411aa5346a9813976a65e663d79",
+        "model_name": "qwen3-vl-flash",
         "max_tokens": 4096,
     },
 }
 
-DEFAULT_PROVIDER = "zhipu"
+DEFAULT_PROVIDER = "aliyun"
 
 
 def get_preset(provider: str) -> dict:
