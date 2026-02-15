@@ -488,7 +488,8 @@ async def list_tools() -> list[Tool]:
             description="""使用 OpenCV 模板匹配快速检测屏幕上的新手指引手指图标并点击指尖。
 
 比 AutoGLM AI 调用快得多（~200ms vs ~2-5s），且对手指图标检测更可靠。
-如果检测到手指图标，自动点击指尖位置；如果未检测到，返回 found: false。""",
+如果检测到手指图标，自动点击指尖位置；如果未检测到，返回 found: false。
+设置 tap_count=0 可以只检测不点击，用于快速探测屏幕上是否有手指图标。""",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -502,9 +503,9 @@ async def list_tools() -> list[Tool]:
                     },
                     "tap_count": {
                         "type": "integer",
-                        "description": "连续点击次数（默认1次）",
+                        "description": "连续点击次数（默认1次）。设为0则只检测不点击，用于快速探测屏幕上是否有手指图标",
                         "default": 1,
-                        "minimum": 1,
+                        "minimum": 0,
                     },
                     "confidence_threshold": {
                         "type": "number",
@@ -1249,21 +1250,24 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent | 
                     type="text",
                     text=json.dumps({
                         "found": False,
+                        "tap_count": 0,
                         "confidence": round(match.confidence, 4),
                         "message": "未检测到手指指引图标",
                     }, ensure_ascii=False)
                 )]
 
-            # 执行点击
             fx, fy = match.fingertip
-            for i in range(tap_count):
-                await asyncio.to_thread(device_factory.tap, fx, fy, DEFAULT_DEVICE_ID)
-                if i < tap_count - 1:
-                    await asyncio.sleep(0.3)
+
+            # tap_count > 0 时执行点击，tap_count=0 时只检测不点击
+            if tap_count > 0:
+                for i in range(tap_count):
+                    await asyncio.to_thread(device_factory.tap, fx, fy, DEFAULT_DEVICE_ID)
+                    if i < tap_count - 1:
+                        await asyncio.sleep(0.3)
 
             # 记录到任务日志
             action_detail = {
-                "type": "finger_tap",
+                "type": "finger_detect" if tap_count == 0 else "finger_tap",
                 "fingertip": [fx, fy],
                 "confidence": round(match.confidence, 4),
                 "scale": round(match.scale, 3),
@@ -1277,12 +1281,16 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent | 
                     current_app = await asyncio.to_thread(
                         device_factory.get_current_app, DEFAULT_DEVICE_ID
                     )
+                    if tap_count > 0:
+                        decision = f"Detected finger guide (confidence={match.confidence:.4f}), tapping fingertip at ({fx}, {fy})"
+                    else:
+                        decision = f"Detected finger guide (confidence={match.confidence:.4f}) at ({fx}, {fy}), detect-only mode"
                     step = TaskStep(
                         step_number=step_number,
                         timestamp=datetime.now().isoformat(),
                         current_app=current_app,
                         claude_analysis="OpenCV finger template matching",
-                        claude_decision=f"Detected finger guide (confidence={match.confidence:.4f}), tapping fingertip at ({fx}, {fy})",
+                        claude_decision=decision,
                         action=action_detail,
                         result=action_result,
                     )
