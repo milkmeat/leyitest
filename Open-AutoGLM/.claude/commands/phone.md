@@ -26,14 +26,35 @@ analyze_screen(task_id, step_number, timing="before")
 
 ### 3. 决策并执行操作
 
-**点击新手指引手指图标（优先使用！）**：
+**点击新手指引手指图标（最优先！连续快速点击模式）**：
 ```
 locate_finger_and_tap(task_id, step_number)
 → 使用 OpenCV 模板匹配快速检测手指图标并点击指尖，比 AutoGLM 更快更准
 → 返回 found: true/false，如果 found: false 说明当前屏幕没有手指图标
 ```
+
 ⚠️ 当 analyze_screen 返回 finger_guide 不为 null，或你判断需要点击手指指引时，
 **必须使用 `locate_finger_and_tap`，不要使用 `locate_and_tap`**。
+
+**🔁 连续点击模式：`locate_finger_and_tap` 成功后无需 analyze_screen！**
+
+当 `locate_finger_and_tap` 返回 `found: true` 时，**跳过 analyze_screen，直接再次调用 `locate_finger_and_tap`**，
+循环执行直到返回 `found: false`，此时才调用 `analyze_screen` 分析新界面。
+
+```
+流程：
+  analyze_screen()  →  发现手指指引
+      ↓
+  locate_finger_and_tap()  →  found: true ─→ 直接再次调用（不做 analyze_screen）
+      ↓                                          ↓
+  found: false                          locate_finger_and_tap()  →  found: true → 继续循环...
+      ↓                                          ↓
+  analyze_screen()  ← ← ← ← ← ← ←   found: false ──────────────────┘
+      ↓
+  继续正常流程...
+```
+
+这样做的好处：新手指引经常是连续多步的，跳过中间的 analyze_screen 可以大幅加速执行。
 
 **点击其他元素**：
 ```
@@ -83,6 +104,9 @@ analyze_screen(task_id, step_number, timing="after")
 → AutoGLM返回操作后的界面元素，你来判断界面是否符合预期
 ```
 
+⚠️ **例外**：如果上一步是 `locate_finger_and_tap` 且返回 `found: true`，跳过此步，直接再次调用 `locate_finger_and_tap`。
+仅当 `locate_finger_and_tap` 返回 `found: false` 时，才执行 `analyze_screen` 验证。
+
 ### 5. 循环执行直到完成
 
 ### 6. 结束任务
@@ -106,7 +130,7 @@ end_task_session(task_id, final_result="完成描述", success=True/False)
 
 ## 示例
 
-用户说："打开微信"
+### 示例1：打开微信
 
 ```
 1. create_task_session(user_request="打开微信")
@@ -125,13 +149,40 @@ end_task_session(task_id, final_result="完成描述", success=True/False)
 5. end_task_session(task_id, final_result="已打开微信", success=True)
 ```
 
+### 示例2：连续新手指引（locate_finger_and_tap 快速循环）
+
+```
+1. create_task_session(user_request="完成新手指引")
+
+2. analyze_screen(task_id, step=1)
+   → 界面上有手指指引图标
+
+3. locate_finger_and_tap(task_id, step=1)
+   → found: true  ✅ 成功！不做 analyze_screen，直接继续
+
+4. locate_finger_and_tap(task_id, step=2)
+   → found: true  ✅ 继续快速点击
+
+5. locate_finger_and_tap(task_id, step=3)
+   → found: true  ✅ 继续
+
+6. locate_finger_and_tap(task_id, step=4)
+   → found: false  ❌ 没有手指了，现在才做 analyze_screen
+
+7. analyze_screen(task_id, step=5)
+   → 分析当前界面，决定下一步操作...
+
+8. ...继续正常流程...
+```
+
 ## 重要提示
 
 - **遇到新手指引手指图标时，必须使用 `locate_finger_and_tap`**，不要用 `locate_and_tap`
+- **`locate_finger_and_tap` 返回 `found: true` 后，跳过 `analyze_screen`，直接再次调用**，连续快速点击直到返回 `found: false`
+- **`locate_finger_and_tap` 返回 `found: false` 后，才调用 `analyze_screen`** 分析新界面
 - **其他元素使用 `locate_and_*` 系列工具** 来执行点击、输入、滑动操作
 - **不要使用 `execute_action(tap, element=[x,y])`** 自己估算坐标，这样容易失败
 - 你负责分析界面、做决策，AutoGLM 负责精确定位和执行
-- 每步操作后获取截图验证结果
 - 如果操作失败，尝试用不同的描述词重试
 
 ---
