@@ -31,9 +31,9 @@ class FingerLocator:
     multi-scale, multi-rotation template matching.
     """
 
-    # Offset from template center to fingertip in template-local coords (pixels).
-    # The hand.png points downward, so fingertip is ~100px below center.
-    _FINGERTIP_OFFSET = (0, 100)
+    # Offset from template center (128, 128) to fingertip (60, 235)
+    # in template-local coords (pixels) for the 256x256 hand.png.
+    _FINGERTIP_OFFSET = (-68, 107)
 
     def __init__(self, template_path: str | None = None):
         self._template_path = template_path or os.path.join(
