@@ -1,0 +1,50 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(pip install:*)",
+      "Bash(where:*)",
+      "Bash(\"/c/Program Files/Nox/bin/adb.exe\" connect 127.0.0.1:62001)",
+      "Bash(\"/c/Program Files/Nox/bin/adb.exe\" devices:*)",
+      "Bash(export ADB_PATH=\"/c/Program Files/Nox/bin/adb.exe\")",
+      "Bash(\"$ADB_PATH\" -s 127.0.0.1:62001 shell dumpsys window)",
+      "Bash(\"/c/Program Files/Nox/bin/adb.exe\" -s 127.0.0.1:62001 shell dumpsys window)",
+      "Bash(export PHONE_DEVICE_ID=\"127.0.0.1:62001\")",
+      "Bash(./start_mcp_nox.bat:*)",
+      "Bash(adb devices:*)",
+      "Bash(\"C:/Program Files/Nox/bin/nox_adb.exe\" devices)",
+      "Bash(\"C:/Program Files/Nox/bin/adb.exe\" devices)",
+      "Bash(\"C:/Program Files/Nox/bin/nox_adb.exe\":*)",
+      "Bash(\"C:/Program Files/Nox/bin/nox_adb.exe\" -s 127.0.0.1:62001 shell \"dumpsys window | grep -i mCurrentFocus\")",
+      "Bash(ADB_PATH=\"C:/Program Files/Nox/bin/nox_adb.exe\" PHONE_DEVICE_ID=\"127.0.0.1:62001\" python:*)",
+      "mcp__phone-agent__create_task_session",
+      "mcp__phone-agent__analyze_screen",
+      "mcp__phone-agent__execute_action",
+      "mcp__phone-agent__locate_and_tap",
+      "mcp__phone-agent__locate_finger_and_tap",
+      "mcp__phone-agent__locate_and_type",
+      "mcp__phone-agent__get_screenshot",
+      "mcp__phone-agent__locate_element",
+      "Bash(adb shell am start:*)",
+      "Bash(\"C:/Program Files/Nox/bin/nox_adb.exe\" shell:*)",
+      "mcp__phone-agent__end_task_session",
+      "Bash(waydroid status:*)",
+      "Bash(dpkg:*)",
+      "Bash(waydroid prop:*)",
+      "Bash(waydroid prop get:*)",
+      "Bash(chmod:*)",
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "Bash(\"/d/Program Files/Nox/bin/nox_adb.exe\" devices)",
+      "Bash(\"/d/Program Files/Nox/bin/nox_adb.exe\" -s 127.0.0.1:62001 shell screencap -p /sdcard/tmp.png)",
+      "Bash(\"/d/Program Files/Nox/bin/nox_adb.exe\" -s 127.0.0.1:62001 shell screencap /sdcard/tmp.png)",
+      "Bash(\"/d/Program Files/Nox/bin/nox_adb.exe\" -s 127.0.0.1:62001 shell \"screencap -p /sdcard/tmp.png\")",
+      "Bash(\"/d/Program Files/Nox/bin/nox_adb.exe\" -s 127.0.0.1:62001 pull /sdcard/tmp.png /tmp/test_screenshot.png)",
+      "Bash(MSYS_NO_PATHCONV=1 \"/d/Program Files/Nox/bin/nox_adb.exe\":*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "phone-agent"
+  ]
+}

@@ -79,4 +79,5 @@ task_loop*.log
 
 .claude/*
 !.claude/commands/
+!.claude/settings.local.json
 .venv
