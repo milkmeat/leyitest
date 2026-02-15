@@ -52,8 +52,9 @@ class FingerLocator:
     _SEARCH_DOWNSAMPLE = 3
 
     # Minimum CCOEFF score at the CCORR-detected location to confirm
-    # the match is not a false positive.
-    _CCOEFF_VERIFY_THRESHOLD = 0.25
+    # the match is not a false positive.  True matches typically score
+    # 0.36+ while false positives stay below 0.31.
+    _CCOEFF_VERIFY_THRESHOLD = 0.35
 
     # When CCORR confidence exceeds this threshold, skip remaining
     # scale/angle iterations (early exit).  True matches typically
