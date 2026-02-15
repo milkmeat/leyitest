@@ -77,5 +77,6 @@ VERBOSE_OUTPUT_EXAMPLE.md
 # Task loop logs
 task_loop*.log
 
-.claude/
+.claude/*
+!.claude/commands/
 .venv
