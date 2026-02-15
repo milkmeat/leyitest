@@ -46,13 +46,18 @@ class FingerLocator:
     _FINGERTIP_OFFSET = (-65, 100)
 
     # Downsample factor for the search image.  Matching cost scales with
-    # image area, so halving each dimension gives a ~4x speedup while
-    # preserving enough detail for the finger icon.
-    _SEARCH_DOWNSAMPLE = 2
+    # image area, so 3x downsample gives ~9x speedup while preserving
+    # enough detail for the finger icon.
+    _SEARCH_DOWNSAMPLE = 3
 
     # Minimum CCOEFF score at the CCORR-detected location to confirm
     # the match is not a false positive.
     _CCOEFF_VERIFY_THRESHOLD = 0.25
+
+    # When CCORR confidence exceeds this threshold, skip remaining
+    # scale/angle iterations (early exit).  True matches typically
+    # score ~0.95, so 0.90 is a safe cutoff.
+    _EARLY_EXIT_THRESHOLD = 0.90
 
     def __init__(self, template_path: str | None = None):
         self._template_path = template_path or os.path.join(
@@ -62,6 +67,13 @@ class FingerLocator:
         self._template_raw_gray: np.ndarray | None = None   # original grayscale
         self._template_mask: np.ndarray | None = None       # binary alpha mask (0/1)
         self._template_mask_255: np.ndarray | None = None   # binary alpha mask (0/255)
+
+        # Cache transformed templates keyed by (scale, angle) to avoid
+        # redundant resize+rotate on repeated calls.
+        self._transform_cache: dict[
+            tuple[float, float], tuple[np.ndarray, np.ndarray | None]
+        ] = {}
+        self._cached_base_scale: float | None = None
 
     def _load_template(self) -> None:
         """Load template image with alpha channel (lazy, once).
@@ -93,6 +105,30 @@ class FingerLocator:
             self._template_mask_255 = None
 
         self._template_gray = gray
+
+    def _get_transformed(
+        self, scale: float, angle: float,
+    ) -> tuple[np.ndarray, np.ndarray | None]:
+        """Return (template, mask) for the given scale/angle, using cache."""
+        key = (scale, angle)
+        cached = self._transform_cache.get(key)
+        if cached is not None:
+            return cached
+
+        if self._template_mask_255 is not None:
+            tmpl = self._resize_and_rotate(
+                self._template_raw_gray, scale, angle, border_value=0)
+            mask = self._resize_and_rotate(
+                self._template_mask_255, scale, angle, border_value=0)
+            mask = (mask > 128).astype(np.uint8) * 255
+        else:
+            fill_val = int(self._template_gray.mean())
+            tmpl = self._resize_and_rotate(
+                self._template_gray, scale, angle, border_value=fill_val)
+            mask = None
+
+        self._transform_cache[key] = (tmpl, mask)
+        return tmpl, mask
 
     @staticmethod
     def _resize_and_rotate(
@@ -175,8 +211,16 @@ class FingerLocator:
         base_scale = screen_width / 1080.0 / ds
         scale_factors = [base_scale * f for f in np.linspace(0.7, 1.4, 8)]
 
-        # Multi-rotation: -30 to +30 degrees in 10-degree steps
-        angles = list(range(-30, 31, 10))  # [-30, -20, -10, 0, 10, 20, 30]
+        # Center-out ordering: try the most likely scale (closest to
+        # base_scale) and angle (0°) first so early exit kicks in sooner.
+        scale_factors.sort(key=lambda s: abs(s - base_scale))
+        angles = [0, -10, 10, -20, 20, -30, 30]
+
+        # Invalidate transform cache when base_scale changes (i.e. the
+        # device resolution changed).
+        if self._cached_base_scale != base_scale:
+            self._transform_cache.clear()
+            self._cached_base_scale = base_scale
 
         has_mask = self._template_mask_255 is not None
 
@@ -187,25 +231,14 @@ class FingerLocator:
         best_topleft = None    # match top-left in search_img (for verification)
 
         # --- Pass 1: Detection ---
-        for scale in scale_factors:
-            for angle in angles:
-                if has_mask:
-                    # CCORR + mask: high sensitivity for masked templates
-                    tmpl = self._resize_and_rotate(
-                        self._template_raw_gray, scale, angle,
-                        border_value=0)
-                    mask = self._resize_and_rotate(
-                        self._template_mask_255, scale, angle,
-                        border_value=0)
-                    # Re-binarize mask after resize/rotate interpolation
-                    mask = (mask > 128).astype(np.uint8) * 255
-                else:
-                    # No alpha: mean-filled CCOEFF (original method)
-                    fill_val = int(self._template_gray.mean())
-                    tmpl = self._resize_and_rotate(
-                        self._template_gray, scale, angle,
-                        border_value=fill_val)
-                    mask = None
+        for angle in angles:
+            if best_confidence >= self._EARLY_EXIT_THRESHOLD:
+                break
+            for scale in scale_factors:
+                if best_confidence >= self._EARLY_EXIT_THRESHOLD:
+                    break
+
+                tmpl, mask = self._get_transformed(scale, angle)
 
                 # Skip if template is larger than search image
                 if (tmpl.shape[0] > search_img.shape[0] or
