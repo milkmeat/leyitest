@@ -30,7 +30,10 @@
 ```
 遇到元素需要点击
     │
-    ├─ 是普通按钮/图标？
+    ├─ analyze_screen 返回了该元素的 center 坐标？
+    │   └─ YES → 直接用 execute_action(tap, element=[x, y])  ⚡ 最快！
+    │
+    ├─ 是普通按钮/图标（没有坐标）？
     │   └─ YES → 用 locate_and_tap(description="具体描述")
     │        │
     │        ├─ 成功 ✅
@@ -44,6 +47,19 @@
         └─ YES → 用 execute_action (back/home/wait/launch)
 ```
 
+**重要：优先使用 analyze_screen 返回的坐标！**
+
+`analyze_screen` 返回的 `interactive_elements` 中每个元素都可能包含 `center: [x, y]` 绝对像素坐标。如果目标元素已有坐标，**直接用 `execute_action(tap, element=[x, y])` 点击**，无需再调用 `locate_and_tap`。这样可以省去一次截图和 AutoGLM 调用。
+
+```python
+# ✅ 最优：analyze_screen 已返回坐标，直接点击
+# 假设 analyze_screen 返回了: {"name": "发送按钮", "center": [950, 1750], ...}
+execute_action(action="tap", element=[950, 1750])
+
+# ✅ 备选：analyze_screen 没返回坐标，或需要点击的元素不在列表中
+locate_and_tap(description="发送按钮")
+```
+
 ## 架构图
 
 ```
@@ -51,11 +67,12 @@
               │
               ├── 1. create_task_session() → 创建任务会话
               │        ↓
-              ├── 2. analyze_screen() → AutoGLM 分析界面，返回结构化描述
+              ├── 2. analyze_screen() → AutoGLM 分析界面，返回结构化描述（含元素坐标）
               │        ↓
               ├── 3. Claude 决策：基于分析结果，决定要点击/输入什么
               │        ↓
-              ├── 4. locate_and_tap() / locate_and_type() → AutoGLM 定位并执行
+              ├── 4a. 有坐标 → execute_action(tap, element=[x,y]) → 直接点击 ⚡
+              ├── 4b. 无坐标 → locate_and_tap() / locate_and_type() → AutoGLM 定位并执行
               │        ↓
               ├── 5. 循环 2-4 直到完成
               │        ↓
@@ -124,7 +141,7 @@
 
 ## 任务执行流程
 
-### 推荐流程（AutoGLM 分析 + AutoGLM 执行）
+### 推荐流程（AutoGLM 分析 + 直接点击坐标）
 
 ```
 1. create_task_session(user_request="打开微信给张三发消息")
@@ -133,20 +150,23 @@
 2. analyze_screen(task_id, step_number=1, task_context="需要打开微信")
    → AutoGLM 返回：
    {
-     "current_screen": "手机主屏幕",
+     "interactive_elements": [
+       {"name": "微信图标", "type": "icon", "center": [bindingX, bindingY], ...},
+       ...
+     ],
      "visible_elements": ["微信图标", "支付宝图标", "设置图标", ...],
      "suggested_actions": ["点击微信图标打开微信"]
    }
 
-3. locate_and_tap(task_id, step_number=1, description="微信图标",
-     claude_analysis="AutoGLM 分析显示当前在主屏幕，微信图标可见",
-     claude_decision="点击微信图标启动应用")
-   → AutoGLM 定位并点击
+3. execute_action(action="tap", element=[bindingX, bindingY])  ⚡ 直接用返回的坐标！
+   → 无需再调 locate_and_tap
 
 4. analyze_screen(task_id, step_number=2, task_context="需要给张三发消息")
    → AutoGLM 返回界面分析...
 
-5. ... 循环执行直到完成 ...
+5. ... 循环 analyze_screen → execute_action(tap) 直到完成 ...
+
+   💡 仅当 analyze_screen 未返回目标元素坐标时，才使用 locate_and_tap
 
 N. end_task_session(task_id, final_result="已发送消息", success=True)
    → 生成报告
@@ -157,7 +177,8 @@ N. end_task_session(task_id, final_result="已发送消息", success=True)
 | 场景 | 使用工具 | 示例 |
 |-----|---------|------|
 | 了解当前界面 | `analyze_screen` | `analyze_screen(task_context="需要找到设置入口")` |
-| 点击按钮/图标 | `locate_and_tap` | `locate_and_tap(description="发送按钮")` |
+| 点击按钮/图标（有坐标） | `execute_action` | `execute_action(action="tap", element=[950, 1750])` ⚡ |
+| 点击按钮/图标（无坐标） | `locate_and_tap` | `locate_and_tap(description="发送按钮")` |
 | 输入文本 | `locate_and_type` | `locate_and_type(input_description="搜索框", text="关键词")` |
 | 滑动屏幕 | `locate_and_swipe` | `locate_and_swipe(description="列表区域", direction="up")` |
 | 返回上一页 | `execute_action` | `execute_action(action="back")` |
@@ -169,18 +190,24 @@ N. end_task_session(task_id, final_result="已发送消息", success=True)
 ### 推荐的方式
 ```python
 # ✅ 让 AutoGLM 分析界面
-analyze_screen()  # AutoGLM 分析更准确，返回结构化数据
+analyze_screen()  # AutoGLM 分析更准确，返回结构化数据（含元素坐标）
 
-# ✅ 让 AutoGLM 来定位（普通元素）
-locate_and_tap(description="微信图标")  # AutoGLM 精确定位
+# ✅ 最优：analyze_screen 已返回坐标，直接点击（省去一次 AutoGLM 调用）
+execute_action(action="tap", element=[950, 1750])  # 使用 analyze_screen 返回的坐标
 
+# ✅ 备选：没有坐标时，让 AutoGLM 来定位
+locate_and_tap(description="微信图标")  # AutoGLM 重新截图+定位
+```
 
 ### 不推荐的方式（容易失败或浪费资源）
 
 ```python
-# ❌ 普通元素不要自己估算坐标
-execute_action(action="tap", element=[320, 450])  # Claude 估算的坐标经常不准
+# ❌ Claude 自己估算坐标（不是从 analyze_screen 获得的）
+execute_action(action="tap", element=[320, 450])  # Claude 凭空猜的坐标经常不准
 
+# ❌ analyze_screen 已返回元素坐标，却还调用 locate_and_tap
+# 这会浪费一次截图 + AutoGLM 调用
+locate_and_tap(description="发送按钮")  # 多余！直接用上面返回的坐标即可
 ```
 
 ## 坐标系统
@@ -223,7 +250,9 @@ phone-agent-tasks/
 
 1. **让 AutoGLM 分析** → `analyze_screen(task_context="当前任务目标")`
 2. **理解分析结果** → 基于 AutoGLM 返回的结构化数据做决策
-3. **让 AutoGLM 执行** → `locate_and_tap(description="xxx")`
+3. **执行操作** →
+   - 有坐标 ⚡：`execute_action(action="tap", element=[x, y])` — 直接用 `interactive_elements` 中的 `center` 坐标
+   - 无坐标：`locate_and_tap(description="xxx")` — 让 AutoGLM 重新定位
 4. **验证结果** → 再次调用 `analyze_screen()` 确认操作成功
 5. **错误恢复** → 如果失败，分析原因并调整策略
 
@@ -392,3 +421,5 @@ adb connect localhost:5555
 - 新手指引：屏幕上如果有"手指"图示，需要点击指尖处完成新手指引，可能会切换到建筑升级、完成任务、奖励领取等界面。需要完成这些操作后继续下一指引。
 - 按钮颜色：灰色按钮=条件不满足，现在无法点击；蓝色按钮=现在可以点击，很可能会跳转到下一界面；金色按钮=任务已完成，可以领取奖励；绿色对勾=奖励已领取，不需要再点击。
 - 信件图标：主界面右下角有一个蓝色的信件图标，不用理会
+- 倒计时活动：屏幕左上部分，会有一些倒计时的活动标签，不用理会
+- 礼包图标：屏幕右上部分，会有礼包/礼物图标，不用理会

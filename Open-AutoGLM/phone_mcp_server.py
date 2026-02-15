@@ -645,7 +645,9 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent | 
                         {
                             "name": e.name, "type": e.type,
                             "location": e.location, "state": e.state,
-                            "center": e.center,
+                            "center": list(convert_autoglm_coords_to_absolute(
+                                e.center, screenshot.width, screenshot.height
+                            )) if e.center else None,
                         }
                         for e in analysis.interactive_elements
                     ],
