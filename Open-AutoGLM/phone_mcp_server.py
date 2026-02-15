@@ -58,6 +58,7 @@ DEFAULT_MAX_STEPS = int(os.environ.get("PHONE_MAX_STEPS", "50"))
 # 全局实例
 _locator: AutoGLMLocator | None = None
 _action_handler: ActionHandler | None = None
+_finger_locator = None  # lazy: FingerLocator | None
 _debug_mode_enabled = True
 
 
@@ -99,6 +100,15 @@ def get_locator() -> AutoGLMLocator:
     if _locator is None:
         _locator = AutoGLMLocator(MODEL_CONFIG)
     return _locator
+
+
+def _get_finger_locator():
+    """获取或创建 FingerLocator 实例（懒加载，缺少 opencv 不会阻止服务器启动）"""
+    global _finger_locator
+    if _finger_locator is None:
+        from phone_agent.locator.finger_locator import FingerLocator
+        _finger_locator = FingerLocator()
+    return _finger_locator
 
 
 def get_action_handler() -> ActionHandler:
@@ -469,6 +479,39 @@ async def list_tools() -> list[Tool]:
                     },
                 },
                 "required": ["description", "direction"],
+            },
+        ),
+
+        # ============ OpenCV 定位工具 ============
+        Tool(
+            name="locate_finger_and_tap",
+            description="""使用 OpenCV 模板匹配快速检测屏幕上的新手指引手指图标并点击指尖。
+
+比 AutoGLM AI 调用快得多（~200ms vs ~2-5s），且对手指图标检测更可靠。
+如果检测到手指图标，自动点击指尖位置；如果未检测到，返回 found: false。""",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "task_id": {
+                        "type": "string",
+                        "description": "任务会话 ID（可选）",
+                    },
+                    "step_number": {
+                        "type": "integer",
+                        "description": "当前步骤号",
+                    },
+                    "tap_count": {
+                        "type": "integer",
+                        "description": "连续点击次数（默认1次）",
+                        "default": 1,
+                        "minimum": 1,
+                    },
+                    "confidence_threshold": {
+                        "type": "number",
+                        "description": "匹配置信度阈值（默认0.55，范围0-1）",
+                        "default": 0.55,
+                    },
+                },
             },
         ),
 
@@ -1177,6 +1220,102 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent | 
 
         except Exception as e:
             return [TextContent(type="text", text=f"定位滑动失败：{str(e)}")]
+
+    # ============ OpenCV 手指定位 ============
+    elif name == "locate_finger_and_tap":
+        task_id = arguments.get("task_id")
+        step_number = arguments.get("step_number", 1)
+        tap_count = arguments.get("tap_count", 1)
+        confidence_threshold = arguments.get("confidence_threshold", 0.55)
+
+        try:
+            # 获取截图
+            screenshot = await asyncio.to_thread(
+                device_factory.get_screenshot, DEFAULT_DEVICE_ID
+            )
+
+            # 使用 OpenCV 模板匹配查找手指图标
+            finger_locator = _get_finger_locator()
+            match = await asyncio.to_thread(
+                finger_locator.find_finger,
+                screenshot.base64_data,
+                screenshot.width,
+                screenshot.height,
+                confidence_threshold,
+            )
+
+            if not match.found or match.fingertip is None:
+                return [TextContent(
+                    type="text",
+                    text=json.dumps({
+                        "found": False,
+                        "confidence": round(match.confidence, 4),
+                        "message": "未检测到手指指引图标",
+                    }, ensure_ascii=False)
+                )]
+
+            # 执行点击
+            fx, fy = match.fingertip
+            for i in range(tap_count):
+                await asyncio.to_thread(device_factory.tap, fx, fy, DEFAULT_DEVICE_ID)
+                if i < tap_count - 1:
+                    await asyncio.sleep(0.3)
+
+            # 记录到任务日志
+            action_detail = {
+                "type": "finger_tap",
+                "fingertip": [fx, fy],
+                "confidence": round(match.confidence, 4),
+                "scale": round(match.scale, 3),
+                "angle": match.angle,
+                "tap_count": tap_count,
+            }
+            action_result = {"success": True}
+
+            if task_id:
+                try:
+                    current_app = await asyncio.to_thread(
+                        device_factory.get_current_app, DEFAULT_DEVICE_ID
+                    )
+                    step = TaskStep(
+                        step_number=step_number,
+                        timestamp=datetime.now().isoformat(),
+                        current_app=current_app,
+                        claude_analysis="OpenCV finger template matching",
+                        claude_decision=f"Detected finger guide (confidence={match.confidence:.4f}), tapping fingertip at ({fx}, {fy})",
+                        action=action_detail,
+                        result=action_result,
+                    )
+                    tracker.add_step(task_id, step)
+                except ValueError:
+                    pass
+
+            return [TextContent(
+                type="text",
+                text=json.dumps({
+                    "found": True,
+                    "fingertip": [fx, fy],
+                    "confidence": round(match.confidence, 4),
+                    "scale": round(match.scale, 3),
+                    "angle": match.angle,
+                    "tap_count": tap_count,
+                }, ensure_ascii=False)
+            )]
+
+        except ImportError:
+            return [TextContent(
+                type="text",
+                text=json.dumps({
+                    "found": False,
+                    "error": "opencv-python-headless 未安装。请运行: pip install opencv-python-headless numpy",
+                }, ensure_ascii=False)
+            )]
+        except Exception as e:
+            import traceback
+            return [TextContent(
+                type="text",
+                text=f"手指定位失败：{str(e)}\n{traceback.format_exc()}"
+            )]
 
     # ============ 辅助工具 ============
     elif name == "list_supported_apps":
