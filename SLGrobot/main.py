@@ -435,6 +435,25 @@ class CLI:
 
 
 def main():
+    # Split sys.argv: flags (--auto, --loops) go to argparse,
+    # remaining positional args are treated as a one-shot command.
+    flags = []
+    cmd_args = []
+    i = 1
+    while i < len(sys.argv):
+        arg = sys.argv[i]
+        if arg.startswith("--"):
+            flags.append(arg)
+            # Consume value for --loops
+            if arg == "--loops" and i + 1 < len(sys.argv):
+                i += 1
+                flags.append(sys.argv[i])
+        else:
+            # Everything from here on is the command
+            cmd_args = sys.argv[i:]
+            break
+        i += 1
+
     parser = argparse.ArgumentParser(description="SLGrobot - SLG Game AI Agent")
     parser.add_argument(
         "--auto", action="store_true",
@@ -444,7 +463,7 @@ def main():
         "--loops", type=int, default=0,
         help="Max auto-loop iterations (0 = infinite)"
     )
-    args = parser.parse_args()
+    args = parser.parse_args(flags)
 
     GameLogger(config.LOG_DIR)
     bot = GameBot()
@@ -452,10 +471,18 @@ def main():
     if not bot.connect():
         sys.exit(1)
 
-    if args.auto:
+    cli = CLI(bot)
+
+    if cmd_args:
+        # One-shot mode: execute command and exit
+        line = " ".join(cmd_args)
+        try:
+            cli.dispatch(line)
+        except SystemExit:
+            pass
+    elif args.auto:
         bot.auto_loop(args.loops)
     else:
-        cli = CLI(bot)
         cli.run()
 
 
