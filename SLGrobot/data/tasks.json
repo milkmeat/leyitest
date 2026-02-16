@@ -1,0 +1,28 @@
+[
+  {
+    "name": "upgrade_building",
+    "priority": 10,
+    "params": {
+      "building_name": "castle"
+    },
+    "status": "pending",
+    "retry_count": 0,
+    "max_retries": 3
+  },
+  {
+    "name": "collect_resources",
+    "priority": 5,
+    "params": {},
+    "status": "pending",
+    "retry_count": 0,
+    "max_retries": 3
+  },
+  {
+    "name": "check_mail",
+    "priority": 1,
+    "params": {},
+    "status": "pending",
+    "retry_count": 0,
+    "max_retries": 3
+  }
+]

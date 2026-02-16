@@ -1,7 +1,9 @@
 """Task Queue - Manage ordered task queue with priority."""
 
+import json
+import os
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 
 logger = logging.getLogger(__name__)
 
@@ -102,3 +104,27 @@ class TaskQueue:
     def pending_count(self) -> int:
         """Number of pending tasks."""
         return sum(1 for t in self._queue if t.status == "pending")
+
+    def save(self, filepath: str) -> None:
+        """Save task queue to JSON file."""
+        data = [asdict(t) for t in self._queue]
+        os.makedirs(os.path.dirname(filepath) or ".", exist_ok=True)
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        logger.info(f"Saved {len(data)} tasks to {filepath}")
+
+    def load(self, filepath: str) -> int:
+        """Load task queue from JSON file. Returns number of tasks loaded."""
+        if not os.path.exists(filepath):
+            logger.warning(f"Task file not found: {filepath}")
+            return 0
+
+        with open(filepath, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        self._queue.clear()
+        for item in data:
+            self._queue.append(Task(**item))
+        self._queue.sort(key=lambda t: t.priority, reverse=True)
+        logger.info(f"Loaded {len(self._queue)} tasks from {filepath}")
+        return len(self._queue)

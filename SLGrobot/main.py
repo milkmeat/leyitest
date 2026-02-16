@@ -52,6 +52,8 @@ Commands:
   scene                         Classify current scene
   task <name> [priority]        Add a task to the queue
   tasks                         Show task queue
+  save_tasks                    Save task queue to data/tasks.json
+  load_tasks                    Load task queue from data/tasks.json
   auto [loops]                  Run auto loop (default: infinite)
   help                          Show this help
   exit / quit                   Exit"""
@@ -407,6 +409,16 @@ class CLI:
             return
         for t in status:
             print(f"  [{t['status']}] {t['name']} (priority={t['priority']}, retries={t['retry_count']})")
+
+    def cmd_save_tasks(self, args: list[str]) -> None:
+        filepath = args[0] if args else config.TASKS_FILE
+        self.bot.task_queue.save(filepath)
+        print(f"Saved {self.bot.task_queue.size()} tasks to {filepath}")
+
+    def cmd_load_tasks(self, args: list[str]) -> None:
+        filepath = args[0] if args else config.TASKS_FILE
+        count = self.bot.task_queue.load(filepath)
+        print(f"Loaded {count} tasks from {filepath}")
 
     def cmd_auto(self, args: list[str]) -> None:
         max_loops = int(args[0]) if args else 0
