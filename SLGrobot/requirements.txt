@@ -3,3 +3,5 @@ Pillow
 numpy
 adbutils
 rapidocr-onnxruntime
+anthropic
+openai

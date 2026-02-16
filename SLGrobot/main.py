@@ -1,15 +1,24 @@
-"""SLGrobot - Main entry point with local decision loop.
+"""SLGrobot - Main entry point with three-layer decision loop.
 
 Supports two modes:
   - Interactive CLI (default): manual game control
-  - Auto mode (--auto): autonomous local decision loop (Phase 3)
+  - Auto mode (--auto): autonomous three-layer decision loop (Phase 4)
 
-The auto loop:
-  screenshot -> classify scene -> update state ->
-    if popup: auto-close
-    if task queue has pending: rule_engine.plan(task)
-    else: auto_handler.get_actions()
-  -> execute actions -> persist state
+Three-layer decision loop:
+  1. Strategic Layer  - Claude LLM (~30min interval) for long-term planning
+  2. Tactical Layer   - Local rule engine (<500ms) decomposes tasks
+  3. Execution Layer  - CV + ADB (<100ms) screenshot -> detect -> tap
+
+Auto loop flow:
+  screenshot -> classify scene ->
+    popup   -> auto-close -> continue
+    loading -> wait -> continue
+    unknown -> LLM analyze -> execute suggestions -> continue
+    other   -> update game_state ->
+      has_pending tasks -> rule_engine.plan(task) -> validate -> execute -> verify
+      no tasks + LLM due -> llm_planner.get_plan() -> add to queue -> continue
+      no tasks           -> auto_handler.get_actions() -> execute
+    -> persist state -> sleep -> repeat
 """
 
 import sys
@@ -34,6 +43,10 @@ from state.persistence import StatePersistence
 from brain.task_queue import TaskQueue, Task
 from brain.auto_handler import AutoHandler
 from brain.rule_engine import RuleEngine
+from brain.llm_planner import LLMPlanner
+from executor.action_validator import ActionValidator
+from executor.action_runner import ActionRunner
+from executor.result_checker import ResultChecker
 from utils.logger import GameLogger
 
 logger = logging.getLogger(__name__)
@@ -55,6 +68,7 @@ Commands:
   save_tasks                    Save task queue to data/tasks.json
   load_tasks                    Load task queue from data/tasks.json
   auto [loops]                  Run auto loop (default: infinite)
+  llm                           Manually trigger LLM strategic consultation
   help                          Show this help
   exit / quit                   Exit"""
 
@@ -68,7 +82,15 @@ def parse_coord(s: str) -> tuple[int, int]:
 
 
 class GameBot:
-    """Main game bot with state tracking and local decision loop."""
+    """Main game bot with three-layer decision loop.
+
+    Layers:
+    1. Strategic (LLM):  llm_planner   - called every ~30min
+    2. Tactical (Rules): rule_engine    - called per task
+    3. Execution (ADB):  action_runner  - called per action
+
+    Validation pipeline: validator -> runner -> checker
+    """
 
     def __init__(self) -> None:
         # Device layer
@@ -99,6 +121,21 @@ class GameBot:
         self.rule_engine = RuleEngine(
             self.detector, self.game_state, config.NAV_PATHS_FILE
         )
+        self.llm_planner = LLMPlanner(
+            api_key=config.LLM_API_KEY,
+            model=config.LLM_MODEL,
+            grid_overlay=self.grid,
+        )
+
+        # Executor layer (Phase 4)
+        self.validator = ActionValidator(self.detector, self.classifier)
+        self.runner = ActionRunner(
+            self.adb, self.input_actions, self.detector,
+            self.grid, self.screenshot_mgr
+        )
+        self.checker = ResultChecker(
+            self.screenshot_mgr, self.classifier, self.detector
+        )
 
     def connect(self) -> bool:
         """Connect to emulator and load persisted state."""
@@ -118,10 +155,23 @@ class GameBot:
         else:
             print("Starting with fresh state")
 
+        # Report LLM availability
+        if config.LLM_API_KEY:
+            print(f"LLM enabled: {config.LLM_PROVIDER}/{config.LLM_VISION_MODEL}")
+        else:
+            print("LLM disabled (no API key configured)")
+
         return True
 
     def auto_loop(self, max_loops: int = 0) -> None:
-        """Run the autonomous local decision loop.
+        """Run the autonomous three-layer decision loop.
+
+        Decision hierarchy:
+        1. Popup/loading -> handle immediately (auto layer)
+        2. Unknown scene  -> consult LLM for scene analysis
+        3. Pending tasks   -> rule engine plans, executor runs with validation
+        4. LLM consult due -> get strategic plan, add tasks to queue
+        5. Nothing to do   -> auto-handler scans for opportunistic actions
 
         Args:
             max_loops: Max iterations (0 = infinite).
@@ -160,12 +210,24 @@ class GameBot:
                     time.sleep(config.LOOP_INTERVAL)
                     continue
 
-                # 5. Update game state
+                # 5. Handle unknown scenes with LLM
+                if scene == "unknown" and config.LLM_API_KEY:
+                    logger.info("Unknown scene, consulting LLM...")
+                    actions = self.llm_planner.analyze_unknown_scene(
+                        screenshot, self.game_state
+                    )
+                    if actions:
+                        self._execute_validated_actions(actions, scene, screenshot)
+                    time.sleep(config.LOOP_INTERVAL)
+                    continue
+
+                # 6. Update game state
                 self.state_tracker.update(screenshot, scene)
 
-                # 6. Decide on actions
+                # 7. Three-layer decision
                 actions = []
                 if self.task_queue.has_pending():
+                    # Tactical layer: rule engine decomposes task
                     task = self.task_queue.next()
                     if task:
                         logger.info(f"Executing task: '{task.name}'")
@@ -173,6 +235,9 @@ class GameBot:
                             actions = self.rule_engine.plan(
                                 task, screenshot, self.game_state
                             )
+                        elif task.params.get("actions"):
+                            # Custom task with inline LLM actions
+                            actions = task.params["actions"]
                         else:
                             logger.warning(
                                 f"No rule for task '{task.name}', skipping"
@@ -183,21 +248,31 @@ class GameBot:
                             self.task_queue.mark_done(task)
                         elif task.status == "running":
                             self.task_queue.mark_failed(task)
+
+                elif self.llm_planner.should_consult(self.game_state):
+                    # Strategic layer: LLM generates task plan
+                    logger.info("LLM consultation due, requesting strategic plan...")
+                    tasks = self.llm_planner.get_plan(screenshot, self.game_state)
+                    if tasks:
+                        self.task_queue.add_tasks(tasks)
+                        logger.info(f"LLM added {len(tasks)} tasks to queue")
+                    # Continue to next loop to start executing new tasks
+                    self.persistence.save(self.game_state)
+                    time.sleep(config.LOOP_INTERVAL)
+                    continue
                 else:
-                    # No pending tasks -> run auto-handler
+                    # Auto layer: opportunistic actions
                     actions = self.auto_handler.get_actions(
                         screenshot, self.game_state
                     )
 
-                # 7. Execute actions
-                for action in actions:
-                    self._execute_action(action)
-                    self.game_state.record_action(action)
+                # 8. Execute actions with validation pipeline
+                self._execute_validated_actions(actions, scene, screenshot)
 
-                # 8. Persist state
+                # 9. Persist state
                 self.persistence.save(self.game_state)
 
-                # 9. Log summary
+                # 10. Log summary
                 if loop % 10 == 0:
                     self._log_status()
 
@@ -215,68 +290,70 @@ class GameBot:
             print(f"Auto loop ended. {loop} iterations completed.")
             logger.info(f"Auto loop ended after {loop} iterations")
 
-    def _execute_action(self, action: dict) -> None:
-        """Execute a single action dict via ADB."""
-        action_type = action.get("type", "")
-        delay = action.get("delay", 0.5)
-        reason = action.get("reason", "")
+    def _execute_validated_actions(self, actions: list[dict],
+                                    pre_scene: str,
+                                    pre_screenshot=None) -> int:
+        """Execute actions through the validation pipeline.
 
-        logger.info(f"Execute: {action_type} reason={reason}")
+        Pipeline: validate -> execute -> check result
 
-        if action_type == "tap":
-            x = action.get("x")
-            y = action.get("y")
-            target_text = action.get("target_text")
+        Args:
+            actions: List of action dicts.
+            pre_scene: Scene classification before execution.
+            pre_screenshot: Screenshot before execution (for validation).
 
-            if target_text and (x is None or y is None):
-                # Locate text on screen first
-                screenshot = self.screenshot_mgr.capture()
-                element = self.detector.locate(screenshot, target_text)
-                if element:
-                    x, y = element.x, element.y
-                else:
-                    # Try fallback grid cell
-                    fallback = action.get("fallback_grid")
-                    if fallback:
-                        x, y = self.grid.cell_to_pixel(fallback)
-                    else:
-                        logger.warning(f"Cannot locate target: '{target_text}'")
-                        return
+        Returns:
+            Number of successfully executed actions.
+        """
+        success_count = 0
 
-            if x is not None and y is not None:
-                self.adb.tap(int(x), int(y))
+        for action in actions:
+            # Take a fresh screenshot for validation if needed
+            if pre_screenshot is None:
+                try:
+                    pre_screenshot = self.screenshot_mgr.capture()
+                except Exception:
+                    pre_screenshot = None
+
+            # Validate
+            if pre_screenshot is not None:
+                if not self.validator.validate(action, pre_screenshot):
+                    logger.warning(f"Action rejected by validator: {action}")
+                    continue
+
+            # Execute
+            if self.runner.execute(action):
+                self.game_state.record_action(action)
+                success_count += 1
+
+                # Check result
+                try:
+                    post_screenshot = self.screenshot_mgr.capture()
+                    ok = self.checker.check(action, pre_scene, post_screenshot)
+                    if not ok:
+                        logger.warning(
+                            f"Result check failed for action: {action.get('type')}"
+                        )
+                    # Update pre_screenshot for next action
+                    pre_screenshot = post_screenshot
+                except Exception as e:
+                    logger.warning(f"Result check error: {e}")
             else:
-                logger.warning(f"No coordinates for tap action")
+                logger.warning(f"Action execution failed: {action}")
 
-        elif action_type == "swipe":
-            self.adb.swipe(
-                int(action["x1"]), int(action["y1"]),
-                int(action["x2"]), int(action["y2"]),
-                int(action.get("duration_ms", 300)),
-            )
+        return success_count
 
-        elif action_type == "wait":
-            seconds = action.get("seconds", 1)
-            time.sleep(seconds)
-            return  # Don't add extra delay
+    def consult_llm(self) -> list[Task]:
+        """Manually trigger LLM strategic consultation.
 
-        elif action_type == "navigate":
-            target = action.get("target", "")
-            if target in self.rule_engine.nav_paths:
-                for step in self.rule_engine.nav_paths[target]:
-                    self._execute_action(step)
-            else:
-                logger.warning(f"Unknown navigation target: '{target}'")
-
-        elif action_type == "key_event":
-            keycode = action.get("keycode", 4)
-            self.adb.key_event(keycode)
-
-        else:
-            logger.warning(f"Unknown action type: '{action_type}'")
-
-        if delay > 0:
-            time.sleep(delay)
+        Returns:
+            List of tasks added to queue.
+        """
+        screenshot = self.screenshot_mgr.capture()
+        tasks = self.llm_planner.get_plan(screenshot, self.game_state)
+        if tasks:
+            self.task_queue.add_tasks(tasks)
+        return tasks
 
     def _log_status(self) -> None:
         """Log current status summary."""
@@ -284,7 +361,8 @@ class GameBot:
         logger.info(
             f"Status: scene={gs.scene}, resources={gs.resources}, "
             f"buildings={len(gs.buildings)}, loop={gs.loop_count}, "
-            f"tasks_pending={self.task_queue.pending_count()}"
+            f"tasks_pending={self.task_queue.pending_count()}, "
+            f"last_llm={gs.last_llm_consult or 'never'}"
         )
 
 
@@ -377,6 +455,7 @@ class CLI:
         print(f"Resources: {gs.resources}")
         print(f"Buildings: {len(gs.buildings)}  Marches: {len(gs.troops_marching)}")
         print(f"Tasks pending: {self.bot.task_queue.pending_count()}")
+        print(f"Last LLM consult: {gs.last_llm_consult or 'never'}")
 
     def cmd_state(self, args: list[str]) -> None:
         gs = self.bot.game_state
@@ -424,6 +503,19 @@ class CLI:
         max_loops = int(args[0]) if args else 0
         self.bot.auto_loop(max_loops)
 
+    def cmd_llm(self, args: list[str]) -> None:
+        if not config.LLM_API_KEY:
+            print("Error: ANTHROPIC_API_KEY not set")
+            return
+        print(f"Consulting {config.LLM_MODEL}...")
+        tasks = self.bot.consult_llm()
+        if tasks:
+            print(f"LLM generated {len(tasks)} tasks:")
+            for t in tasks:
+                print(f"  [{t.priority}] {t.name} params={t.params}")
+        else:
+            print("LLM returned no tasks")
+
     def cmd_help(self, args: list[str]) -> None:
         print(HELP_TEXT)
 
@@ -457,7 +549,7 @@ def main():
     parser = argparse.ArgumentParser(description="SLGrobot - SLG Game AI Agent")
     parser.add_argument(
         "--auto", action="store_true",
-        help="Run in autonomous mode (local decision loop)"
+        help="Run in autonomous mode (three-layer decision loop)"
     )
     parser.add_argument(
         "--loops", type=int, default=0,
