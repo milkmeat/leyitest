@@ -2,3 +2,4 @@ opencv-python
 Pillow
 numpy
 adbutils
+rapidocr-onnxruntime
