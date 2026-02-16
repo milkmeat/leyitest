@@ -93,18 +93,50 @@ class ActionRunner:
 
         return success
 
-    def execute_sequence(self, actions: list[dict]) -> int:
+    def execute_with_retry(self, action: dict, max_retries: int = 3,
+                            retry_delay: float = 1.0) -> bool:
+        """Execute an action with retry on failure.
+
+        Args:
+            action: Action dict to execute.
+            max_retries: Maximum number of attempts.
+            retry_delay: Seconds to wait between retries.
+
+        Returns:
+            True if the action succeeded on any attempt.
+        """
+        for attempt in range(1, max_retries + 1):
+            if self.execute(action):
+                return True
+            if attempt < max_retries:
+                logger.warning(
+                    f"Action retry {attempt}/{max_retries}: {action.get('type', '?')}"
+                )
+                time.sleep(retry_delay)
+        logger.error(
+            f"Action failed after {max_retries} attempts: {action.get('type', '?')}"
+        )
+        return False
+
+    def execute_sequence(self, actions: list[dict], retry: bool = False,
+                          max_retries: int = 3) -> int:
         """Execute a sequence of actions.
 
         Args:
             actions: List of action dicts.
+            retry: If True, use execute_with_retry for each action.
+            max_retries: Max retries per action (only used when retry=True).
 
         Returns:
             Number of successfully executed actions.
         """
         success_count = 0
         for action in actions:
-            if self.execute(action):
+            if retry:
+                ok = self.execute_with_retry(action, max_retries=max_retries)
+            else:
+                ok = self.execute(action)
+            if ok:
                 success_count += 1
             else:
                 logger.warning(f"Action failed: {action}")

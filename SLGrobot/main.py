@@ -21,11 +21,14 @@ Auto loop flow:
     -> persist state -> sleep -> repeat
 """
 
+import os
 import sys
 import time
 import shlex
 import logging
 import argparse
+
+import cv2
 
 import config
 from device.adb_controller import ADBController
@@ -44,6 +47,7 @@ from brain.task_queue import TaskQueue, Task
 from brain.auto_handler import AutoHandler
 from brain.rule_engine import RuleEngine
 from brain.llm_planner import LLMPlanner
+from brain.stuck_recovery import StuckRecovery
 from executor.action_validator import ActionValidator
 from executor.action_runner import ActionRunner
 from executor.result_checker import ResultChecker
@@ -69,6 +73,9 @@ Commands:
   load_tasks                    Load task queue from data/tasks.json
   auto [loops]                  Run auto loop (default: infinite)
   llm                           Manually trigger LLM strategic consultation
+  capture_template <category> <name> <x1>,<y1> <x2>,<y2>
+                                Capture screenshot region as template
+  reload_templates              Reload template library
   help                          Show this help
   exit / quit                   Exit"""
 
@@ -137,6 +144,10 @@ class GameBot:
             self.screenshot_mgr, self.classifier, self.detector
         )
 
+        # Hardening layer (Phase 5)
+        self.stuck_recovery = StuckRecovery(adb=self.adb)
+        self.game_logger = GameLogger(config.LOG_DIR)
+
     def connect(self) -> bool:
         """Connect to emulator and load persisted state."""
         if not self.adb.connect():
@@ -164,7 +175,7 @@ class GameBot:
         return True
 
     def auto_loop(self, max_loops: int = 0) -> None:
-        """Run the autonomous three-layer decision loop.
+        """Run the autonomous three-layer decision loop with error recovery.
 
         Decision hierarchy:
         1. Popup/loading -> handle immediately (auto layer)
@@ -173,10 +184,20 @@ class GameBot:
         4. LLM consult due -> get strategic plan, add tasks to queue
         5. Nothing to do   -> auto-handler scans for opportunistic actions
 
+        Hardening (Phase 5):
+        - ADB reconnect on disconnection
+        - Stuck detection with escalating recovery
+        - Per-iteration try/except with consecutive error tracking
+
         Args:
             max_loops: Max iterations (0 = infinite).
         """
         loop = 0
+        scene_history: list[str] = []
+        consecutive_errors = 0
+        consecutive_screenshot_failures = 0
+        max_consecutive_errors = 5
+
         print(f"Starting auto loop (max_loops={max_loops or 'infinite'})...")
         print("Press Ctrl+C to stop.\n")
 
@@ -185,117 +206,188 @@ class GameBot:
                 loop += 1
                 logger.info(f"=== Loop {loop} ===")
 
-                # 1. Capture screenshot
                 try:
-                    screenshot = self.screenshot_mgr.capture()
-                except Exception as e:
-                    logger.error(f"Screenshot failed: {e}")
-                    time.sleep(config.LOOP_INTERVAL)
-                    continue
+                    # 0. Check ADB connection
+                    if not self.adb.is_connected():
+                        logger.warning("ADB disconnected, attempting reconnect...")
+                        self.game_logger.log_recovery(
+                            "adb_reconnect", "Connection lost, reconnecting"
+                        )
+                        if not self.adb.reconnect(
+                            max_retries=config.ADB_RECONNECT_RETRIES
+                        ):
+                            logger.error("ADB reconnect failed, stopping loop")
+                            break
+                        consecutive_screenshot_failures = 0
 
-                # 2. Classify scene
-                scene = self.classifier.classify(screenshot)
-                logger.info(f"Scene: {scene}")
-
-                # 3. Handle popups immediately
-                if scene == "popup":
-                    logger.info("Popup detected, attempting to close")
-                    self.popup_filter.handle(screenshot)
-                    time.sleep(0.5)
-                    continue
-
-                # 4. Skip loading screens
-                if scene == "loading":
-                    logger.info("Loading screen, waiting...")
-                    time.sleep(config.LOOP_INTERVAL)
-                    continue
-
-                # 5. Handle unknown scenes with LLM
-                if scene == "unknown" and config.LLM_API_KEY:
-                    logger.info("Unknown scene, consulting LLM...")
-                    actions = self.llm_planner.analyze_unknown_scene(
-                        screenshot, self.game_state
-                    )
-                    if actions:
-                        self._execute_validated_actions(actions, scene, screenshot)
-                    time.sleep(config.LOOP_INTERVAL)
-                    continue
-
-                # 6. Update game state
-                self.state_tracker.update(screenshot, scene)
-
-                # 7. Three-layer decision
-                actions = []
-                if self.task_queue.has_pending():
-                    # Tactical layer: rule engine decomposes task
-                    task = self.task_queue.next()
-                    if task:
-                        logger.info(f"Executing task: '{task.name}'")
-                        if self.rule_engine.can_handle(task):
-                            actions = self.rule_engine.plan(
-                                task, screenshot, self.game_state
-                            )
-                        elif task.params.get("actions"):
-                            # Custom task with inline LLM actions
-                            actions = task.params["actions"]
-                        else:
+                    # 1. Capture screenshot
+                    try:
+                        screenshot = self.screenshot_mgr.capture()
+                        consecutive_screenshot_failures = 0
+                    except Exception as e:
+                        logger.error(f"Screenshot failed: {e}")
+                        consecutive_screenshot_failures += 1
+                        if consecutive_screenshot_failures >= 3:
                             logger.warning(
-                                f"No rule for task '{task.name}', skipping"
+                                "3+ screenshot failures, attempting ADB reconnect"
                             )
-                            self.task_queue.mark_failed(task)
+                            self.game_logger.log_recovery(
+                                "adb_reconnect",
+                                f"Screenshot failed {consecutive_screenshot_failures} times"
+                            )
+                            if self.adb.reconnect(
+                                max_retries=config.ADB_RECONNECT_RETRIES
+                            ):
+                                consecutive_screenshot_failures = 0
+                        time.sleep(config.LOOP_INTERVAL)
+                        continue
 
+                    # 2. Classify scene
+                    scene = self.classifier.classify(screenshot)
+                    logger.info(f"Scene: {scene}")
+
+                    # 2a. Stuck detection
+                    scene_history.append(scene)
+                    # Keep history bounded
+                    if len(scene_history) > config.STUCK_MAX_SAME_SCENE * 2:
+                        scene_history = scene_history[-config.STUCK_MAX_SAME_SCENE * 2:]
+
+                    if self.stuck_recovery.check(scene_history):
+                        action = self.stuck_recovery.recover(self.adb)
+                        self.game_logger.log_recovery(
+                            "stuck_recovery",
+                            f"Stuck on '{scene}', recovery action: {action}",
+                            screenshot
+                        )
+                        scene_history.clear()
+                        time.sleep(config.LOOP_INTERVAL)
+                        continue
+
+                    # 2b. Reset stuck escalation if scene changed
+                    if len(scene_history) >= 2 and scene_history[-1] != scene_history[-2]:
+                        self.stuck_recovery.reset()
+
+                    # 3. Handle popups immediately
+                    if scene == "popup":
+                        logger.info("Popup detected, attempting to close")
+                        self.popup_filter.handle(screenshot)
+                        time.sleep(0.5)
+                        continue
+
+                    # 4. Skip loading screens
+                    if scene == "loading":
+                        logger.info("Loading screen, waiting...")
+                        time.sleep(config.LOOP_INTERVAL)
+                        continue
+
+                    # 5. Handle unknown scenes with LLM
+                    if scene == "unknown" and config.LLM_API_KEY:
+                        logger.info("Unknown scene, consulting LLM...")
+                        actions = self.llm_planner.analyze_unknown_scene(
+                            screenshot, self.game_state
+                        )
                         if actions:
-                            self.task_queue.mark_done(task)
-                        elif task.status == "running":
-                            self.task_queue.mark_failed(task)
+                            self._execute_validated_actions(actions, scene, screenshot)
+                        time.sleep(config.LOOP_INTERVAL)
+                        continue
 
-                elif self.llm_planner.should_consult(self.game_state):
-                    # Strategic layer: LLM generates task plan
-                    logger.info("LLM consultation due, requesting strategic plan...")
-                    tasks = self.llm_planner.get_plan(screenshot, self.game_state)
-                    if tasks:
-                        self.task_queue.add_tasks(tasks)
-                        logger.info(f"LLM added {len(tasks)} tasks to queue")
-                    # Continue to next loop to start executing new tasks
+                    # 6. Update game state
+                    self.state_tracker.update(screenshot, scene)
+
+                    # 7. Three-layer decision
+                    actions = []
+                    if self.task_queue.has_pending():
+                        # Tactical layer: rule engine decomposes task
+                        task = self.task_queue.next()
+                        if task:
+                            logger.info(f"Executing task: '{task.name}'")
+                            if self.rule_engine.can_handle(task):
+                                actions = self.rule_engine.plan(
+                                    task, screenshot, self.game_state
+                                )
+                            elif task.params.get("actions"):
+                                actions = task.params["actions"]
+                            else:
+                                logger.warning(
+                                    f"No rule for task '{task.name}', skipping"
+                                )
+                                self.task_queue.mark_failed(task)
+
+                            if actions:
+                                self.task_queue.mark_done(task)
+                            elif task.status == "running":
+                                self.task_queue.mark_failed(task)
+
+                    elif self.llm_planner.should_consult(self.game_state):
+                        logger.info("LLM consultation due, requesting strategic plan...")
+                        tasks = self.llm_planner.get_plan(screenshot, self.game_state)
+                        if tasks:
+                            self.task_queue.add_tasks(tasks)
+                            logger.info(f"LLM added {len(tasks)} tasks to queue")
+                        self.persistence.save(self.game_state)
+                        time.sleep(config.LOOP_INTERVAL)
+                        continue
+                    else:
+                        actions = self.auto_handler.get_actions(
+                            screenshot, self.game_state
+                        )
+
+                    # 8. Execute actions with validation pipeline
+                    self._execute_validated_actions(actions, scene, screenshot)
+
+                    # 9. Persist state
                     self.persistence.save(self.game_state)
-                    time.sleep(config.LOOP_INTERVAL)
-                    continue
-                else:
-                    # Auto layer: opportunistic actions
-                    actions = self.auto_handler.get_actions(
-                        screenshot, self.game_state
+
+                    # 10. Log summary
+                    if loop % 10 == 0:
+                        self._log_status()
+
+                    if loop % 20 == 0:
+                        self.task_queue.clear_completed()
+
+                    # Reset error counter on successful iteration
+                    consecutive_errors = 0
+
+                except Exception as e:
+                    consecutive_errors += 1
+                    logger.error(
+                        f"Loop iteration error ({consecutive_errors}/"
+                        f"{max_consecutive_errors}): {e}",
+                        exc_info=True
                     )
-
-                # 8. Execute actions with validation pipeline
-                self._execute_validated_actions(actions, scene, screenshot)
-
-                # 9. Persist state
-                self.persistence.save(self.game_state)
-
-                # 10. Log summary
-                if loop % 10 == 0:
-                    self._log_status()
-
-                # Clean up completed tasks periodically
-                if loop % 20 == 0:
-                    self.task_queue.clear_completed()
+                    self.game_logger.log_recovery(
+                        "loop_error",
+                        f"Error #{consecutive_errors}: {e}"
+                    )
+                    if consecutive_errors >= max_consecutive_errors:
+                        logger.error(
+                            f"Too many consecutive errors "
+                            f"({max_consecutive_errors}), stopping"
+                        )
+                        break
 
                 time.sleep(config.LOOP_INTERVAL)
 
         except KeyboardInterrupt:
             print("\nStopped by user.")
         finally:
-            # Final state save
             self.persistence.save(self.game_state)
-            print(f"Auto loop ended. {loop} iterations completed.")
-            logger.info(f"Auto loop ended after {loop} iterations")
+            recoveries = self.stuck_recovery.recovery_count
+            print(
+                f"Auto loop ended. {loop} iterations, "
+                f"{recoveries} recoveries."
+            )
+            logger.info(
+                f"Auto loop ended after {loop} iterations, "
+                f"{recoveries} stuck recoveries"
+            )
 
     def _execute_validated_actions(self, actions: list[dict],
                                     pre_scene: str,
                                     pre_screenshot=None) -> int:
-        """Execute actions through the validation pipeline.
+        """Execute actions through the validation pipeline with retry.
 
-        Pipeline: validate -> execute -> check result
+        Pipeline: validate -> execute (with retry) -> check result -> log
 
         Args:
             actions: List of action dicts.
@@ -321,8 +413,12 @@ class GameBot:
                     logger.warning(f"Action rejected by validator: {action}")
                     continue
 
-            # Execute
-            if self.runner.execute(action):
+            before_screenshot = pre_screenshot
+
+            # Execute with retry
+            if self.runner.execute_with_retry(
+                action, max_retries=config.ACTION_MAX_RETRIES
+            ):
                 self.game_state.record_action(action)
                 success_count += 1
 
@@ -334,10 +430,15 @@ class GameBot:
                         logger.warning(
                             f"Result check failed for action: {action.get('type')}"
                         )
-                    # Update pre_screenshot for next action
                     pre_screenshot = post_screenshot
                 except Exception as e:
                     logger.warning(f"Result check error: {e}")
+                    post_screenshot = None
+
+                # Log action with before/after screenshots
+                self.game_logger.log_action_with_screenshots(
+                    action, before_screenshot, post_screenshot
+                )
             else:
                 logger.warning(f"Action execution failed: {action}")
 
@@ -498,6 +599,43 @@ class CLI:
         filepath = args[0] if args else config.TASKS_FILE
         count = self.bot.task_queue.load(filepath)
         print(f"Loaded {count} tasks from {filepath}")
+
+    def cmd_capture_template(self, args: list[str]) -> None:
+        """Capture a screenshot region and save as a template."""
+        if len(args) < 4:
+            print("Usage: capture_template <category> <name> <x1>,<y1> <x2>,<y2>")
+            print("Example: capture_template buttons close 450,100 630,180")
+            return
+        category = args[0]
+        name = args[1]
+        try:
+            x1, y1 = parse_coord(args[2])
+            x2, y2 = parse_coord(args[3])
+        except ValueError as e:
+            print(f"Invalid coordinates: {e}")
+            return
+
+        screenshot = self.bot.screenshot_mgr.capture()
+        region = screenshot[y1:y2, x1:x2]
+        if region.size == 0:
+            print(f"Empty region ({x1},{y1})-({x2},{y2}). Check coordinates.")
+            return
+
+        out_dir = os.path.join(config.TEMPLATE_DIR, category)
+        os.makedirs(out_dir, exist_ok=True)
+        out_path = os.path.join(out_dir, f"{name}.png")
+        cv2.imwrite(out_path, region)
+        print(f"Saved template: {out_path} ({region.shape[1]}x{region.shape[0]})")
+
+        # Reload templates so the new one is available immediately
+        self.bot.template_matcher.reload()
+        print(f"Templates reloaded ({self.bot.template_matcher.count()} total)")
+
+    def cmd_reload_templates(self, args: list[str]) -> None:
+        """Reload the template library from disk."""
+        self.bot.template_matcher.reload()
+        count = self.bot.template_matcher.count()
+        print(f"Templates reloaded: {count} templates loaded")
 
     def cmd_auto(self, args: list[str]) -> None:
         max_loops = int(args[0]) if args else 0

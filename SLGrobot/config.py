@@ -46,3 +46,9 @@ NAV_PATHS_FILE = "data/navigation_paths.json"
 
 # Logging
 LOG_DIR = "logs"
+
+# Phase 5: Hardening
+GAME_PACKAGE = ""                # Android package name (for app restart recovery)
+STUCK_MAX_SAME_SCENE = 10       # Trigger stuck recovery after N identical scenes
+ADB_RECONNECT_RETRIES = 3       # Max ADB reconnection attempts
+ACTION_MAX_RETRIES = 3           # Max retries per failed action

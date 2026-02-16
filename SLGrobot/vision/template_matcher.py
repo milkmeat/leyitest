@@ -60,6 +60,10 @@ class TemplateMatcher:
         self._cache.clear()
         self._load_templates()
 
+    def count(self) -> int:
+        """Return the number of loaded templates."""
+        return len(self._cache)
+
     def get_template_names(self) -> list[str]:
         """Return list of all loaded template names."""
         return list(self._cache.keys())

@@ -106,3 +106,26 @@ class ADBController:
         except Exception:
             self._connected = False
             return False
+
+    def reconnect(self, max_retries: int = 3, base_delay: float = 2.0) -> bool:
+        """Reconnect to the emulator with exponential backoff.
+
+        Args:
+            max_retries: Maximum number of reconnection attempts.
+            base_delay: Base delay in seconds (doubles each attempt).
+
+        Returns:
+            True if reconnection succeeded, False after all retries exhausted.
+        """
+        for attempt in range(1, max_retries + 1):
+            delay = base_delay * (2 ** (attempt - 1))
+            logger.warning(
+                f"ADB reconnect attempt {attempt}/{max_retries} "
+                f"(delay {delay:.1f}s)"
+            )
+            time.sleep(delay)
+            if self.connect():
+                logger.info(f"ADB reconnected on attempt {attempt}")
+                return True
+        logger.error(f"ADB reconnect failed after {max_retries} attempts")
+        return False
