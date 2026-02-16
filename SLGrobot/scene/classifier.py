@@ -11,38 +11,36 @@ logger = logging.getLogger(__name__)
 
 
 class SceneClassifier:
-    """Classify screenshots into scene types using feature-region template matching.
+    """Classify screenshots into scene types using template matching.
+
+    Primary detection: bottom-right corner icon determines main_city vs world_map.
+      - "世界" icon visible → main_city
+      - "领地" icon visible → world_map
+      - Neither → other scene (check further templates)
+
+    Secondary detection: match scene templates for specific sub-scenes
+    (hero, hero_recruit, etc.)
+
+    Fallback: popup overlay analysis, loading screen detection.
 
     Scenes:
-        main_city  - Main base/city view
-        world_map  - Overworld map view
-        battle     - Active battle or battle result screen
-        popup      - Dialog/popup overlay
-        loading    - Loading/transition screen
-        unknown    - Cannot determine
+        main_city     - Main base/city view (bottom-right shows "世界")
+        world_map     - Overworld map view (bottom-right shows "领地")
+        hero          - Hero list/management screen
+        hero_recruit  - Hero recruitment screen
+        battle        - Active battle or battle result screen
+        popup         - Dialog/popup overlay
+        loading       - Loading/transition screen
+        unknown       - Cannot determine
     """
 
-    SCENES = ["main_city", "world_map", "battle", "popup", "loading", "unknown"]
+    SCENES = [
+        "main_city", "world_map", "hero", "hero_recruit",
+        "battle", "popup", "loading", "unknown",
+    ]
 
-    # Scene-specific feature regions to check (as ratios of screen dimensions).
-    # Each scene has characteristic UI elements in predictable positions.
-    # Format: (x_ratio, y_ratio, w_ratio, h_ratio)
-    SCENE_REGIONS = {
-        "main_city": [
-            (0.0, 0.0, 1.0, 0.08),   # Top resource bar
-            (0.0, 0.85, 0.3, 0.15),   # Bottom-left menu buttons
-        ],
-        "world_map": [
-            (0.0, 0.0, 0.15, 0.08),   # Top-left coordinates display
-            (0.85, 0.0, 0.15, 0.08),  # Top-right minimap area
-        ],
-        "battle": [
-            (0.3, 0.0, 0.4, 0.1),    # Top-center battle timer/info
-        ],
-        "popup": [
-            (0.1, 0.1, 0.8, 0.8),    # Central dialog area
-        ],
-    }
+    # Bottom-right corner region (ratio of screen) for main_city/world_map detection
+    CORNER_REGION = (0.78, 0.85, 1.0, 1.0)  # (x1_ratio, y1_ratio, x2_ratio, y2_ratio)
 
     def __init__(self, template_matcher: TemplateMatcher) -> None:
         self.template_matcher = template_matcher
@@ -50,16 +48,10 @@ class SceneClassifier:
     def classify(self, screenshot: np.ndarray) -> str:
         """Classify screenshot into one of SCENES.
 
-        Uses a combination of:
-        1. Template matching for scene-specific features (scenes/ templates)
-        2. Popup detection via semi-transparent overlay analysis
-        3. Loading screen detection via color uniformity
-
         Returns scene name string.
         """
         scores = self.get_confidence(screenshot)
 
-        # Find highest scoring scene
         best_scene = "unknown"
         best_score = 0.0
 
@@ -76,26 +68,50 @@ class SceneClassifier:
         h, w = screenshot.shape[:2]
         scores: dict[str, float] = {}
 
-        # 1. Check for popup (darkened/semi-transparent overlay)
+        # 1. Check for popup (darkened/semi-transparent overlay) — highest priority
         scores["popup"] = self._detect_popup_score(screenshot)
+        if scores["popup"] >= 0.7:
+            # Popup detected with high confidence, skip further checks
+            for scene in self.SCENES:
+                if scene not in scores:
+                    scores[scene] = 0.0
+            return scores
 
-        # 2. Check for loading screen (uniform color, low detail)
+        # 2. Check for loading screen
         scores["loading"] = self._detect_loading_score(screenshot)
+        if scores["loading"] >= 0.7:
+            for scene in self.SCENES:
+                if scene not in scores:
+                    scores[scene] = 0.0
+            return scores
 
-        # 3. Template-based scene detection
+        # 3. Primary: bottom-right corner icon → main_city or world_map
+        rx1, ry1, rx2, ry2 = self.CORNER_REGION
+        corner = screenshot[int(ry1*h):int(ry2*h), int(rx1*w):int(rx2*w)]
+
+        main_city_match = self.template_matcher.match_one(corner, "scenes/main_city")
+        world_map_match = self.template_matcher.match_one(corner, "scenes/world_map")
+
+        scores["main_city"] = main_city_match.confidence if main_city_match else 0.0
+        scores["world_map"] = world_map_match.confidence if world_map_match else 0.0
+
+        if scores["main_city"] >= 0.5 or scores["world_map"] >= 0.5:
+            # One of the two primary scenes detected, done
+            for scene in self.SCENES:
+                if scene not in scores:
+                    scores[scene] = 0.0
+            return scores
+
+        # 4. Secondary: check other scene templates on full screenshot
         scene_templates = self.template_matcher.match_all(screenshot, "scenes")
         for match in scene_templates:
-            # Template names are like "scenes/main_city_resource_bar"
-            for scene in self.SCENES:
-                if scene in match.template_name:
-                    current = scores.get(scene, 0.0)
-                    scores[scene] = max(current, match.confidence)
-
-        # 4. Heuristic detection for main_city vs world_map
-        if "main_city" not in scores or scores.get("main_city", 0) < 0.5:
-            scores["main_city"] = self._heuristic_main_city(screenshot)
-        if "world_map" not in scores or scores.get("world_map", 0) < 0.5:
-            scores["world_map"] = self._heuristic_world_map(screenshot)
+            # Template names like "scenes/hero", "scenes/hero_recruit"
+            name = match.template_name.split("/")[-1] if "/" in match.template_name else match.template_name
+            if name in ("main_city", "world_map"):
+                continue  # Already handled by corner detection
+            if name in self.SCENES:
+                current = scores.get(name, 0.0)
+                scores[name] = max(current, match.confidence)
 
         # Ensure all scenes have a score
         for scene in self.SCENES:
@@ -148,34 +164,3 @@ class SceneClassifier:
             return 0.6
 
         return 0.0
-
-    def _heuristic_main_city(self, screenshot: np.ndarray) -> float:
-        """Heuristic: main city has resource bar at top and is colorful."""
-        h, w = screenshot.shape[:2]
-
-        # Check top region for resource bar characteristics
-        # Resource bars typically have icons + numbers in a horizontal strip
-        top_strip = screenshot[0:h//12, :]
-        hsv = cv2.cvtColor(top_strip, cv2.COLOR_BGR2HSV)
-
-        # Resource bars tend to have moderate saturation and varied colors
-        saturation = hsv[:, :, 1].mean()
-        if saturation > 40:
-            return 0.3
-
-        return 0.1
-
-    def _heuristic_world_map(self, screenshot: np.ndarray) -> float:
-        """Heuristic: world map has large green/brown terrain areas."""
-        h, w = screenshot.shape[:2]
-        hsv = cv2.cvtColor(screenshot, cv2.COLOR_BGR2HSV)
-
-        # World maps typically have a lot of green/brown terrain
-        # Green hue range: 35-85
-        green_mask = cv2.inRange(hsv, (35, 30, 30), (85, 255, 255))
-        green_ratio = green_mask.sum() / (255.0 * h * w)
-
-        if green_ratio > 0.3:
-            return 0.4
-
-        return 0.1

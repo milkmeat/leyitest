@@ -1,7 +1,7 @@
 """Auto Handler - Instant automatic operations that never need LLM (<100ms).
 
 Handles:
-- Close popups (template match X button)
+- Close known popups (identified by content, then tap close_x)
 - Claim rewards (detect red dots / reward indicators)
 - Skip loading/waiting screens
 """
@@ -24,11 +24,10 @@ class AutoHandler:
     They run every loop iteration and should complete in <100ms.
     """
 
-    # Templates that indicate dismissible popups
-    POPUP_CLOSE_TEMPLATES = [
-        "buttons/close",
-        "buttons/close_x",
-        "buttons/x",
+    # Known popup patterns: (identifier_template, close_template)
+    # When identifier is matched, tap the close template to dismiss.
+    KNOWN_POPUPS = [
+        ("buttons/view", "buttons/close_x"),       # Alliance recruit message
     ]
 
     # Templates that indicate claimable rewards
@@ -75,32 +74,37 @@ class AutoHandler:
         return actions
 
     def _check_popup(self, screenshot: np.ndarray) -> dict | None:
-        """Check for popup close buttons."""
-        # Try template matching first
-        for template_name in self.POPUP_CLOSE_TEMPLATES:
-            match = self.template_matcher.match_one(screenshot, template_name)
-            if match is not None:
-                logger.info(f"Auto: popup close button found '{template_name}'")
+        """Check for known dismissible popups by content, then tap close button.
+
+        Each known popup is identified by a content template (e.g. "查看" button
+        for alliance recruitment). Only when the identifier matches do we look
+        for the corresponding close button. This avoids accidentally closing
+        dialogs that the bot intentionally opened.
+        """
+        for identifier, close_template in self.KNOWN_POPUPS:
+            id_match = self.template_matcher.match_one(screenshot, identifier)
+            if id_match is None:
+                continue
+
+            # Identifier matched — find the close button
+            close_match = self.template_matcher.match_one(screenshot, close_template)
+            if close_match is not None:
+                logger.info(
+                    f"Auto: known popup detected ('{identifier}'), "
+                    f"closing via '{close_template}' at ({close_match.x}, {close_match.y})"
+                )
                 return {
                     "type": "tap",
-                    "x": match.x,
-                    "y": match.y,
+                    "x": close_match.x,
+                    "y": close_match.y,
                     "delay": 0.5,
-                    "reason": f"auto_close_popup:{template_name}",
+                    "reason": f"auto_close_popup:{identifier}",
                 }
 
-        # Try OCR-based detection
-        for text in self.CLOSE_TEXT_PATTERNS:
-            element = self.detector.locate(screenshot, text, methods=["ocr"])
-            if element is not None:
-                logger.info(f"Auto: close text found '{text}'")
-                return {
-                    "type": "tap",
-                    "x": element.x,
-                    "y": element.y,
-                    "delay": 0.5,
-                    "reason": f"auto_close_popup_text:{text}",
-                }
+            logger.warning(
+                f"Auto: popup identified ('{identifier}') but close button "
+                f"'{close_template}' not found"
+            )
 
         return None
 
