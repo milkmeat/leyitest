@@ -1,0 +1,17 @@
+{
+  "scene": "unknown",
+  "resources": {
+    "food": 0,
+    "wood": 0,
+    "stone": 0,
+    "gold": 0
+  },
+  "buildings": {},
+  "troops_marching": [],
+  "task_queue": [],
+  "last_actions": [],
+  "cooldowns": {},
+  "last_llm_consult": "",
+  "last_update": "",
+  "loop_count": 0
+}
