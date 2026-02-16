@@ -12,7 +12,7 @@ ITERATIONS=${1:-$DEFAULT_ITERATIONS}
 WAIT_TIME=${2:-$DEFAULT_WAIT_TIME}
 
 # 任务指令
-TASK_COMMAND="/phone 按照手指图标指引，完成所有新手教程"
+TASK_COMMAND="/phone 查看任务提示栏，完成当前任务"
 
 # 日志文件
 LOG_FILE="task_loop_$(date +%Y%m%d_%H%M%S).log"
@@ -113,7 +113,7 @@ run_task() {
     local readable_output_file="$RAW_OUTPUT_DIR/task_${iteration}_readable.log"
 
     # 执行命令并保存 JSON 输出
-    echo "$TASK_COMMAND" | claude --model sonnet --print --output-format stream-json --verbose 2>&1 | tee "$json_output_file" | while IFS= read -r line; do
+    echo "$TASK_COMMAND" | claude --model haiku --print --output-format stream-json --verbose 2>&1 | tee "$json_output_file" | while IFS= read -r line; do
         # 实时显示并解析 JSON
         echo "$line"
 
