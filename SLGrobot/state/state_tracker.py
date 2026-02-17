@@ -9,6 +9,7 @@ import numpy as np
 from .game_state import GameState, BuildingState
 from vision.ocr_locator import OCRLocator
 from vision.template_matcher import TemplateMatcher
+from vision.quest_bar_detector import QuestBarDetector
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,7 @@ class StateTracker:
         self.state = game_state
         self.ocr = ocr_locator
         self.template_matcher = template_matcher
+        self.quest_bar_detector = QuestBarDetector(template_matcher, ocr_locator)
 
     def update(self, screenshot: np.ndarray, scene: str) -> None:
         """Update game_state based on current screenshot and scene.
@@ -46,6 +48,7 @@ class StateTracker:
         if scene == "main_city":
             self._update_resources(screenshot)
             self._update_buildings(screenshot)
+            self._update_quest_bar(screenshot)
         elif scene == "world_map":
             self._update_marches(screenshot)
         elif scene == "battle":
@@ -168,6 +171,18 @@ class StateTracker:
                 logger.info("Battle result: Victory")
             elif "失败" in text or "defeat" in text or "lose" in text:
                 logger.info("Battle result: Defeat")
+
+    def _update_quest_bar(self, screenshot: np.ndarray) -> None:
+        """Detect quest bar and update game state fields."""
+        try:
+            info = self.quest_bar_detector.detect(screenshot)
+            self.state.quest_bar_visible = info.visible
+            self.state.quest_bar_has_red_badge = info.has_red_badge
+            self.state.quest_bar_current_quest = info.current_quest_text
+            self.state.quest_bar_has_green_check = info.has_green_check
+            self.state.quest_bar_has_tutorial_finger = info.has_tutorial_finger
+        except Exception as e:
+            logger.warning(f"Quest bar detection failed: {e}")
 
     @staticmethod
     def _parse_number(text: str) -> int | None:

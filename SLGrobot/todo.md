@@ -1,6 +1,6 @@
 # SLGrobot TODO
 
-Phase 1-5 框架已完成，以下是后续工作方向。
+Phase 1-5 框架已完成，Phase 6 Quest Workflow 已实现，以下是后续工作方向。
 
 ---
 
@@ -9,7 +9,7 @@ Phase 1-5 框架已完成，以下是后续工作方向。
 ### 1. 填充模板库
 - [x] 21个模板已截取并手工校准
 - [x] `buttons/`: back_arrow, close_x, recruit_more, view
-- [x] `icons/`: event_daily, event_journey, event_recharge, member_badge, regular_activity, task_scroll
+- [x] `icons/`: event_daily, event_journey, event_recharge, member_badge, regular_activity, task_scroll, tutorial_finger
 - [x] `nav_bar/`: expedition, hero, shop, supplies, territory, tribe, world
 - [x] `scenes/`: hero, hero_recruit, main_city, world_map
 - [ ] 继续补充：更多弹窗类型、战斗界面、建筑界面等
@@ -42,25 +42,49 @@ Phase 1-5 框架已完成，以下是后续工作方向。
 
 ---
 
+## Phase 6: Quest Workflow（已完成）
+
+### 6. Quest Bar 检测 + Quest Workflow 状态机
+- [x] `vision/quest_bar_detector.py` — QuestBarDetector + QuestBarInfo
+- [x] `brain/quest_workflow.py` — 8 阶段状态机（IDLE → ENSURE_MAIN_CITY → READ_QUEST → CLICK_QUEST → EXECUTE_QUEST → CHECK_COMPLETION → CLAIM_REWARD → VERIFY）
+- [x] `brain/llm_planner.py` — analyze_quest_execution() + QUEST_EXECUTION_PROMPT
+- [x] `state/game_state.py` — quest bar 状态字段 + workflow 持久化字段
+- [x] `state/state_tracker.py` — 主城更新时调用 _update_quest_bar()
+- [x] `brain/auto_handler.py` — CLAIM_TEXT_PATTERNS 增加 "一键领取"
+- [x] `main.py` — auto_loop 接入 Workflow + popup 领奖优先
+- [x] `icons/tutorial_finger.png` — 手指引导模板
+- [x] `test_quest_workflow.py` — 35 个单元测试全部通过
+- [x] `docs/workflow_complete_current_quest.md` — 文档更新
+
+### 7. Quest Workflow 实跑验证
+- [ ] `python main.py --auto --loops 30` 观察 quest workflow 日志
+- [ ] 确认卷轴模板匹配在不同游戏状态下稳定
+- [ ] 确认 OCR 正确读取 quest 文本（中文）
+- [ ] 确认红色徽标 / 绿色对勾 HSV 阈值准确
+- [ ] 确认 tutorial_finger 模板匹配有效
+- [ ] 测试 quest 执行完整循环（领取奖励后 quest 名称切换）
+
+---
+
 ## 进阶功能
 
-### 6. 扩充 Rule Engine 规则
+### 8. 扩充 Rule Engine 规则
 - [ ] 根据实际游戏玩法添加更多任务规则
 - [ ] 覆盖日常任务流程：采集、训练、研究、联盟帮助等
 - [ ] 处理特殊事件：战争、活动、限时任务
 
-### 7. LLM Prompt 调优
+### 9. LLM Prompt 调优
 - [ ] 根据实际游戏截图调整 prompt 模板
 - [ ] 优化 LLM 对场景的理解准确率
 - [ ] 减少不必要的 LLM 调用，降低成本
 - [ ] 测试不同模型（Claude / GPT / 本地模型）效果对比
 
-### 8. 多账号/多实例支持
+### 10. 多账号/多实例支持
 - [ ] 支持同时操控多个 Nox 模拟器实例
 - [ ] 每个实例独立的 ADB 端口和状态
 - [ ] 统一调度和资源分配
 
-### 9. Web Dashboard
+### 11. Web Dashboard
 - [ ] 远程监控 bot 运行状态
 - [ ] 实时查看截图和日志
 - [ ] 远程启停和参数调整

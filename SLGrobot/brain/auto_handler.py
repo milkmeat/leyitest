@@ -40,7 +40,7 @@ class AutoHandler:
 
     # Text patterns for auto-actions (OCR-based)
     CLOSE_TEXT_PATTERNS = ["关闭", "close", "×", "X"]
-    CLAIM_TEXT_PATTERNS = ["领取", "claim", "collect", "收集"]
+    CLAIM_TEXT_PATTERNS = ["领取", "claim", "collect", "收集", "一键领取"]
 
     def __init__(self, template_matcher: TemplateMatcher,
                  element_detector: ElementDetector) -> None:

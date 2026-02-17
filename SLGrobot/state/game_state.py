@@ -48,6 +48,17 @@ class GameState:
         self.last_update: str = ""
         self.loop_count: int = 0
 
+        # Quest bar state (updated each main_city screenshot)
+        self.quest_bar_visible: bool = False
+        self.quest_bar_has_red_badge: bool = False
+        self.quest_bar_current_quest: str = ""
+        self.quest_bar_has_green_check: bool = False
+        self.quest_bar_has_tutorial_finger: bool = False
+
+        # Quest workflow execution state (persisted across iterations)
+        self.quest_workflow_phase: str = "idle"
+        self.quest_workflow_target: str = ""
+
     def to_dict(self) -> dict:
         """Serialize to dict for JSON persistence and LLM context."""
         return {
@@ -63,6 +74,13 @@ class GameState:
             "last_llm_consult": self.last_llm_consult,
             "last_update": self.last_update,
             "loop_count": self.loop_count,
+            "quest_bar_visible": self.quest_bar_visible,
+            "quest_bar_has_red_badge": self.quest_bar_has_red_badge,
+            "quest_bar_current_quest": self.quest_bar_current_quest,
+            "quest_bar_has_green_check": self.quest_bar_has_green_check,
+            "quest_bar_has_tutorial_finger": self.quest_bar_has_tutorial_finger,
+            "quest_workflow_phase": self.quest_workflow_phase,
+            "quest_workflow_target": self.quest_workflow_target,
         }
 
     def from_dict(self, data: dict) -> None:
@@ -86,6 +104,18 @@ class GameState:
         self.last_llm_consult = data.get("last_llm_consult", "")
         self.last_update = data.get("last_update", "")
         self.loop_count = data.get("loop_count", 0)
+
+        # Quest bar state
+        self.quest_bar_visible = data.get("quest_bar_visible", False)
+        self.quest_bar_has_red_badge = data.get("quest_bar_has_red_badge", False)
+        self.quest_bar_current_quest = data.get("quest_bar_current_quest", "")
+        self.quest_bar_has_green_check = data.get("quest_bar_has_green_check", False)
+        self.quest_bar_has_tutorial_finger = data.get("quest_bar_has_tutorial_finger", False)
+
+        # Quest workflow state
+        self.quest_workflow_phase = data.get("quest_workflow_phase", "idle")
+        self.quest_workflow_target = data.get("quest_workflow_target", "")
+
         logger.info("Game state loaded from dict")
 
     def record_action(self, action: dict) -> None:
@@ -130,5 +160,23 @@ class GameState:
         # Pending tasks
         if self.task_queue:
             lines.append(f"Pending tasks: {', '.join(self.task_queue[:5])}")
+
+        # Quest bar
+        if self.quest_bar_visible:
+            quest_parts = [f"quest='{self.quest_bar_current_quest}'"]
+            if self.quest_bar_has_red_badge:
+                quest_parts.append("red_badge")
+            if self.quest_bar_has_green_check:
+                quest_parts.append("green_check")
+            if self.quest_bar_has_tutorial_finger:
+                quest_parts.append("tutorial_finger")
+            lines.append(f"Quest bar: {', '.join(quest_parts)}")
+
+        # Quest workflow
+        if self.quest_workflow_phase != "idle":
+            lines.append(
+                f"Quest workflow: phase={self.quest_workflow_phase}, "
+                f"target='{self.quest_workflow_target}'"
+            )
 
         return "\n".join(lines)

@@ -48,6 +48,7 @@ from brain.auto_handler import AutoHandler
 from brain.rule_engine import RuleEngine
 from brain.llm_planner import LLMPlanner
 from brain.stuck_recovery import StuckRecovery
+from brain.quest_workflow import QuestWorkflow
 from executor.action_validator import ActionValidator
 from executor.action_runner import ActionRunner
 from executor.result_checker import ResultChecker
@@ -147,6 +148,14 @@ class GameBot:
         # Hardening layer (Phase 5)
         self.stuck_recovery = StuckRecovery(adb=self.adb)
         self.game_logger = GameLogger(config.LOG_DIR)
+
+        # Quest workflow
+        self.quest_workflow = QuestWorkflow(
+            quest_bar_detector=self.state_tracker.quest_bar_detector,
+            element_detector=self.detector,
+            llm_planner=self.llm_planner,
+            game_state=self.game_state,
+        )
 
     def connect(self) -> bool:
         """Connect to emulator and load persisted state."""
@@ -269,6 +278,15 @@ class GameBot:
 
                     # 3. Handle popups immediately
                     if scene == "popup":
+                        # Check for claimable rewards before closing
+                        reward_action = self.auto_handler._check_rewards(screenshot)
+                        if reward_action:
+                            logger.info("Popup: reward button found, claiming first")
+                            self._execute_validated_actions(
+                                [reward_action], scene, screenshot
+                            )
+                            time.sleep(0.5)
+                            continue
                         logger.info("Popup detected, attempting to close")
                         self.popup_filter.handle(screenshot)
                         time.sleep(0.5)
@@ -293,6 +311,17 @@ class GameBot:
 
                     # 6. Update game state
                     self.state_tracker.update(screenshot, scene)
+
+                    # 6.5 Quest workflow state machine
+                    if self.quest_workflow.is_active():
+                        actions = self.quest_workflow.step(screenshot, scene)
+                        if actions:
+                            self._execute_validated_actions(
+                                actions, scene, screenshot
+                            )
+                        self.persistence.save(self.game_state)
+                        time.sleep(config.LOOP_INTERVAL)
+                        continue
 
                     # 7. Three-layer decision
                     actions = []
@@ -328,6 +357,12 @@ class GameBot:
                         time.sleep(config.LOOP_INTERVAL)
                         continue
                     else:
+                        # Start quest workflow if idle and quest bar is visible
+                        if (scene == "main_city"
+                                and self.game_state.quest_bar_visible
+                                and self.game_state.quest_bar_current_quest):
+                            self.quest_workflow.start()
+                            continue
                         actions = self.auto_handler.get_actions(
                             screenshot, self.game_state
                         )
@@ -557,6 +592,13 @@ class CLI:
         print(f"Buildings: {len(gs.buildings)}  Marches: {len(gs.troops_marching)}")
         print(f"Tasks pending: {self.bot.task_queue.pending_count()}")
         print(f"Last LLM consult: {gs.last_llm_consult or 'never'}")
+        if gs.quest_bar_visible:
+            print(f"Quest bar: '{gs.quest_bar_current_quest}' "
+                  f"red_badge={gs.quest_bar_has_red_badge} "
+                  f"green_check={gs.quest_bar_has_green_check}")
+        if gs.quest_workflow_phase != "idle":
+            print(f"Quest workflow: phase={gs.quest_workflow_phase} "
+                  f"target='{gs.quest_workflow_target}'")
 
     def cmd_state(self, args: list[str]) -> None:
         gs = self.bot.game_state

@@ -80,6 +80,32 @@ Output format:
 }
 """
 
+# System prompt for quest execution analysis
+QUEST_EXECUTION_PROMPT = """\
+You are an AI advisor for a mobile SLG game called "Frozen Island" (冰封岛屿).
+The player is currently executing a quest: "{quest_name}".
+You see a grid-annotated screenshot of the game. The grid uses column letters (A-H) \
+and row numbers (1-6).
+
+Your job: analyze the screenshot and suggest 1-5 actions to progress or complete the quest.
+
+Rules:
+- Output ONLY valid JSON, no markdown fences, no explanation outside JSON.
+- If the quest looks completed, suggest actions to return to main city.
+- Prefer safe, minimal actions: tap visible buttons, follow UI prompts.
+- Use grid cells (e.g., "C4") for fallback positions.
+
+Output format:
+{{
+    "scene_description": "What you see on screen",
+    "quest_status": "in_progress | completed | unclear",
+    "actions": [
+        {{"type": "tap", "target_text": "Button text", "fallback_grid": "C4"}},
+        {{"type": "key_event", "keycode": 4}}
+    ]
+}}
+"""
+
 
 class LLMPlanner:
     """Multi-provider LLM strategic planner.
@@ -212,6 +238,46 @@ class LLMPlanner:
             return actions
         except Exception as e:
             logger.error(f"LLM scene analysis failed: {e}")
+            return []
+
+    def analyze_quest_execution(self, screenshot: np.ndarray,
+                                quest_name: str,
+                                game_state: GameState) -> list[dict]:
+        """Ask LLM to analyze the screen and suggest actions to progress a quest.
+
+        Args:
+            screenshot: BGR numpy array.
+            quest_name: Name of the quest being executed.
+            game_state: Current game state.
+
+        Returns:
+            List of action dicts.
+        """
+        logger.info(
+            f"Consulting LLM ({self.provider}/{self.vision_model}) "
+            f"for quest execution: '{quest_name}'"
+        )
+
+        annotated = self._prepare_screenshot(screenshot)
+        image_b64 = to_base64(annotated)
+
+        state_summary = game_state.summary_for_llm()
+        system_prompt = QUEST_EXECUTION_PROMPT.format(quest_name=quest_name)
+        user_text = (
+            f"Current game state:\n{state_summary}\n\n"
+            f"I am executing quest: \"{quest_name}\". "
+            f"What actions should I take to progress or complete this quest?"
+        )
+
+        try:
+            response = self._call_vision_api(
+                system_prompt, image_b64, user_text
+            )
+            actions = self._parse_scene_response(response)
+            logger.info(f"LLM quest analysis: {len(actions)} actions suggested")
+            return actions
+        except Exception as e:
+            logger.error(f"LLM quest analysis failed: {e}")
             return []
 
     def should_consult(self, game_state: GameState) -> bool:
