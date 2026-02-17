@@ -53,16 +53,47 @@ Phase 1-5 框架已完成，Phase 6 Quest Workflow 已实现，以下是后续�
 - [x] `brain/auto_handler.py` — CLAIM_TEXT_PATTERNS 增加 "一键领取"
 - [x] `main.py` — auto_loop 接入 Workflow + popup 领奖优先
 - [x] `icons/tutorial_finger.png` — 手指引导模板
-- [x] `test_quest_workflow.py` — 35 个单元测试全部通过
+- [x] `test_quest_workflow.py` — 37 个单元测试全部通过
 - [x] `docs/workflow_complete_current_quest.md` — 文档更新
 
 ### 7. Quest Workflow 实跑验证
-- [ ] `python main.py --auto --loops 30` 观察 quest workflow 日志
-- [ ] 确认卷轴模板匹配在不同游戏状态下稳定
-- [ ] 确认 OCR 正确读取 quest 文本（中文）
-- [ ] 确认红色徽标 / 绿色对勾 HSV 阈值准确
-- [ ] 确认 tutorial_finger 模板匹配有效
-- [ ] 测试 quest 执行完整循环（领取奖励后 quest 名称切换）
+- [x] `python main.py --auto --loops 30` 观察 quest workflow 日志
+- [x] 确认卷轴模板匹配在不同游戏状态下稳定（重新截取 task_scroll 模板，conf=1.0）
+- [x] 确认 OCR 正确读取 quest 文本（中文）
+- [x] 确认 tutorial_finger 模板匹配有效（含左右镜像检测）
+- [x] 测试 quest 执行完整循环（建筑升级任务成功完成）
+- [ ] 确认红色徽标 / 绿色对勾 HSV 阈值准确（待更多场景验证）
+
+---
+
+## Phase 7: 弹窗修复与脱困（已完成）
+
+### 8. 模板匹配 Alpha 透明遮罩支持
+- [x] `vision/template_matcher.py` — cache 改为 `(bgr, mask)` 元组，加载保留 alpha 通道
+- [x] 有 mask 时使用 `TM_CCORR_NORMED`，无 mask 时保持 `TM_CCOEFF_NORMED`
+- [x] `templates/buttons/close_x.png` — HSV 颜色分割提取红色 X，非红色区域透明化
+- [x] close_x 可在不同背景色对话框上匹配
+
+### 9. close_popup 三阶段安全策略
+- [x] `brain/rule_engine.py` — `_plan_close_popup()` 改为三阶段：
+  - 阶段 1: 仅 template 匹配 close 类按钮模板
+  - 阶段 2: 仅 OCR 搜索多字符文本（避免单字符 "X"/"×" 误匹配）
+  - 阶段 3: 兜底按 BACK 键（keycode=4）
+- [x] 解决了 OCR 搜索 "X" 误触聊天入口的问题
+
+### 10. Unknown 场景 BACK 键脱困
+- [x] `main.py` — 添加 `consecutive_unknown_scenes` 计数器
+- [x] 连续 3 次 unknown 场景后自动按 BACK 键脱出
+- [x] 非 unknown 场景重置计数器
+
+### 11. Quest Workflow 实战修复
+- [x] Tutorial finger 指尖偏移修正（`_FINGERTIP_OFFSET = (-65, 100)`）
+- [x] Tutorial finger 左右镜像检测与处理
+- [x] 建筑升级按钮检测：模板匹配优先 → OCR 回退
+- [x] 连续点击家具升级（`_RAPID_TAP_COUNT = 15`）
+- [x] 新增模板：`buttons/upgrade_building.png`, `buttons/build.png`
+- [x] 重新截取 `icons/task_scroll.png`（旧模板 conf=0.771，新模板 conf=1.0）
+- [x] Red badge 不再误触卷轴打开任务面板
 
 ---
 

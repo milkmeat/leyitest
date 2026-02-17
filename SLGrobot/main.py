@@ -205,6 +205,7 @@ class GameBot:
         scene_history: list[str] = []
         consecutive_errors = 0
         consecutive_screenshot_failures = 0
+        consecutive_unknown_scenes = 0
         max_consecutive_errors = 5
 
         print(f"Starting auto loop (max_loops={max_loops or 'infinite'})...")
@@ -298,16 +299,51 @@ class GameBot:
                         time.sleep(config.LOOP_INTERVAL)
                         continue
 
-                    # 5. Handle unknown scenes with LLM
-                    if scene == "unknown" and config.LLM_API_KEY:
-                        logger.info("Unknown scene, consulting LLM...")
-                        actions = self.llm_planner.analyze_unknown_scene(
-                            screenshot, self.game_state
+                    # 5. Handle unknown scenes with counter + BACK escape
+                    if scene == "unknown":
+                        consecutive_unknown_scenes += 1
+                        logger.info(
+                            f"Unknown scene ({consecutive_unknown_scenes} consecutive)"
                         )
-                        if actions:
-                            self._execute_validated_actions(actions, scene, screenshot)
+
+                        if consecutive_unknown_scenes >= 3:
+                            # Stuck in unknown scene — press BACK to escape
+                            logger.warning(
+                                "3+ consecutive unknown scenes, pressing BACK to escape"
+                            )
+                            self.adb.key_event(4)
+                            self.game_logger.log_recovery(
+                                "unknown_scene_escape",
+                                f"Pressed BACK after {consecutive_unknown_scenes} "
+                                f"consecutive unknown scenes",
+                                screenshot,
+                            )
+                            consecutive_unknown_scenes = 0
+                        elif config.LLM_API_KEY:
+                            actions = self.llm_planner.analyze_unknown_scene(
+                                screenshot, self.game_state
+                            )
+                            if actions:
+                                self._execute_validated_actions(
+                                    actions, scene, screenshot
+                                )
+                                # Check if scene changed after LLM suggestion
+                                try:
+                                    post = self.screenshot_mgr.capture()
+                                    post_scene = self.classifier.classify(post)
+                                    if post_scene != "unknown":
+                                        consecutive_unknown_scenes = 0
+                                except Exception:
+                                    pass
+                        else:
+                            # No LLM — press BACK immediately
+                            self.adb.key_event(4)
+                            consecutive_unknown_scenes = 0
+
                         time.sleep(config.LOOP_INTERVAL)
                         continue
+                    else:
+                        consecutive_unknown_scenes = 0
 
                     # 6. Update game state
                     self.state_tracker.update(screenshot, scene)

@@ -35,6 +35,25 @@ class QuestWorkflow:
         verify           - Verify quest name changed (reward claimed)
     """
 
+    # Offset from template center (128, 128) to fingertip (60, 235)
+    # in template-local coords (pixels) for the 256x256 tutorial_finger.png.
+    _FINGERTIP_OFFSET = (-65, 100)
+
+    # Number of rapid taps when clicking an action button (furniture upgrade
+    # needs ~10 clicks to go from 0% to 100%, "下一个" auto-advances).
+    _RAPID_TAP_COUNT = 15
+
+    # Button templates to try via template matching (highest priority).
+    _ACTION_BUTTON_TEMPLATES = [
+        "buttons/upgrade_building", "buttons/upgrade", "buttons/build",
+    ]
+
+    # Fallback: OCR text search for actionable buttons.
+    _ACTION_BUTTON_TEXTS = [
+        "建造", "升级", "训练", "研究", "确定", "前往",
+        "开始", "领取", "使用", "派遣", "出征",
+    ]
+
     # Phase constants
     IDLE = "idle"
     ENSURE_MAIN_CITY = "ensure_main_city"
@@ -54,6 +73,9 @@ class QuestWorkflow:
         self.element_detector = element_detector
         self.llm_planner = llm_planner
         self.game_state = game_state
+
+        # Create horizontally flipped tutorial_finger template for mirror detection
+        self._ensure_flipped_finger_template()
 
         # State
         self.phase: str = self.IDLE
@@ -166,11 +188,7 @@ class QuestWorkflow:
         }]
 
     def _step_read_quest(self, screenshot: np.ndarray) -> list[dict]:
-        """Read quest bar to get current quest name.
-
-        If red badge detected, prioritize claiming pending rewards first
-        by clicking the scroll icon.
-        """
+        """Read quest bar to get current quest name."""
         info = self.quest_bar_detector.detect(screenshot)
 
         if not info.visible:
@@ -178,16 +196,8 @@ class QuestWorkflow:
             self.abort()
             return []
 
-        # Red badge = pending rewards, click scroll to claim first
-        if info.has_red_badge and info.scroll_icon_pos:
-            logger.info("Quest workflow: red badge detected, clicking scroll to claim")
-            return [{
-                "type": "tap",
-                "x": info.scroll_icon_pos[0],
-                "y": info.scroll_icon_pos[1],
-                "delay": 1.0,
-                "reason": "quest_workflow:claim_pending_reward",
-            }]
+        if info.has_red_badge:
+            logger.info("Quest workflow: red badge noted (will handle after quest)")
 
         # Record quest name and proceed
         if not info.current_quest_text:
@@ -234,8 +244,8 @@ class QuestWorkflow:
         """Execute the quest: follow tutorial finger or ask LLM.
 
         Transitions:
-        - scene == main_city -> CHECK_COMPLETION (quest might be done)
-        - tutorial finger detected -> tap finger position
+        - tutorial finger detected -> tap fingertip (highest priority)
+        - scene == main_city (no finger) -> CHECK_COMPLETION
         - else -> ask LLM for guidance
         - iterations exceeded -> RETURN_TO_CITY
         """
@@ -250,28 +260,52 @@ class QuestWorkflow:
             self.phase = self.RETURN_TO_CITY
             return []
 
-        # If we're back at main city, quest execution might be done
-        if scene == "main_city":
-            logger.info("Quest workflow: back at main city, checking completion")
-            self.phase = self.CHECK_COMPLETION
-            self.check_retries = 0
-            return []
-
-        # Check for tutorial finger icon
-        finger_match = self.element_detector.locate(
-            screenshot, "icons/tutorial_finger", methods=["template"]
-        )
+        # Check for tutorial finger icon FIRST (even on main_city)
+        # Matches both normal and horizontally flipped orientations
+        finger_match, is_flipped = self._detect_tutorial_finger(screenshot)
         if finger_match is not None:
+            # Finger detected — look for actionable button text via OCR
+            button = self._find_action_button(screenshot, finger_match)
+            if button is not None:
+                logger.info(
+                    f"Quest workflow: finger detected, tapping button "
+                    f"'{button.name}' at ({button.x}, {button.y}) x{self._RAPID_TAP_COUNT}"
+                )
+                # Rapid-tap: furniture upgrade buttons can be clicked
+                # continuously (~10% progress per click), so send multiple
+                # taps in one step to fill the progress bar quickly.
+                return [{
+                    "type": "tap",
+                    "x": button.x,
+                    "y": button.y,
+                    "delay": 0.3,
+                    "reason": f"quest_workflow:finger_button:{button.name}",
+                }] * self._RAPID_TAP_COUNT
+
+            # No button text found — fall back to fingertip offset
+            dx, dy = self._FINGERTIP_OFFSET
+            if is_flipped:
+                dx = -dx  # mirror the horizontal offset
+            tap_x = finger_match.x + dx
+            tap_y = finger_match.y + dy
             logger.info(
-                f"Quest workflow: tutorial finger at ({finger_match.x}, {finger_match.y})"
+                f"Quest workflow: finger center=({finger_match.x}, {finger_match.y}), "
+                f"flipped={is_flipped}, fingertip=({tap_x}, {tap_y})"
             )
             return [{
                 "type": "tap",
-                "x": finger_match.x,
-                "y": finger_match.y,
+                "x": tap_x,
+                "y": tap_y,
                 "delay": 1.0,
                 "reason": "quest_workflow:follow_tutorial_finger",
             }]
+
+        # No finger — if back at main city, quest execution might be done
+        if scene == "main_city":
+            logger.info("Quest workflow: back at main city (no finger), checking completion")
+            self.phase = self.CHECK_COMPLETION
+            self.check_retries = 0
+            return []
 
         # Fallback: ask LLM for quest execution guidance
         if self.llm_planner and self.llm_planner.api_key:
@@ -405,6 +439,108 @@ class QuestWorkflow:
         }]
 
     # -- Internal helpers --
+
+    def _ensure_flipped_finger_template(self) -> None:
+        """Create a horizontally flipped tutorial_finger in the template cache.
+
+        The game shows the finger icon mirrored (pointing left or right).
+        We need both orientations for reliable matching.
+        """
+        try:
+            import cv2
+            tm = self.element_detector.template_matcher
+            cache = tm._cache
+            if not isinstance(cache, dict):
+                return
+
+            name = "icons/tutorial_finger"
+            flip_name = "icons/tutorial_finger_flip"
+
+            if flip_name in cache:
+                return
+
+            entry = cache.get(name)
+            if entry is None or not isinstance(entry, tuple):
+                return
+
+            tpl, mask = entry
+            flip_tpl = cv2.flip(tpl, 1)  # horizontal flip
+            flip_mask = cv2.flip(mask, 1) if mask is not None else None
+            cache[flip_name] = (flip_tpl, flip_mask)
+            logger.debug("Created flipped tutorial_finger template")
+        except Exception:
+            pass  # graceful degradation — flipped matching won't be available
+
+    def _detect_tutorial_finger(self, screenshot: np.ndarray) -> tuple:
+        """Detect tutorial finger in both normal and mirrored orientation.
+
+        Returns:
+            (match, is_flipped) where match is an Element or None,
+            and is_flipped indicates if the mirrored version matched better.
+        """
+        normal = self.element_detector.locate(
+            screenshot, "icons/tutorial_finger", methods=["template"]
+        )
+        flipped = self.element_detector.locate(
+            screenshot, "icons/tutorial_finger_flip", methods=["template"]
+        )
+
+        if normal is None and flipped is None:
+            return None, False
+        if normal is not None and flipped is None:
+            return normal, False
+        if normal is None and flipped is not None:
+            return flipped, True
+
+        # Both matched — pick higher confidence
+        if flipped.confidence > normal.confidence:
+            return flipped, True
+        return normal, False
+
+    def _find_action_button(self, screenshot: np.ndarray,
+                            finger_match) -> "Element | None":
+        """Find an actionable button on screen.
+
+        Priority:
+        1. Template matching for known button images (most reliable).
+        2. OCR text search as fallback, preferring topmost match.
+        """
+        from vision.element_detector import Element
+
+        # Stage 1: template matching for button images
+        for tpl_name in self._ACTION_BUTTON_TEMPLATES:
+            match = self.element_detector.locate(
+                screenshot, tpl_name, methods=["template"]
+            )
+            if match is not None:
+                logger.debug(f"Action button template match: {tpl_name} "
+                             f"at ({match.x},{match.y}) conf={match.confidence:.3f}")
+                return match
+
+        # Stage 2: OCR fallback — find all text, pick topmost match
+        ocr = self.element_detector.ocr
+        all_results = ocr.find_all_text(screenshot)
+        if not all_results:
+            return None
+
+        candidates: list[tuple[str, int, int]] = []
+        for btn_text in self._ACTION_BUTTON_TEXTS:
+            btn_lower = btn_text.lower()
+            for r in all_results:
+                if btn_lower in r.text.lower():
+                    candidates.append((btn_text, r.center[0], r.center[1]))
+
+        if not candidates:
+            return None
+
+        best = min(candidates, key=lambda c: c[2])
+        logger.debug(
+            f"Action button OCR: {len(candidates)} candidates, "
+            f"picked '{best[0]}' at ({best[1]},{best[2]})"
+        )
+        return Element(name=best[0], x=best[1], y=best[2],
+                       confidence=1.0, source="ocr",
+                       bbox=(best[1], best[2], best[1], best[2]))
 
     def _sync_to_game_state(self) -> None:
         """Sync workflow state to game_state for persistence."""

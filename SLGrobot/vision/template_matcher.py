@@ -28,7 +28,7 @@ class TemplateMatcher:
     def __init__(self, template_dir: str = None, threshold: float = None) -> None:
         self.template_dir = template_dir or config.TEMPLATE_DIR
         self.threshold = threshold or config.TEMPLATE_MATCH_THRESHOLD
-        self._cache: dict[str, np.ndarray] = {}
+        self._cache: dict[str, tuple[np.ndarray, np.ndarray | None]] = {}
         self._load_templates()
 
     def _load_templates(self) -> None:
@@ -42,16 +42,29 @@ class TemplateMatcher:
                 if not filename.lower().endswith((".png", ".jpg", ".jpeg")):
                     continue
                 filepath = os.path.join(root, filename)
-                image = cv2.imread(filepath, cv2.IMREAD_COLOR)
+                image = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
                 if image is None:
                     logger.warning(f"Failed to load template: {filepath}")
                     continue
 
+                # Separate alpha channel as mask if present
+                mask = None
+                if image.ndim == 3 and image.shape[2] == 4:
+                    alpha = image[:, :, 3]
+                    bgr = image[:, :, :3]
+                    if alpha.min() < 255:
+                        # Real transparency exists — use alpha as mask
+                        mask = cv2.merge([alpha, alpha, alpha])
+                    image = bgr
+                elif image.ndim == 2:
+                    # Grayscale — convert to BGR
+                    image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+
                 # Key: relative path without extension, e.g. "buttons/close"
                 rel_path = os.path.relpath(filepath, self.template_dir)
                 name = os.path.splitext(rel_path)[0].replace("\\", "/")
-                self._cache[name] = image
-                logger.debug(f"Loaded template: {name} ({image.shape[1]}x{image.shape[0]})")
+                self._cache[name] = (image, mask)
+                logger.debug(f"Loaded template: {name} ({image.shape[1]}x{image.shape[0]}, mask={'yes' if mask is not None else 'no'})")
 
         logger.info(f"Loaded {len(self._cache)} templates from {self.template_dir}")
 
@@ -73,12 +86,13 @@ class TemplateMatcher:
 
         Returns MatchResult if confidence >= threshold, else None.
         """
-        template = self._cache.get(template_name)
-        if template is None:
+        entry = self._cache.get(template_name)
+        if entry is None:
             logger.warning(f"Template not found in cache: {template_name}")
             return None
 
-        return self._match(screenshot, template_name, template)
+        template, mask = entry
+        return self._match(screenshot, template_name, template, mask)
 
     def match_all(self, screenshot: np.ndarray, category: str = "") -> list[MatchResult]:
         """Match all templates (optionally filtered by category directory).
@@ -90,10 +104,10 @@ class TemplateMatcher:
         Returns list of MatchResults above threshold, sorted by confidence descending.
         """
         results = []
-        for name, template in self._cache.items():
+        for name, (template, mask) in self._cache.items():
             if category and not name.startswith(category):
                 continue
-            result = self._match(screenshot, name, template)
+            result = self._match(screenshot, name, template, mask)
             if result is not None:
                 results.append(result)
 
@@ -119,13 +133,15 @@ class TemplateMatcher:
 
         Returns list of non-overlapping matches above threshold.
         """
-        template = self._cache.get(template_name)
-        if template is None:
+        entry = self._cache.get(template_name)
+        if entry is None:
             logger.warning(f"Template not found in cache: {template_name}")
             return []
 
+        template, mask = entry
         th, tw = template.shape[:2]
-        result_map = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
+        method = cv2.TM_CCORR_NORMED if mask is not None else cv2.TM_CCOEFF_NORMED
+        result_map = cv2.matchTemplate(screenshot, template, method, mask=mask)
 
         results = []
         for _ in range(max_matches):
@@ -153,7 +169,8 @@ class TemplateMatcher:
 
         return results
 
-    def _match(self, screenshot: np.ndarray, name: str, template: np.ndarray) -> MatchResult | None:
+    def _match(self, screenshot: np.ndarray, name: str, template: np.ndarray,
+               mask: np.ndarray | None = None) -> MatchResult | None:
         """Run template matching and return MatchResult if above threshold."""
         th, tw = template.shape[:2]
         sh, sw = screenshot.shape[:2]
@@ -162,7 +179,10 @@ class TemplateMatcher:
         if tw > sw or th > sh:
             return None
 
-        result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
+        # Use TM_CCORR_NORMED when mask is present (OpenCV only fully supports
+        # masked matching with TM_SQDIFF and TM_CCORR_NORMED, not TM_CCOEFF_NORMED)
+        method = cv2.TM_CCORR_NORMED if mask is not None else cv2.TM_CCOEFF_NORMED
+        result = cv2.matchTemplate(screenshot, template, method, mask=mask)
         _, max_val, _, max_loc = cv2.minMaxLoc(result)
 
         if max_val < self.threshold:

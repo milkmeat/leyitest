@@ -304,18 +304,18 @@ class TestQuestWorkflow(unittest.TestCase):
         assert wf.phase == "click_quest"
         assert wf.target_quest_name == "训练士兵"
 
-    def test_read_quest_red_badge(self):
-        """Red badge -> click scroll to claim rewards first."""
+    def test_read_quest_red_badge_skipped(self):
+        """Red badge is noted but doesn't interrupt — proceeds to read quest."""
         wf, qbd, ed, llm, gs = self._make_workflow()
         wf.start()
         wf.phase = "read_quest"
 
-        qbd.detect.return_value = self._make_quest_info(red_badge=True)
+        qbd.detect.return_value = self._make_quest_info(
+            text="升级城堡", red_badge=True
+        )
         actions = wf.step(_make_screenshot(), "main_city")
-        assert wf.phase == "read_quest"  # stays to re-read after claim
-        assert len(actions) == 1
-        assert actions[0]["type"] == "tap"
-        assert "claim" in actions[0]["reason"]
+        assert wf.phase == "click_quest"  # proceeds past red badge
+        assert wf.target_quest_name == "升级城堡"
 
     def test_read_quest_not_visible(self):
         """Quest bar not visible -> abort."""
@@ -348,18 +348,19 @@ class TestQuestWorkflow(unittest.TestCase):
     # -- EXECUTE_QUEST tests --
 
     def test_execute_quest_back_to_main_city(self):
-        """If scene is main_city during execution -> CHECK_COMPLETION."""
+        """If scene is main_city and no finger during execution -> CHECK_COMPLETION."""
         wf, qbd, ed, llm, gs = self._make_workflow()
         wf.start()
         wf.phase = "execute_quest"
         wf.target_quest_name = "升级城堡"
 
+        ed.locate.return_value = None  # no tutorial finger
         actions = wf.step(_make_screenshot(), "main_city")
         assert wf.phase == "check_completion"
         assert actions == []
 
-    def test_execute_quest_tutorial_finger(self):
-        """Tutorial finger found -> tap it."""
+    def test_execute_quest_tutorial_finger_with_button(self):
+        """Tutorial finger + OCR button found -> tap topmost button."""
         wf, qbd, ed, llm, gs = self._make_workflow()
         wf.start()
         wf.phase = "execute_quest"
@@ -368,14 +369,76 @@ class TestQuestWorkflow(unittest.TestCase):
         finger = MagicMock()
         finger.x = 540
         finger.y = 960
-        ed.locate.return_value = finger
+        finger.confidence = 0.9
+
+        # Simulate two "升级" results: building button (top) and furniture (bottom)
+        ocr_top = MagicMock(text="升级", confidence=0.9, center=(700, 600))
+        ocr_bot = MagicMock(text="升级", confidence=0.95, center=(900, 970))
+
+        def locate_side_effect(screenshot, target, methods=None):
+            if target == "icons/tutorial_finger" and methods == ["template"]:
+                return finger
+            return None
+        ed.locate.side_effect = locate_side_effect
+        ed.ocr.find_all_text.return_value = [ocr_top, ocr_bot]
+
+        actions = wf.step(_make_screenshot(), "popup")
+        assert wf.phase == "execute_quest"
+        assert len(actions) == wf._RAPID_TAP_COUNT
+        # Should pick the topmost "升级" (building button at y=600)
+        assert actions[0]["x"] == 700
+        assert actions[0]["y"] == 600
+        assert "finger_button" in actions[0]["reason"]
+
+    def test_execute_quest_tutorial_finger_no_button(self):
+        """Tutorial finger (normal) found but no OCR button -> tap fingertip."""
+        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf.start()
+        wf.phase = "execute_quest"
+        wf.target_quest_name = "升级城堡"
+
+        finger = MagicMock()
+        finger.x = 540
+        finger.y = 960
+        finger.confidence = 0.9
+
+        def locate_side_effect(screenshot, target, methods=None):
+            if target == "icons/tutorial_finger" and methods == ["template"]:
+                return finger
+            return None
+        ed.locate.side_effect = locate_side_effect
 
         actions = wf.step(_make_screenshot(), "popup")
         assert wf.phase == "execute_quest"
         assert len(actions) == 1
-        assert actions[0]["x"] == 540
-        assert actions[0]["y"] == 960
-        assert "finger" in actions[0]["reason"]
+        assert actions[0]["x"] == 540 + wf._FINGERTIP_OFFSET[0]  # -65
+        assert actions[0]["y"] == 960 + wf._FINGERTIP_OFFSET[1]  # +100
+        assert "follow_tutorial_finger" in actions[0]["reason"]
+
+    def test_execute_quest_tutorial_finger_flipped(self):
+        """Flipped finger found -> tap with mirrored x offset."""
+        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf.start()
+        wf.phase = "execute_quest"
+        wf.target_quest_name = "升级城堡"
+
+        flipped = MagicMock()
+        flipped.x = 700
+        flipped.y = 600
+        flipped.confidence = 0.95
+
+        def locate_side_effect(screenshot, target, methods=None):
+            if target == "icons/tutorial_finger_flip" and methods == ["template"]:
+                return flipped
+            return None
+        ed.locate.side_effect = locate_side_effect
+
+        actions = wf.step(_make_screenshot(), "popup")
+        assert len(actions) == 1
+        # Flipped: dx is negated -> +65 instead of -65
+        assert actions[0]["x"] == 700 + (-wf._FINGERTIP_OFFSET[0])
+        assert actions[0]["y"] == 600 + wf._FINGERTIP_OFFSET[1]
+        assert "follow_tutorial_finger" in actions[0]["reason"]
 
     def test_execute_quest_llm_fallback(self):
         """No finger -> use LLM suggestions."""
@@ -535,7 +598,8 @@ class TestQuestWorkflow(unittest.TestCase):
         assert wf.phase == "execute_quest"
         assert len(actions) == 1
 
-        # 5. Execute -> returns to main city
+        # 5. Execute -> no finger, returns to main city -> check completion
+        ed.locate.return_value = None
         actions = wf.step(_make_screenshot(), "main_city")
         assert wf.phase == "check_completion"
 

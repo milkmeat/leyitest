@@ -252,22 +252,49 @@ class RuleEngine:
 
     def _plan_close_popup(self, task: Task, screenshot: np.ndarray,
                           game_state: GameState) -> list[dict]:
-        """Plan: close current popup."""
-        actions = []
+        """Plan: close current popup using three-stage strategy.
 
-        for text in ["关闭", "close", "×", "X", "确定", "ok"]:
-            element = self.detector.locate(screenshot, text, methods=["template", "ocr"])
+        Stage 1: Template-only matching for close button images.
+        Stage 2: OCR for multi-character text (no single-char to avoid mismatches).
+        Stage 3: Fallback to BACK key.
+        """
+        # Stage 1: template matching only — safe, no OCR false positives
+        for template_name in ["buttons/close", "buttons/close_x", "buttons/x",
+                              "buttons/cancel", "buttons/confirm", "buttons/ok"]:
+            element = self.detector.locate(
+                screenshot, template_name, methods=["template"]
+            )
             if element:
-                actions.append({
+                return [{
                     "type": "tap",
                     "x": element.x,
                     "y": element.y,
                     "delay": 0.5,
-                    "reason": f"close_popup:{text}",
-                })
-                break
+                    "reason": f"close_popup:template:{template_name}",
+                }]
 
-        return actions
+        # Stage 2: OCR for multi-character text only (avoid single-char "X"/"×")
+        for text in ["关闭", "close", "确定", "取消", "cancel"]:
+            element = self.detector.locate(
+                screenshot, text, methods=["ocr"]
+            )
+            if element:
+                return [{
+                    "type": "tap",
+                    "x": element.x,
+                    "y": element.y,
+                    "delay": 0.5,
+                    "reason": f"close_popup:ocr:{text}",
+                }]
+
+        # Stage 3: fallback — press BACK key
+        logger.info("close_popup: no button found, falling back to BACK key")
+        return [{
+            "type": "key_event",
+            "keycode": 4,
+            "delay": 0.5,
+            "reason": "close_popup:back_key_fallback",
+        }]
 
     def _plan_check_mail(self, task: Task, screenshot: np.ndarray,
                          game_state: GameState) -> list[dict]:

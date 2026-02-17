@@ -46,9 +46,9 @@ IDLE → ENSURE_MAIN_CITY → READ_QUEST → CLICK_QUEST → EXECUTE_QUEST → C
 |------|------|----------|
 | `IDLE` | 无操作 | auto_loop 空闲时启动 → `ENSURE_MAIN_CITY` |
 | `ENSURE_MAIN_CITY` | 不在主城则导航回主城 | scene == main_city → `READ_QUEST` |
-| `READ_QUEST` | 检测 quest bar，OCR 读取 quest 名称存入 `target_quest_name` | 有红色徽标 → 先点卷轴领奖；否则 → `CLICK_QUEST` |
+| `READ_QUEST` | 检测 quest bar，OCR 读取 quest 名称存入 `target_quest_name` | 红色徽标仅记录，直接 → `CLICK_QUEST` |
 | `CLICK_QUEST` | 点击 quest 文本跳转到执行入口 | 点击完成 → `EXECUTE_QUEST` |
-| `EXECUTE_QUEST` | 手指图标 → 跟随点击；否则 → LLM 分析操作 | scene == main_city → `CHECK_COMPLETION`；超过上限 → 导航回城后 `CHECK_COMPLETION` |
+| `EXECUTE_QUEST` | 手指图标 → 模板匹配按钮连续点击（x15）；否则 → LLM 分析操作 | 无手指 + scene == main_city → `CHECK_COMPLETION`；超过上限 → 导航回城后 `CHECK_COMPLETION` |
 | `CHECK_COMPLETION` | 检测 quest 文本右侧绿色对勾 | 有对勾 → `CLAIM_REWARD`；无对勾 → `CLICK_QUEST` 重试（有上限） |
 | `CLAIM_REWARD` | 点击 quest 文本领取奖励 | → `VERIFY` |
 | `VERIFY` | OCR 读取 quest 名称，确认已切换 | 名称变化 → `IDLE` |
