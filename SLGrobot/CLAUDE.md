@@ -1,0 +1,95 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Summary
+
+SLGrobot is a Python AI agent that autonomously plays "Frozen Island Pro" (`leyi.frozenislandpro`), an SLG mobile game, via a Nox Android emulator on Windows. It uses ADB for device control, OpenCV for screen understanding, OCR for text extraction, and LLM APIs (Anthropic Claude or Zhipu GLM) for strategic planning.
+
+## Commands
+
+### Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### Run
+```bash
+python main.py              # Interactive CLI
+python main.py --auto       # Autonomous loop (infinite)
+python main.py --auto --loops 50   # Autonomous loop with limit
+python main.py tap 100,200         # One-shot command
+python main.py screenshot label    # One-shot screenshot
+python main.py scene               # Detect current scene
+python main.py status              # Show connection/game state
+```
+
+### Tests
+Tests use raw `assert` statements (no pytest fixtures). Each file tests one development phase and requires a running Nox emulator with ADB connected:
+```bash
+python test_phase1.py       # ADB + device layer
+python test_vision.py       # Template matching, OCR, grid overlay
+python test_state.py        # Game state, persistence, task queue
+python test_llm.py          # LLM planner API calls
+python test_hardening.py    # Stuck recovery, reconnect, retry
+```
+
+## Architecture
+
+### Three-Layer Decision Loop
+
+1. **Strategic Layer** — LLM (Claude or GLM-4V), consulted every ~30 minutes, generates high-level task plans
+2. **Tactical Layer** — Local rule engine (<500ms), decomposes tasks into action sequences
+3. **Execution Layer** — CV + ADB (<100ms), screenshot → detect → tap
+
+90% of operations bypass the LLM entirely; the local CV + rule engine handles routine tasks.
+
+### Module Layers
+
+| Directory | Layer | Role |
+|-----------|-------|------|
+| `device/` | Device Control | ADB connection, tap, swipe, screenshots, reconnect |
+| `vision/` | Visual Perception | Template matching, OCR text detection, grid overlay, element detection |
+| `scene/` | Scene Understanding | Scene classification, popup detection/auto-close, scene-specific handlers |
+| `state/` | State Management | In-memory game state, OCR-based state extraction, JSON persistence |
+| `brain/` | Decision Making | Task queue, rule engine, LLM planner, stuck recovery, auto-handler |
+| `executor/` | Execution Pipeline | Action validation → execution (with retry) → result verification |
+| `utils/` | Utilities | Logging (console + `.log` + `.jsonl`), image helpers |
+
+### Key Design Principles
+
+- **LLM selects grid cells (A1–H6), not pixel coordinates** — CV handles coordinate resolution, the LLM picks from an annotated grid overlay
+- **LLM is stateless** — game state is persisted in `data/game_state.json` and passed as context to each LLM call
+- **Scene-first dispatch** — every auto-loop iteration starts with scene classification before deciding what to do
+- **Validate-execute-confirm pipeline** — `ActionValidator` → `ActionRunner` (with retry) → `ResultChecker`
+
+### Action Dict Protocol
+
+All modules exchange actions as dicts with a `type` field:
+```python
+{"type": "tap", "x": 540, "y": 960, "delay": 0.5, "reason": "..."}
+{"type": "tap", "target_text": "升级", "fallback_grid": "C4"}
+{"type": "navigate", "target": "barracks"}  # follows navigation_paths.json
+{"type": "swipe", "x1": 640, "y1": 500, "x2": 640, "y2": 200, "duration_ms": 300}
+{"type": "wait", "seconds": 2}
+{"type": "key_event", "keycode": 4}  # 4=BACK, 3=HOME
+```
+
+### Scene Types and Task Types
+
+Scene types: `main_city`, `world_map`, `hero`, `hero_recruit`, `battle`, `popup`, `loading`, `unknown`
+
+Known task types (handled by `RuleEngine`): `collect_resources`, `upgrade_building`, `train_troops`, `claim_rewards`, `navigate_main_city`, `navigate_world_map`, `close_popup`, `check_mail`, `collect_daily`
+
+## Configuration
+
+- `config.py` — all global constants (ADB host/port, screen resolution, timing, thresholds, file paths)
+- `model_presets.py` — LLM provider presets. Switch provider by changing `ACTIVE_PRESET` (currently `"zhipu"`)
+- `data/navigation_paths.json` — predefined tap sequences for navigating between game screens (17 paths)
+- `templates/` — PNG template images organized by category (`buttons/`, `icons/`, `nav_bar/`, `scenes/`, `popups/`)
+
+## Platform Requirements
+
+- **Windows only** — Nox ADB path is hardcoded at `D:\Program Files\Nox\bin\nox_adb.exe` in `config.py`
+- **Python 3.10+** — uses PEP 604 union types (`dict | None`) and PEP 585 generics (`tuple[int, int]`)
+- **Nox emulator** at 1080×1920 portrait resolution on ADB port 62001
