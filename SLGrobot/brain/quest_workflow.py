@@ -211,15 +211,12 @@ class QuestWorkflow:
         self.target_quest_name = info.current_quest_text
         logger.info(f"Quest workflow: target quest = '{self.target_quest_name}'")
 
-        # If quest is already complete (green check), skip execution
-        # and go straight to claiming the reward.
+        # Green check means quest is already completed — skip execution
         if info.has_green_check:
             logger.info(
-                "Quest workflow: green check already visible, "
-                "skipping to CHECK_COMPLETION"
+                "Quest workflow: green check detected, skipping to CLAIM_REWARD"
             )
-            self.phase = self.CHECK_COMPLETION
-            self.check_retries = 0
+            self.phase = self.CLAIM_REWARD
             return []
 
         self.phase = self.CLICK_QUEST
@@ -381,22 +378,6 @@ class QuestWorkflow:
                 "reason": "quest_workflow:dismiss_popup:final_center_tap",
             }]
 
-        # At main city — check green checkmark BEFORE following finger.
-        # When the quest is complete the finger points at the quest bar
-        # to claim the reward; we must detect the green check first so
-        # the workflow transitions to CLAIM_REWARD instead of endlessly
-        # re-tapping the finger.
-        if scene == "main_city":
-            info = self.quest_bar_detector.detect(screenshot)
-            if info.visible and info.has_green_check:
-                logger.info(
-                    "Quest workflow: green check detected at main city, "
-                    "moving to CHECK_COMPLETION"
-                )
-                self.phase = self.CHECK_COMPLETION
-                self.check_retries = 0
-                return []
-
         # Check for tutorial finger icon (even on main_city)
         # Matches both normal and horizontally flipped orientations
         finger_match, is_flipped = self._detect_tutorial_finger(screenshot)
@@ -459,28 +440,22 @@ class QuestWorkflow:
             self.check_retries = 0
             return []
 
-        # On non-popup screens (e.g. reward dialogs classified as "unknown"),
-        # look for actionable buttons FIRST — especially "领取" (claim reward).
-        # Only fall back to close_x if no action button is found.
-        # Require short text (≤ btn + 2 chars) to avoid matching substrings
-        # inside long quest descriptions (e.g. "建造" in "建造雷达通告栏").
-        ocr = self.element_detector.ocr
-        all_text = ocr.find_all_text(screenshot)
-        for btn_text in self._ACTION_BUTTON_TEXTS:
-            for r in all_text:
-                if btn_text in r.text and len(r.text) <= len(btn_text) + 2:
-                    cx, cy = r.center
-                    logger.info(
-                        f"Quest workflow: action button '{btn_text}' found "
-                        f"at ({cx}, {cy}) on non-popup screen"
-                    )
-                    return [{
-                        "type": "tap",
-                        "x": cx,
-                        "y": cy,
-                        "delay": 1.0,
-                        "reason": f"quest_workflow:action_button:{btn_text}",
-                    }]
+        # OCR search for action buttons (e.g. "领取" on reward dialog)
+        # before close_x — so reward dialogs get claimed, not dismissed.
+        action_buttons = self._find_action_buttons(screenshot)
+        if action_buttons:
+            best = action_buttons[0]
+            logger.info(
+                f"Quest workflow: action button '{best.name}' found "
+                f"at ({best.x}, {best.y}) on non-popup screen"
+            )
+            return [{
+                "type": "tap",
+                "x": best.x,
+                "y": best.y,
+                "delay": 1.5,
+                "reason": f"quest_workflow:action_button:{best.name}",
+            }]
 
         # Try close_x for full-screen popups that lack dark borders
         # (e.g. "First Purchase Reward") — classified as "unknown" not "popup"
@@ -684,42 +659,37 @@ class QuestWorkflow:
     def _step_verify(self, screenshot: np.ndarray) -> list[dict]:
         """Verify that quest name changed (reward was successfully claimed).
 
-        After CLAIM_REWARD clicks the quest bar text, the Tasks panel may
-        open.  This phase handles:
-        1. Finding and clicking "领取" / "全部领取" on the Tasks panel.
-        2. Closing the panel (BACK or close_x) to return to main city.
-        3. Re-reading the quest bar to confirm the quest changed.
+        After CLAIM_REWARD clicks the quest text, a reward dialog may appear
+        that requires clicking "领取".  If the quest bar is not visible
+        (covered by dialog), look for claim buttons before assuming done.
         """
         info = self.quest_bar_detector.detect(screenshot)
 
         if not info.visible:
-            # Quest bar not visible — likely the Tasks panel is open.
-            # Look for "领取" or "全部领取" to claim the reward.
+            # Quest bar hidden — likely a reward dialog is covering it.
+            # Look for "领取" or other claim buttons before assuming done.
             ocr = self.element_detector.ocr
             all_text = ocr.find_all_text(screenshot)
-            for claim_text in ["领取", "全部领取"]:
+            for claim_text in ["领取", "领取奖励", "确定", "确认"]:
                 for r in all_text:
-                    if claim_text in r.text and len(r.text) <= len(claim_text) + 2:
+                    if claim_text in r.text:
                         cx, cy = r.center
                         logger.info(
-                            f"Quest workflow (verify): claiming '{claim_text}' "
-                            f"at ({cx}, {cy})"
+                            f"Quest workflow (verify): tapping '{claim_text}' "
+                            f"at ({cx}, {cy}) in reward dialog"
                         )
                         return [{
                             "type": "tap",
                             "x": cx,
                             "y": cy,
-                            "delay": 1.5,
+                            "delay": 2.0,
                             "reason": f"quest_workflow:verify_claim:{claim_text}",
                         }]
 
-            # No claim button — try closing the panel to get back
-            logger.info(
-                "Quest workflow: quest bar not visible, no claim button, "
-                "pressing BACK"
-            )
-            return [{"type": "key_event", "keycode": 4,
-                     "reason": "quest_workflow:verify_close_panel"}]
+            # No claim button found — probably done
+            logger.info("Quest workflow: quest bar not visible after claim, assuming done")
+            self.phase = self.IDLE
+            return []
 
         new_quest = info.current_quest_text
         if new_quest and new_quest != self.target_quest_name:

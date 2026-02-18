@@ -95,6 +95,76 @@ Phase 1-5 框架已完成，Phase 6 Quest Workflow 已实现，以下是后续�
 - [x] 重新截取 `icons/task_scroll.png`（旧模板 conf=0.771，新模板 conf=1.0）
 - [x] Red badge 不再误触卷轴打开任务面板
 
+## Phase 8: LLM 调试日志与 Quest Workflow 加固（已完成）
+
+### 12. LLM 调试日志
+- [x] LLM 响应原始 JSON 写入 `.jsonl` 日志
+- [x] LLM 调用耗时、token 用量记录
+
+### 13. Quest Workflow 弹窗 OCR 关闭
+- [x] `_step_execute_quest` popup 处理：OCR 搜索 "返回领地"、"确定" 等文本
+- [x] 从 OCR dismiss 列表中移除 "领取"（避免误触领取按钮）
+
+---
+
+## Phase 9: 弹窗处理全面加固与 Quest Workflow 鲁棒性（已完成）
+
+### 14. Quest Workflow 优先级修复
+- [x] `main.py` — Quest Workflow 启动检查移到 Step 7.5（在 TaskQueue 和 LLM 咨询之前）
+- [x] 解决了 LLM 生成的任务抢占 quest workflow 导致远征任务无法执行的问题
+
+### 15. 按钮优先级与单按钮修复
+- [x] `_ACTION_BUTTON_TEXTS` 新增 "开始战斗"（高优先级，index 2）
+- [x] "领取" 移到最低优先级（列表末尾）
+- [x] `_find_action_buttons` 只返回最高优先级的一个按钮，避免同时点击多个按钮
+
+### 16. 弹窗逐级升级机制
+- [x] `_step_execute_quest` popup 处理增加 `popup_back_count` 计数器
+- [x] 升级策略：OCR 文本 → close_x 模板 → BACK×2 → 屏幕中心×2 → LLM 分析 → 兜底中心点击
+- [x] `_step_return_to_city` 完整重写，增加与 execute_quest 相同的弹窗升级逻辑
+- [x] 解决了 return_to_city 阶段遇弹窗只按 BACK 无法关闭的问题
+
+### 17. close_x 假阳性过滤
+- [x] 所有 close_x 模板匹配增加位置验证（右上角区域：y < 35%, x > 45%）
+- [x] `scene/popup_filter.py` — close_x 位置验证
+- [x] `brain/quest_workflow.py` — execute_quest 和 return_to_city 两处 close_x 位置验证
+- [x] 解决了红色 X 模板在主城、战斗结果等界面的大量假阳性问题
+
+### 18. Popup Filter OCR 优先
+- [x] `scene/popup_filter.py` — 策略重排：OCR 文本搜索优先于模板匹配
+- [x] 解决了失败弹窗上 close_x 误匹配 ">" 箭头导致无限循环的问题
+
+### 19. Unknown 场景 Popup Filter 回退
+- [x] `main.py` — unknown 场景处理增加 popup_filter 尝试（在 LLM 调用之前）
+- [x] 处理 "首充奖励" 等全屏弹窗（无暗色边框，被分类为 unknown 而非 popup）
+
+### 20. 执行迭代上限增加
+- [x] `max_execute_iterations` 从 20 增加到 40
+- [x] 远征任务需要多轮战斗，每轮约 6 次迭代
+
+### 21. 全屏弹窗 close_x 检查（execute_quest 内）
+- [x] LLM 回退之前增加 close_x 模板检查（带位置验证）
+- [x] 在 quest workflow 内部也能关闭 "首充奖励" 等 unknown 分类的全屏弹窗
+
+---
+
+## 已知问题与待解决
+
+### close_x 模板局限性
+- close_x（红色 X）模板匹配假阳性率高，已通过位置验证（右上角）缓解
+- 场景分类器不再单独依赖 close_x 判定 popup（需暗色边框配合）
+- "首充奖励"等全屏弹窗无暗色边框，通过 unknown → popup_filter 路径处理
+
+### 远征战斗
+- 远征第 10 关需要多轮战斗，bot 可能战力不足导致失败
+- 失败后出现 "失败" 弹窗，已通过 OCR 找到 "返回领地" 正确处理
+- 如果反复失败，workflow 会在 max_execute_iterations 后退出
+
+### 日志中文乱码
+- Windows 终端日志中中文显示为乱码（如 `ͨ��Զ����10�ء�`）
+- 功能不受影响，但调试不便
+- 日志文件（.log/.jsonl）中中文正常
+
 ---
 
 ## 进阶功能
