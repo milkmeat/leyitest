@@ -341,6 +341,15 @@ class GameBot:
                                 screenshot,
                             )
                             consecutive_unknown_scenes = 0
+                        elif self.popup_filter.handle(screenshot):
+                            # Some popup-like screens (e.g. first-purchase
+                            # reward) lack the dark border that the classifier
+                            # uses for popup detection.  Try the popup filter
+                            # before the more expensive LLM call.
+                            logger.info(
+                                "Unknown scene handled by popup filter"
+                            )
+                            consecutive_unknown_scenes = 0
                         elif config.LLM_API_KEY:
                             actions = self.llm_planner.analyze_unknown_scene(
                                 screenshot, self.game_state
@@ -369,6 +378,20 @@ class GameBot:
 
                     # 7. Update game state
                     self.state_tracker.update(screenshot, scene)
+
+                    # 7.5 Quest workflow has highest priority — start it
+                    #     when quest bar is visible, before LLM tasks or
+                    #     strategic consultation can take over.
+                    if (not self.quest_workflow.is_active()
+                            and scene == "main_city"
+                            and self.game_state.quest_bar_visible
+                            and self.game_state.quest_bar_current_quest):
+                        logger.info(
+                            "Quest bar active, starting quest workflow "
+                            f"(pausing {self.task_queue.pending_count()} queued tasks)"
+                        )
+                        self.quest_workflow.start()
+                        continue
 
                     # 8. Three-layer decision
                     actions = []
@@ -404,12 +427,6 @@ class GameBot:
                         time.sleep(config.LOOP_INTERVAL)
                         continue
                     else:
-                        # Start quest workflow if idle and quest bar is visible
-                        if (scene == "main_city"
-                                and self.game_state.quest_bar_visible
-                                and self.game_state.quest_bar_current_quest):
-                            self.quest_workflow.start()
-                            continue
                         actions = self.auto_handler.get_actions(
                             screenshot, self.game_state
                         )

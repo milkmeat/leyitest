@@ -50,9 +50,9 @@ class QuestWorkflow:
 
     # Fallback: OCR text search for actionable buttons.
     _ACTION_BUTTON_TEXTS = [
-        "一键上阵", "出战",
+        "一键上阵", "出战", "开始战斗",
         "建造", "升级", "训练", "研究", "确定", "前往",
-        "开始", "领取", "使用", "派遣", "出征", "下一个",
+        "开始", "使用", "派遣", "出征", "下一个", "领取",
     ]
 
     # Phase constants
@@ -82,11 +82,12 @@ class QuestWorkflow:
         self.phase: str = self.IDLE
         self.target_quest_name: str = ""
         self.execute_iterations: int = 0
-        self.max_execute_iterations: int = 20
+        self.max_execute_iterations: int = 40
         self.check_retries: int = 0
         self.max_check_retries: int = 3
         self.verify_retries: int = 0
         self.max_verify_retries: int = 3
+        self.popup_back_count: int = 0
 
     def is_active(self) -> bool:
         """Return True if workflow is currently executing a quest."""
@@ -100,6 +101,7 @@ class QuestWorkflow:
         self.execute_iterations = 0
         self.check_retries = 0
         self.verify_retries = 0
+        self.popup_back_count = 0
         self._sync_to_game_state()
 
     def abort(self) -> None:
@@ -265,9 +267,10 @@ class QuestWorkflow:
         # Must be checked before finger detection — the finger template
         # can false-match on popup screens.
         if scene == "popup":
+            # Stage 1: OCR text search for known dismiss buttons
             ocr = self.element_detector.ocr
             all_text = ocr.find_all_text(screenshot)
-            for dismiss_text in ["返回领地", "领取", "返回", "确定", "确认", "关闭"]:
+            for dismiss_text in ["返回领地", "返回", "确定", "确认", "关闭"]:
                 for r in all_text:
                     if dismiss_text in r.text:
                         cx, cy = r.center
@@ -275,6 +278,7 @@ class QuestWorkflow:
                             f"Quest workflow: popup detected, tapping "
                             f"'{dismiss_text}' at ({cx}, {cy})"
                         )
+                        self.popup_back_count = 0
                         return [{
                             "type": "tap",
                             "x": cx,
@@ -282,10 +286,88 @@ class QuestWorkflow:
                             "delay": 1.5,
                             "reason": f"quest_workflow:dismiss_popup:{dismiss_text}",
                         }]
-            # No known text found, try BACK
-            logger.info("Quest workflow: popup with no dismiss text, pressing BACK")
-            return [{"type": "key_event", "keycode": 4,
-                     "reason": "quest_workflow:dismiss_popup:back"}]
+
+            # Stage 2: template matching for close_x button
+            # Only accept matches in the top-right region to avoid
+            # false positives on game UI elements.
+            h, w = screenshot.shape[:2]
+            for tpl_name in ["buttons/close_x", "buttons/close"]:
+                match = self.element_detector.locate(
+                    screenshot, tpl_name, methods=["template"]
+                )
+                if match is not None:
+                    if match.y > h * 0.35 or match.x < w * 0.45:
+                        logger.debug(
+                            f"Quest workflow: rejected close '{tpl_name}' "
+                            f"at ({match.x}, {match.y}) — outside expected region"
+                        )
+                        continue
+                    logger.info(
+                        f"Quest workflow: popup close button '{tpl_name}' "
+                        f"at ({match.x}, {match.y})"
+                    )
+                    self.popup_back_count = 0
+                    return [{
+                        "type": "tap",
+                        "x": match.x,
+                        "y": match.y,
+                        "delay": 1.0,
+                        "reason": f"quest_workflow:dismiss_popup:{tpl_name}",
+                    }]
+
+            # No known dismiss method found — escalate
+            self.popup_back_count += 1
+
+            if self.popup_back_count <= 2:
+                # Level 1: try BACK key
+                logger.info(
+                    f"Quest workflow: popup no dismiss found, pressing BACK "
+                    f"({self.popup_back_count}/2)"
+                )
+                return [{"type": "key_event", "keycode": 4,
+                         "reason": "quest_workflow:dismiss_popup:back"}]
+
+            if self.popup_back_count <= 4:
+                # Level 2: tap screen center (some popups dismiss on any tap)
+                h, w = screenshot.shape[:2]
+                logger.info(
+                    f"Quest workflow: popup BACK ineffective, tapping center "
+                    f"({self.popup_back_count})"
+                )
+                return [{
+                    "type": "tap",
+                    "x": w // 2,
+                    "y": h // 2,
+                    "delay": 1.0,
+                    "reason": "quest_workflow:dismiss_popup:center_tap",
+                }]
+
+            # Level 3: ask LLM to analyze the popup
+            if self.llm_planner and self.llm_planner.api_key:
+                logger.info(
+                    f"Quest workflow: popup stuck ({self.popup_back_count}), "
+                    f"asking LLM for help"
+                )
+                self.popup_back_count = 0  # reset to avoid infinite LLM calls
+                try:
+                    actions = self.llm_planner.analyze_unknown_scene(
+                        screenshot, self.game_state
+                    )
+                    if actions:
+                        return actions
+                except Exception as e:
+                    logger.warning(f"Quest workflow: LLM popup analysis failed: {e}")
+
+            # Final fallback: tap screen center
+            h, w = screenshot.shape[:2]
+            self.popup_back_count = 0
+            return [{
+                "type": "tap",
+                "x": w // 2,
+                "y": h // 2,
+                "delay": 1.0,
+                "reason": "quest_workflow:dismiss_popup:final_center_tap",
+            }]
 
         # Check for tutorial finger icon (even on main_city)
         # Matches both normal and horizontally flipped orientations
@@ -349,6 +431,26 @@ class QuestWorkflow:
             self.check_retries = 0
             return []
 
+        # Try close_x for full-screen popups that lack dark borders
+        # (e.g. "First Purchase Reward") — classified as "unknown" not "popup"
+        h, w = screenshot.shape[:2]
+        for tpl_name in ["buttons/close_x", "buttons/close"]:
+            match = self.element_detector.locate(
+                screenshot, tpl_name, methods=["template"]
+            )
+            if match is not None and match.y <= h * 0.35 and match.x >= w * 0.45:
+                logger.info(
+                    f"Quest workflow: close button '{tpl_name}' found "
+                    f"at ({match.x}, {match.y}) on non-popup screen"
+                )
+                return [{
+                    "type": "tap",
+                    "x": match.x,
+                    "y": match.y,
+                    "delay": 1.0,
+                    "reason": f"quest_workflow:dismiss_unknown_popup:{tpl_name}",
+                }]
+
         # Fallback: ask LLM for quest execution guidance
         if self.llm_planner and self.llm_planner.api_key:
             try:
@@ -376,14 +478,97 @@ class QuestWorkflow:
 
     def _step_return_to_city(self, screenshot: np.ndarray,
                              scene: str) -> list[dict]:
-        """Navigate back to main city after quest execution."""
+        """Navigate back to main city after quest execution.
+
+        Handles popups with the same escalation logic as _step_execute_quest
+        (OCR dismiss → close_x template → BACK → center tap → LLM).
+        """
         if scene == "main_city":
             logger.info("Quest workflow: returned to main city, checking completion")
             self.phase = self.CHECK_COMPLETION
             self.check_retries = 0
+            self.popup_back_count = 0
             return []
 
-        # Use same navigation logic as ensure_main_city
+        # Handle popup with full escalation logic
+        if scene == "popup":
+            # Stage 1: OCR text search for known dismiss buttons
+            ocr = self.element_detector.ocr
+            all_text = ocr.find_all_text(screenshot)
+            for dismiss_text in ["返回领地", "返回", "确定", "确认", "关闭"]:
+                for r in all_text:
+                    if dismiss_text in r.text:
+                        cx, cy = r.center
+                        logger.info(
+                            f"Quest workflow (return): popup tapping "
+                            f"'{dismiss_text}' at ({cx}, {cy})"
+                        )
+                        self.popup_back_count = 0
+                        return [{
+                            "type": "tap",
+                            "x": cx,
+                            "y": cy,
+                            "delay": 1.5,
+                            "reason": f"quest_workflow:return_dismiss_popup:{dismiss_text}",
+                        }]
+
+            # Stage 2: template matching for close_x button
+            # Only accept matches in the top-right region.
+            h, w = screenshot.shape[:2]
+            for tpl_name in ["buttons/close_x", "buttons/close"]:
+                match = self.element_detector.locate(
+                    screenshot, tpl_name, methods=["template"]
+                )
+                if match is not None:
+                    if match.y > h * 0.35 or match.x < w * 0.45:
+                        logger.debug(
+                            f"Quest workflow (return): rejected close '{tpl_name}' "
+                            f"at ({match.x}, {match.y}) — outside expected region"
+                        )
+                        continue
+                    logger.info(
+                        f"Quest workflow (return): popup close '{tpl_name}' "
+                        f"at ({match.x}, {match.y})"
+                    )
+                    self.popup_back_count = 0
+                    return [{
+                        "type": "tap",
+                        "x": match.x,
+                        "y": match.y,
+                        "delay": 1.0,
+                        "reason": f"quest_workflow:return_dismiss_popup:{tpl_name}",
+                    }]
+
+            # Escalation: BACK → center tap
+            self.popup_back_count += 1
+            if self.popup_back_count <= 2:
+                logger.info(
+                    f"Quest workflow (return): popup pressing BACK "
+                    f"({self.popup_back_count}/2)"
+                )
+                return [{"type": "key_event", "keycode": 4,
+                         "reason": "quest_workflow:return_dismiss_popup:back"}]
+
+            h, w = screenshot.shape[:2]
+            if self.popup_back_count <= 4:
+                logger.info(
+                    f"Quest workflow (return): popup tapping center "
+                    f"({self.popup_back_count})"
+                )
+                return [{
+                    "type": "tap",
+                    "x": w // 2,
+                    "y": h // 2,
+                    "delay": 1.0,
+                    "reason": "quest_workflow:return_dismiss_popup:center_tap",
+                }]
+
+            # Final: reset and try BACK again
+            self.popup_back_count = 0
+            return [{"type": "key_event", "keycode": 4,
+                     "reason": "quest_workflow:return_dismiss_popup:back_reset"}]
+
+        # Not a popup — try OCR navigation text or BACK
         return self._step_ensure_main_city(screenshot, scene)
 
     def _step_check_completion(self, screenshot: np.ndarray) -> list[dict]:
@@ -605,10 +790,14 @@ class QuestWorkflow:
                 seen_texts.add(btn_text)
 
         if found:
+            # Return only the highest-priority button to avoid tapping
+            # multiple buttons (e.g. "开始战斗" + "领取") in one iteration.
+            best = found[0]
             logger.debug(
-                f"Action buttons OCR: {len(found)} found: "
-                + ", ".join(f"'{b.name}' at ({b.x},{b.y})" for b in found)
+                f"Action button OCR: best='{best.name}' at ({best.x},{best.y}), "
+                f"total candidates={len(found)}"
             )
+            return [best]
         return found
 
     def _sync_to_game_state(self) -> None:

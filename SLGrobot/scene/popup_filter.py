@@ -62,32 +62,16 @@ class PopupFilter:
     def handle(self, screenshot: np.ndarray) -> bool:
         """Detect and close popup. Returns True if popup was found and closed.
 
-        Strategy:
-        1. Try to find close/X button via template match -> tap it
-        2. Try to find any button in the popup area -> tap the close-like one
-        3. Fallback: tap outside the popup area (top-left corner)
+        Strategy (ordered by reliability):
+        1. OCR text search for dismiss buttons (most reliable — finds actual
+           text buttons like "返回领地", "确定", "关闭")
+        2. Template match for close/X button images
+        3. Search all button templates in the popup area
+        4. Fallback: tap outside the popup area (top-left corner)
         """
-        # Strategy 1: Find close button template
-        for name in self.CLOSE_TEMPLATES:
-            match = self.template_matcher.match_one(screenshot, name)
-            if match is not None:
-                logger.info(f"Popup: tapping close button '{name}' at ({match.x}, {match.y})")
-                self.adb.tap(match.x, match.y)
-                time.sleep(0.5)
-                return True
-
-        # Strategy 2: Search all button templates for anything in the popup area
-        h, w = screenshot.shape[:2]
-        all_buttons = self.template_matcher.match_all(screenshot, "buttons")
-        for match in all_buttons:
-            # Prefer buttons in the upper-right quadrant of popup (typical X location)
-            if match.x > w // 3 and match.y < 2 * h // 3:
-                logger.info(f"Popup: tapping button '{match.template_name}' at ({match.x}, {match.y})")
-                self.adb.tap(match.x, match.y)
-                time.sleep(0.5)
-                return True
-
-        # Strategy 3: OCR text search for dismiss buttons (e.g. "返回领地")
+        # Strategy 1: OCR text search for dismiss buttons (e.g. "返回领地")
+        # Tried first because template matching can false-positive on
+        # non-close elements (e.g. ">" chevron arrows).
         if self.ocr is not None:
             all_text = self.ocr.find_all_text(screenshot)
             for close_text in self.CLOSE_TEXTS:
@@ -101,6 +85,36 @@ class PopupFilter:
                         self.adb.tap(cx, cy)
                         time.sleep(0.5)
                         return True
+
+        # Strategy 2: Find close button template (with position validation)
+        h, w = screenshot.shape[:2]
+        for name in self.CLOSE_TEMPLATES:
+            match = self.template_matcher.match_one(screenshot, name)
+            if match is not None:
+                # Close/X buttons are in the top-right corner of popups.
+                # Reject matches outside the top 35% / right 55% of screen
+                # to avoid false positives on game UI elements.
+                if "close" in name or "x" in name:
+                    if match.y > h * 0.35 or match.x < w * 0.45:
+                        logger.debug(
+                            f"Popup: rejected '{name}' at ({match.x}, {match.y}) — "
+                            f"outside expected close button region"
+                        )
+                        continue
+                logger.info(f"Popup: tapping close button '{name}' at ({match.x}, {match.y})")
+                self.adb.tap(match.x, match.y)
+                time.sleep(0.5)
+                return True
+
+        # Strategy 3: Search all button templates for anything in the popup area
+        all_buttons = self.template_matcher.match_all(screenshot, "buttons")
+        for match in all_buttons:
+            # Prefer buttons in the upper-right quadrant of popup (typical X location)
+            if match.x > w // 3 and match.y < 2 * h // 3:
+                logger.info(f"Popup: tapping button '{match.template_name}' at ({match.x}, {match.y})")
+                self.adb.tap(match.x, match.y)
+                time.sleep(0.5)
+                return True
 
         # Strategy 4: If we detected a dark overlay but found no buttons,
         # try tapping outside the popup area
