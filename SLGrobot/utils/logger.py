@@ -74,6 +74,11 @@ class GameLogger:
         root_logger.addHandler(file_handler)
         root_logger.addHandler(json_handler)
 
+        # Suppress verbose SDK debug logs (they dump full base64 payloads)
+        logging.getLogger("openai").setLevel(logging.INFO)
+        logging.getLogger("httpx").setLevel(logging.INFO)
+        logging.getLogger("anthropic").setLevel(logging.INFO)
+
         logger.info(f"Logging initialized. Log file: {log_file}")
         logger.info(f"JSON log: {jsonl_file}")
 

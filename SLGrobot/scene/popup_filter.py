@@ -6,6 +6,7 @@ import logging
 import numpy as np
 
 from vision.template_matcher import TemplateMatcher
+from vision.ocr_locator import OCRLocator
 from device.adb_controller import ADBController
 
 logger = logging.getLogger(__name__)
@@ -30,10 +31,17 @@ class PopupFilter:
         "buttons/ok",
     ]
 
+    # OCR text patterns that dismiss popups (e.g. battle result screen)
+    CLOSE_TEXTS = [
+        "返回领地", "领取", "返回", "关闭", "确定", "确认",
+    ]
+
     def __init__(self, template_matcher: TemplateMatcher,
-                 adb: ADBController) -> None:
+                 adb: ADBController,
+                 ocr: OCRLocator | None = None) -> None:
         self.template_matcher = template_matcher
         self.adb = adb
+        self.ocr = ocr
 
     def is_popup(self, screenshot: np.ndarray) -> bool:
         """Check if current screen has a popup overlay.
@@ -79,7 +87,22 @@ class PopupFilter:
                 time.sleep(0.5)
                 return True
 
-        # Strategy 3: If we detected a dark overlay but found no buttons,
+        # Strategy 3: OCR text search for dismiss buttons (e.g. "返回领地")
+        if self.ocr is not None:
+            all_text = self.ocr.find_all_text(screenshot)
+            for close_text in self.CLOSE_TEXTS:
+                for r in all_text:
+                    if close_text in r.text:
+                        cx, cy = r.center
+                        logger.info(
+                            f"Popup: tapping OCR text '{close_text}' "
+                            f"at ({cx}, {cy})"
+                        )
+                        self.adb.tap(cx, cy)
+                        time.sleep(0.5)
+                        return True
+
+        # Strategy 4: If we detected a dark overlay but found no buttons,
         # try tapping outside the popup area
         if self._has_dark_overlay(screenshot):
             # Tap in the dark border area (top-left) to dismiss

@@ -114,7 +114,7 @@ class GameBot:
 
         # Scene layer
         self.classifier = SceneClassifier(self.template_matcher)
-        self.popup_filter = PopupFilter(self.template_matcher, self.adb)
+        self.popup_filter = PopupFilter(self.template_matcher, self.adb, self.ocr)
 
         # State layer
         self.game_state = GameState()
@@ -149,13 +149,15 @@ class GameBot:
         self.stuck_recovery = StuckRecovery(adb=self.adb)
         self.game_logger = GameLogger(config.LOG_DIR)
 
-        # Quest workflow
+        # Quest workflow (reset stale persisted state — workflow always starts IDLE)
         self.quest_workflow = QuestWorkflow(
             quest_bar_detector=self.state_tracker.quest_bar_detector,
             element_detector=self.detector,
             llm_planner=self.llm_planner,
             game_state=self.game_state,
         )
+        self.game_state.quest_workflow_phase = "idle"
+        self.game_state.quest_workflow_target = ""
 
     def connect(self) -> bool:
         """Connect to emulator and load persisted state."""
@@ -277,8 +279,10 @@ class GameBot:
                     if len(scene_history) >= 2 and scene_history[-1] != scene_history[-2]:
                         self.stuck_recovery.reset()
 
-                    # 3. Handle popups immediately
-                    if scene == "popup":
+                    # 3. Handle popups immediately (skip when quest workflow
+                    #    is active — workflow handles its own popups like
+                    #    battle result screens with "返回领地")
+                    if scene == "popup" and not self.quest_workflow.is_active():
                         # Check for claimable rewards before closing
                         reward_action = self.auto_handler._check_rewards(screenshot)
                         if reward_action:
@@ -299,7 +303,25 @@ class GameBot:
                         time.sleep(config.LOOP_INTERVAL)
                         continue
 
-                    # 5. Handle unknown scenes with counter + BACK escape
+                    # 5. Quest workflow state machine (before unknown scene
+                    #    handling — workflow may navigate through non-main scenes
+                    #    like expedition that get classified as "unknown")
+                    if self.quest_workflow.is_active():
+                        if scene == "unknown":
+                            consecutive_unknown_scenes += 1
+                        else:
+                            consecutive_unknown_scenes = 0
+                        actions = self.quest_workflow.step(screenshot, scene)
+                        if actions:
+                            self._execute_validated_actions(
+                                actions, scene, screenshot
+                            )
+                        self.state_tracker.update(screenshot, scene)
+                        self.persistence.save(self.game_state)
+                        time.sleep(config.LOOP_INTERVAL)
+                        continue
+
+                    # 6. Handle unknown scenes with counter + BACK escape
                     if scene == "unknown":
                         consecutive_unknown_scenes += 1
                         logger.info(
@@ -345,21 +367,10 @@ class GameBot:
                     else:
                         consecutive_unknown_scenes = 0
 
-                    # 6. Update game state
+                    # 7. Update game state
                     self.state_tracker.update(screenshot, scene)
 
-                    # 6.5 Quest workflow state machine
-                    if self.quest_workflow.is_active():
-                        actions = self.quest_workflow.step(screenshot, scene)
-                        if actions:
-                            self._execute_validated_actions(
-                                actions, scene, screenshot
-                            )
-                        self.persistence.save(self.game_state)
-                        time.sleep(config.LOOP_INTERVAL)
-                        continue
-
-                    # 7. Three-layer decision
+                    # 8. Three-layer decision
                     actions = []
                     if self.task_queue.has_pending():
                         # Tactical layer: rule engine decomposes task

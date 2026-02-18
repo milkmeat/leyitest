@@ -50,8 +50,9 @@ class QuestWorkflow:
 
     # Fallback: OCR text search for actionable buttons.
     _ACTION_BUTTON_TEXTS = [
+        "一键上阵", "出战",
         "建造", "升级", "训练", "研究", "确定", "前往",
-        "开始", "领取", "使用", "派遣", "出征",
+        "开始", "领取", "使用", "派遣", "出征", "下一个",
     ]
 
     # Phase constants
@@ -260,27 +261,68 @@ class QuestWorkflow:
             self.phase = self.RETURN_TO_CITY
             return []
 
-        # Check for tutorial finger icon FIRST (even on main_city)
+        # Handle popup FIRST (e.g. battle result with "返回领地").
+        # Must be checked before finger detection — the finger template
+        # can false-match on popup screens.
+        if scene == "popup":
+            ocr = self.element_detector.ocr
+            all_text = ocr.find_all_text(screenshot)
+            for dismiss_text in ["返回领地", "领取", "返回", "确定", "确认", "关闭"]:
+                for r in all_text:
+                    if dismiss_text in r.text:
+                        cx, cy = r.center
+                        logger.info(
+                            f"Quest workflow: popup detected, tapping "
+                            f"'{dismiss_text}' at ({cx}, {cy})"
+                        )
+                        return [{
+                            "type": "tap",
+                            "x": cx,
+                            "y": cy,
+                            "delay": 1.5,
+                            "reason": f"quest_workflow:dismiss_popup:{dismiss_text}",
+                        }]
+            # No known text found, try BACK
+            logger.info("Quest workflow: popup with no dismiss text, pressing BACK")
+            return [{"type": "key_event", "keycode": 4,
+                     "reason": "quest_workflow:dismiss_popup:back"}]
+
+        # Check for tutorial finger icon (even on main_city)
         # Matches both normal and horizontally flipped orientations
         finger_match, is_flipped = self._detect_tutorial_finger(screenshot)
         if finger_match is not None:
-            # Finger detected — look for actionable button text via OCR
-            button = self._find_action_button(screenshot, finger_match)
-            if button is not None:
-                logger.info(
-                    f"Quest workflow: finger detected, tapping button "
-                    f"'{button.name}' at ({button.x}, {button.y}) x{self._RAPID_TAP_COUNT}"
-                )
-                # Rapid-tap: furniture upgrade buttons can be clicked
-                # continuously (~10% progress per click), so send multiple
-                # taps in one step to fill the progress bar quickly.
-                return [{
-                    "type": "tap",
-                    "x": button.x,
-                    "y": button.y,
-                    "delay": 0.3,
-                    "reason": f"quest_workflow:finger_button:{button.name}",
-                }] * self._RAPID_TAP_COUNT
+            # Finger detected — look for actionable buttons via OCR
+            buttons = self._find_action_buttons(screenshot, finger_match)
+            if buttons:
+                actions = []
+                for b in buttons:
+                    if b.name in ("建造", "下一个"):
+                        # Furniture building/next: rapid-tap to fill
+                        # progress bar (~10% per click).
+                        logger.info(
+                            f"Quest workflow: finger detected, rapid-tapping "
+                            f"'{b.name}' at ({b.x}, {b.y}) x{self._RAPID_TAP_COUNT}"
+                        )
+                        actions.extend([{
+                            "type": "tap",
+                            "x": b.x,
+                            "y": b.y,
+                            "delay": 0.3,
+                            "reason": f"quest_workflow:finger_button:{b.name}",
+                        }] * self._RAPID_TAP_COUNT)
+                    else:
+                        logger.info(
+                            f"Quest workflow: finger detected, tapping "
+                            f"'{b.name}' at ({b.x}, {b.y})"
+                        )
+                        actions.append({
+                            "type": "tap",
+                            "x": b.x,
+                            "y": b.y,
+                            "delay": 1.0,
+                            "reason": f"quest_workflow:finger_button:{b.name}",
+                        })
+                return actions
 
             # No button text found — fall back to fingertip offset
             dx, dy = self._FINGERTIP_OFFSET
@@ -471,6 +513,10 @@ class QuestWorkflow:
         except Exception:
             pass  # graceful degradation — flipped matching won't be available
 
+    # Finger template matches below this confidence are ignored.
+    # Real finger: 0.96+, false positives (e.g. battle result icons): ~0.91.
+    _FINGER_CONFIDENCE_THRESHOLD = 0.95
+
     def _detect_tutorial_finger(self, screenshot: np.ndarray) -> tuple:
         """Detect tutorial finger in both normal and mirrored orientation.
 
@@ -485,6 +531,20 @@ class QuestWorkflow:
             screenshot, "icons/tutorial_finger_flip", methods=["template"]
         )
 
+        # Filter out low-confidence matches (false positives)
+        if normal is not None and normal.confidence < self._FINGER_CONFIDENCE_THRESHOLD:
+            logger.debug(
+                f"Finger match rejected: confidence={normal.confidence:.3f} "
+                f"< {self._FINGER_CONFIDENCE_THRESHOLD}"
+            )
+            normal = None
+        if flipped is not None and flipped.confidence < self._FINGER_CONFIDENCE_THRESHOLD:
+            logger.debug(
+                f"Flipped finger match rejected: confidence={flipped.confidence:.3f} "
+                f"< {self._FINGER_CONFIDENCE_THRESHOLD}"
+            )
+            flipped = None
+
         if normal is None and flipped is None:
             return None, False
         if normal is not None and flipped is None:
@@ -497,13 +557,16 @@ class QuestWorkflow:
             return flipped, True
         return normal, False
 
-    def _find_action_button(self, screenshot: np.ndarray,
-                            finger_match) -> "Element | None":
-        """Find an actionable button on screen.
+    def _find_action_buttons(self, screenshot: np.ndarray,
+                             finger_match) -> "list[Element]":
+        """Find actionable buttons on screen.
+
+        Returns a list of Elements, deduplicated by button text and ordered
+        by priority (list position in _ACTION_BUTTON_TEXTS).
 
         Priority:
         1. Template matching for known button images (most reliable).
-        2. OCR text search as fallback, preferring topmost match.
+        2. OCR text search as fallback.
         """
         from vision.element_detector import Element
 
@@ -515,32 +578,38 @@ class QuestWorkflow:
             if match is not None:
                 logger.debug(f"Action button template match: {tpl_name} "
                              f"at ({match.x},{match.y}) conf={match.confidence:.3f}")
-                return match
+                return [match]
 
-        # Stage 2: OCR fallback — find all text, pick topmost match
+        # Stage 2: OCR fallback — find all matching buttons
         ocr = self.element_detector.ocr
         all_results = ocr.find_all_text(screenshot)
         if not all_results:
-            return None
+            return []
 
-        candidates: list[tuple[str, int, int]] = []
+        # Collect best (highest on screen) match per button text,
+        # preserving _ACTION_BUTTON_TEXTS priority order.
+        found: list[Element] = []
+        seen_texts: set[str] = set()
         for btn_text in self._ACTION_BUTTON_TEXTS:
+            if btn_text in seen_texts:
+                continue
             btn_lower = btn_text.lower()
-            for r in all_results:
-                if btn_lower in r.text.lower():
-                    candidates.append((btn_text, r.center[0], r.center[1]))
+            matches = [(r.center[0], r.center[1]) for r in all_results
+                       if btn_lower in r.text.lower()]
+            if matches:
+                # Pick topmost occurrence of this button text
+                best = min(matches, key=lambda m: m[1])
+                found.append(Element(name=btn_text, x=best[0], y=best[1],
+                                     confidence=1.0, source="ocr",
+                                     bbox=(best[0], best[1], best[0], best[1])))
+                seen_texts.add(btn_text)
 
-        if not candidates:
-            return None
-
-        best = min(candidates, key=lambda c: c[2])
-        logger.debug(
-            f"Action button OCR: {len(candidates)} candidates, "
-            f"picked '{best[0]}' at ({best[1]},{best[2]})"
-        )
-        return Element(name=best[0], x=best[1], y=best[2],
-                       confidence=1.0, source="ocr",
-                       bbox=(best[1], best[2], best[1], best[2]))
+        if found:
+            logger.debug(
+                f"Action buttons OCR: {len(found)} found: "
+                + ", ".join(f"'{b.name}' at ({b.x},{b.y})" for b in found)
+            )
+        return found
 
     def _sync_to_game_state(self) -> None:
         """Sync workflow state to game_state for persistence."""

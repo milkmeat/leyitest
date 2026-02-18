@@ -365,6 +365,14 @@ class LLMPlanner:
             },
         ]
 
+        logger.debug(
+            f"[LLM REQUEST] provider=anthropic, model={self.vision_model}, "
+            f"max_tokens={self.max_tokens}\n"
+            f"  system_prompt ({len(system_prompt)} chars):\n{system_prompt}\n"
+            f"  user_text ({len(user_text)} chars):\n{user_text}\n"
+            f"  image_b64: ({len(image_b64)} chars, omitted)"
+        )
+
         start_time = time.time()
         response = client.messages.create(
             model=self.vision_model,
@@ -386,7 +394,13 @@ class LLMPlanner:
             f"input_tokens={response.usage.input_tokens}, "
             f"output_tokens={response.usage.output_tokens}"
         )
-        logger.debug(f"LLM response: {text[:500]}")
+        logger.debug(
+            f"[LLM RESPONSE] provider=anthropic, {elapsed:.1f}s\n"
+            f"  usage: input_tokens={response.usage.input_tokens}, "
+            f"output_tokens={response.usage.output_tokens}\n"
+            f"  stop_reason={response.stop_reason}\n"
+            f"  full response text:\n{text}"
+        )
         return text
 
     def _call_openai_compatible(self, system_prompt: str, image_b64: str,
@@ -414,6 +428,14 @@ class LLMPlanner:
             },
         ]
 
+        logger.debug(
+            f"[LLM REQUEST] provider=openai_compatible, model={self.vision_model}, "
+            f"max_tokens={self.max_tokens}\n"
+            f"  system_prompt ({len(system_prompt)} chars):\n{system_prompt}\n"
+            f"  user_text ({len(user_text)} chars):\n{user_text}\n"
+            f"  image_b64: ({len(image_b64)} chars, omitted)"
+        )
+
         start_time = time.time()
         response = client.chat.completions.create(
             model=self.vision_model,
@@ -429,7 +451,13 @@ class LLMPlanner:
             f"input_tokens={usage.prompt_tokens if usage else '?'}, "
             f"output_tokens={usage.completion_tokens if usage else '?'}"
         )
-        logger.debug(f"LLM response: {text[:500]}")
+        logger.debug(
+            f"[LLM RESPONSE] provider=openai_compatible, {elapsed:.1f}s\n"
+            f"  usage: prompt_tokens={usage.prompt_tokens if usage else '?'}, "
+            f"completion_tokens={usage.completion_tokens if usage else '?'}\n"
+            f"  finish_reason={response.choices[0].finish_reason}\n"
+            f"  full response text:\n{text}"
+        )
         return text
 
     def _parse_plan_response(self, response: str) -> list[Task]:
