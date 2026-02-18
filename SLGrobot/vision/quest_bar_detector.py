@@ -53,11 +53,13 @@ class QuestBarDetector:
     RED_PIXEL_THRESHOLD = 50
 
     # HSV thresholds for green check detection
-    GREEN_H_MIN = 35
+    # H_MIN raised from 35→50 and S_MIN from 80→100 to exclude
+    # tutorial finger skin tones (yellow/orange, H~25-50, low S).
+    GREEN_H_MIN = 50
     GREEN_H_MAX = 85
-    GREEN_S_MIN = 80
+    GREEN_S_MIN = 100
     GREEN_V_MIN = 100
-    GREEN_PIXEL_THRESHOLD = 30
+    GREEN_PIXEL_THRESHOLD = 50
 
     def __init__(self, template_matcher: TemplateMatcher,
                  ocr_locator: OCRLocator) -> None:

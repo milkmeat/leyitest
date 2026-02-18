@@ -50,7 +50,7 @@ class QuestWorkflow:
 
     # Fallback: OCR text search for actionable buttons.
     _ACTION_BUTTON_TEXTS = [
-        "一键上阵", "出战", "开始战斗",
+        "一键上阵", "出战", "开始战斗", "攻击",
         "建造", "升级", "训练", "研究", "确定", "前往",
         "开始", "使用", "派遣", "出征", "下一个", "领取",
     ]
@@ -387,31 +387,16 @@ class QuestWorkflow:
             if buttons:
                 actions = []
                 for b in buttons:
-                    if b.name in ("建造", "下一个"):
-                        # Furniture building/next: rapid-tap to fill
-                        # progress bar (~10% per click).
-                        logger.info(
-                            f"Quest workflow: finger detected, rapid-tapping "
-                            f"'{b.name}' at ({b.x}, {b.y}) x{self._RAPID_TAP_COUNT}"
-                        )
-                        actions.extend([{
-                            "type": "tap",
-                            "x": b.x,
-                            "y": b.y,
-                            "delay": 0.3,
-                            "reason": f"quest_workflow:finger_button:{b.name}",
-                        }] * self._RAPID_TAP_COUNT)
-                    else:
-                        logger.info(
-                            f"Quest workflow: finger detected, tapping "
-                            f"'{b.name}' at ({b.x}, {b.y})"
-                        )
-                        actions.append({
-                            "type": "tap",
-                            "x": b.x,
-                            "y": b.y,
-                            "delay": 1.0,
-                            "reason": f"quest_workflow:finger_button:{b.name}",
+                    logger.info(
+                        f"Quest workflow: finger detected, tapping "
+                        f"'{b.name}' at ({b.x}, {b.y})"
+                    )
+                    actions.append({
+                        "type": "tap",
+                        "x": b.x,
+                        "y": b.y,
+                        "delay": 1.0,
+                        "reason": f"quest_workflow:finger_button:{b.name}",
                         })
                 return actions
 
@@ -442,7 +427,7 @@ class QuestWorkflow:
 
         # OCR search for action buttons (e.g. "领取" on reward dialog)
         # before close_x — so reward dialogs get claimed, not dismissed.
-        action_buttons = self._find_action_buttons(screenshot)
+        action_buttons = self._find_action_buttons(screenshot, None)
         if action_buttons:
             best = action_buttons[0]
             logger.info(
