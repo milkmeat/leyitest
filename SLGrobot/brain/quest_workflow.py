@@ -731,10 +731,11 @@ class QuestWorkflow:
     # -- Internal helpers --
 
     def _ensure_flipped_finger_template(self) -> None:
-        """Create a horizontally flipped tutorial_finger in the template cache.
+        """Create flipped finger template and precomposed versions for validation.
 
         The game shows the finger icon mirrored (pointing left or right).
-        We need both orientations for reliable matching.
+        Precomposed (alpha-blended onto black) versions are used for a second
+        validation pass with TM_CCOEFF_NORMED to reject false positives.
         """
         try:
             import cv2
@@ -754,20 +755,82 @@ class QuestWorkflow:
                 return
 
             tpl, mask = entry
-            flip_tpl = cv2.flip(tpl, 1)  # horizontal flip
+
+            # Create flipped template (with mask for stage-1 matching)
+            flip_tpl = cv2.flip(tpl, 1)
             flip_mask = cv2.flip(mask, 1) if mask is not None else None
             cache[flip_name] = (flip_tpl, flip_mask)
-            logger.debug("Created flipped tutorial_finger template")
-        except Exception:
-            pass  # graceful degradation — flipped matching won't be available
 
-    # Finger template matches below this confidence are ignored.
-    # Fully visible finger: 0.96+, edge/partially-covered finger: ~0.89,
-    # false positives (e.g. battle result icons): ~0.80.
+            # Store template BGR and boolean mask for stage-2 masked NCC.
+            # Masked NCC computes correlation only on opaque pixels,
+            # ignoring background — much more discriminative than full-image
+            # TM_CCOEFF_NORMED with precomposed templates.
+            if mask is not None:
+                self._finger_mask = mask[:, :, 0] > 128
+            else:
+                self._finger_mask = np.ones(tpl.shape[:2], dtype=bool)
+            self._finger_tpl = tpl.copy()
+            self._finger_flip_tpl = flip_tpl.copy()
+            self._finger_flip_mask = cv2.flip(
+                self._finger_mask.astype(np.uint8), 1
+            ).astype(bool)
+
+            logger.debug("Created flipped finger template and masks for NCC")
+        except Exception:
+            self._finger_mask = None
+            self._finger_tpl = None
+            self._finger_flip_tpl = None
+            self._finger_flip_mask = None
+
+    # Stage-1 threshold (TM_CCORR_NORMED with mask).
+    # Lowered from 0.93 to 0.85 to catch partially-visible fingers;
+    # false positives are caught by stage-2 validation instead.
     _FINGER_CONFIDENCE_THRESHOLD = 0.85
 
+    # Stage-2 threshold (masked NCC — correlation on opaque pixels only).
+    # Real finger: 0.98+, false positives: ~0.40.  Threshold 0.70 gives
+    # 0.28 margin on real side, 0.30 margin on false positive side.
+    _FINGER_NCC_THRESHOLD = 0.70
+
+    def _verify_finger_ncc(self, screenshot: np.ndarray,
+                            cx: int, cy: int,
+                            is_flipped: bool) -> float:
+        """Stage-2 validation: NCC on masked (opaque) pixels only.
+
+        Computes normalized cross-correlation between template and screenshot
+        crop, considering only the pixels where the template is opaque.
+        This ignores background entirely, making it robust to varying
+        game backgrounds around the finger.
+
+        Returns the NCC score, or -1.0 on error / 1.0 if validation unavailable.
+        """
+        tpl = self._finger_flip_tpl if is_flipped else self._finger_tpl
+        msk = self._finger_flip_mask if is_flipped else self._finger_mask
+        if tpl is None or msk is None:
+            return 1.0  # skip validation if unavailable
+
+        th, tw = tpl.shape[:2]
+        sh, sw = screenshot.shape[:2]
+        x1, y1 = cx - tw // 2, cy - th // 2
+        if x1 < 0 or y1 < 0 or x1 + tw > sw or y1 + th > sh:
+            return -1.0
+
+        crop = screenshot[y1:y1 + th, x1:x1 + tw]
+        t = tpl[msk].astype(np.float32).flatten()
+        s = crop[msk].astype(np.float32).flatten()
+        t = t - t.mean()
+        s = s - s.mean()
+        denom = np.sqrt(np.dot(t, t) * np.dot(s, s))
+        if denom < 1e-10:
+            return 0.0
+        return float(np.dot(t, s) / denom)
+
     def _detect_tutorial_finger(self, screenshot: np.ndarray) -> tuple:
-        """Detect tutorial finger in both normal and mirrored orientation.
+        """Detect tutorial finger with two-stage validation.
+
+        Stage 1: TM_CCORR_NORMED with mask (sensitive, may have false positives).
+        Stage 2: Masked NCC on opaque pixels only (pattern-based,
+                 eliminates false positives).
 
         Returns:
             (match, is_flipped) where match is an Element or None,
@@ -780,19 +843,44 @@ class QuestWorkflow:
             screenshot, "icons/tutorial_finger_flip", methods=["template"]
         )
 
-        # Filter out low-confidence matches (false positives)
+        # Stage-1: filter by CCORR confidence
         if normal is not None and normal.confidence < self._FINGER_CONFIDENCE_THRESHOLD:
             logger.debug(
-                f"Finger match rejected: confidence={normal.confidence:.3f} "
+                f"Finger match rejected (stage1): confidence={normal.confidence:.3f} "
                 f"< {self._FINGER_CONFIDENCE_THRESHOLD}"
             )
             normal = None
         if flipped is not None and flipped.confidence < self._FINGER_CONFIDENCE_THRESHOLD:
             logger.debug(
-                f"Flipped finger match rejected: confidence={flipped.confidence:.3f} "
+                f"Flipped finger match rejected (stage1): confidence={flipped.confidence:.3f} "
                 f"< {self._FINGER_CONFIDENCE_THRESHOLD}"
             )
             flipped = None
+
+        # Stage-2: validate surviving candidates with masked NCC
+        if normal is not None:
+            ncc = self._verify_finger_ncc(
+                screenshot, normal.x, normal.y, is_flipped=False)
+            if ncc < self._FINGER_NCC_THRESHOLD:
+                logger.debug(
+                    f"Finger match rejected (stage2): ncc={ncc:.3f} "
+                    f"< {self._FINGER_NCC_THRESHOLD} at ({normal.x}, {normal.y})"
+                )
+                normal = None
+            else:
+                logger.debug(f"Finger match verified: ncc={ncc:.3f}")
+
+        if flipped is not None:
+            ncc = self._verify_finger_ncc(
+                screenshot, flipped.x, flipped.y, is_flipped=True)
+            if ncc < self._FINGER_NCC_THRESHOLD:
+                logger.debug(
+                    f"Flipped finger match rejected (stage2): ncc={ncc:.3f} "
+                    f"< {self._FINGER_NCC_THRESHOLD} at ({flipped.x}, {flipped.y})"
+                )
+                flipped = None
+            else:
+                logger.debug(f"Flipped finger match verified: ncc={ncc:.3f}")
 
         if normal is None and flipped is None:
             return None, False
@@ -802,8 +890,6 @@ class QuestWorkflow:
             return flipped, True
 
         # Both matched — prefer normal unless flipped is clearly better.
-        # The flipped template can false-match UI elements at similar
-        # confidence to the real finger on the normal template.
         if flipped.confidence > normal.confidence + 0.03:
             return flipped, True
         return normal, False

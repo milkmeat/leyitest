@@ -718,9 +718,29 @@ class CLI:
             screenshot = self.bot.screenshot_mgr.capture()
         wf = self.bot.quest_workflow
 
+        # Get raw matches (before threshold filter) for debug display
+        raw_normal = wf.element_detector.locate(
+            screenshot, "icons/tutorial_finger", methods=["template"]
+        )
+        raw_flipped = wf.element_detector.locate(
+            screenshot, "icons/tutorial_finger_flip", methods=["template"]
+        )
+        print(f"Raw normal:  ccorr={raw_normal.confidence:.3f} at ({raw_normal.x}, {raw_normal.y})"
+              if raw_normal else "Raw normal:  no match (below template threshold)")
+        print(f"Raw flipped: ccorr={raw_flipped.confidence:.3f} at ({raw_flipped.x}, {raw_flipped.y})"
+              if raw_flipped else "Raw flipped: no match (below template threshold)")
+        # Show stage-2 masked NCC scores for raw candidates
+        for label, raw, flipped_flag in [("normal", raw_normal, False),
+                                          ("flipped", raw_flipped, True)]:
+            if raw is not None:
+                ncc = wf._verify_finger_ncc(screenshot, raw.x, raw.y, flipped_flag)
+                print(f"  -> {label} ncc={ncc:.3f}  "
+                      f"(threshold: ccorr>={wf._FINGER_CONFIDENCE_THRESHOLD}, "
+                      f"ncc>={wf._FINGER_NCC_THRESHOLD})")
+
         finger_match, is_flipped = wf._detect_tutorial_finger(screenshot)
         if finger_match is None:
-            print("No finger detected.")
+            print("No finger detected (rejected by two-stage filter).")
             return
 
         dx, dy = wf._FINGERTIP_OFFSET
