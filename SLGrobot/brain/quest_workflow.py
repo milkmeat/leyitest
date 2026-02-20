@@ -35,9 +35,10 @@ class QuestWorkflow:
         verify           - Verify quest name changed (reward claimed)
     """
 
-    # Offset from template center (128, 128) to fingertip (60, 235)
-    # in template-local coords (pixels) for the 256x256 tutorial_finger.png.
-    _FINGERTIP_OFFSET = (-65, 100)
+    # Offset from template center (64, 64) to fingertip (63, 100)
+    # in template-local coords (pixels) for the 128x128 tutorial_finger.png
+    # (bottom-left crop of the original 256x256, keeping the fingertip).
+    _FINGERTIP_OFFSET = (-1, 36)
 
     # Number of rapid taps when clicking an action button (furniture upgrade
     # needs ~10 clicks to go from 0% to 100%, "下一个" auto-advances).
