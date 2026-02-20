@@ -74,6 +74,7 @@ Commands:
   load_tasks                    Load task queue from data/tasks.json
   auto [loops]                  Run auto loop (default: infinite)
   llm                           Manually trigger LLM strategic consultation
+  detect_finger                 Detect tutorial finger, print coords, save crop
   capture_template <category> <name> <x1>,<y1> <x2>,<y2>
                                 Capture screenshot region as template
   reload_templates              Reload template library
@@ -705,6 +706,44 @@ class CLI:
         filepath = args[0] if args else config.TASKS_FILE
         count = self.bot.task_queue.load(filepath)
         print(f"Loaded {count} tasks from {filepath}")
+
+    def cmd_detect_finger(self, args: list[str]) -> None:
+        """Detect tutorial finger on screen and save debug crop."""
+        if args:
+            screenshot = cv2.imread(args[0])
+            if screenshot is None:
+                print(f"Failed to read image: {args[0]}")
+                return
+        else:
+            screenshot = self.bot.screenshot_mgr.capture()
+        wf = self.bot.quest_workflow
+
+        finger_match, is_flipped = wf._detect_tutorial_finger(screenshot)
+        if finger_match is None:
+            print("No finger detected.")
+            return
+
+        dx, dy = wf._FINGERTIP_OFFSET
+        if is_flipped:
+            dx = -dx
+        tip_x = finger_match.x + dx
+        tip_y = finger_match.y + dy
+
+        print(f"Finger center: ({finger_match.x}, {finger_match.y})  "
+              f"confidence={finger_match.confidence:.3f}  flipped={is_flipped}")
+        print(f"Fingertip:     ({tip_x}, {tip_y})")
+
+        # Save 256x256 crop around finger center
+        h, w = screenshot.shape[:2]
+        cx, cy = finger_match.x, finger_match.y
+        x1 = max(0, cx - 128)
+        y1 = max(0, cy - 128)
+        x2 = min(w, x1 + 256)
+        y2 = min(h, y1 + 256)
+        crop = screenshot[y1:y2, x1:x2]
+        out_path = "debug_finger.png"
+        cv2.imwrite(out_path, crop)
+        print(f"Saved {crop.shape[1]}x{crop.shape[0]} crop -> {out_path}")
 
     def cmd_capture_template(self, args: list[str]) -> None:
         """Capture a screenshot region and save as a template."""
