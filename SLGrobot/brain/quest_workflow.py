@@ -40,6 +40,15 @@ class QuestWorkflow:
     # (trimmed fingertip crop of the original 256x256).
     _FINGERTIP_OFFSET = (-25, 43)
 
+    def _fingertip_pos(self, cx: int, cy: int, flip_type: str) -> tuple[int, int]:
+        """Compute fingertip tap position from match center and flip type."""
+        dx, dy = self._FINGERTIP_OFFSET
+        if flip_type in ("hflip", "hvflip"):
+            dx = -dx
+        if flip_type in ("vflip", "hvflip"):
+            dy = -dy
+        return cx + dx, cy + dy
+
     # Number of rapid taps when clicking an action button (furniture upgrade
     # needs ~10 clicks to go from 0% to 100%, "下一个" auto-advances).
     _RAPID_TAP_COUNT = 15
@@ -329,16 +338,13 @@ class QuestWorkflow:
             # finger pointing at "前往训练").  Follow the fingertip directly —
             # OCR is unreliable here (matches title/body text, finger covers
             # button text).
-            finger_match, is_flipped = self._detect_tutorial_finger(screenshot)
+            finger_match, flip_type = self._detect_tutorial_finger(screenshot)
             if finger_match is not None:
-                dx, dy = self._FINGERTIP_OFFSET
-                if is_flipped:
-                    dx = -dx
-                tap_x = finger_match.x + dx
-                tap_y = finger_match.y + dy
+                tap_x, tap_y = self._fingertip_pos(
+                    finger_match.x, finger_match.y, flip_type)
                 logger.info(
                     f"Quest workflow: popup finger at ({finger_match.x}, "
-                    f"{finger_match.y}), flipped={is_flipped}, "
+                    f"{finger_match.y}), {flip_type}, "
                     f"tapping fingertip ({tap_x}, {tap_y})"
                 )
                 self.popup_back_count = 0
@@ -426,16 +432,13 @@ class QuestWorkflow:
         # Check for tutorial finger icon (even on main_city).
         # Always follow the fingertip directly — OCR is unreliable when the
         # finger covers button text and can false-match on titles/body text.
-        finger_match, is_flipped = self._detect_tutorial_finger(screenshot)
+        finger_match, flip_type = self._detect_tutorial_finger(screenshot)
         if finger_match is not None:
-            dx, dy = self._FINGERTIP_OFFSET
-            if is_flipped:
-                dx = -dx  # mirror the horizontal offset
-            tap_x = finger_match.x + dx
-            tap_y = finger_match.y + dy
+            tap_x, tap_y = self._fingertip_pos(
+                finger_match.x, finger_match.y, flip_type)
             logger.info(
                 f"Quest workflow: finger center=({finger_match.x}, {finger_match.y}), "
-                f"flipped={is_flipped}, fingertip=({tap_x}, {tap_y})"
+                f"{flip_type}, fingertip=({tap_x}, {tap_y})"
             )
             return [{
                 "type": "tap",
@@ -749,12 +752,21 @@ class QuestWorkflow:
 
     # -- Internal helpers --
 
-    def _ensure_flipped_finger_template(self) -> None:
-        """Create flipped finger template and precomposed versions for validation.
+    # All finger template variants: (cache_name, flip_code, flip_type)
+    # flip_code: 1=horizontal, 0=vertical, -1=both (for cv2.flip)
+    _FINGER_VARIANTS = [
+        ("icons/tutorial_finger",         None, "normal"),
+        ("icons/tutorial_finger_hflip",   1,    "hflip"),
+        ("icons/tutorial_finger_vflip",   0,    "vflip"),
+        ("icons/tutorial_finger_hvflip", -1,    "hvflip"),
+    ]
 
-        The game shows the finger icon mirrored (pointing left or right).
-        Precomposed (alpha-blended onto black) versions are used for a second
-        validation pass with TM_CCOEFF_NORMED to reject false positives.
+    def _ensure_flipped_finger_template(self) -> None:
+        """Create all finger template variants (h-flip, v-flip, hv-flip).
+
+        The game shows the finger icon in various orientations.
+        For each variant, caches the template + mask for stage-1 matching,
+        and stores BGR + boolean mask for stage-2 masked NCC.
         """
         try:
             import cv2
@@ -763,43 +775,45 @@ class QuestWorkflow:
             if not isinstance(cache, dict):
                 return
 
-            name = "icons/tutorial_finger"
-            flip_name = "icons/tutorial_finger_flip"
-
-            if flip_name in cache:
-                return
-
-            entry = cache.get(name)
+            base_name = "icons/tutorial_finger"
+            entry = cache.get(base_name)
             if entry is None or not isinstance(entry, tuple):
                 return
 
             tpl, mask = entry
 
-            # Create flipped template (with mask for stage-1 matching)
-            flip_tpl = cv2.flip(tpl, 1)
-            flip_mask = cv2.flip(mask, 1) if mask is not None else None
-            cache[flip_name] = (flip_tpl, flip_mask)
-
-            # Store template BGR and boolean mask for stage-2 masked NCC.
-            # Masked NCC computes correlation only on opaque pixels,
-            # ignoring background — much more discriminative than full-image
-            # TM_CCOEFF_NORMED with precomposed templates.
+            # Build boolean mask for NCC
             if mask is not None:
-                self._finger_mask = mask[:, :, 0] > 128
+                base_bool_mask = mask[:, :, 0] > 128
             else:
-                self._finger_mask = np.ones(tpl.shape[:2], dtype=bool)
-            self._finger_tpl = tpl.copy()
-            self._finger_flip_tpl = flip_tpl.copy()
-            self._finger_flip_mask = cv2.flip(
-                self._finger_mask.astype(np.uint8), 1
-            ).astype(bool)
+                base_bool_mask = np.ones(tpl.shape[:2], dtype=bool)
 
-            logger.debug("Created flipped finger template and masks for NCC")
+            # Store per-variant NCC data: {flip_type: (bgr, bool_mask)}
+            self._finger_ncc = {
+                "normal": (tpl.copy(), base_bool_mask),
+            }
+
+            for cache_name, flip_code, flip_type in self._FINGER_VARIANTS:
+                if flip_code is None:
+                    continue  # normal — already in cache
+                if cache_name in cache:
+                    continue
+
+                flip_tpl = cv2.flip(tpl, flip_code)
+                flip_mask = cv2.flip(mask, flip_code) if mask is not None else None
+                cache[cache_name] = (flip_tpl, flip_mask)
+
+                flip_bool = cv2.flip(
+                    base_bool_mask.astype(np.uint8), flip_code
+                ).astype(bool)
+                self._finger_ncc[flip_type] = (flip_tpl.copy(), flip_bool)
+
+            logger.debug(
+                f"Created finger template variants: "
+                f"{list(self._finger_ncc.keys())}"
+            )
         except Exception:
-            self._finger_mask = None
-            self._finger_tpl = None
-            self._finger_flip_tpl = None
-            self._finger_flip_mask = None
+            self._finger_ncc = {}
 
     # Stage-1 threshold (TM_CCORR_NORMED with mask).
     # Lowered from 0.93 to 0.85 to catch partially-visible fingers;
@@ -813,7 +827,7 @@ class QuestWorkflow:
 
     def _verify_finger_ncc(self, screenshot: np.ndarray,
                             cx: int, cy: int,
-                            is_flipped: bool) -> float:
+                            flip_type: str) -> float:
         """Stage-2 validation: NCC on masked (opaque) pixels only.
 
         Computes normalized cross-correlation between template and screenshot
@@ -823,11 +837,11 @@ class QuestWorkflow:
 
         Returns the NCC score, or -1.0 on error / 1.0 if validation unavailable.
         """
-        tpl = self._finger_flip_tpl if is_flipped else self._finger_tpl
-        msk = self._finger_flip_mask if is_flipped else self._finger_mask
-        if tpl is None or msk is None:
+        ncc_entry = self._finger_ncc.get(flip_type)
+        if ncc_entry is None:
             return 1.0  # skip validation if unavailable
 
+        tpl, msk = ncc_entry
         th, tw = tpl.shape[:2]
         sh, sw = screenshot.shape[:2]
         x1, y1 = cx - tw // 2, cy - th // 2
@@ -847,71 +861,55 @@ class QuestWorkflow:
     def _detect_tutorial_finger(self, screenshot: np.ndarray) -> tuple:
         """Detect tutorial finger with two-stage validation.
 
+        Checks all orientation variants (normal, h-flip, v-flip, hv-flip).
+
         Stage 1: TM_CCORR_NORMED with mask (sensitive, may have false positives).
         Stage 2: Masked NCC on opaque pixels only (pattern-based,
                  eliminates false positives).
 
         Returns:
-            (match, is_flipped) where match is an Element or None,
-            and is_flipped indicates if the mirrored version matched better.
+            (match, flip_type) where match is an Element or None,
+            and flip_type is one of "normal", "hflip", "vflip", "hvflip".
         """
-        normal = self.element_detector.locate(
-            screenshot, "icons/tutorial_finger", methods=["template"]
-        )
-        flipped = self.element_detector.locate(
-            screenshot, "icons/tutorial_finger_flip", methods=["template"]
-        )
-
-        # Stage-1: filter by CCORR confidence
-        if normal is not None and normal.confidence < self._FINGER_CONFIDENCE_THRESHOLD:
-            logger.debug(
-                f"Finger match rejected (stage1): confidence={normal.confidence:.3f} "
-                f"< {self._FINGER_CONFIDENCE_THRESHOLD}"
+        verified = []
+        for cache_name, _, flip_type in self._FINGER_VARIANTS:
+            match = self.element_detector.locate(
+                screenshot, cache_name, methods=["template"]
             )
-            normal = None
-        if flipped is not None and flipped.confidence < self._FINGER_CONFIDENCE_THRESHOLD:
-            logger.debug(
-                f"Flipped finger match rejected (stage1): confidence={flipped.confidence:.3f} "
-                f"< {self._FINGER_CONFIDENCE_THRESHOLD}"
-            )
-            flipped = None
+            if match is None:
+                continue
 
-        # Stage-2: validate surviving candidates with masked NCC
-        if normal is not None:
+            # Stage-1: filter by CCORR confidence
+            if match.confidence < self._FINGER_CONFIDENCE_THRESHOLD:
+                logger.debug(
+                    f"Finger {flip_type} rejected (stage1): "
+                    f"conf={match.confidence:.3f}"
+                )
+                continue
+
+            # Stage-2: masked NCC
             ncc = self._verify_finger_ncc(
-                screenshot, normal.x, normal.y, is_flipped=False)
+                screenshot, match.x, match.y, flip_type)
             if ncc < self._FINGER_NCC_THRESHOLD:
                 logger.debug(
-                    f"Finger match rejected (stage2): ncc={ncc:.3f} "
-                    f"< {self._FINGER_NCC_THRESHOLD} at ({normal.x}, {normal.y})"
+                    f"Finger {flip_type} rejected (stage2): ncc={ncc:.3f} "
+                    f"at ({match.x}, {match.y})"
                 )
-                normal = None
-            else:
-                logger.debug(f"Finger match verified: ncc={ncc:.3f}")
+                continue
 
-        if flipped is not None:
-            ncc = self._verify_finger_ncc(
-                screenshot, flipped.x, flipped.y, is_flipped=True)
-            if ncc < self._FINGER_NCC_THRESHOLD:
-                logger.debug(
-                    f"Flipped finger match rejected (stage2): ncc={ncc:.3f} "
-                    f"< {self._FINGER_NCC_THRESHOLD} at ({flipped.x}, {flipped.y})"
-                )
-                flipped = None
-            else:
-                logger.debug(f"Flipped finger match verified: ncc={ncc:.3f}")
+            logger.debug(
+                f"Finger {flip_type} verified: conf={match.confidence:.3f}, "
+                f"ncc={ncc:.3f} at ({match.x}, {match.y})"
+            )
+            verified.append((match, flip_type))
 
-        if normal is None and flipped is None:
-            return None, False
-        if normal is not None and flipped is None:
-            return normal, False
-        if normal is None and flipped is not None:
-            return flipped, True
+        if not verified:
+            return None, "normal"
 
-        # Both matched — prefer normal unless flipped is clearly better.
-        if flipped.confidence > normal.confidence + 0.03:
-            return flipped, True
-        return normal, False
+        # Pick highest confidence; prefer "normal" on ties.
+        verified.sort(key=lambda v: (v[0].confidence, v[1] == "normal"),
+                      reverse=True)
+        return verified[0]
 
     def _find_action_buttons(self, screenshot: np.ndarray,
                              finger_match) -> "list[Element]":
