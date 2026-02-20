@@ -1,17 +1,235 @@
 {
-  "scene": "unknown",
+  "scene": "world_map",
   "resources": {
-    "food": 0,
-    "wood": 0,
-    "stone": 0,
-    "gold": 0
+    "food": 71,
+    "wood": 5,
+    "stone": 161248,
+    "gold": 14
   },
   "buildings": {},
   "troops_marching": [],
   "task_queue": [],
-  "last_actions": [],
+  "last_actions": [
+    {
+      "timestamp": "2026-02-18T22:55:57.880544",
+      "action": {
+        "type": "tap",
+        "x": 542,
+        "y": 1191,
+        "delay": 1.0,
+        "reason": "quest_workflow:finger_button:前往"
+      },
+      "scene": "unknown"
+    },
+    {
+      "timestamp": "2026-02-18T22:57:35.107979",
+      "action": {
+        "type": "tap",
+        "target_text": "Level 1 beast",
+        "fallback_grid": "D5"
+      },
+      "scene": "unknown"
+    },
+    {
+      "timestamp": "2026-02-18T22:58:34.659994",
+      "action": {
+        "type": "tap",
+        "target_text": "1级野兽",
+        "fallback_grid": "E5"
+      },
+      "scene": "unknown"
+    },
+    {
+      "timestamp": "2026-02-18T22:59:27.968399",
+      "action": {
+        "type": "tap",
+        "target_text": "Level 1 beast",
+        "fallback_grid": "D4"
+      },
+      "scene": "unknown"
+    },
+    {
+      "timestamp": "2026-02-18T22:59:59.949210",
+      "action": {
+        "type": "tap",
+        "target_text": "Level 1 beast",
+        "fallback_grid": "D5"
+      },
+      "scene": "unknown"
+    },
+    {
+      "timestamp": "2026-02-18T23:02:46.608407",
+      "action": {
+        "type": "tap",
+        "x": 246,
+        "y": 1578,
+        "delay": 1.5,
+        "reason": "quest_workflow:click_quest:击败1次1级野兽。"
+      },
+      "scene": "main_city"
+    },
+    {
+      "timestamp": "2026-02-18T23:02:56.198290",
+      "action": {
+        "type": "tap",
+        "x": 85,
+        "y": 1412,
+        "delay": 1.0,
+        "reason": "quest_workflow:follow_tutorial_finger"
+      },
+      "scene": "main_city"
+    },
+    {
+      "timestamp": "2026-02-18T23:03:06.679382",
+      "action": {
+        "type": "tap",
+        "x": 542,
+        "y": 1816,
+        "delay": 1.0,
+        "reason": "quest_workflow:follow_tutorial_finger"
+      },
+      "scene": "world_map"
+    },
+    {
+      "timestamp": "2026-02-18T23:05:12.481833",
+      "action": {
+        "type": "tap",
+        "target_text": "攻打",
+        "fallback_grid": "C4"
+      },
+      "scene": "unknown"
+    },
+    {
+      "timestamp": "2026-02-18T23:05:22.729563",
+      "action": {
+        "type": "tap",
+        "x": 535,
+        "y": 1198,
+        "delay": 1.5,
+        "reason": "quest_workflow:popup_follow_finger"
+      },
+      "scene": "unknown"
+    },
+    {
+      "timestamp": "2026-02-18T23:16:28.081910",
+      "action": {
+        "type": "tap",
+        "x": 247,
+        "y": 1577,
+        "delay": 1.5,
+        "reason": "quest_workflow:click_quest:击败1次1级野兽。"
+      },
+      "scene": "main_city"
+    },
+    {
+      "timestamp": "2026-02-18T23:16:38.671563",
+      "action": {
+        "type": "tap",
+        "x": 65,
+        "y": 1432,
+        "delay": 1.0,
+        "reason": "quest_workflow:follow_tutorial_finger"
+      },
+      "scene": "main_city"
+    },
+    {
+      "timestamp": "2026-02-18T23:16:49.999363",
+      "action": {
+        "type": "tap",
+        "x": 538,
+        "y": 1820,
+        "delay": 1.0,
+        "reason": "quest_workflow:follow_tutorial_finger"
+      },
+      "scene": "world_map"
+    },
+    {
+      "timestamp": "2026-02-18T23:16:59.771144",
+      "action": {
+        "type": "tap",
+        "x": 201,
+        "y": 1448,
+        "delay": 1.0,
+        "reason": "quest_workflow:follow_tutorial_finger"
+      },
+      "scene": "unknown"
+    },
+    {
+      "timestamp": "2026-02-18T23:17:08.570754",
+      "action": {
+        "type": "tap",
+        "x": 422,
+        "y": 1148,
+        "delay": 1.0,
+        "reason": "quest_workflow:follow_tutorial_finger"
+      },
+      "scene": "unknown"
+    },
+    {
+      "timestamp": "2026-02-18T23:17:15.694409",
+      "action": {
+        "type": "tap",
+        "x": 420,
+        "y": 1150,
+        "delay": 1.0,
+        "reason": "quest_workflow:follow_tutorial_finger"
+      },
+      "scene": "unknown"
+    },
+    {
+      "timestamp": "2026-02-18T23:17:23.708923",
+      "action": {
+        "type": "tap",
+        "x": 421,
+        "y": 1150,
+        "delay": 1.0,
+        "reason": "quest_workflow:follow_tutorial_finger"
+      },
+      "scene": "world_map"
+    },
+    {
+      "timestamp": "2026-02-18T23:17:31.478041",
+      "action": {
+        "type": "tap",
+        "x": 419,
+        "y": 1147,
+        "delay": 1.0,
+        "reason": "quest_workflow:follow_tutorial_finger"
+      },
+      "scene": "world_map"
+    },
+    {
+      "timestamp": "2026-02-18T23:17:39.248860",
+      "action": {
+        "type": "tap",
+        "x": 423,
+        "y": 1148,
+        "delay": 1.0,
+        "reason": "quest_workflow:follow_tutorial_finger"
+      },
+      "scene": "world_map"
+    },
+    {
+      "timestamp": "2026-02-18T23:17:46.771416",
+      "action": {
+        "type": "tap",
+        "x": 421,
+        "y": 1149,
+        "delay": 1.0,
+        "reason": "quest_workflow:follow_tutorial_finger"
+      },
+      "scene": "world_map"
+    }
+  ],
   "cooldowns": {},
-  "last_llm_consult": "",
-  "last_update": "",
-  "loop_count": 0
+  "last_llm_consult": "2026-02-18T21:44:51.611339",
+  "last_update": "2026-02-18T23:17:48.034805",
+  "loop_count": 564,
+  "quest_bar_visible": true,
+  "quest_bar_has_red_badge": false,
+  "quest_bar_current_quest": "击败1次1级野兽。",
+  "quest_bar_has_green_check": false,
+  "quest_bar_has_tutorial_finger": true,
+  "quest_workflow_phase": "execute_quest",
+  "quest_workflow_target": "击败1次1级野兽。"
 }

@@ -109,6 +109,11 @@ class PopupFilter:
         # Strategy 3: Search all button templates for anything in the popup area
         all_buttons = self.template_matcher.match_all(screenshot, "buttons")
         for match in all_buttons:
+            tname = match.template_name.lower()
+            # Skip close/x templates — they were already checked with
+            # stricter position validation in Strategy 2.
+            if "close" in tname or "/x" in tname:
+                continue
             # Prefer buttons in the upper-right quadrant of popup (typical X location)
             if match.x > w // 3 and match.y < 2 * h // 3:
                 logger.info(f"Popup: tapping button '{match.template_name}' at ({match.x}, {match.y})")

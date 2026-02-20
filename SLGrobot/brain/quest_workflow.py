@@ -324,6 +324,50 @@ class QuestWorkflow:
                         "reason": f"quest_workflow:dismiss_popup:{tpl_name}",
                     }]
 
+            # Stage 3: Tutorial finger on popup (e.g. "出征提示" with
+            # finger pointing at "前往训练").  Follow the fingertip directly —
+            # OCR is unreliable here (matches title/body text, finger covers
+            # button text).
+            finger_match, is_flipped = self._detect_tutorial_finger(screenshot)
+            if finger_match is not None:
+                dx, dy = self._FINGERTIP_OFFSET
+                if is_flipped:
+                    dx = -dx
+                tap_x = finger_match.x + dx
+                tap_y = finger_match.y + dy
+                logger.info(
+                    f"Quest workflow: popup finger at ({finger_match.x}, "
+                    f"{finger_match.y}), flipped={is_flipped}, "
+                    f"tapping fingertip ({tap_x}, {tap_y})"
+                )
+                self.popup_back_count = 0
+                return [{
+                    "type": "tap",
+                    "x": tap_x,
+                    "y": tap_y,
+                    "delay": 1.5,
+                    "reason": "quest_workflow:popup_follow_finger",
+                }]
+
+            # Stage 4: Action buttons on popup (no finger, but has
+            # tappable buttons like "前往训练", "攻击", etc.)
+            # Use short-text filter to exclude body text matches.
+            action_buttons = self._find_action_buttons(screenshot, None)
+            if action_buttons:
+                best = action_buttons[0]
+                logger.info(
+                    f"Quest workflow: popup action button '{best.name}' "
+                    f"at ({best.x}, {best.y})"
+                )
+                self.popup_back_count = 0
+                return [{
+                    "type": "tap",
+                    "x": best.x,
+                    "y": best.y,
+                    "delay": 1.5,
+                    "reason": f"quest_workflow:popup_action:{best.name}",
+                }]
+
             # No known dismiss method found — escalate
             self.popup_back_count += 1
 
@@ -378,29 +422,11 @@ class QuestWorkflow:
                 "reason": "quest_workflow:dismiss_popup:final_center_tap",
             }]
 
-        # Check for tutorial finger icon (even on main_city)
-        # Matches both normal and horizontally flipped orientations
+        # Check for tutorial finger icon (even on main_city).
+        # Always follow the fingertip directly — OCR is unreliable when the
+        # finger covers button text and can false-match on titles/body text.
         finger_match, is_flipped = self._detect_tutorial_finger(screenshot)
         if finger_match is not None:
-            # Finger detected — look for actionable buttons via OCR
-            buttons = self._find_action_buttons(screenshot, finger_match)
-            if buttons:
-                actions = []
-                for b in buttons:
-                    logger.info(
-                        f"Quest workflow: finger detected, tapping "
-                        f"'{b.name}' at ({b.x}, {b.y})"
-                    )
-                    actions.append({
-                        "type": "tap",
-                        "x": b.x,
-                        "y": b.y,
-                        "delay": 1.0,
-                        "reason": f"quest_workflow:finger_button:{b.name}",
-                        })
-                return actions
-
-            # No button text found — fall back to fingertip offset
             dx, dy = self._FINGERTIP_OFFSET
             if is_flipped:
                 dx = -dx  # mirror the horizontal offset
@@ -736,8 +762,9 @@ class QuestWorkflow:
             pass  # graceful degradation — flipped matching won't be available
 
     # Finger template matches below this confidence are ignored.
-    # Real finger: 0.96+, false positives (e.g. battle result icons): ~0.91.
-    _FINGER_CONFIDENCE_THRESHOLD = 0.95
+    # Fully visible finger: 0.96+, edge/partially-covered finger: ~0.89,
+    # false positives (e.g. battle result icons): ~0.80.
+    _FINGER_CONFIDENCE_THRESHOLD = 0.85
 
     def _detect_tutorial_finger(self, screenshot: np.ndarray) -> tuple:
         """Detect tutorial finger in both normal and mirrored orientation.
@@ -774,8 +801,10 @@ class QuestWorkflow:
         if normal is None and flipped is not None:
             return flipped, True
 
-        # Both matched — pick higher confidence
-        if flipped.confidence > normal.confidence:
+        # Both matched — prefer normal unless flipped is clearly better.
+        # The flipped template can false-match UI elements at similar
+        # confidence to the real finger on the normal template.
+        if flipped.confidence > normal.confidence + 0.03:
             return flipped, True
         return normal, False
 
@@ -816,8 +845,11 @@ class QuestWorkflow:
             if btn_text in seen_texts:
                 continue
             btn_lower = btn_text.lower()
+            # Filter: OCR text must be short (keyword + ≤4 extra chars)
+            # to exclude body text (e.g. "建议建造兵营" matching "建造").
             matches = [(r.center[0], r.center[1]) for r in all_results
-                       if btn_lower in r.text.lower()]
+                       if btn_lower in r.text.lower()
+                       and len(r.text) <= len(btn_text) + 4]
             if matches:
                 # Pick topmost occurrence of this button text
                 best = min(matches, key=lambda m: m[1])
