@@ -53,7 +53,7 @@ class QuestWorkflow:
     _ACTION_BUTTON_TEXTS = [
         "一键上阵", "出战", "开始战斗", "攻击",
         "建造", "升级", "训练", "研究", "确定", "前往",
-        "开始", "使用", "派遣", "出征", "下一个", "领取",
+        "开始", "使用", "派遣", "出征", "行军", "下一个", "领取",
     ]
 
     # Phase constants
@@ -952,9 +952,12 @@ class QuestWorkflow:
             btn_lower = btn_text.lower()
             # Filter: OCR text must be short (keyword + ≤4 extra chars)
             # to exclude body text (e.g. "建议建造兵营" matching "建造").
+            h = screenshot.shape[0]
             matches = [(r.center[0], r.center[1]) for r in all_results
                        if btn_lower in r.text.lower()
-                       and len(r.text) <= len(btn_text) + 4]
+                       and len(r.text) <= len(btn_text) + 4
+                       # "行军" in top half is a march queue label, not a button
+                       and not (btn_text == "行军" and r.center[1] < h * 0.5)]
             if matches:
                 # Pick topmost occurrence of this button text
                 best = min(matches, key=lambda m: m[1])
