@@ -36,7 +36,7 @@ class SceneClassifier:
 
     SCENES = [
         "main_city", "world_map", "hero", "hero_recruit",
-        "battle", "popup", "loading", "unknown",
+        "battle", "popup", "loading", "story_dialogue", "unknown",
     ]
 
     # Bottom-right corner region (ratio of screen) for main_city/world_map detection
@@ -85,7 +85,16 @@ class SceneClassifier:
                     scores[scene] = 0.0
             return scores
 
-        # 3. Primary: bottom-right corner icon → main_city or world_map
+        # 3. Story dialogue: detected by the down-triangle "continue" icon
+        triangle_match = self.template_matcher.match_one(screenshot, "icons/down_triangle")
+        if triangle_match and triangle_match.confidence >= 0.9:
+            scores["story_dialogue"] = triangle_match.confidence
+            for scene in self.SCENES:
+                if scene not in scores:
+                    scores[scene] = 0.0
+            return scores
+
+        # 4. Primary: bottom-right corner icon → main_city or world_map
         rx1, ry1, rx2, ry2 = self.CORNER_REGION
         corner = screenshot[int(ry1*h):int(ry2*h), int(rx1*w):int(rx2*w)]
 
@@ -102,7 +111,7 @@ class SceneClassifier:
                     scores[scene] = 0.0
             return scores
 
-        # 4. Secondary: check other scene templates on full screenshot
+        # 5. Secondary: check other scene templates on full screenshot
         scene_templates = self.template_matcher.match_all(screenshot, "scenes")
         for match in scene_templates:
             # Template names like "scenes/hero", "scenes/hero_recruit"

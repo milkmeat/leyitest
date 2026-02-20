@@ -298,7 +298,24 @@ class GameBot:
                         time.sleep(0.5)
                         continue
 
-                    # 4. Skip loading screens
+                    # 4. Story dialogue — tap the down-triangle to advance
+                    if scene == "story_dialogue":
+                        match = self.template_matcher.match_one(
+                            screenshot, "icons/down_triangle"
+                        )
+                        if match:
+                            logger.info(
+                                f"Story dialogue: tapping triangle "
+                                f"at ({match.x}, {match.y})"
+                            )
+                            self.adb.tap(match.x, match.y)
+                        else:
+                            logger.info("Story dialogue: tapping center")
+                            self.adb.tap(540, 960)
+                        time.sleep(0.5)
+                        continue
+
+                    # 5. Skip loading screens
                     if scene == "loading":
                         logger.info("Loading screen, waiting...")
                         time.sleep(config.LOOP_INTERVAL)

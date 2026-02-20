@@ -445,6 +445,24 @@ class QuestWorkflow:
                 "reason": "quest_workflow:follow_tutorial_finger",
             }]
 
+        # Story dialogue — tap the down-triangle to advance
+        if scene == "story_dialogue":
+            match = self.element_detector.locate(
+                screenshot, "icons/down_triangle", methods=["template"]
+            )
+            if match is not None:
+                logger.info(
+                    f"Quest workflow: story dialogue, tapping triangle "
+                    f"at ({match.x}, {match.y})"
+                )
+                return [{
+                    "type": "tap",
+                    "x": match.x,
+                    "y": match.y,
+                    "delay": 0.5,
+                    "reason": "quest_workflow:story_dialogue_advance",
+                }]
+
         # No finger — if back at main city, quest execution might be done
         if scene == "main_city":
             logger.info("Quest workflow: back at main city (no finger), checking completion")
