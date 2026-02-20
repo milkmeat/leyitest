@@ -75,6 +75,7 @@ Commands:
   auto [loops]                  Run auto loop (default: infinite)
   llm                           Manually trigger LLM strategic consultation
   detect_finger                 Detect tutorial finger, print coords, save crop
+  detect_close_x                Detect close_x button, print coords, save crop
   capture_template <category> <name> <x1>,<y1> <x2>,<y2>
                                 Capture screenshot region as template
   reload_templates              Reload template library
@@ -770,6 +771,67 @@ class CLI:
         y2 = min(h, y1 + 256)
         crop = screenshot[y1:y2, x1:x2]
         out_path = "debug_finger.png"
+        cv2.imwrite(out_path, crop)
+        print(f"Saved {crop.shape[1]}x{crop.shape[0]} crop -> {out_path}")
+
+    def cmd_detect_close_x(self, args: list[str]) -> None:
+        """Detect close_x button on screen and save debug crop."""
+        if args:
+            screenshot = cv2.imread(args[0])
+            if screenshot is None:
+                print(f"Failed to read image: {args[0]}")
+                return
+        else:
+            screenshot = self.bot.screenshot_mgr.capture()
+
+        wf = self.bot.quest_workflow
+        tm = wf.element_detector.template_matcher
+
+        # Show raw top-5 CCORR candidates with red-pixel ratios
+        candidates = tm.match_one_multi(screenshot, "buttons/close_x",
+                                        max_matches=5)
+        entry = tm._cache.get("buttons/close_x")
+        opaque, transparent = None, None
+        if entry is not None:
+            _, mask = entry
+            if mask is not None:
+                opaque = mask[:, :, 0] > 0
+                transparent = ~opaque
+
+        for i, m in enumerate(candidates):
+            patch = screenshot[m.bbox[1]:m.bbox[3], m.bbox[0]:m.bbox[2]]
+            hsv = cv2.cvtColor(patch, cv2.COLOR_BGR2HSV)
+            red1 = cv2.inRange(hsv, (0, 80, 80), (10, 255, 255))
+            red2 = cv2.inRange(hsv, (170, 80, 80), (180, 255, 255))
+            red_px = red1 | red2
+            if opaque is not None:
+                r_op = (red_px[opaque] > 0).sum() / opaque.sum()
+                r_bg = (red_px[transparent] > 0).sum() / transparent.sum()
+            else:
+                r_op = (red_px > 0).sum() / red_px.size
+                r_bg = 0.0
+            print(f"  #{i+1}: ccorr={m.confidence:.3f} "
+                  f"red_x={r_op:.3f} red_bg={r_bg:.3f} at ({m.x}, {m.y})")
+        print(f"  (need: red_x>={wf._CLOSE_X_RED_OPAQUE_MIN}, "
+              f"red_bg<={wf._CLOSE_X_RED_BG_MAX})")
+
+        # Run verified detection
+        match = wf._find_close_x(screenshot)
+        if match is None:
+            print("No close_x detected (rejected by red-pixel filter).")
+            return
+
+        print(f"close_x: ({match.x}, {match.y}) conf={match.confidence:.3f}")
+
+        # Save 128x128 crop around match center
+        h, w = screenshot.shape[:2]
+        cx, cy = match.x, match.y
+        x1 = max(0, cx - 64)
+        y1 = max(0, cy - 64)
+        x2 = min(w, x1 + 128)
+        y2 = min(h, y1 + 128)
+        crop = screenshot[y1:y2, x1:x2]
+        out_path = "debug_close_x.png"
         cv2.imwrite(out_path, crop)
         print(f"Saved {crop.shape[1]}x{crop.shape[0]} crop -> {out_path}")
 

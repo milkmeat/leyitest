@@ -306,23 +306,20 @@ class QuestWorkflow:
                             "reason": f"quest_workflow:dismiss_popup:{dismiss_text}",
                         }]
 
-            # Stage 2: template matching for close_x button
-            # Only accept matches in the top-right region to avoid
-            # false positives on game UI elements.
+            # Stage 2: template matching for close_x button (with red-pixel
+            # verification to eliminate false positives on colored backgrounds).
+            # Only accept matches in the top-right region.
             h, w = screenshot.shape[:2]
-            for tpl_name in ["buttons/close_x", "buttons/close"]:
-                match = self.element_detector.locate(
-                    screenshot, tpl_name, methods=["template"]
-                )
-                if match is not None:
-                    if match.y > h * 0.35 or match.x < w * 0.45:
-                        logger.debug(
-                            f"Quest workflow: rejected close '{tpl_name}' "
-                            f"at ({match.x}, {match.y}) — outside expected region"
-                        )
-                        continue
+            match = self._find_close_x(screenshot)
+            if match is not None:
+                if match.y > h * 0.35 or match.x < w * 0.45:
+                    logger.debug(
+                        f"Quest workflow: rejected close_x "
+                        f"at ({match.x}, {match.y}) — outside expected region"
+                    )
+                else:
                     logger.info(
-                        f"Quest workflow: popup close button '{tpl_name}' "
+                        f"Quest workflow: popup close_x "
                         f"at ({match.x}, {match.y})"
                     )
                     self.popup_back_count = 0
@@ -331,7 +328,7 @@ class QuestWorkflow:
                         "x": match.x,
                         "y": match.y,
                         "delay": 1.0,
-                        "reason": f"quest_workflow:dismiss_popup:{tpl_name}",
+                        "reason": "quest_workflow:dismiss_popup:close_x",
                     }]
 
             # Stage 3: Tutorial finger on popup (e.g. "出征提示" with
@@ -493,22 +490,19 @@ class QuestWorkflow:
         # Try close_x for full-screen popups that lack dark borders
         # (e.g. "First Purchase Reward") — classified as "unknown" not "popup"
         h, w = screenshot.shape[:2]
-        for tpl_name in ["buttons/close_x", "buttons/close"]:
-            match = self.element_detector.locate(
-                screenshot, tpl_name, methods=["template"]
+        match = self._find_close_x(screenshot)
+        if match is not None and match.y <= h * 0.35 and match.x >= w * 0.45:
+            logger.info(
+                f"Quest workflow: close_x found "
+                f"at ({match.x}, {match.y}) on non-popup screen"
             )
-            if match is not None and match.y <= h * 0.35 and match.x >= w * 0.45:
-                logger.info(
-                    f"Quest workflow: close button '{tpl_name}' found "
-                    f"at ({match.x}, {match.y}) on non-popup screen"
-                )
-                return [{
-                    "type": "tap",
-                    "x": match.x,
-                    "y": match.y,
-                    "delay": 1.0,
-                    "reason": f"quest_workflow:dismiss_unknown_popup:{tpl_name}",
-                }]
+            return [{
+                "type": "tap",
+                "x": match.x,
+                "y": match.y,
+                "delay": 1.0,
+                "reason": "quest_workflow:dismiss_unknown_popup:close_x",
+            }]
 
         # Fallback: ask LLM for quest execution guidance
         if self.llm_planner and self.llm_planner.api_key:
@@ -571,22 +565,20 @@ class QuestWorkflow:
                             "reason": f"quest_workflow:return_dismiss_popup:{dismiss_text}",
                         }]
 
-            # Stage 2: template matching for close_x button
+            # Stage 2: template matching for close_x button (with red-pixel
+            # verification to eliminate false positives).
             # Only accept matches in the top-right region.
             h, w = screenshot.shape[:2]
-            for tpl_name in ["buttons/close_x", "buttons/close"]:
-                match = self.element_detector.locate(
-                    screenshot, tpl_name, methods=["template"]
-                )
-                if match is not None:
-                    if match.y > h * 0.35 or match.x < w * 0.45:
-                        logger.debug(
-                            f"Quest workflow (return): rejected close '{tpl_name}' "
-                            f"at ({match.x}, {match.y}) — outside expected region"
-                        )
-                        continue
+            match = self._find_close_x(screenshot)
+            if match is not None:
+                if match.y > h * 0.35 or match.x < w * 0.45:
+                    logger.debug(
+                        f"Quest workflow (return): rejected close_x "
+                        f"at ({match.x}, {match.y}) — outside expected region"
+                    )
+                else:
                     logger.info(
-                        f"Quest workflow (return): popup close '{tpl_name}' "
+                        f"Quest workflow (return): popup close_x "
                         f"at ({match.x}, {match.y})"
                     )
                     self.popup_back_count = 0
@@ -595,7 +587,7 @@ class QuestWorkflow:
                         "x": match.x,
                         "y": match.y,
                         "delay": 1.0,
-                        "reason": f"quest_workflow:return_dismiss_popup:{tpl_name}",
+                        "reason": "quest_workflow:return_dismiss_popup:close_x",
                     }]
 
             # Escalation: BACK → center tap
@@ -910,6 +902,93 @@ class QuestWorkflow:
         verified.sort(key=lambda v: (v[0].confidence, v[1] == "normal"),
                       reverse=True)
         return verified[0]
+
+    # ---- close_x detection with red-pixel verification ----
+
+    # Red-pixel verification thresholds for close_x detection.
+    # Real close_x: red X on non-red background -> red_opaque ~0.84, red_bg ~0.03.
+    # Skin false positive: red everywhere        -> red_opaque ~0.94, red_bg ~0.74.
+    _CLOSE_X_RED_OPAQUE_MIN = 0.15   # min red ratio in opaque (X shape) area
+    _CLOSE_X_RED_BG_MAX = 0.30       # max red ratio in transparent (between arms) area
+
+    def _find_close_x(self, screenshot: np.ndarray):
+        """Detect close_x button with red-pixel verification.
+
+        Uses multi-match to find all CCORR candidates, then verifies each
+        by checking:
+        1. The opaque (X shape) area contains enough red pixels.
+        2. The transparent (background between X arms) area does NOT contain
+           too many red pixels (eliminates skin-tone false positives).
+
+        Returns an Element or None.
+        """
+        import cv2
+        from vision.element_detector import Element
+
+        tm = self.element_detector.template_matcher
+
+        # CCORR_NORMED with alpha mask produces many false positives on
+        # colored backgrounds (all scoring higher than the real match).
+        # We scan up to 50 candidates and pick the best verified one.
+        candidates = tm.match_one_multi(screenshot, "buttons/close_x",
+                                        max_matches=50)
+        if not candidates:
+            return None
+
+        entry = tm._cache.get("buttons/close_x")
+        if entry is None:
+            return Element(name="close_x", source="template",
+                           x=candidates[0].x, y=candidates[0].y,
+                           confidence=candidates[0].confidence,
+                           bbox=candidates[0].bbox)
+        _, mask = entry
+        if mask is not None:
+            opaque = mask[:, :, 0] > 0
+            transparent = ~opaque
+        else:
+            opaque = None
+            transparent = None
+
+        best = None
+        best_score = -1.0
+        for m in candidates:
+            x1, y1, x2, y2 = m.bbox
+            patch = screenshot[y1:y2, x1:x2]
+            hsv = cv2.cvtColor(patch, cv2.COLOR_BGR2HSV)
+            # Red in HSV: H in [0,10] or [170,180], S > 80, V > 80
+            red1 = cv2.inRange(hsv, (0, 80, 80), (10, 255, 255))
+            red2 = cv2.inRange(hsv, (170, 80, 80), (180, 255, 255))
+            red_px = red1 | red2
+
+            if opaque is not None and transparent is not None:
+                red_opaque = (red_px[opaque] > 0).sum() / opaque.sum()
+                red_bg = (red_px[transparent] > 0).sum() / transparent.sum()
+            else:
+                red_opaque = (red_px > 0).sum() / red_px.size
+                red_bg = 0.0
+
+            # Reject: not enough red in X area, or too much red in background
+            if (red_opaque < self._CLOSE_X_RED_OPAQUE_MIN
+                    or red_bg > self._CLOSE_X_RED_BG_MAX):
+                continue
+
+            # Score: high red_opaque with low red_bg is best
+            score = red_opaque - red_bg
+            if score > best_score:
+                best_score = score
+                best = m
+
+        if best is None:
+            logger.debug("close_x: no candidate passed red-pixel verification")
+            return None
+
+        logger.debug(
+            f"close_x verified at ({best.x}, {best.y}) "
+            f"ccorr={best.confidence:.3f}"
+        )
+        return Element(name="close_x", source="template",
+                       x=best.x, y=best.y,
+                       confidence=best.confidence, bbox=best.bbox)
 
     def _find_action_buttons(self, screenshot: np.ndarray,
                              finger_match) -> "list[Element]":
