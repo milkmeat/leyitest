@@ -913,9 +913,11 @@ class QuestWorkflow:
     _FINGER_CONFIDENCE_THRESHOLD = 0.85
 
     # Stage-2 threshold (masked NCC — correlation on opaque pixels only).
-    # Real finger: 0.98+, false positives: ~0.40.  Threshold 0.70 gives
-    # 0.28 margin on real side, 0.30 margin on false positive side.
-    _FINGER_NCC_THRESHOLD = 0.70
+    # Quest-guide finger: NCC 0.98+.  Battle-scene finger (with glow
+    # overlay): NCC ~0.47–0.53.  False positives: ~0.20–0.40.
+    # Threshold 0.45 catches both contexts with ≥0.05 margin over
+    # false positives.
+    _FINGER_NCC_THRESHOLD = 0.45
 
     def _verify_finger_ncc(self, screenshot: np.ndarray,
                             cx: int, cy: int,
