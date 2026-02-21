@@ -1,0 +1,62 @@
+{
+  "name": "westgame2",
+  "display_name": "West Game II",
+  "package": "leyi.cowboyclash3",
+
+  "default_resources": {
+    "food": 0,
+    "wood": 0,
+    "stone": 0,
+    "silver": 0
+  },
+  "resource_keywords": {
+    "food": ["食物", "粮食", "food"],
+    "wood": ["木材", "木头", "wood"],
+    "stone": ["石头", "石材", "stone", "铁", "iron"],
+    "silver": ["银币", "银", "silver", "金币", "金", "gold"]
+  },
+  "resource_order": ["food", "wood", "stone", "silver"],
+
+  "scenes": [
+    "main_city", "world_map", "hero", "hero_recruit",
+    "battle", "popup", "loading", "story_dialogue", "unknown"
+  ],
+
+  "known_tasks": [
+    "collect_resources", "upgrade_building", "train_troops",
+    "claim_rewards", "navigate_main_city", "navigate_world_map",
+    "close_popup", "check_mail", "collect_daily"
+  ],
+
+  "llm_game_description": "a mobile Western-themed SLG game called \"West Game II\" (西部游戏2)",
+  "llm_task_types": "collect_resources, upgrade_building, train_troops, claim_rewards, navigate_main_city, navigate_world_map, close_popup, check_mail, collect_daily, gather_resource, scout_enemy, send_troops, custom",
+
+  "known_popups": [
+    ["buttons/view", "buttons/close_x"]
+  ],
+  "reward_templates": [
+    "buttons/claim", "buttons/collect", "buttons/ok", "buttons/confirm"
+  ],
+  "close_text_patterns": ["关闭", "close", "×", "X"],
+  "claim_text_patterns": ["领取", "claim", "collect", "收集", "一键领取"],
+
+  "action_button_templates": [
+    "buttons/upgrade_building", "buttons/upgrade", "buttons/build"
+  ],
+  "action_button_texts": [
+    "一键上阵", "出战", "开始战斗", "攻击",
+    "建造", "升级", "训练", "研究", "确定", "前往",
+    "开始", "使用", "派遣", "出征", "行军", "下一个", "领取"
+  ],
+
+  "popup_close_templates": [
+    "buttons/close", "buttons/close_x", "buttons/x",
+    "buttons/cancel", "buttons/confirm", "buttons/ok"
+  ],
+  "popup_close_texts": [
+    "返回领地", "领取", "返回", "关闭", "确定", "确认"
+  ],
+
+  "grid_cols": 8,
+  "grid_rows": 6
+}
