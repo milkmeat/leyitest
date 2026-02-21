@@ -53,6 +53,10 @@ class QuestWorkflow:
     # needs ~10 clicks to go from 0% to 100%, "下一个" auto-advances).
     _RAPID_TAP_COUNT = 15
 
+    # After tapping the same action button this many times consecutively
+    # without scene change, mark it as "exhausted" and try the next button.
+    _ACTION_BUTTON_EXHAUST_THRESHOLD = 2
+
     # Button templates to try via template matching (highest priority).
     _ACTION_BUTTON_TEMPLATES = [
         "buttons/upgrade_building", "buttons/upgrade", "buttons/build",
@@ -99,6 +103,13 @@ class QuestWorkflow:
         self.max_verify_retries: int = 3
         self.popup_back_count: int = 0
 
+        # Button fatigue tracking — avoid repeatedly tapping the same
+        # ineffective button (e.g. "一键上阵" when we need "出战").
+        self._last_action_button_text: str = ""
+        self._action_button_repeat_count: int = 0
+        self._exhausted_buttons: set[str] = set()
+        self._last_execute_scene: str = ""
+
     def is_active(self) -> bool:
         """Return True if workflow is currently executing a quest."""
         return self.phase != self.IDLE
@@ -112,6 +123,10 @@ class QuestWorkflow:
         self.check_retries = 0
         self.verify_retries = 0
         self.popup_back_count = 0
+        self._last_action_button_text = ""
+        self._action_button_repeat_count = 0
+        self._exhausted_buttons = set()
+        self._last_execute_scene = ""
         self._sync_to_game_state()
 
     def abort(self) -> None:
@@ -122,6 +137,10 @@ class QuestWorkflow:
         self.execute_iterations = 0
         self.check_retries = 0
         self.verify_retries = 0
+        self._last_action_button_text = ""
+        self._action_button_repeat_count = 0
+        self._exhausted_buttons = set()
+        self._last_execute_scene = ""
         self._sync_to_game_state()
 
     def step(self, screenshot: np.ndarray, scene: str) -> list[dict]:
@@ -168,7 +187,8 @@ class QuestWorkflow:
                                scene: str) -> list[dict]:
         """Ensure we are on the main city screen.
 
-        If not in main_city, try to navigate there via OCR text or BACK key.
+        If not in main_city, try to navigate there via OCR text, back_arrow
+        template, or tapping blank area.
         """
         if scene == "main_city":
             logger.info("Quest workflow: at main city, moving to READ_QUEST")
@@ -192,12 +212,30 @@ class QuestWorkflow:
                     "reason": f"quest_workflow:navigate_main_city:{target_text}",
                 }]
 
-        # Fallback: press BACK
-        logger.info("Quest workflow: pressing BACK to navigate to main city")
+        # Fallback: try back_arrow template
+        match = self._find_back_arrow(screenshot)
+        if match is not None:
+            logger.info(
+                f"Quest workflow: tapping back_arrow at ({match.x}, {match.y}) "
+                f"to navigate to main city"
+            )
+            return [{
+                "type": "tap",
+                "x": match.x,
+                "y": match.y,
+                "delay": 1.0,
+                "reason": "quest_workflow:navigate_main_city:back_arrow",
+            }]
+
+        # Last resort: tap blank area outside any dialog
+        h, w = screenshot.shape[:2]
+        logger.info("Quest workflow: tapping blank area to navigate to main city")
         return [{
-            "type": "key_event",
-            "keycode": 4,
-            "reason": "quest_workflow:navigate_main_city:back",
+            "type": "tap",
+            "x": w // 2,
+            "y": int(h * 0.95),
+            "delay": 1.0,
+            "reason": "quest_workflow:navigate_main_city:tap_blank",
         }]
 
     def _step_read_quest(self, screenshot: np.ndarray) -> list[dict]:
@@ -252,6 +290,10 @@ class QuestWorkflow:
         )
         self.phase = self.EXECUTE_QUEST
         self.execute_iterations = 0
+        self._last_action_button_text = ""
+        self._action_button_repeat_count = 0
+        self._exhausted_buttons = set()
+        self._last_execute_scene = ""
 
         return [{
             "type": "tap",
@@ -272,6 +314,13 @@ class QuestWorkflow:
         - iterations exceeded -> RETURN_TO_CITY
         """
         self.execute_iterations += 1
+
+        # Scene change -> clear button fatigue (screen content changed)
+        if scene != self._last_execute_scene and self._last_execute_scene:
+            self._exhausted_buttons.clear()
+            self._last_action_button_text = ""
+            self._action_button_repeat_count = 0
+        self._last_execute_scene = scene
 
         # Check iteration limit
         if self.execute_iterations > self.max_execute_iterations:
@@ -359,6 +408,7 @@ class QuestWorkflow:
             action_buttons = self._find_action_buttons(screenshot, None)
             if action_buttons:
                 best = action_buttons[0]
+                self._track_button_tap(best.name)
                 logger.info(
                     f"Quest workflow: popup action button '{best.name}' "
                     f"at ({best.x}, {best.y})"
@@ -376,19 +426,40 @@ class QuestWorkflow:
             self.popup_back_count += 1
 
             if self.popup_back_count <= 2:
-                # Level 1: try BACK key
+                # Level 1: try back_arrow template, or tap blank area
+                # outside the dialog (game ignores Android BACK).
+                match = self._find_back_arrow(screenshot)
+                if match is not None:
+                    logger.info(
+                        f"Quest workflow: popup tapping back_arrow "
+                        f"at ({match.x}, {match.y}) "
+                        f"({self.popup_back_count}/2)"
+                    )
+                    return [{
+                        "type": "tap",
+                        "x": match.x,
+                        "y": match.y,
+                        "delay": 1.0,
+                        "reason": "quest_workflow:dismiss_popup:back_arrow",
+                    }]
+                h, w = screenshot.shape[:2]
                 logger.info(
-                    f"Quest workflow: popup no dismiss found, pressing BACK "
+                    f"Quest workflow: popup tapping blank area "
                     f"({self.popup_back_count}/2)"
                 )
-                return [{"type": "key_event", "keycode": 4,
-                         "reason": "quest_workflow:dismiss_popup:back"}]
+                return [{
+                    "type": "tap",
+                    "x": w // 2,
+                    "y": int(h * 0.95),
+                    "delay": 1.0,
+                    "reason": "quest_workflow:dismiss_popup:tap_blank",
+                }]
 
             if self.popup_back_count <= 4:
                 # Level 2: tap screen center (some popups dismiss on any tap)
                 h, w = screenshot.shape[:2]
                 logger.info(
-                    f"Quest workflow: popup BACK ineffective, tapping center "
+                    f"Quest workflow: popup tap_blank ineffective, tapping center "
                     f"({self.popup_back_count})"
                 )
                 return [{
@@ -475,6 +546,7 @@ class QuestWorkflow:
         action_buttons = self._find_action_buttons(screenshot, None)
         if action_buttons:
             best = action_buttons[0]
+            self._track_button_tap(best.name)
             logger.info(
                 f"Quest workflow: action button '{best.name}' found "
                 f"at ({best.x}, {best.y}) on non-popup screen"
@@ -534,7 +606,7 @@ class QuestWorkflow:
         """Navigate back to main city after quest execution.
 
         Handles popups with the same escalation logic as _step_execute_quest
-        (OCR dismiss → close_x template → BACK → center tap → LLM).
+        (OCR dismiss → close_x template → back_arrow → tap blank → center tap).
         """
         if scene == "main_city":
             logger.info("Quest workflow: returned to main city, checking completion")
@@ -590,15 +662,36 @@ class QuestWorkflow:
                         "reason": "quest_workflow:return_dismiss_popup:close_x",
                     }]
 
-            # Escalation: BACK → center tap
+            # Escalation: back_arrow → tap blank → center tap
+            # (game ignores Android BACK button)
             self.popup_back_count += 1
             if self.popup_back_count <= 2:
+                match = self._find_back_arrow(screenshot)
+                if match is not None:
+                    logger.info(
+                        f"Quest workflow (return): popup tapping back_arrow "
+                        f"at ({match.x}, {match.y}) "
+                        f"({self.popup_back_count}/2)"
+                    )
+                    return [{
+                        "type": "tap",
+                        "x": match.x,
+                        "y": match.y,
+                        "delay": 1.0,
+                        "reason": "quest_workflow:return_dismiss_popup:back_arrow",
+                    }]
+                h, w = screenshot.shape[:2]
                 logger.info(
-                    f"Quest workflow (return): popup pressing BACK "
+                    f"Quest workflow (return): popup tapping blank area "
                     f"({self.popup_back_count}/2)"
                 )
-                return [{"type": "key_event", "keycode": 4,
-                         "reason": "quest_workflow:return_dismiss_popup:back"}]
+                return [{
+                    "type": "tap",
+                    "x": w // 2,
+                    "y": int(h * 0.95),
+                    "delay": 1.0,
+                    "reason": "quest_workflow:return_dismiss_popup:tap_blank",
+                }]
 
             h, w = screenshot.shape[:2]
             if self.popup_back_count <= 4:
@@ -614,12 +707,18 @@ class QuestWorkflow:
                     "reason": "quest_workflow:return_dismiss_popup:center_tap",
                 }]
 
-            # Final: reset and try BACK again
+            # Final: reset and tap blank area
             self.popup_back_count = 0
-            return [{"type": "key_event", "keycode": 4,
-                     "reason": "quest_workflow:return_dismiss_popup:back_reset"}]
+            logger.info("Quest workflow (return): popup reset, tapping blank area")
+            return [{
+                "type": "tap",
+                "x": w // 2,
+                "y": int(h * 0.95),
+                "delay": 1.0,
+                "reason": "quest_workflow:return_dismiss_popup:tap_blank_reset",
+            }]
 
-        # Not a popup — try OCR navigation text or BACK
+        # Not a popup — try OCR navigation text or back_arrow
         return self._step_ensure_main_city(screenshot, scene)
 
     def _step_check_completion(self, screenshot: np.ndarray) -> list[dict]:
@@ -760,6 +859,7 @@ class QuestWorkflow:
         For each variant, caches the template + mask for stage-1 matching,
         and stores BGR + boolean mask for stage-2 masked NCC.
         """
+        self._finger_ncc = {}
         try:
             import cv2
             tm = self.element_detector.template_matcher
@@ -903,6 +1003,15 @@ class QuestWorkflow:
                       reverse=True)
         return verified[0]
 
+    def _find_back_arrow(self, screenshot: np.ndarray):
+        """Detect back_arrow button (left arrow) via template matching.
+
+        Returns an Element or None.
+        """
+        return self.element_detector.locate(
+            screenshot, "buttons/back_arrow", methods=["template"]
+        )
+
     # ---- close_x detection with red-pixel verification ----
 
     # Red-pixel verification thresholds for close_x detection.
@@ -990,6 +1099,23 @@ class QuestWorkflow:
                        x=best.x, y=best.y,
                        confidence=best.confidence, bbox=best.bbox)
 
+    def _track_button_tap(self, button_text: str) -> None:
+        """Track consecutive taps on the same action button.
+
+        If the same button is tapped _ACTION_BUTTON_EXHAUST_THRESHOLD times
+        in a row, add it to the exhausted set so _find_action_buttons skips
+        it on subsequent iterations.
+        """
+        if button_text == self._last_action_button_text:
+            self._action_button_repeat_count += 1
+        else:
+            self._last_action_button_text = button_text
+            self._action_button_repeat_count = 1
+        if self._action_button_repeat_count >= self._ACTION_BUTTON_EXHAUST_THRESHOLD:
+            self._exhausted_buttons.add(button_text)
+            self._last_action_button_text = ""
+            self._action_button_repeat_count = 0
+
     def _find_action_buttons(self, screenshot: np.ndarray,
                              finger_match) -> "list[Element]":
         """Find actionable buttons on screen.
@@ -1025,6 +1151,8 @@ class QuestWorkflow:
         seen_texts: set[str] = set()
         for btn_text in self._ACTION_BUTTON_TEXTS:
             if btn_text in seen_texts:
+                continue
+            if btn_text in self._exhausted_buttons:
                 continue
             btn_lower = btn_text.lower()
             # Filter: OCR text must be short (keyword + ≤4 extra chars)

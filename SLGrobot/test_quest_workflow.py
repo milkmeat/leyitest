@@ -203,6 +203,10 @@ class TestQuestWorkflow(unittest.TestCase):
 
         qbd = MagicMock()
         ed = MagicMock()
+        # _find_close_x calls ed.template_matcher.match_one_multi — return
+        # empty list so the method short-circuits to None without touching
+        # the cache.
+        ed.template_matcher.match_one_multi.return_value = []
         llm = MagicMock()
         llm.api_key = "test-key"
         gs = GameState()
@@ -280,16 +284,40 @@ class TestQuestWorkflow(unittest.TestCase):
         assert actions[0]["type"] == "tap"
         assert actions[0]["x"] == 540
 
-    def test_ensure_main_city_fallback_back(self):
-        """If no navigation text found, press BACK."""
+    def test_ensure_main_city_fallback_back_arrow(self):
+        """If no navigation text found, try back_arrow template."""
+        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf.start()
+
+        back_arrow = MagicMock()
+        back_arrow.x = 60
+        back_arrow.y = 80
+
+        def locate_side_effect(screenshot, target, methods=None):
+            if target == "buttons/back_arrow" and methods == ["template"]:
+                return back_arrow
+            return None
+        ed.locate.side_effect = locate_side_effect
+
+        actions = wf.step(_make_screenshot(), "battle")
+        assert len(actions) == 1
+        assert actions[0]["type"] == "tap"
+        assert actions[0]["x"] == 60
+        assert actions[0]["y"] == 80
+        assert "back_arrow" in actions[0]["reason"]
+
+    def test_ensure_main_city_fallback_tap_blank(self):
+        """If no navigation text and no back_arrow, tap blank area."""
         wf, qbd, ed, llm, gs = self._make_workflow()
         wf.start()
         ed.locate.return_value = None
 
-        actions = wf.step(_make_screenshot(), "battle")
+        screenshot = _make_screenshot()
+        actions = wf.step(screenshot, "battle")
         assert len(actions) == 1
-        assert actions[0]["type"] == "key_event"
-        assert actions[0]["keycode"] == 4
+        assert actions[0]["type"] == "tap"
+        assert actions[0]["y"] == int(1920 * 0.95)
+        assert "tap_blank" in actions[0]["reason"]
 
     # -- READ_QUEST tests --
 
@@ -360,7 +388,7 @@ class TestQuestWorkflow(unittest.TestCase):
         assert actions == []
 
     def test_execute_quest_tutorial_finger_with_button(self):
-        """Tutorial finger + OCR button found -> tap topmost button."""
+        """Tutorial finger on popup -> follow fingertip (buttons ignored)."""
         wf, qbd, ed, llm, gs = self._make_workflow()
         wf.start()
         wf.phase = "execute_quest"
@@ -371,7 +399,7 @@ class TestQuestWorkflow(unittest.TestCase):
         finger.y = 960
         finger.confidence = 0.9
 
-        # Simulate two "升级" results: building button (top) and furniture (bottom)
+        # OCR buttons exist but finger takes priority on popup
         ocr_top = MagicMock(text="升级", confidence=0.9, center=(700, 600))
         ocr_bot = MagicMock(text="升级", confidence=0.95, center=(900, 970))
 
@@ -384,11 +412,11 @@ class TestQuestWorkflow(unittest.TestCase):
 
         actions = wf.step(_make_screenshot(), "popup")
         assert wf.phase == "execute_quest"
-        assert len(actions) == wf._RAPID_TAP_COUNT
-        # Should pick the topmost "升级" (building button at y=600)
-        assert actions[0]["x"] == 700
-        assert actions[0]["y"] == 600
-        assert "finger_button" in actions[0]["reason"]
+        assert len(actions) == 1
+        # Finger on popup -> follow fingertip directly
+        assert actions[0]["x"] == 540 + wf._FINGERTIP_OFFSET[0]
+        assert actions[0]["y"] == 960 + wf._FINGERTIP_OFFSET[1]
+        assert "follow_finger" in actions[0]["reason"]
 
     def test_execute_quest_tutorial_finger_no_button(self):
         """Tutorial finger (normal) found but no OCR button -> tap fingertip."""
@@ -413,10 +441,10 @@ class TestQuestWorkflow(unittest.TestCase):
         assert len(actions) == 1
         assert actions[0]["x"] == 540 + wf._FINGERTIP_OFFSET[0]  # -65
         assert actions[0]["y"] == 960 + wf._FINGERTIP_OFFSET[1]  # +100
-        assert "follow_tutorial_finger" in actions[0]["reason"]
+        assert "follow_finger" in actions[0]["reason"]
 
     def test_execute_quest_tutorial_finger_flipped(self):
-        """Flipped finger found -> tap with mirrored x offset."""
+        """Flipped finger (hflip) found -> tap with mirrored x offset."""
         wf, qbd, ed, llm, gs = self._make_workflow()
         wf.start()
         wf.phase = "execute_quest"
@@ -428,20 +456,20 @@ class TestQuestWorkflow(unittest.TestCase):
         flipped.confidence = 0.95
 
         def locate_side_effect(screenshot, target, methods=None):
-            if target == "icons/tutorial_finger_flip" and methods == ["template"]:
+            if target == "icons/tutorial_finger_hflip" and methods == ["template"]:
                 return flipped
             return None
         ed.locate.side_effect = locate_side_effect
 
-        actions = wf.step(_make_screenshot(), "popup")
+        actions = wf.step(_make_screenshot(), "unknown")
         assert len(actions) == 1
-        # Flipped: dx is negated -> +65 instead of -65
+        # hflip: dx is negated -> +25 instead of -25
         assert actions[0]["x"] == 700 + (-wf._FINGERTIP_OFFSET[0])
         assert actions[0]["y"] == 600 + wf._FINGERTIP_OFFSET[1]
         assert "follow_tutorial_finger" in actions[0]["reason"]
 
     def test_execute_quest_llm_fallback(self):
-        """No finger -> use LLM suggestions."""
+        """No finger, no buttons -> use LLM suggestions."""
         wf, qbd, ed, llm, gs = self._make_workflow()
         wf.start()
         wf.phase = "execute_quest"
@@ -452,7 +480,7 @@ class TestQuestWorkflow(unittest.TestCase):
             {"type": "tap", "x": 300, "y": 500, "reason": "llm_suggestion"}
         ]
 
-        actions = wf.step(_make_screenshot(), "popup")
+        actions = wf.step(_make_screenshot(), "unknown")
         assert len(actions) == 1
         assert actions[0]["x"] == 300
 
@@ -643,6 +671,104 @@ class TestQuestWorkflow(unittest.TestCase):
         wf.start()
         wf.step(_make_screenshot(), "main_city")  # -> read_quest
         assert gs.quest_workflow_phase == "read_quest"
+
+    # -- Button fatigue tracking tests --
+
+    def test_action_button_exhausted_after_threshold(self):
+        """Tapping the same button _ACTION_BUTTON_EXHAUST_THRESHOLD times
+        adds it to _exhausted_buttons."""
+        wf, *_ = self._make_workflow()
+        wf.start()
+        assert wf._exhausted_buttons == set()
+
+        wf._track_button_tap("一键上阵")
+        assert "一键上阵" not in wf._exhausted_buttons  # 1st tap, below threshold
+
+        wf._track_button_tap("一键上阵")
+        assert "一键上阵" in wf._exhausted_buttons  # 2nd tap, hits threshold=2
+
+    def test_exhausted_button_skipped(self):
+        """Exhausted buttons are skipped by _find_action_buttons OCR stage."""
+        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf.start()
+        wf.phase = "execute_quest"
+
+        # Simulate OCR returning both "一键上阵" and "出战"
+        from unittest.mock import MagicMock
+        ocr_btn1 = MagicMock(text="一键上阵", confidence=0.95,
+                             center=(540, 800))
+        ocr_btn1.text = "一键上阵"
+        ocr_btn2 = MagicMock(text="出战", confidence=0.90,
+                             center=(540, 900))
+        ocr_btn2.text = "出战"
+        ed.ocr.find_all_text.return_value = [ocr_btn1, ocr_btn2]
+        # No template matches
+        ed.locate.return_value = None
+        ed.template_matcher.match_one_multi.return_value = []
+
+        # Without fatigue, "一键上阵" has higher priority
+        buttons = wf._find_action_buttons(_make_screenshot(), None)
+        assert len(buttons) == 1
+        assert buttons[0].name == "一键上阵"
+
+        # Mark "一键上阵" as exhausted
+        wf._exhausted_buttons.add("一键上阵")
+
+        # Now should skip "一键上阵" and return "出战"
+        buttons = wf._find_action_buttons(_make_screenshot(), None)
+        assert len(buttons) == 1
+        assert buttons[0].name == "出战"
+
+    def test_exhausted_reset_on_scene_change(self):
+        """Scene change clears exhausted buttons."""
+        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf.start()
+        wf.phase = "execute_quest"
+        wf.target_quest_name = "通关远征"
+
+        # Exhaust a button
+        wf._exhausted_buttons.add("一键上阵")
+        wf._last_action_button_text = "一键上阵"
+        wf._action_button_repeat_count = 1
+        wf._last_execute_scene = "unknown"
+
+        # Step with a different scene triggers reset
+        ed.locate.return_value = None
+        llm.analyze_quest_execution.return_value = []
+        wf.step(_make_screenshot(), "popup")
+
+        assert wf._exhausted_buttons == set()
+        assert wf._last_action_button_text == ""
+        assert wf._action_button_repeat_count == 0
+        assert wf._last_execute_scene == "popup"
+
+    def test_exhausted_reset_on_start_and_abort(self):
+        """start() and abort() clear all button fatigue state."""
+        wf, *_ = self._make_workflow()
+
+        # Pollute fatigue state
+        wf._exhausted_buttons = {"一键上阵", "出战"}
+        wf._last_action_button_text = "攻击"
+        wf._action_button_repeat_count = 5
+        wf._last_execute_scene = "battle"
+
+        wf.start()
+        assert wf._exhausted_buttons == set()
+        assert wf._last_action_button_text == ""
+        assert wf._action_button_repeat_count == 0
+        assert wf._last_execute_scene == ""
+
+        # Pollute again
+        wf._exhausted_buttons = {"建造"}
+        wf._last_action_button_text = "建造"
+        wf._action_button_repeat_count = 3
+        wf._last_execute_scene = "unknown"
+
+        wf.abort()
+        assert wf._exhausted_buttons == set()
+        assert wf._last_action_button_text == ""
+        assert wf._action_button_repeat_count == 0
+        assert wf._last_execute_scene == ""
 
 
 if __name__ == "__main__":
