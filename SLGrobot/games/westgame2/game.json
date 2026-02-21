@@ -58,5 +58,7 @@
   ],
 
   "grid_cols": 8,
-  "grid_rows": 6
+  "grid_rows": 6,
+
+  "finger_ncc_threshold": 0.80
 }

@@ -132,7 +132,7 @@ class GameBot:
         self.detector = ElementDetector(self.template_matcher, self.ocr, self.grid)
 
         # Scene layer
-        self.classifier = SceneClassifier(self.template_matcher)
+        self.classifier = SceneClassifier(self.template_matcher, game_profile=game_profile)
         self.popup_filter = PopupFilter(
             self.template_matcher, self.adb, self.ocr,
             game_profile=game_profile,
@@ -317,6 +317,25 @@ class GameBot:
                     # 2b. Reset stuck escalation if scene changed
                     if len(scene_history) >= 2 and scene_history[-1] != scene_history[-2]:
                         self.stuck_recovery.reset()
+
+                    # 2c. Tutorial finger detection — highest priority so
+                    #     fingers are tapped even on popup/unknown scenes.
+                    if not self.quest_workflow.is_active():
+                        finger, flip = self.quest_workflow._detect_tutorial_finger(
+                            screenshot
+                        )
+                        if finger is not None:
+                            tip_x, tip_y = self.quest_workflow._fingertip_pos(
+                                finger.x, finger.y, flip
+                            )
+                            logger.info(
+                                f"Tutorial finger detected at ({finger.x}, {finger.y}) "
+                                f"{flip}, tapping fingertip ({tip_x}, {tip_y})"
+                            )
+                            self.adb.tap(tip_x, tip_y)
+                            consecutive_unknown_scenes = 0
+                            time.sleep(0.8)
+                            continue
 
                     # 3. Handle popups immediately (skip when quest workflow
                     #    is active — workflow handles its own popups like

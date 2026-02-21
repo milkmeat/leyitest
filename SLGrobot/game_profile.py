@@ -61,6 +61,9 @@ class GameProfile:
     grid_cols: int = 8
     grid_rows: int = 6
 
+    # Finger detection — NCC threshold (0.0 = use class default)
+    finger_ncc_threshold: float = 0.0
+
 
 def load_game_profile(game_id: str,
                       games_dir: str = "games") -> GameProfile:
@@ -126,6 +129,9 @@ def load_game_profile(game_id: str,
         # Grid
         grid_cols=data.get("grid_cols", 8),
         grid_rows=data.get("grid_rows", 6),
+
+        # Finger detection
+        finger_ncc_threshold=data.get("finger_ncc_threshold", 0.0),
     )
 
     logger.info(f"Loaded game profile: {profile.display_name} ({game_id})")

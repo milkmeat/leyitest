@@ -42,8 +42,14 @@ class SceneClassifier:
     # Bottom-right corner region (ratio of screen) for main_city/world_map detection
     CORNER_REGION = (0.78, 0.85, 1.0, 1.0)  # (x1_ratio, y1_ratio, x2_ratio, y2_ratio)
 
-    def __init__(self, template_matcher: TemplateMatcher) -> None:
+    def __init__(self, template_matcher: TemplateMatcher,
+                 game_profile=None) -> None:
         self.template_matcher = template_matcher
+        self._scenes = (
+            game_profile.scenes
+            if game_profile and game_profile.scenes
+            else self.SCENES
+        )
 
     def classify(self, screenshot: np.ndarray) -> str:
         """Classify screenshot into one of SCENES.
@@ -72,7 +78,7 @@ class SceneClassifier:
         scores["popup"] = self._detect_popup_score(screenshot)
         if scores["popup"] >= 0.7:
             # Popup detected with high confidence, skip further checks
-            for scene in self.SCENES:
+            for scene in self._scenes:
                 if scene not in scores:
                     scores[scene] = 0.0
             return scores
@@ -80,7 +86,7 @@ class SceneClassifier:
         # 2. Check for loading screen
         scores["loading"] = self._detect_loading_score(screenshot)
         if scores["loading"] >= 0.7:
-            for scene in self.SCENES:
+            for scene in self._scenes:
                 if scene not in scores:
                     scores[scene] = 0.0
             return scores
@@ -89,7 +95,7 @@ class SceneClassifier:
         triangle_match = self.template_matcher.match_one(screenshot, "icons/down_triangle")
         if triangle_match and triangle_match.confidence >= 0.9:
             scores["story_dialogue"] = triangle_match.confidence
-            for scene in self.SCENES:
+            for scene in self._scenes:
                 if scene not in scores:
                     scores[scene] = 0.0
             return scores
@@ -106,7 +112,7 @@ class SceneClassifier:
 
         if scores["main_city"] >= 0.5 or scores["world_map"] >= 0.5:
             # One of the two primary scenes detected, done
-            for scene in self.SCENES:
+            for scene in self._scenes:
                 if scene not in scores:
                     scores[scene] = 0.0
             return scores
@@ -118,12 +124,12 @@ class SceneClassifier:
             name = match.template_name.split("/")[-1] if "/" in match.template_name else match.template_name
             if name in ("main_city", "world_map"):
                 continue  # Already handled by corner detection
-            if name in self.SCENES:
+            if name in self._scenes:
                 current = scores.get(name, 0.0)
                 scores[name] = max(current, match.confidence)
 
         # Ensure all scenes have a score
-        for scene in self.SCENES:
+        for scene in self._scenes:
             if scene not in scores:
                 scores[scene] = 0.0
 
