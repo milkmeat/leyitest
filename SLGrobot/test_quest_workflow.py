@@ -452,7 +452,7 @@ class TestQuestWorkflow(unittest.TestCase):
 
         flipped = MagicMock()
         flipped.x = 700
-        flipped.y = 600
+        flipped.y = 1500
         flipped.confidence = 0.95
 
         def locate_side_effect(screenshot, target, methods=None):
@@ -465,7 +465,7 @@ class TestQuestWorkflow(unittest.TestCase):
         assert len(actions) == 1
         # hflip: dx is negated -> +25 instead of -25
         assert actions[0]["x"] == 700 + (-wf._FINGERTIP_OFFSET[0])
-        assert actions[0]["y"] == 600 + wf._FINGERTIP_OFFSET[1]
+        assert actions[0]["y"] == 1500 + wf._FINGERTIP_OFFSET[1]
         assert "follow_tutorial_finger" in actions[0]["reason"]
 
     def test_execute_quest_llm_fallback(self):

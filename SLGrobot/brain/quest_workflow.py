@@ -919,6 +919,13 @@ class QuestWorkflow:
     # false positives.
     _FINGER_NCC_THRESHOLD = 0.45
 
+    # Stage-3: position filter — tutorial fingers appear near UI buttons
+    # in the lower portion of the screen.  All real fingers observed at
+    # y > 70% screen height.  False positives (e.g. y=553 on 1920 = 29%)
+    # appear in the upper area.  Threshold 0.40 (y > 768 on 1920)
+    # rejects upper-screen false positives with wide margin.
+    _FINGER_MIN_Y_RATIO = 0.40
+
     def _verify_finger_ncc(self, screenshot: np.ndarray,
                             cx: int, cy: int,
                             flip_type: str) -> float:
@@ -988,6 +995,15 @@ class QuestWorkflow:
                 logger.debug(
                     f"Finger {flip_type} rejected (stage2): ncc={ncc:.3f} "
                     f"at ({match.x}, {match.y})"
+                )
+                continue
+
+            # Stage-3: position filter — reject matches in upper screen
+            sh = screenshot.shape[0]
+            if match.y < sh * self._FINGER_MIN_Y_RATIO:
+                logger.debug(
+                    f"Finger {flip_type} rejected (stage3 position): "
+                    f"y={match.y} < {sh * self._FINGER_MIN_Y_RATIO:.0f}"
                 )
                 continue
 
