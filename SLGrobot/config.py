@@ -44,6 +44,10 @@ STATE_FILE = "data/game_state.json"
 TASKS_FILE = "data/tasks.json"
 NAV_PATHS_FILE = "data/navigation_paths.json"
 
+# Multi-game support
+GAMES_DIR = "games"
+ACTIVE_GAME = "frozenisland"
+
 # Logging
 LOG_DIR = "logs"
 

@@ -18,9 +18,11 @@ class StuckRecovery:
 
     MAX_LEVEL = 3
 
-    def __init__(self, adb=None, max_same_scene: int = None) -> None:
+    def __init__(self, adb=None, max_same_scene: int = None,
+                 game_package: str | None = None) -> None:
         self.adb = adb
         self.max_same_scene = max_same_scene or config.STUCK_MAX_SAME_SCENE
+        self._game_package = game_package
         self._level = 0
         self._recovery_count = 0
 
@@ -72,7 +74,7 @@ class StuckRecovery:
 
     def _restart_app(self, adb) -> None:
         """Force-stop and relaunch the game package."""
-        package = getattr(config, "GAME_PACKAGE", "")
+        package = self._game_package or getattr(config, "GAME_PACKAGE", "")
         if not package or not adb:
             logger.warning("No GAME_PACKAGE configured, falling back to HOME key")
             if adb:

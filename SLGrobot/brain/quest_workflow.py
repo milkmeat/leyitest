@@ -83,11 +83,18 @@ class QuestWorkflow:
     def __init__(self, quest_bar_detector: QuestBarDetector,
                  element_detector: ElementDetector,
                  llm_planner,
-                 game_state: GameState) -> None:
+                 game_state: GameState,
+                 game_profile=None) -> None:
         self.quest_bar_detector = quest_bar_detector
         self.element_detector = element_detector
         self.llm_planner = llm_planner
         self.game_state = game_state
+
+        # Override button patterns from game profile
+        if game_profile and game_profile.action_button_templates:
+            self._ACTION_BUTTON_TEMPLATES = game_profile.action_button_templates
+        if game_profile and game_profile.action_button_texts:
+            self._ACTION_BUTTON_TEXTS = game_profile.action_button_texts
 
         # Create horizontally flipped tutorial_finger template for mirror detection
         self._ensure_flipped_finger_template()

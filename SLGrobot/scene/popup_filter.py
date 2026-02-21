@@ -38,10 +38,21 @@ class PopupFilter:
 
     def __init__(self, template_matcher: TemplateMatcher,
                  adb: ADBController,
-                 ocr: OCRLocator | None = None) -> None:
+                 ocr: OCRLocator | None = None,
+                 game_profile=None) -> None:
         self.template_matcher = template_matcher
         self.adb = adb
         self.ocr = ocr
+        self._close_templates = (
+            game_profile.popup_close_templates
+            if game_profile and game_profile.popup_close_templates
+            else self.CLOSE_TEMPLATES
+        )
+        self._close_texts = (
+            game_profile.popup_close_texts
+            if game_profile and game_profile.popup_close_texts
+            else self.CLOSE_TEXTS
+        )
 
     def is_popup(self, screenshot: np.ndarray) -> bool:
         """Check if current screen has a popup overlay.
@@ -51,7 +62,7 @@ class PopupFilter:
         2. Border darkness analysis (popup darkens background)
         """
         # Check for close button templates
-        for name in self.CLOSE_TEMPLATES:
+        for name in self._close_templates:
             match = self.template_matcher.match_one(screenshot, name)
             if match is not None:
                 return True
@@ -74,7 +85,7 @@ class PopupFilter:
         # non-close elements (e.g. ">" chevron arrows).
         if self.ocr is not None:
             all_text = self.ocr.find_all_text(screenshot)
-            for close_text in self.CLOSE_TEXTS:
+            for close_text in self._close_texts:
                 for r in all_text:
                     if close_text in r.text:
                         cx, cy = r.center
@@ -88,7 +99,7 @@ class PopupFilter:
 
         # Strategy 2: Find close button template (with position validation)
         h, w = screenshot.shape[:2]
-        for name in self.CLOSE_TEMPLATES:
+        for name in self._close_templates:
             match = self.template_matcher.match_one(screenshot, name)
             if match is not None:
                 # Close/X buttons are in the top-right corner of popups.

@@ -31,6 +31,7 @@ import argparse
 import cv2
 
 import config
+from game_profile import GameProfile, load_game_profile, list_games
 from device.adb_controller import ADBController
 from device.input_actions import InputActions
 from vision.screenshot import ScreenshotManager
@@ -70,8 +71,8 @@ Commands:
   scene                         Classify current scene
   task <name> [priority]        Add a task to the queue
   tasks                         Show task queue
-  save_tasks                    Save task queue to data/tasks.json
-  load_tasks                    Load task queue from data/tasks.json
+  save_tasks                    Save task queue to file
+  load_tasks                    Load task queue from file
   auto [loops]                  Run auto loop (default: infinite)
   llm                           Manually trigger LLM strategic consultation
   detect_finger                 Detect tutorial finger, print coords, save crop
@@ -79,6 +80,8 @@ Commands:
   capture_template <category> <name> <x1>,<y1> <x2>,<y2>
                                 Capture screenshot region as template
   reload_templates              Reload template library
+  games                         List available games
+  game [id]                     Show current game (or info about <id>)
   help                          Show this help
   exit / quit                   Exit"""
 
@@ -102,39 +105,70 @@ class GameBot:
     Validation pipeline: validator -> runner -> checker
     """
 
-    def __init__(self) -> None:
+    def __init__(self, game_profile: GameProfile | None = None) -> None:
+        self.game_profile = game_profile
+
+        # Resolve paths from profile or fall back to config defaults
+        template_dir = game_profile.template_dir if game_profile else config.TEMPLATE_DIR
+        nav_paths_file = game_profile.nav_paths_file if game_profile else config.NAV_PATHS_FILE
+        state_file = game_profile.state_file if game_profile else config.STATE_FILE
+        tasks_file = game_profile.tasks_file if game_profile else config.TASKS_FILE
+        game_package = game_profile.package if game_profile else config.GAME_PACKAGE
+        grid_cols = game_profile.grid_cols if game_profile else config.GRID_COLS
+        grid_rows = game_profile.grid_rows if game_profile else config.GRID_ROWS
+
+        self._tasks_file = tasks_file
+        self._template_dir = template_dir
+
         # Device layer
         self.adb = ADBController(config.ADB_HOST, config.ADB_PORT, config.NOX_ADB_PATH)
         self.input_actions = InputActions(self.adb)
         self.screenshot_mgr = ScreenshotManager(self.adb, config.SCREENSHOT_DIR)
 
         # Vision layer
-        self.template_matcher = TemplateMatcher(config.TEMPLATE_DIR)
+        self.template_matcher = TemplateMatcher(template_dir)
         self.ocr = OCRLocator()
-        self.grid = GridOverlay(config.GRID_COLS, config.GRID_ROWS)
+        self.grid = GridOverlay(grid_cols, grid_rows)
         self.detector = ElementDetector(self.template_matcher, self.ocr, self.grid)
 
         # Scene layer
         self.classifier = SceneClassifier(self.template_matcher)
-        self.popup_filter = PopupFilter(self.template_matcher, self.adb, self.ocr)
+        self.popup_filter = PopupFilter(
+            self.template_matcher, self.adb, self.ocr,
+            game_profile=game_profile,
+        )
 
         # State layer
-        self.game_state = GameState()
-        self.persistence = StatePersistence(config.STATE_FILE)
+        default_resources = (
+            game_profile.default_resources if game_profile else None
+        )
+        self.game_state = GameState(default_resources=default_resources)
+        self.persistence = StatePersistence(state_file)
         self.state_tracker = StateTracker(
-            self.game_state, self.ocr, self.template_matcher
+            self.game_state, self.ocr, self.template_matcher,
+            resource_keywords=(
+                game_profile.resource_keywords if game_profile else None
+            ),
+            resource_order=(
+                game_profile.resource_order if game_profile else None
+            ),
         )
 
         # Brain layer
         self.task_queue = TaskQueue()
-        self.auto_handler = AutoHandler(self.template_matcher, self.detector)
+        self.auto_handler = AutoHandler(
+            self.template_matcher, self.detector,
+            game_profile=game_profile,
+        )
         self.rule_engine = RuleEngine(
-            self.detector, self.game_state, config.NAV_PATHS_FILE
+            self.detector, self.game_state, nav_paths_file,
+            game_profile=game_profile,
         )
         self.llm_planner = LLMPlanner(
             api_key=config.LLM_API_KEY,
             model=config.LLM_MODEL,
             grid_overlay=self.grid,
+            game_profile=game_profile,
         )
 
         # Executor layer (Phase 4)
@@ -148,7 +182,9 @@ class GameBot:
         )
 
         # Hardening layer (Phase 5)
-        self.stuck_recovery = StuckRecovery(adb=self.adb)
+        self.stuck_recovery = StuckRecovery(
+            adb=self.adb, game_package=game_package,
+        )
         self.game_logger = GameLogger(config.LOG_DIR)
 
         # Quest workflow (reset stale persisted state — workflow always starts IDLE)
@@ -157,6 +193,7 @@ class GameBot:
             element_detector=self.detector,
             llm_planner=self.llm_planner,
             game_state=self.game_state,
+            game_profile=game_profile,
         )
         self.game_state.quest_workflow_phase = "idle"
         self.game_state.quest_workflow_target = ""
@@ -669,6 +706,9 @@ class CLI:
     def cmd_status(self, args: list[str]) -> None:
         alive = self.bot.adb.is_connected()
         gs = self.bot.game_state
+        gp = self.bot.game_profile
+        if gp:
+            print(f"Game: {gp.display_name} ({gp.game_id})")
         print(f"Connected: {alive}  Device: {self.bot.adb.device_serial}")
         print(f"Scene: {gs.scene}  Loop: {gs.loop_count}")
         print(f"Resources: {gs.resources}")
@@ -699,7 +739,7 @@ class CLI:
     def cmd_task(self, args: list[str]) -> None:
         if len(args) < 1:
             print("Usage: task <name> [priority]")
-            print(f"Known tasks: {', '.join(sorted(self.bot.rule_engine.KNOWN_TASKS))}")
+            print(f"Known tasks: {', '.join(sorted(self.bot.rule_engine._known_tasks))}")
             return
         name = args[0]
         priority = int(args[1]) if len(args) > 1 else 0
@@ -716,12 +756,12 @@ class CLI:
             print(f"  [{t['status']}] {t['name']} (priority={t['priority']}, retries={t['retry_count']})")
 
     def cmd_save_tasks(self, args: list[str]) -> None:
-        filepath = args[0] if args else config.TASKS_FILE
+        filepath = args[0] if args else self.bot._tasks_file
         self.bot.task_queue.save(filepath)
         print(f"Saved {self.bot.task_queue.size()} tasks to {filepath}")
 
     def cmd_load_tasks(self, args: list[str]) -> None:
-        filepath = args[0] if args else config.TASKS_FILE
+        filepath = args[0] if args else self.bot._tasks_file
         count = self.bot.task_queue.load(filepath)
         print(f"Loaded {count} tasks from {filepath}")
 
@@ -856,7 +896,7 @@ class CLI:
             print(f"Empty region ({x1},{y1})-({x2},{y2}). Check coordinates.")
             return
 
-        out_dir = os.path.join(config.TEMPLATE_DIR, category)
+        out_dir = os.path.join(self.bot._template_dir, category)
         os.makedirs(out_dir, exist_ok=True)
         out_path = os.path.join(out_dir, f"{name}.png")
         cv2.imwrite(out_path, region)
@@ -871,6 +911,49 @@ class CLI:
         self.bot.template_matcher.reload()
         count = self.bot.template_matcher.count()
         print(f"Templates reloaded: {count} templates loaded")
+
+    def cmd_games(self, args: list[str]) -> None:
+        """List available games."""
+        games_dir = getattr(config, "GAMES_DIR", "games")
+        available = list_games(games_dir)
+        if not available:
+            print(f"No games found in {games_dir}/")
+            return
+        active_id = (
+            self.bot.game_profile.game_id if self.bot.game_profile else None
+        )
+        for gid in available:
+            marker = " *" if gid == active_id else ""
+            try:
+                gp = load_game_profile(gid, games_dir)
+                print(f"  {gid}{marker}  ({gp.display_name})")
+            except Exception:
+                print(f"  {gid}{marker}")
+
+    def cmd_game(self, args: list[str]) -> None:
+        """Show current game or info about a specific game ID."""
+        games_dir = getattr(config, "GAMES_DIR", "games")
+        if args:
+            gid = args[0]
+            try:
+                gp = load_game_profile(gid, games_dir)
+                print(f"Game: {gp.display_name} ({gid})")
+                print(f"  Package: {gp.package}")
+                print(f"  Templates: {gp.template_dir}")
+                active_id = (
+                    self.bot.game_profile.game_id
+                    if self.bot.game_profile else None
+                )
+                if gid != active_id:
+                    print(f"  To switch: restart with --game {gid}")
+            except FileNotFoundError:
+                print(f"Game '{gid}' not found. Use 'games' to list available.")
+        else:
+            gp = self.bot.game_profile
+            if gp:
+                print(f"Active game: {gp.display_name} ({gp.game_id})")
+            else:
+                print("No game profile loaded (using built-in defaults)")
 
     def cmd_auto(self, args: list[str]) -> None:
         max_loops = int(args[0]) if args else 0
@@ -900,7 +983,7 @@ class CLI:
 
 
 def main():
-    # Split sys.argv: flags (--auto, --loops) go to argparse,
+    # Split sys.argv: flags (--auto, --loops, --game) go to argparse,
     # remaining positional args are treated as a one-shot command.
     flags = []
     cmd_args = []
@@ -909,8 +992,8 @@ def main():
         arg = sys.argv[i]
         if arg.startswith("--"):
             flags.append(arg)
-            # Consume value for --loops
-            if arg == "--loops" and i + 1 < len(sys.argv):
+            # Consume value for --loops and --game
+            if arg in ("--loops", "--game") and i + 1 < len(sys.argv):
                 i += 1
                 flags.append(sys.argv[i])
         else:
@@ -928,10 +1011,25 @@ def main():
         "--loops", type=int, default=0,
         help="Max auto-loop iterations (0 = infinite)"
     )
+    parser.add_argument(
+        "--game", type=str,
+        default=getattr(config, "ACTIVE_GAME", "frozenisland"),
+        help="Game profile to load (default: %(default)s)"
+    )
     args = parser.parse_args(flags)
 
     GameLogger(config.LOG_DIR)
-    bot = GameBot()
+
+    # Load game profile
+    games_dir = getattr(config, "GAMES_DIR", "games")
+    game_profile = None
+    try:
+        game_profile = load_game_profile(args.game, games_dir)
+        print(f"Game: {game_profile.display_name}")
+    except FileNotFoundError:
+        print(f"Warning: game profile '{args.game}' not found, using defaults")
+
+    bot = GameBot(game_profile=game_profile)
 
     if not bot.connect():
         sys.exit(1)

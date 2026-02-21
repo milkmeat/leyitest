@@ -39,11 +39,17 @@ class RuleEngine:
 
     def __init__(self, element_detector: ElementDetector,
                  game_state: GameState,
-                 nav_paths_file: str = "data/navigation_paths.json") -> None:
+                 nav_paths_file: str = "data/navigation_paths.json",
+                 game_profile=None) -> None:
         self.detector = element_detector
         self.state = game_state
         self.nav_paths: dict = {}
         self._load_nav_paths(nav_paths_file)
+        self._known_tasks = (
+            set(game_profile.known_tasks)
+            if game_profile and game_profile.known_tasks
+            else self.KNOWN_TASKS
+        )
 
     def _load_nav_paths(self, filepath: str) -> None:
         """Load predefined navigation paths from JSON."""
@@ -57,7 +63,7 @@ class RuleEngine:
 
     def can_handle(self, task: Task) -> bool:
         """Check if this task has predefined rules."""
-        return task.name in self.KNOWN_TASKS
+        return task.name in self._known_tasks
 
     def plan(self, task: Task, screenshot: np.ndarray,
              game_state: GameState) -> list[dict]:

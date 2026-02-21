@@ -24,9 +24,18 @@ from .task_queue import Task
 
 logger = logging.getLogger(__name__)
 
-# System prompt for strategic planning
-STRATEGIC_PROMPT = """\
-You are an AI advisor for a mobile SLG game called "Frozen Island" (冰封岛屿).
+# System prompt templates for strategic planning.
+# When a GameProfile is provided, {game_description} and {task_types} are
+# filled from the profile; otherwise the Frozen Island defaults below are used.
+_DEFAULT_GAME_DESCRIPTION = 'a mobile SLG game called "Frozen Island" (冰封岛屿)'
+_DEFAULT_TASK_TYPES = (
+    "collect_resources, upgrade_building, train_troops, claim_rewards, "
+    "navigate_main_city, navigate_world_map, close_popup, check_mail, "
+    "collect_daily, gather_resource, scout_enemy, send_troops, custom"
+)
+
+STRATEGIC_PROMPT_TEMPLATE = """\
+You are an AI advisor for {game_description}.
 You see a grid-annotated screenshot of the game. The grid uses column letters (A-H) \
 and row numbers (1-6). You also receive a game state summary.
 
@@ -34,31 +43,27 @@ Your job: analyze the current situation and produce a prioritized task plan.
 
 Rules:
 - Output ONLY valid JSON, no markdown fences, no explanation outside JSON.
-- Each task must use one of these types: collect_resources, upgrade_building, \
-train_troops, claim_rewards, navigate_main_city, navigate_world_map, \
-close_popup, check_mail, collect_daily, gather_resource, scout_enemy, \
-send_troops, custom.
+- Each task must use one of these types: {task_types}.
 - For "custom" tasks, provide an "actions" array with step-by-step action dicts.
 - Prioritize: immediate rewards > building upgrades > troop training > exploration.
 - Do NOT produce more than 10 tasks.
 
 Output format:
-{
+{{
     "reasoning": "Brief explanation of your strategy",
     "tasks": [
-        {"name": "task_type", "priority": 10, "params": {}},
-        {"name": "upgrade_building", "priority": 8, "params": {"building_name": "barracks"}},
-        {"name": "custom", "priority": 5, "params": {}, "actions": [
-            {"type": "tap", "target_text": "Upgrade", "fallback_grid": "C4"},
-            {"type": "wait", "seconds": 1}
-        ]}
+        {{"name": "task_type", "priority": 10, "params": {{}}}},
+        {{"name": "upgrade_building", "priority": 8, "params": {{"building_name": "barracks"}}}},
+        {{"name": "custom", "priority": 5, "params": {{}}, "actions": [
+            {{"type": "tap", "target_text": "Upgrade", "fallback_grid": "C4"}},
+            {{"type": "wait", "seconds": 1}}
+        ]}}
     ]
-}
+}}
 """
 
-# System prompt for unknown scene analysis
-UNKNOWN_SCENE_PROMPT = """\
-You are an AI advisor for a mobile SLG game called "Frozen Island" (冰封岛屿).
+UNKNOWN_SCENE_PROMPT_TEMPLATE = """\
+You are an AI advisor for {game_description}.
 You see a grid-annotated screenshot of an UNKNOWN or unexpected game screen.
 The grid uses column letters (A-H) and row numbers (1-6).
 
@@ -71,19 +76,18 @@ Rules:
 - Use grid cells (e.g., "C4") for fallback positions.
 
 Output format:
-{
+{{
     "scene_description": "What you see on screen",
     "actions": [
-        {"type": "tap", "target_text": "Close", "fallback_grid": "H1"},
-        {"type": "tap", "target_text": "确定", "fallback_grid": "D4"}
+        {{"type": "tap", "target_text": "Close", "fallback_grid": "H1"}},
+        {{"type": "tap", "target_text": "确定", "fallback_grid": "D4"}}
     ]
-}
+}}
 """
 
-# System prompt for quest execution analysis
-QUEST_EXECUTION_PROMPT = """\
-You are an AI advisor for a mobile SLG game called "Frozen Island" (冰封岛屿).
-The player is currently executing a quest: "{quest_name}".
+QUEST_EXECUTION_PROMPT_TEMPLATE = """\
+You are an AI advisor for {game_description}.
+The player is currently executing a quest: "{{quest_name}}".
 You see a grid-annotated screenshot of the game. The grid uses column letters (A-H) \
 and row numbers (1-6).
 
@@ -96,14 +100,14 @@ Rules:
 - Use grid cells (e.g., "C4") for fallback positions.
 
 Output format:
-{{
+{{{{
     "scene_description": "What you see on screen",
     "quest_status": "in_progress | completed | unclear",
     "actions": [
-        {{"type": "tap", "target_text": "Button text", "fallback_grid": "C4"}},
-        {{"type": "key_event", "keycode": 4}}
+        {{{{"type": "tap", "target_text": "Button text", "fallback_grid": "C4"}}}},
+        {{{{"type": "key_event", "keycode": 4}}}}
     ]
-}}
+}}}}
 """
 
 
@@ -119,7 +123,8 @@ class LLMPlanner:
     def __init__(self, api_key: str = None, model: str = None,
                  grid_overlay: GridOverlay = None,
                  provider: str = None, base_url: str = None,
-                 vision_model: str = None) -> None:
+                 vision_model: str = None,
+                 game_profile=None) -> None:
         self.api_key = api_key if api_key is not None else config.LLM_API_KEY
         self.model = model if model is not None else config.LLM_MODEL
         self.vision_model = vision_model if vision_model is not None else getattr(config, "LLM_VISION_MODEL", self.model)
@@ -129,6 +134,20 @@ class LLMPlanner:
         self.grid = grid_overlay
         self.consult_interval = config.LLM_CONSULT_INTERVAL
         self._client = None
+
+        # Build prompts from game profile or defaults
+        game_desc = (game_profile.llm_game_description
+                     if game_profile and game_profile.llm_game_description
+                     else _DEFAULT_GAME_DESCRIPTION)
+        task_types = (game_profile.llm_task_types
+                      if game_profile and game_profile.llm_task_types
+                      else _DEFAULT_TASK_TYPES)
+        self._strategic_prompt = STRATEGIC_PROMPT_TEMPLATE.format(
+            game_description=game_desc, task_types=task_types)
+        self._unknown_scene_prompt = UNKNOWN_SCENE_PROMPT_TEMPLATE.format(
+            game_description=game_desc)
+        self._quest_execution_prompt_template = QUEST_EXECUTION_PROMPT_TEMPLATE.format(
+            game_description=game_desc)
 
     def _get_client(self):
         """Lazy-initialize the API client based on provider."""
@@ -196,7 +215,7 @@ class LLMPlanner:
         # Call LLM API
         try:
             response = self._call_vision_api(
-                STRATEGIC_PROMPT, image_b64, user_text
+                self._strategic_prompt, image_b64, user_text
             )
             tasks = self._parse_plan_response(response)
             game_state.last_llm_consult = datetime.now().isoformat()
@@ -231,7 +250,7 @@ class LLMPlanner:
 
         try:
             response = self._call_vision_api(
-                UNKNOWN_SCENE_PROMPT, image_b64, user_text
+                self._unknown_scene_prompt, image_b64, user_text
             )
             actions = self._parse_scene_response(response)
             logger.info(f"LLM scene analysis: {len(actions)} actions suggested")
@@ -262,7 +281,7 @@ class LLMPlanner:
         image_b64 = to_base64(annotated)
 
         state_summary = game_state.summary_for_llm()
-        system_prompt = QUEST_EXECUTION_PROMPT.format(quest_name=quest_name)
+        system_prompt = self._quest_execution_prompt_template.format(quest_name=quest_name)
         user_text = (
             f"Current game state:\n{state_summary}\n\n"
             f"I am executing quest: \"{quest_name}\". "

@@ -31,9 +31,9 @@ class GameState:
     Serializable to/from dict for JSON persistence and LLM context.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, default_resources: dict[str, int] | None = None) -> None:
         self.scene: str = "unknown"
-        self.resources: dict[str, int] = {
+        self.resources: dict[str, int] = default_resources.copy() if default_resources else {
             "food": 0,
             "wood": 0,
             "stone": 0,

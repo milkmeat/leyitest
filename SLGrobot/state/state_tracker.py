@@ -30,11 +30,15 @@ class StateTracker:
 
     def __init__(self, game_state: GameState,
                  ocr_locator: OCRLocator,
-                 template_matcher: TemplateMatcher) -> None:
+                 template_matcher: TemplateMatcher,
+                 resource_keywords: dict[str, list[str]] | None = None,
+                 resource_order: list[str] | None = None) -> None:
         self.state = game_state
         self.ocr = ocr_locator
         self.template_matcher = template_matcher
         self.quest_bar_detector = QuestBarDetector(template_matcher, ocr_locator)
+        self._resource_keywords = resource_keywords or self.RESOURCE_KEYWORDS
+        self._resource_order = resource_order or ["food", "wood", "stone", "gold"]
 
     def update(self, screenshot: np.ndarray, scene: str) -> None:
         """Update game_state based on current screenshot and scene.
@@ -84,7 +88,7 @@ class StateTracker:
                 continue
 
             # Try to associate number with a resource by proximity or keyword
-            for resource_name, keywords in self.RESOURCE_KEYWORDS.items():
+            for resource_name, keywords in self._resource_keywords.items():
                 for kw in keywords:
                     if kw.lower() in result.text.lower():
                         self.state.resources[resource_name] = value
@@ -101,7 +105,7 @@ class StateTracker:
 
         if len(numbers) >= 2:
             numbers.sort(key=lambda x: x[0])  # Sort by x position
-            resource_order = ["food", "wood", "stone", "gold"]
+            resource_order = self._resource_order
             for i, (_, value) in enumerate(numbers):
                 if i < len(resource_order):
                     # Only update if we got a plausible value

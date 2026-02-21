@@ -1,0 +1,80 @@
+{
+  "collect_resources": [
+    {"type": "tap", "target_text": "收集", "delay": 0.5, "reason": "nav_collect"},
+    {"type": "wait", "seconds": 1}
+  ],
+  "barracks": [
+    {"type": "tap", "target_text": "兵营", "delay": 1.0, "reason": "nav_barracks"},
+    {"type": "wait", "seconds": 1}
+  ],
+  "hospital": [
+    {"type": "tap", "target_text": "医院", "delay": 1.0, "reason": "nav_hospital"},
+    {"type": "wait", "seconds": 1}
+  ],
+  "mail": [
+    {"type": "tap", "target_text": "邮件", "delay": 1.0, "reason": "nav_mail"},
+    {"type": "wait", "seconds": 1}
+  ],
+  "alliance": [
+    {"type": "tap", "target_text": "联盟", "delay": 1.0, "reason": "nav_alliance"},
+    {"type": "wait", "seconds": 1}
+  ],
+  "shop": [
+    {"type": "tap", "target_text": "商店", "delay": 1.0, "reason": "nav_shop"},
+    {"type": "wait", "seconds": 1}
+  ],
+  "backpack": [
+    {"type": "tap", "target_text": "背包", "delay": 1.0, "reason": "nav_backpack"},
+    {"type": "wait", "seconds": 1}
+  ],
+  "main_city": [
+    {"type": "key_event", "keycode": 4, "delay": 0.5, "reason": "nav_back_to_city"},
+    {"type": "wait", "seconds": 1},
+    {"type": "tap", "target_text": "城市", "fallback_grid": "D3", "delay": 1.0, "reason": "nav_main_city"},
+    {"type": "wait", "seconds": 1}
+  ],
+  "world_map": [
+    {"type": "tap", "target_text": "世界", "fallback_grid": "A6", "delay": 1.0, "reason": "nav_world_map"},
+    {"type": "wait", "seconds": 1.5}
+  ],
+  "research": [
+    {"type": "tap", "target_text": "研究", "fallback_grid": "D2", "delay": 1.0, "reason": "nav_research"},
+    {"type": "wait", "seconds": 1}
+  ],
+  "wall": [
+    {"type": "tap", "target_text": "城墙", "fallback_grid": "D5", "delay": 1.0, "reason": "nav_wall"},
+    {"type": "wait", "seconds": 1}
+  ],
+  "forge": [
+    {"type": "tap", "target_text": "锻造", "fallback_grid": "C3", "delay": 1.0, "reason": "nav_forge"},
+    {"type": "wait", "seconds": 1}
+  ],
+  "hero": [
+    {"type": "tap", "target_text": "英雄", "fallback_grid": "H6", "delay": 1.0, "reason": "nav_hero"},
+    {"type": "wait", "seconds": 1}
+  ],
+  "quests": [
+    {"type": "tap", "target_text": "任务", "fallback_grid": "A2", "delay": 1.0, "reason": "nav_quests"},
+    {"type": "wait", "seconds": 1}
+  ],
+  "events": [
+    {"type": "tap", "target_text": "活动", "fallback_grid": "H1", "delay": 1.0, "reason": "nav_events"},
+    {"type": "wait", "seconds": 1}
+  ],
+  "building_castle": [
+    {"type": "tap", "target_text": "城堡", "fallback_grid": "D3", "delay": 1.0, "reason": "nav_castle"},
+    {"type": "wait", "seconds": 1}
+  ],
+  "daily_rewards": [
+    {"type": "tap", "target_text": "每日", "fallback_grid": "A1", "delay": 1.0, "reason": "nav_daily_rewards"},
+    {"type": "wait", "seconds": 0.5},
+    {"type": "tap", "target_text": "领取", "delay": 0.5, "reason": "nav_claim_daily"},
+    {"type": "wait", "seconds": 1}
+  ],
+  "alliance_help": [
+    {"type": "tap", "target_text": "联盟", "fallback_grid": "G6", "delay": 1.0, "reason": "nav_alliance"},
+    {"type": "wait", "seconds": 1},
+    {"type": "tap", "target_text": "帮助", "fallback_grid": "E3", "delay": 0.5, "reason": "nav_alliance_help"},
+    {"type": "wait", "seconds": 1}
+  ]
+}

@@ -1,0 +1,245 @@
+{
+  "scene": "main_city",
+  "resources": {
+    "food": 7,
+    "wood": 207275,
+    "stone": 19,
+    "gold": 94000
+  },
+  "buildings": {},
+  "troops_marching": [],
+  "task_queue": [],
+  "last_actions": [
+    {
+      "timestamp": "2026-02-21T14:01:48.920045",
+      "action": {
+        "type": "tap",
+        "x": 540,
+        "y": 1824,
+        "delay": 1.0,
+        "reason": "quest_workflow:navigate_main_city:tap_blank"
+      },
+      "scene": "unknown"
+    },
+    {
+      "timestamp": "2026-02-21T14:01:58.981380",
+      "action": {
+        "type": "tap",
+        "x": 540,
+        "y": 1824,
+        "delay": 1.0,
+        "reason": "quest_workflow:navigate_main_city:tap_blank"
+      },
+      "scene": "unknown"
+    },
+    {
+      "timestamp": "2026-02-21T14:02:09.088315",
+      "action": {
+        "type": "tap",
+        "x": 540,
+        "y": 1824,
+        "delay": 1.0,
+        "reason": "quest_workflow:navigate_main_city:tap_blank"
+      },
+      "scene": "unknown"
+    },
+    {
+      "timestamp": "2026-02-21T14:02:19.190258",
+      "action": {
+        "type": "tap",
+        "x": 540,
+        "y": 1824,
+        "delay": 1.0,
+        "reason": "quest_workflow:navigate_main_city:tap_blank"
+      },
+      "scene": "unknown"
+    },
+    {
+      "timestamp": "2026-02-21T14:02:34.479053",
+      "action": {
+        "type": "tap",
+        "x": 540,
+        "y": 1824,
+        "delay": 1.0,
+        "reason": "quest_workflow:navigate_main_city:tap_blank"
+      },
+      "scene": "unknown"
+    },
+    {
+      "timestamp": "2026-02-21T14:02:44.462529",
+      "action": {
+        "type": "tap",
+        "x": 540,
+        "y": 1824,
+        "delay": 1.0,
+        "reason": "quest_workflow:navigate_main_city:tap_blank"
+      },
+      "scene": "unknown"
+    },
+    {
+      "timestamp": "2026-02-21T14:02:54.854249",
+      "action": {
+        "type": "tap",
+        "x": 540,
+        "y": 1824,
+        "delay": 1.0,
+        "reason": "quest_workflow:navigate_main_city:tap_blank"
+      },
+      "scene": "unknown"
+    },
+    {
+      "timestamp": "2026-02-21T14:03:23.884931",
+      "action": {
+        "type": "tap",
+        "x": 250,
+        "y": 1576,
+        "delay": 1.5,
+        "reason": "quest_workflow:click_quest:将医务室升至5级。"
+      },
+      "scene": "main_city"
+    },
+    {
+      "timestamp": "2026-02-21T14:03:34.661024",
+      "action": {
+        "type": "tap",
+        "x": 484,
+        "y": 1572,
+        "delay": 1.0,
+        "reason": "quest_workflow:follow_tutorial_finger"
+      },
+      "scene": "main_city"
+    },
+    {
+      "timestamp": "2026-02-21T14:03:44.711352",
+      "action": {
+        "type": "tap",
+        "x": 538,
+        "y": 870,
+        "delay": 1.0,
+        "reason": "quest_workflow:follow_tutorial_finger"
+      },
+      "scene": "main_city"
+    },
+    {
+      "timestamp": "2026-02-21T14:03:54.860547",
+      "action": {
+        "type": "tap",
+        "x": 533,
+        "y": 974,
+        "delay": 1.0,
+        "reason": "quest_workflow:follow_tutorial_finger"
+      },
+      "scene": "main_city"
+    },
+    {
+      "timestamp": "2026-02-21T14:04:06.959805",
+      "action": {
+        "type": "tap",
+        "x": 538,
+        "y": 1779,
+        "delay": 1.5,
+        "reason": "quest_workflow:action_button:buttons/build"
+      },
+      "scene": "main_city"
+    },
+    {
+      "timestamp": "2026-02-21T14:04:14.624238",
+      "action": {
+        "type": "tap",
+        "x": 501,
+        "y": 1556,
+        "delay": 1.0,
+        "reason": "quest_workflow:follow_tutorial_finger"
+      },
+      "scene": "unknown"
+    },
+    {
+      "timestamp": "2026-02-21T14:04:24.949840",
+      "action": {
+        "type": "tap",
+        "x": 534,
+        "y": 1242,
+        "delay": 1.0,
+        "reason": "quest_workflow:follow_tutorial_finger"
+      },
+      "scene": "main_city"
+    },
+    {
+      "timestamp": "2026-02-21T14:04:36.101803",
+      "action": {
+        "type": "tap",
+        "x": 1004,
+        "y": 255,
+        "delay": 1.0,
+        "reason": "quest_workflow:dismiss_popup:close_x"
+      },
+      "scene": "main_city"
+    },
+    {
+      "timestamp": "2026-02-21T14:04:43.931810",
+      "action": {
+        "type": "tap",
+        "x": 488,
+        "y": 1569,
+        "delay": 1.0,
+        "reason": "quest_workflow:follow_tutorial_finger"
+      },
+      "scene": "popup"
+    },
+    {
+      "timestamp": "2026-02-21T14:04:54.229065",
+      "action": {
+        "type": "tap",
+        "x": 534,
+        "y": 1242,
+        "delay": 1.0,
+        "reason": "quest_workflow:follow_tutorial_finger"
+      },
+      "scene": "main_city"
+    },
+    {
+      "timestamp": "2026-02-21T14:05:05.283040",
+      "action": {
+        "type": "tap",
+        "x": 1004,
+        "y": 255,
+        "delay": 1.0,
+        "reason": "quest_workflow:dismiss_popup:close_x"
+      },
+      "scene": "main_city"
+    },
+    {
+      "timestamp": "2026-02-21T14:05:13.171913",
+      "action": {
+        "type": "tap",
+        "x": 483,
+        "y": 1574,
+        "delay": 1.0,
+        "reason": "quest_workflow:follow_tutorial_finger"
+      },
+      "scene": "popup"
+    },
+    {
+      "timestamp": "2026-02-21T14:05:23.459540",
+      "action": {
+        "type": "tap",
+        "x": 531,
+        "y": 1246,
+        "delay": 1.0,
+        "reason": "quest_workflow:follow_tutorial_finger"
+      },
+      "scene": "main_city"
+    }
+  ],
+  "cooldowns": {},
+  "last_llm_consult": "2026-02-20T16:32:36.883246",
+  "last_update": "2026-02-21T14:05:25.528580",
+  "loop_count": 1328,
+  "quest_bar_visible": true,
+  "quest_bar_has_red_badge": false,
+  "quest_bar_current_quest": "将驻防站升至2级。",
+  "quest_bar_has_green_check": false,
+  "quest_bar_has_tutorial_finger": true,
+  "quest_workflow_phase": "execute_quest",
+  "quest_workflow_target": "将6号起居室升至3."
+}
