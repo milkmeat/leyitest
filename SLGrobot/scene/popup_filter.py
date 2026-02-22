@@ -125,12 +125,12 @@ class PopupFilter:
             # stricter position validation in Strategy 2.
             if "close" in tname or "/x" in tname:
                 continue
-            # Prefer buttons in the upper-right quadrant of popup (typical X location)
-            if match.x > w // 3 and match.y < 2 * h // 3:
-                logger.info(f"Popup: tapping button '{match.template_name}' at ({match.x}, {match.y})")
-                self.adb.tap(match.x, match.y)
-                time.sleep(0.5)
-                return True
+            # Accept any non-close button found on screen (action buttons
+            # like "upgrade" often appear at the bottom of popup panels).
+            logger.info(f"Popup: tapping button '{match.template_name}' at ({match.x}, {match.y})")
+            self.adb.tap(match.x, match.y)
+            time.sleep(0.5)
+            return True
 
         # Strategy 4: If we detected a dark overlay but found no buttons,
         # try tapping outside the popup area

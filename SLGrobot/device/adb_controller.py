@@ -53,23 +53,32 @@ class ADBController:
     def screenshot(self) -> np.ndarray:
         """Capture screenshot, return as BGR numpy array (OpenCV format).
 
-        Uses 'adb exec-out screencap -p' for fast raw PNG capture.
+        Uses 'adb exec-out screencap' (raw RGBA) to avoid device-side
+        PNG compression, which saves ~0.5s per capture.
         """
-        result = self._run_adb(["exec-out", "screencap", "-p"], timeout=15)
+        result = self._run_adb(["exec-out", "screencap"], timeout=15)
         if result.returncode != 0:
             stderr = result.stderr.decode("utf-8", errors="replace")
             raise RuntimeError(f"Screenshot failed: {stderr}")
 
-        png_data = result.stdout
-        if not png_data:
+        raw = result.stdout
+        if not raw or len(raw) < 12:
             raise RuntimeError("Screenshot returned empty data")
 
-        # Decode PNG bytes to numpy array
-        img_array = np.frombuffer(png_data, dtype=np.uint8)
-        image = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
-        if image is None:
-            raise RuntimeError("Failed to decode screenshot image")
+        # Raw format: 4-byte width, 4-byte height, 4-byte pixel format,
+        # then width*height*4 bytes of RGBA pixel data.
+        w = int.from_bytes(raw[0:4], "little")
+        h = int.from_bytes(raw[4:8], "little")
+        expected = 12 + w * h * 4
+        if len(raw) < expected:
+            raise RuntimeError(
+                f"Screenshot data truncated: got {len(raw)}, "
+                f"expected {expected} ({w}x{h})"
+            )
 
+        pixels = np.frombuffer(raw, dtype=np.uint8, offset=12, count=w * h * 4)
+        image = pixels.reshape((h, w, 4))[:, :, :3]  # drop alpha
+        image = image[:, :, ::-1].copy()  # RGB -> BGR
         return image
 
     def tap(self, x: int, y: int) -> None:
