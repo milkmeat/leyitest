@@ -54,11 +54,11 @@
     "buttons/cancel", "buttons/confirm", "buttons/ok"
   ],
   "popup_close_texts": [
-    "返回领地", "领取", "返回", "关闭", "确定", "确认"
+    "返回领地", "关闭", "确定", "确认", "返回", "领取", "前往"
   ],
 
   "grid_cols": 8,
   "grid_rows": 6,
 
-  "finger_ncc_threshold": 0.80
+  "finger_ncc_threshold": 0.75
 }

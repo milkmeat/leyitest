@@ -40,8 +40,18 @@ class QuestWorkflow:
     # (trimmed fingertip crop of the original 256x256).
     _FINGERTIP_OFFSET = (-25, 43)
 
+    # Pre-computed fingertip offsets for rotation variants.
+    # Derived by rotating _FINGERTIP_OFFSET (-25, 43) by the CW angle
+    # using screen-coordinate rotation (y-down).
+    _ROTATION_FINGERTIP_OFFSETS: dict[str, tuple[int, int]] = {
+        "rot117cw": (-27, -42),
+    }
+
     def _fingertip_pos(self, cx: int, cy: int, flip_type: str) -> tuple[int, int]:
         """Compute fingertip tap position from match center and flip type."""
+        if flip_type in self._ROTATION_FINGERTIP_OFFSETS:
+            dx, dy = self._ROTATION_FINGERTIP_OFFSETS[flip_type]
+            return cx + dx, cy + dy
         dx, dy = self._FINGERTIP_OFFSET
         if flip_type in ("hflip", "hvflip"):
             dx = -dx
@@ -877,17 +887,18 @@ class QuestWorkflow:
 
     # -- Internal helpers --
 
-    # All finger template variants: (cache_name, flip_code, flip_type)
-    # flip_code: 1=horizontal, 0=vertical, -1=both (for cv2.flip)
+    # All finger template variants: (cache_name, transform, flip_type)
+    # transform: None=original, int=cv2.flip code, str "cwN"=CW rotation by N°
     _FINGER_VARIANTS = [
-        ("icons/tutorial_finger",         None, "normal"),
-        ("icons/tutorial_finger_hflip",   1,    "hflip"),
-        ("icons/tutorial_finger_vflip",   0,    "vflip"),
-        ("icons/tutorial_finger_hvflip", -1,    "hvflip"),
+        ("icons/tutorial_finger",           None,    "normal"),
+        ("icons/tutorial_finger_hflip",     1,       "hflip"),
+        ("icons/tutorial_finger_vflip",     0,       "vflip"),
+        ("icons/tutorial_finger_hvflip",   -1,       "hvflip"),
+        ("icons/tutorial_finger_rot117cw", "cw117",  "rot117cw"),
     ]
 
     def _ensure_flipped_finger_template(self) -> None:
-        """Create all finger template variants (h-flip, v-flip, hv-flip).
+        """Create all finger template variants (flips and rotations).
 
         The game shows the finger icon in various orientations.
         For each variant, caches the template + mask for stage-1 matching,
@@ -919,20 +930,41 @@ class QuestWorkflow:
                 "normal": (tpl.copy(), base_bool_mask),
             }
 
-            for cache_name, flip_code, flip_type in self._FINGER_VARIANTS:
-                if flip_code is None:
+            for cache_name, transform, flip_type in self._FINGER_VARIANTS:
+                if transform is None:
                     continue  # normal — already in cache
                 if cache_name in cache:
                     continue
 
-                flip_tpl = cv2.flip(tpl, flip_code)
-                flip_mask = cv2.flip(mask, flip_code) if mask is not None else None
-                cache[cache_name] = (flip_tpl, flip_mask)
+                if isinstance(transform, str) and transform.startswith("cw"):
+                    # Clockwise rotation variant (e.g. "cw135" = 135° CW)
+                    angle_cw = int(transform[2:])
+                    h, w = tpl.shape[:2]
+                    center = (w / 2, h / 2)
+                    M = cv2.getRotationMatrix2D(center, -angle_cw, 1.0)
+                    cos_v = abs(M[0, 0])
+                    sin_v = abs(M[0, 1])
+                    new_w = int(h * sin_v + w * cos_v)
+                    new_h = int(h * cos_v + w * sin_v)
+                    M[0, 2] += (new_w - w) / 2
+                    M[1, 2] += (new_h - h) / 2
+                    var_tpl = cv2.warpAffine(tpl, M, (new_w, new_h))
+                    var_mask = (cv2.warpAffine(mask, M, (new_w, new_h))
+                                if mask is not None else None)
+                    var_bool = cv2.warpAffine(
+                        base_bool_mask.astype(np.uint8), M, (new_w, new_h)
+                    ).astype(bool)
+                else:
+                    # Flip variant (transform is int: -1, 0, or 1)
+                    var_tpl = cv2.flip(tpl, transform)
+                    var_mask = (cv2.flip(mask, transform)
+                                if mask is not None else None)
+                    var_bool = cv2.flip(
+                        base_bool_mask.astype(np.uint8), transform
+                    ).astype(bool)
 
-                flip_bool = cv2.flip(
-                    base_bool_mask.astype(np.uint8), flip_code
-                ).astype(bool)
-                self._finger_ncc[flip_type] = (flip_tpl.copy(), flip_bool)
+                cache[cache_name] = (var_tpl, var_mask)
+                self._finger_ncc[flip_type] = (var_tpl.copy(), var_bool)
 
             logger.debug(
                 f"Created finger template variants: "
