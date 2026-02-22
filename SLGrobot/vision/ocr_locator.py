@@ -10,6 +10,41 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
+def is_on_colored_button(screenshot: np.ndarray,
+                         bbox: tuple[int, int, int, int]) -> bool:
+    """Check if an OCR text region sits on a colored button background.
+
+    Game buttons have saturated backgrounds (blue, green, yellow, red).
+    Body text sits on low-saturation backgrounds (beige, white, brown).
+
+    Args:
+        screenshot: Full BGR screenshot.
+        bbox: (x1, y1, x2, y2) bounding box of the OCR text region.
+
+    Returns:
+        True if 30%+ of the sampled region has high saturation (S>80, V>60),
+        indicating a colored button background.
+    """
+    x1, y1, x2, y2 = bbox
+    # Expand bbox slightly to sample the button background around text
+    pad_y = max(5, (y2 - y1) // 3)
+    pad_x = max(5, (x2 - x1) // 6)
+    h, w = screenshot.shape[:2]
+    ey1 = max(0, y1 - pad_y)
+    ey2 = min(h, y2 + pad_y)
+    ex1 = max(0, x1 - pad_x)
+    ex2 = min(w, x2 + pad_x)
+
+    region = screenshot[ey1:ey2, ex1:ex2]
+    if region.size == 0:
+        return False
+    hsv = cv2.cvtColor(region, cv2.COLOR_BGR2HSV)
+    # Saturated pixels: S > 80, V > 60
+    sat_mask = cv2.inRange(hsv, (0, 80, 60), (180, 255, 255))
+    sat_ratio = cv2.countNonZero(sat_mask) / sat_mask.size
+    return sat_ratio > 0.3
+
+
 @dataclass
 class OCRResult:
     """Result of an OCR detection."""

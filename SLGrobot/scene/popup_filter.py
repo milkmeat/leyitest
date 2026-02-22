@@ -6,7 +6,7 @@ import logging
 import numpy as np
 
 from vision.template_matcher import TemplateMatcher
-from vision.ocr_locator import OCRLocator
+from vision.ocr_locator import OCRLocator, is_on_colored_button
 from device.adb_controller import ADBController
 
 logger = logging.getLogger(__name__)
@@ -88,6 +88,13 @@ class PopupFilter:
             for close_text in self._close_texts:
                 for r in all_text:
                     if close_text in r.text:
+                        # Verify text is on a colored button, not body text
+                        if not is_on_colored_button(screenshot, r.bbox):
+                            logger.debug(
+                                f"Popup: skipping '{close_text}' "
+                                f"at {r.center} — not on colored button"
+                            )
+                            continue
                         cx, cy = r.center
                         logger.info(
                             f"Popup: tapping OCR text '{close_text}' "

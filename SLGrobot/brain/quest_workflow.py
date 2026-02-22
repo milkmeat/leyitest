@@ -16,6 +16,7 @@ import numpy as np
 
 from vision.quest_bar_detector import QuestBarDetector, QuestBarInfo
 from vision.element_detector import ElementDetector
+from vision.ocr_locator import is_on_colored_button
 from state.game_state import GameState
 
 logger = logging.getLogger(__name__)
@@ -230,6 +231,19 @@ class QuestWorkflow:
             self.phase = self.READ_QUEST
             return []
 
+        # Popup during ensure_main_city — likely a quest-related screen
+        # opened by a tutorial finger tap.  Advance to EXECUTE_QUEST which
+        # has comprehensive popup handling (dismiss buttons, close_x, finger,
+        # action buttons, LLM escalation).
+        if scene == "popup":
+            logger.info(
+                "Quest workflow: popup during ensure_main_city, "
+                "advancing to EXECUTE_QUEST"
+            )
+            self.phase = self.EXECUTE_QUEST
+            self.execute_iterations = 0
+            return self._step_execute_quest(screenshot, scene)
+
         # Try to find navigation text to go back to city
         for target_text in ["城池", "home", "主城"]:
             element = self.element_detector.locate(
@@ -376,6 +390,13 @@ class QuestWorkflow:
             for dismiss_text in self._POPUP_DISMISS_TEXTS:
                 for r in all_text:
                     if dismiss_text in r.text:
+                        # Verify text is on a colored button, not body text
+                        if not is_on_colored_button(screenshot, r.bbox):
+                            logger.debug(
+                                f"Quest workflow: skipping '{dismiss_text}' "
+                                f"at {r.center} — not on colored button"
+                            )
+                            continue
                         cx, cy = r.center
                         logger.info(
                             f"Quest workflow: popup detected, tapping "
@@ -683,6 +704,14 @@ class QuestWorkflow:
             for dismiss_text in self._POPUP_DISMISS_TEXTS:
                 for r in all_text:
                     if dismiss_text in r.text:
+                        # Verify text is on a colored button, not body text
+                        if not is_on_colored_button(screenshot, r.bbox):
+                            logger.debug(
+                                f"Quest workflow (return): skipping "
+                                f"'{dismiss_text}' at {r.center} "
+                                f"— not on colored button"
+                            )
+                            continue
                         cx, cy = r.center
                         logger.info(
                             f"Quest workflow (return): popup tapping "
@@ -1375,12 +1404,14 @@ class QuestWorkflow:
             if btn_text in self._exhausted_buttons:
                 continue
             btn_lower = btn_text.lower()
-            # Filter: OCR text must be short (keyword + ≤4 extra chars)
-            # to exclude body text (e.g. "建议建造兵营" matching "建造").
+            # Filters to exclude body text matches:
+            # 1. Short text: keyword + ≤4 extra chars (rejects "建议建造兵营" matching "建造")
+            # 2. Colored button: high-saturation background (rejects beige/white body text)
             h = screenshot.shape[0]
             matches = [(r.center[0], r.center[1]) for r in all_results
                        if btn_lower in r.text.lower()
                        and len(r.text) <= len(btn_text) + 4
+                       and is_on_colored_button(screenshot, r.bbox)
                        # "行军" in top half is a march queue label, not a button
                        and not (btn_text == "行军" and r.center[1] < h * 0.5)]
             if matches:
