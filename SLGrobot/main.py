@@ -319,23 +319,23 @@ class GameBot:
                         self.stuck_recovery.reset()
 
                     # 2c. Tutorial finger detection — highest priority so
-                    #     fingers are tapped even on popup/unknown scenes.
-                    if not self.quest_workflow.is_active():
-                        finger, flip = self.quest_workflow._detect_tutorial_finger(
-                            screenshot
+                    #     fingers are tapped even on popup/unknown scenes
+                    #     and during all quest workflow phases.
+                    finger, flip = self.quest_workflow._detect_tutorial_finger(
+                        screenshot
+                    )
+                    if finger is not None:
+                        tip_x, tip_y = self.quest_workflow._fingertip_pos(
+                            finger.x, finger.y, flip
                         )
-                        if finger is not None:
-                            tip_x, tip_y = self.quest_workflow._fingertip_pos(
-                                finger.x, finger.y, flip
-                            )
-                            logger.info(
-                                f"Tutorial finger detected at ({finger.x}, {finger.y}) "
-                                f"{flip}, tapping fingertip ({tip_x}, {tip_y})"
-                            )
-                            self.adb.tap(tip_x, tip_y)
-                            consecutive_unknown_scenes = 0
-                            time.sleep(0.8)
-                            continue
+                        logger.info(
+                            f"Tutorial finger detected at ({finger.x}, {finger.y}) "
+                            f"{flip}, tapping fingertip ({tip_x}, {tip_y})"
+                        )
+                        self.adb.tap(tip_x, tip_y)
+                        consecutive_unknown_scenes = 0
+                        time.sleep(0.8)
+                        continue
 
                     # 3. Handle popups immediately (skip when quest workflow
                     #    is active — workflow handles its own popups like
@@ -355,20 +355,37 @@ class GameBot:
                         time.sleep(0.5)
                         continue
 
-                    # 4. Story dialogue — tap the down-triangle to advance
+                    # 4. Story dialogue — try skip button first, then
+                    #    down-triangle to advance one frame
                     if scene == "story_dialogue":
-                        match = self.template_matcher.match_one(
-                            screenshot, "icons/down_triangle"
-                        )
-                        if match:
-                            logger.info(
-                                f"Story dialogue: tapping triangle "
-                                f"at ({match.x}, {match.y})"
+                        # Try OCR skip button first
+                        skip_element = None
+                        for skip_text in ["跳过", "skip"]:
+                            skip_element = self.detector.locate(
+                                screenshot, skip_text, methods=["ocr"]
                             )
-                            self.adb.tap(match.x, match.y)
+                            if skip_element is not None:
+                                break
+                        if skip_element is not None:
+                            logger.info(
+                                f"Story dialogue: tapping skip "
+                                f"'{skip_element.name}' "
+                                f"at ({skip_element.x}, {skip_element.y})"
+                            )
+                            self.adb.tap(skip_element.x, skip_element.y)
                         else:
-                            logger.info("Story dialogue: tapping center")
-                            self.adb.tap(540, 960)
+                            match = self.template_matcher.match_one(
+                                screenshot, "icons/down_triangle"
+                            )
+                            if match:
+                                logger.info(
+                                    f"Story dialogue: tapping triangle "
+                                    f"at ({match.x}, {match.y})"
+                                )
+                                self.adb.tap(match.x, match.y)
+                            else:
+                                logger.info("Story dialogue: tapping center")
+                                self.adb.tap(540, 960)
                         time.sleep(0.5)
                         continue
 

@@ -62,6 +62,10 @@ class QuestWorkflow:
         "buttons/upgrade_building", "buttons/upgrade", "buttons/build",
     ]
 
+    # OCR text search for popup dismiss buttons (used in execute_quest
+    # and return_to_city).  Overridden from game_profile.popup_close_texts.
+    _POPUP_DISMISS_TEXTS = ["返回领地", "返回", "确定", "确认", "关闭"]
+
     # Fallback: OCR text search for actionable buttons.
     _ACTION_BUTTON_TEXTS = [
         "一键上阵", "出战", "开始战斗", "攻击",
@@ -97,6 +101,8 @@ class QuestWorkflow:
             self._ACTION_BUTTON_TEXTS = game_profile.action_button_texts
         if game_profile and game_profile.finger_ncc_threshold > 0:
             self._FINGER_NCC_THRESHOLD = game_profile.finger_ncc_threshold
+        if game_profile and game_profile.popup_close_texts:
+            self._POPUP_DISMISS_TEXTS = game_profile.popup_close_texts
         # Create horizontally flipped tutorial_finger template for mirror detection
         self._ensure_flipped_finger_template()
 
@@ -346,7 +352,7 @@ class QuestWorkflow:
             # Stage 1: OCR text search for known dismiss buttons
             ocr = self.element_detector.ocr
             all_text = ocr.find_all_text(screenshot)
-            for dismiss_text in ["返回领地", "返回", "确定", "确认", "关闭"]:
+            for dismiss_text in self._POPUP_DISMISS_TEXTS:
                 for r in all_text:
                     if dismiss_text in r.text:
                         cx, cy = r.center
@@ -524,8 +530,28 @@ class QuestWorkflow:
                 "reason": "quest_workflow:follow_tutorial_finger",
             }]
 
-        # Story dialogue — tap the down-triangle to advance
+        # Story dialogue — try skip button first, then down-triangle
         if scene == "story_dialogue":
+            # Try OCR skip button first
+            skip_element = None
+            for skip_text in ["跳过", "skip"]:
+                skip_element = self.element_detector.locate(
+                    screenshot, skip_text, methods=["ocr"]
+                )
+                if skip_element is not None:
+                    break
+            if skip_element is not None:
+                logger.info(
+                    f"Quest workflow: story skip '{skip_element.name}' "
+                    f"at ({skip_element.x}, {skip_element.y})"
+                )
+                return [{
+                    "type": "tap",
+                    "x": skip_element.x,
+                    "y": skip_element.y,
+                    "delay": 0.5,
+                    "reason": f"quest_workflow:story_skip:{skip_element.name}",
+                }]
             match = self.element_detector.locate(
                 screenshot, "icons/down_triangle", methods=["template"]
             )
@@ -628,7 +654,7 @@ class QuestWorkflow:
             # Stage 1: OCR text search for known dismiss buttons
             ocr = self.element_detector.ocr
             all_text = ocr.find_all_text(screenshot)
-            for dismiss_text in ["返回领地", "返回", "确定", "确认", "关闭"]:
+            for dismiss_text in self._POPUP_DISMISS_TEXTS:
                 for r in all_text:
                     if dismiss_text in r.text:
                         cx, cy = r.center
