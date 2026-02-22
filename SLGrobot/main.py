@@ -318,7 +318,13 @@ class GameBot:
                     if len(scene_history) >= 2 and scene_history[-1] != scene_history[-2]:
                         self.stuck_recovery.reset()
 
-                    # 2c. Tutorial finger detection — highest priority so
+                    # 2c. Update state on main_city before finger check so
+                    #     quest bar info is always extracted even when a
+                    #     tutorial finger is present and causes a continue.
+                    if scene == "main_city":
+                        self.state_tracker.update(screenshot, scene)
+
+                    # 2d. Tutorial finger detection — highest priority so
                     #     fingers are tapped even on popup/unknown scenes
                     #     and during all quest workflow phases.
                     finger, flip = self.quest_workflow._detect_tutorial_finger(
@@ -468,8 +474,10 @@ class GameBot:
                     else:
                         consecutive_unknown_scenes = 0
 
-                    # 7. Update game state
-                    self.state_tracker.update(screenshot, scene)
+                    # 7. Update game state (main_city already updated
+                    #    in step 2c before finger detection)
+                    if scene != "main_city":
+                        self.state_tracker.update(screenshot, scene)
 
                     # 7.5 Quest workflow has highest priority — start it
                     #     when quest bar is visible, before LLM tasks or

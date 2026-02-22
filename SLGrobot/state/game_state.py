@@ -172,11 +172,10 @@ class GameState:
                 quest_parts.append("tutorial_finger")
             lines.append(f"Quest bar: {', '.join(quest_parts)}")
 
-        # Quest workflow
-        if self.quest_workflow_phase != "idle":
-            lines.append(
-                f"Quest workflow: phase={self.quest_workflow_phase}, "
-                f"target='{self.quest_workflow_target}'"
-            )
+        # Quest workflow (always include so LLM knows current objective)
+        lines.append(
+            f"Quest workflow: phase={self.quest_workflow_phase}, "
+            f"target='{self.quest_workflow_target}'"
+        )
 
         return "\n".join(lines)
