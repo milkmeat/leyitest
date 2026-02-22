@@ -98,6 +98,12 @@ Rules:
 - If the quest looks completed, suggest actions to return to main city.
 - Prefer safe, minimal actions: tap visible buttons, follow UI prompts.
 - Use grid cells (e.g., "C4") for fallback positions.
+- IMPORTANT: This is a tutorial-guided quest. The game may show screens that seem \
+unrelated to the quest name (e.g., a battle screen during a building quest). \
+This is normal — the game guides the player through intermediate steps. \
+Always follow the on-screen flow: tap action buttons like "一键上阵", "出战", \
+"开始战斗", "确定" etc. to advance. Do NOT press back or try to leave \
+unless the screen is clearly stuck or shows an error.
 
 Output format:
 {{{{

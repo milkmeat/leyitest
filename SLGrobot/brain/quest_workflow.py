@@ -1396,8 +1396,13 @@ class QuestWorkflow:
 
         # Collect best (highest on screen) match per button text,
         # preserving _ACTION_BUTTON_TEXTS priority order.
+        # Pass 1 (strict): require colored button background.
+        # Pass 2 (relaxed): near-exact OCR matches in bottom half of screen,
+        #   skipping is_on_colored_button.  Catches buttons with dark/dim
+        #   backgrounds (e.g. battle prep "一键上阵", "出战").
         found: list[Element] = []
         seen_texts: set[str] = set()
+        h = screenshot.shape[0]
         for btn_text in self._ACTION_BUTTON_TEXTS:
             if btn_text in seen_texts:
                 continue
@@ -1407,7 +1412,6 @@ class QuestWorkflow:
             # Filters to exclude body text matches:
             # 1. Short text: keyword + ≤4 extra chars (rejects "建议建造兵营" matching "建造")
             # 2. Colored button: high-saturation background (rejects beige/white body text)
-            h = screenshot.shape[0]
             matches = [(r.center[0], r.center[1]) for r in all_results
                        if btn_lower in r.text.lower()
                        and len(r.text) <= len(btn_text) + 4
@@ -1421,6 +1425,32 @@ class QuestWorkflow:
                                      confidence=1.0, source="ocr",
                                      bbox=(best[0], best[1], best[0], best[1])))
                 seen_texts.add(btn_text)
+
+        # Pass 2 (relaxed): near-exact matches without colored button check.
+        # Only for bottom-half of screen (where action buttons live) and
+        # OCR text that closely matches the keyword (≤1 extra char).
+        if not found:
+            for btn_text in self._ACTION_BUTTON_TEXTS:
+                if btn_text in seen_texts:
+                    continue
+                if btn_text in self._exhausted_buttons:
+                    continue
+                btn_lower = btn_text.lower()
+                matches = [(r.center[0], r.center[1]) for r in all_results
+                           if btn_lower in r.text.lower()
+                           and len(r.text) <= len(btn_text) + 1
+                           and r.center[1] > h * 0.5
+                           and not (btn_text == "行军" and r.center[1] < h * 0.5)]
+                if matches:
+                    best = min(matches, key=lambda m: m[1])
+                    logger.debug(
+                        f"Action button OCR (relaxed): '{btn_text}' "
+                        f"at ({best[0]},{best[1]})"
+                    )
+                    found.append(Element(name=btn_text, x=best[0], y=best[1],
+                                         confidence=0.9, source="ocr",
+                                         bbox=(best[0], best[1], best[0], best[1])))
+                    seen_texts.add(btn_text)
 
         if found:
             # Return only the highest-priority button to avoid tapping

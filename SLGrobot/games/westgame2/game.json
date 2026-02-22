@@ -54,7 +54,7 @@
     "buttons/cancel", "buttons/confirm", "buttons/ok"
   ],
   "popup_close_texts": [
-    "返回领地", "关闭", "确定", "确认", "返回", "领取", "前往"
+    "返回领地", "关闭", "确定", "确认", "取消", "返回", "领取", "前往", "全部领取"
   ],
 
   "grid_cols": 8,
@@ -72,9 +72,10 @@
     {
       "pattern": "派遣.*镇民",
       "steps": [
-        {"tap_text": "镇民", "delay": 1.0, "description": "切换到镇民标签"},
-        {"tap_text": "+", "fallback_xy": [760, 1600], "delay": 1.0, "description": "点击添加镇民按钮"},
-        {"tap_xy": [417, 648], "delay": 1.0, "description": "关闭对话框"}
+        {"tap_xy": [790, 1815], "delay": 1.0, "description": "切换到镇民标签"},
+        {"tap_xy": [750, 1598], "delay": 1.5, "description": "点击+添加镇民1"},
+        {"tap_xy": [750, 1598], "delay": 1.5, "description": "点击+添加镇民2"},
+        {"tap_xy": [750, 1598], "delay": 1.5, "description": "点击+添加镇民3"}
       ]
     }
   ]

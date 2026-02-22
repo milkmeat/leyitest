@@ -346,21 +346,37 @@ class GameBot:
                         # navigates us past the read→click phases, so skip
                         # directly to execution so quest rules are active on
                         # the next loop.
+                        # Also handles the case where workflow is already active
+                        # in an early phase (ENSURE_MAIN_CITY / READ_QUEST /
+                        # CLICK_QUEST) — the finger tap navigates away from
+                        # main_city, so the workflow must advance to
+                        # EXECUTE_QUEST to avoid a back-and-forth loop.
                         if (scene == "main_city"
-                                and not self.quest_workflow.is_active()
                                 and self.game_state.quest_bar_has_tutorial_finger
                                 and self.game_state.quest_bar_visible
                                 and self.game_state.quest_bar_current_quest):
                             quest_text = self.game_state.quest_bar_current_quest
-                            self.quest_workflow.start()
-                            self.quest_workflow.target_quest_name = quest_text
-                            self.quest_workflow.phase = (
-                                self.quest_workflow.EXECUTE_QUEST
-                            )
-                            logger.info(
-                                f"Quest workflow fast-started to EXECUTE_QUEST "
-                                f"(quest bar finger), quest='{quest_text}'"
-                            )
+                            early_phases = {
+                                self.quest_workflow.IDLE,
+                                self.quest_workflow.ENSURE_MAIN_CITY,
+                                self.quest_workflow.READ_QUEST,
+                                self.quest_workflow.CLICK_QUEST,
+                            }
+                            if (not self.quest_workflow.is_active()
+                                    or self.quest_workflow.phase in early_phases):
+                                if not self.quest_workflow.is_active():
+                                    self.quest_workflow.start()
+                                self.quest_workflow.target_quest_name = quest_text
+                                self.quest_workflow.phase = (
+                                    self.quest_workflow.EXECUTE_QUEST
+                                )
+                                self.quest_workflow.execute_iterations = 0
+                                self.quest_workflow._quest_rule_step_done = 0
+                                self.quest_workflow._exhausted_buttons = set()
+                                logger.info(
+                                    f"Quest workflow fast-started to EXECUTE_QUEST "
+                                    f"(quest bar finger), quest='{quest_text}'"
+                                )
                         time.sleep(0.8)
                         continue
 
