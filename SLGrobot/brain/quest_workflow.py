@@ -10,6 +10,7 @@ and persists across iterations.
 """
 
 import logging
+import re
 
 import numpy as np
 
@@ -113,6 +114,11 @@ class QuestWorkflow:
             self._FINGER_NCC_THRESHOLD = game_profile.finger_ncc_threshold
         if game_profile and game_profile.popup_close_texts:
             self._POPUP_DISMISS_TEXTS = game_profile.popup_close_texts
+        self._quest_action_rules = (
+            game_profile.quest_action_rules
+            if game_profile and game_profile.quest_action_rules
+            else []
+        )
         # Create horizontally flipped tutorial_finger template for mirror detection
         self._ensure_flipped_finger_template()
 
@@ -134,6 +140,9 @@ class QuestWorkflow:
         self._exhausted_buttons: set[str] = set()
         self._last_execute_scene: str = ""
 
+        # Quest rule step tracking — sequential execution index
+        self._quest_rule_step_done: int = 0
+
     def is_active(self) -> bool:
         """Return True if workflow is currently executing a quest."""
         return self.phase != self.IDLE
@@ -151,6 +160,7 @@ class QuestWorkflow:
         self._action_button_repeat_count = 0
         self._exhausted_buttons = set()
         self._last_execute_scene = ""
+        self._quest_rule_step_done = 0
         self._sync_to_game_state()
 
     def abort(self) -> None:
@@ -165,6 +175,7 @@ class QuestWorkflow:
         self._action_button_repeat_count = 0
         self._exhausted_buttons = set()
         self._last_execute_scene = ""
+        self._quest_rule_step_done = 0
         self._sync_to_game_state()
 
     def step(self, screenshot: np.ndarray, scene: str) -> list[dict]:
@@ -584,6 +595,11 @@ class QuestWorkflow:
             self.phase = self.CHECK_COMPLETION
             self.check_retries = 0
             return []
+
+        # Quest-specific action rules (multi-step patterns like "派遣镇民")
+        rule_action = self._match_quest_rule(screenshot)
+        if rule_action:
+            return rule_action
 
         # OCR search for action buttons (e.g. "领取" on reward dialog)
         # before close_x — so reward dialogs get claimed, not dismissed.
@@ -1183,6 +1199,142 @@ class QuestWorkflow:
             self._exhausted_buttons.add(button_text)
             self._last_action_button_text = ""
             self._action_button_repeat_count = 0
+
+    def _match_quest_rule(self, screenshot: np.ndarray) -> list[dict] | None:
+        """Match current quest against quest_action_rules and return an action.
+
+        Steps are executed **sequentially**: step 0 first, then step 1, etc.
+        ``_quest_rule_step_done`` tracks progress and is reset on start/abort.
+
+        Each step type:
+        - ``tap_text``: OCR search → tap if found, else try fallback_xy/grid.
+        - ``tap_xy`` (no tap_text): unconditional tap at fixed coordinates.
+
+        Returns ``None`` when all steps are done or no rule matches,
+        letting the caller fall through to generic action buttons / LLM.
+        """
+        if not self._quest_action_rules or not self.target_quest_name:
+            return None
+
+        for rule in self._quest_action_rules:
+            pattern = rule.get("pattern", "")
+            if not pattern or not re.search(pattern, self.target_quest_name):
+                continue
+
+            steps = rule.get("steps", [])
+            if not steps or self._quest_rule_step_done >= len(steps):
+                # All steps done — fall through to generic logic
+                return None
+
+            idx = self._quest_rule_step_done
+            step = steps[idx]
+            tap_text = step.get("tap_text", "")
+            delay = step.get("delay", 1.0)
+            description = step.get("description", tap_text)
+
+            # Step with tap_text: try OCR, then fallback
+            if tap_text:
+                element = self.element_detector.locate(
+                    screenshot, tap_text, methods=["ocr"]
+                )
+                if element is not None:
+                    logger.info(
+                        f"Quest rule '{pattern}' step {idx}/{len(steps)}: "
+                        f"tap '{tap_text}' at ({element.x}, {element.y}) "
+                        f"— {description}"
+                    )
+                    self._quest_rule_step_done = idx + 1
+                    return [{
+                        "type": "tap",
+                        "x": element.x,
+                        "y": element.y,
+                        "delay": delay,
+                        "reason": f"quest_rule:{pattern}:step{idx}:{tap_text}",
+                    }]
+
+                # tap_text not found — try fallback_xy or fallback_grid
+                fallback_xy = step.get("fallback_xy")
+                fallback_grid = step.get("fallback_grid")
+                fx, fy = None, None
+                fallback_label = ""
+                if fallback_xy and len(fallback_xy) == 2:
+                    fx, fy = int(fallback_xy[0]), int(fallback_xy[1])
+                    fallback_label = f"xy:{fx},{fy}"
+                elif fallback_grid:
+                    grid_pos = self._grid_to_pixel(screenshot, fallback_grid)
+                    if grid_pos is not None:
+                        fx, fy = grid_pos
+                        fallback_label = f"grid:{fallback_grid}"
+                if fx is not None:
+                    logger.info(
+                        f"Quest rule '{pattern}' step {idx}/{len(steps)}: "
+                        f"fallback {fallback_label} at ({fx}, {fy}) "
+                        f"— {description}"
+                    )
+                    self._quest_rule_step_done = idx + 1
+                    return [{
+                        "type": "tap",
+                        "x": fx,
+                        "y": fy,
+                        "delay": delay,
+                        "reason": f"quest_rule:{pattern}:step{idx}:{fallback_label}",
+                    }]
+
+                # No fallback — wait for tap_text to appear
+                logger.debug(
+                    f"Quest rule '{pattern}' step {idx}: "
+                    f"'{tap_text}' not visible, waiting"
+                )
+                return None
+
+            # Step with tap_xy (unconditional)
+            tap_xy = step.get("tap_xy")
+            if tap_xy and len(tap_xy) == 2:
+                tx, ty = int(tap_xy[0]), int(tap_xy[1])
+                logger.info(
+                    f"Quest rule '{pattern}' step {idx}/{len(steps)}: "
+                    f"tap_xy ({tx}, {ty}) — {description}"
+                )
+                self._quest_rule_step_done = idx + 1
+                return [{
+                    "type": "tap",
+                    "x": tx,
+                    "y": ty,
+                    "delay": delay,
+                    "reason": f"quest_rule:{pattern}:step{idx}:xy:{tx},{ty}",
+                }]
+
+            # Step has neither tap_text nor tap_xy — skip it
+            self._quest_rule_step_done = idx + 1
+
+        return None
+
+    def _grid_to_pixel(self, screenshot: np.ndarray,
+                       grid_label: str) -> tuple[int, int] | None:
+        """Convert a grid label like 'F5' to pixel coordinates.
+
+        Uses the screenshot dimensions and the configured grid size.
+        Column A=0, B=1, ...; Row 1=0, 2=1, ...
+        Returns center pixel of the grid cell, or None on invalid label.
+        """
+        if len(grid_label) < 2:
+            return None
+        col_char = grid_label[0].upper()
+        row_str = grid_label[1:]
+        if not col_char.isalpha() or not row_str.isdigit():
+            return None
+        col = ord(col_char) - ord('A')
+        row = int(row_str) - 1
+        h, w = screenshot.shape[:2]
+        cols = 8  # default
+        rows = 6
+        cell_w = w / cols
+        cell_h = h / rows
+        if col < 0 or col >= cols or row < 0 or row >= rows:
+            return None
+        cx = int(cell_w * (col + 0.5))
+        cy = int(cell_h * (row + 0.5))
+        return cx, cy
 
     def _find_action_buttons(self, screenshot: np.ndarray,
                              finger_match) -> "list[Element]":

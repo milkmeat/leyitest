@@ -22,8 +22,9 @@ class OCRResult:
 class OCRLocator:
     """OCR text detection and positioning using RapidOCR (ONNX Runtime)."""
 
-    def __init__(self) -> None:
+    def __init__(self, corrections: dict[str, str] | None = None) -> None:
         self._ocr = None
+        self._corrections = corrections or {}
 
     def _get_ocr(self):
         """Lazy-load RapidOCR to avoid slow import at startup."""
@@ -80,6 +81,11 @@ class OCRLocator:
             x1, y1 = min(xs), min(ys)
             x2, y2 = max(xs), max(ys)
             cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
+
+            # Apply OCR error corrections
+            for wrong, correct in self._corrections.items():
+                if wrong in text:
+                    text = text.replace(wrong, correct)
 
             results.append(OCRResult(
                 text=text,

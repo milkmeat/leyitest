@@ -60,5 +60,22 @@
   "grid_cols": 8,
   "grid_rows": 6,
 
-  "finger_ncc_threshold": 0.80
+  "ocr_corrections": {
+    "派道": "派遣",
+    "镇发": "镇民",
+    "采右": "采石"
+  },
+
+  "finger_ncc_threshold": 0.80,
+
+  "quest_action_rules": [
+    {
+      "pattern": "派遣.*镇民",
+      "steps": [
+        {"tap_text": "镇民", "delay": 1.0, "description": "切换到镇民标签"},
+        {"tap_text": "+", "fallback_xy": [760, 1600], "delay": 1.0, "description": "点击添加镇民按钮"},
+        {"tap_xy": [417, 648], "delay": 1.0, "description": "关闭对话框"}
+      ]
+    }
+  ]
 }

@@ -64,6 +64,12 @@ class GameProfile:
     # Finger detection — NCC threshold (0.0 = use class default)
     finger_ncc_threshold: float = 0.0
 
+    # OCR error corrections (common misrecognitions)
+    ocr_corrections: dict[str, str] = field(default_factory=dict)
+
+    # Quest-specific action rules (multi-step patterns)
+    quest_action_rules: list[dict] = field(default_factory=list)
+
 
 def load_game_profile(game_id: str,
                       games_dir: str = "games") -> GameProfile:
@@ -132,6 +138,12 @@ def load_game_profile(game_id: str,
 
         # Finger detection
         finger_ncc_threshold=data.get("finger_ncc_threshold", 0.0),
+
+        # OCR corrections
+        ocr_corrections=data.get("ocr_corrections", {}),
+
+        # Quest action rules
+        quest_action_rules=data.get("quest_action_rules", []),
     )
 
     logger.info(f"Loaded game profile: {profile.display_name} ({game_id})")

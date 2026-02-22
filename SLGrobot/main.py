@@ -127,7 +127,8 @@ class GameBot:
 
         # Vision layer
         self.template_matcher = TemplateMatcher(template_dir)
-        self.ocr = OCRLocator()
+        ocr_corrections = game_profile.ocr_corrections if game_profile else {}
+        self.ocr = OCRLocator(corrections=ocr_corrections)
         self.grid = GridOverlay(grid_cols, grid_rows)
         self.detector = ElementDetector(self.template_matcher, self.ocr, self.grid)
 
@@ -340,6 +341,26 @@ class GameBot:
                         )
                         self.adb.tap(tip_x, tip_y)
                         consecutive_unknown_scenes = 0
+                        # Fast-start quest workflow to EXECUTE_QUEST when
+                        # finger is on the quest bar — the finger tap already
+                        # navigates us past the read→click phases, so skip
+                        # directly to execution so quest rules are active on
+                        # the next loop.
+                        if (scene == "main_city"
+                                and not self.quest_workflow.is_active()
+                                and self.game_state.quest_bar_has_tutorial_finger
+                                and self.game_state.quest_bar_visible
+                                and self.game_state.quest_bar_current_quest):
+                            quest_text = self.game_state.quest_bar_current_quest
+                            self.quest_workflow.start()
+                            self.quest_workflow.target_quest_name = quest_text
+                            self.quest_workflow.phase = (
+                                self.quest_workflow.EXECUTE_QUEST
+                            )
+                            logger.info(
+                                f"Quest workflow fast-started to EXECUTE_QUEST "
+                                f"(quest bar finger), quest='{quest_text}'"
+                            )
                         time.sleep(0.8)
                         continue
 
@@ -488,7 +509,8 @@ class GameBot:
                             and self.game_state.quest_bar_current_quest):
                         logger.info(
                             "Quest bar active, starting quest workflow "
-                            f"(pausing {self.task_queue.pending_count()} queued tasks)"
+                            f"(pausing {self.task_queue.pending_count()} queued tasks), "
+                            f"quest='{self.game_state.quest_bar_current_quest}'"
                         )
                         self.quest_workflow.start()
                         continue
