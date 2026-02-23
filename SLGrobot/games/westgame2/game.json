@@ -73,9 +73,17 @@
       "pattern": "派遣.*镇民",
       "steps": [
         {"tap_xy": [790, 1815], "delay": 1.0, "description": "切换到镇民标签"},
-        {"tap_xy": [750, 1598], "delay": 1.5, "description": "点击+添加镇民1"},
-        {"tap_xy": [750, 1598], "delay": 1.5, "description": "点击+添加镇民2"},
-        {"tap_xy": [750, 1598], "delay": 1.5, "description": "点击+添加镇民3"}
+        {"tap_xy": [750, 1598], "delay": 1.5, "repeat": 3, "description": "点击+添加镇民"}
+      ]
+    },
+    {
+      "pattern": "领取远征奖励",
+      "steps": [
+        {"tap_icon": ["nav_bar/expedition"], "delay": 2.0, "description": "点击远征图标"},
+        {"tap_text": ["领取奖励"], "delay": 1.5, "description": "点击领取奖励"},
+        {"tap_text": ["领取"], "delay": 1.5, "description": "点击领取"},
+        {"tap_text": ["确定"], "delay": 1.5, "description": "点击确定"},
+        {"tap_icon": ["buttons/back_arrow"], "delay": 1.5, "description": "返回主城"}
       ]
     }
   ]
