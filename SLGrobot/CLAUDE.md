@@ -83,7 +83,7 @@ Known task types (handled by `RuleEngine`): `collect_resources`, `upgrade_buildi
 
 ### Quest Scripting System
 
-Game operations are defined as JSON quest scripts in `games/<id>/game.json` under `quest_action_rules`. Scripts are multi-step sequences with verbs: `tap_xy`, `tap_text`, `tap_icon`, `wait_text`, `read_text`, `eval`. Executed by `QuestScriptRunner` (`brain/quest_script.py`), triggered automatically via quest bar matching or manually via `quest` CLI command. See `quest_scripting.md` for full reference.
+Game operations are defined as JSON quest scripts in `games/<id>/game.json` under `quest_action_rules`. Scripts are multi-step sequences with verbs: `tap_xy`, `tap_text`, `tap_icon`, `wait_text`, `ensure_main_city`, `read_text`, `eval`. Executed by `QuestScriptRunner` (`brain/quest_script.py`), triggered automatically via quest bar matching or manually via `quest` CLI command. See `quest_scripting.md` for full reference.
 
 ## Configuration
 

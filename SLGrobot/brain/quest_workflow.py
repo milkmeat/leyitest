@@ -1271,6 +1271,16 @@ class QuestWorkflow:
                     f"into script runner"
                 )
 
+            # Script aborted — reset and fall through
+            if self._script_runner.is_aborted():
+                logger.warning(
+                    f"Quest rule '{pattern}': script aborted — "
+                    f"{self._script_runner.abort_reason}"
+                )
+                self._script_runner.reset()
+                self._loaded_quest_pattern = ""
+                return None
+
             # All steps done — fall through to generic logic
             if self._script_runner.is_done():
                 return None

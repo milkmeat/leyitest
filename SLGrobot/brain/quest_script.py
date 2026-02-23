@@ -2,13 +2,13 @@
 
 Each quest script is a list of steps with verb + args.  Supported verbs:
 
-  tap_xy    [x, y]                  — unconditional tap at fixed coordinates
-  tap_text  [text] or [text, nth]   — OCR search, tap nth match (1-indexed)
-  tap_icon  [name] or [name, nth]   — template match, tap nth match (1-indexed)
-  wait_text [text]                  — wait until text appears on screen (no tap)
-  read_text [x, y, var] or [x, y, var, w, h]
-                                    — OCR region around (x,y), store in variable
-  eval      [var, expression]       — safe arithmetic on variables
+  tap_xy           [x, y]                — unconditional tap at fixed coordinates
+  tap_text         [text] or [text, nth] — OCR search, tap nth match (1-indexed)
+  tap_icon         [name] or [name, nth] — template match, tap nth match
+  wait_text        [text]                — wait until text appears (no tap)
+  ensure_main_city [] or [max_retries]   — navigate to main city or abort
+  read_text        [x, y, var, ...]      — OCR region, store in variable
+  eval             [var, expression]     — safe arithmetic on variables
 
 Step fields:
   delay       float, default 1.0   — seconds to wait after action
@@ -131,6 +131,10 @@ class QuestScriptRunner:
         self.step_index: int = 0
         self.steps: list[dict] = []
         self._repeat_remaining: int = 0
+        self.aborted: bool = False
+        self.abort_reason: str = ""
+        self._suppress_advance: bool = False
+        self._ensure_retries: int = 0
 
     def load(self, steps: list[dict]) -> None:
         """Load a new script.  Resets all state."""
@@ -138,16 +142,28 @@ class QuestScriptRunner:
         self.step_index = 0
         self._repeat_remaining = 0
         self.variables.clear()
+        self.aborted = False
+        self.abort_reason = ""
+        self._suppress_advance = False
+        self._ensure_retries = 0
 
     def reset(self) -> None:
         """Reset execution state without clearing the loaded steps."""
         self.step_index = 0
         self._repeat_remaining = 0
         self.variables.clear()
+        self.aborted = False
+        self.abort_reason = ""
+        self._suppress_advance = False
+        self._ensure_retries = 0
 
     def is_done(self) -> bool:
-        """Return True when all steps have been executed."""
-        return self.step_index >= len(self.steps)
+        """Return True when all steps have been executed or script aborted."""
+        return self.aborted or self.step_index >= len(self.steps)
+
+    def is_aborted(self) -> bool:
+        """Return True if the script was aborted due to unrecoverable error."""
+        return self.aborted
 
     @property
     def current_step(self) -> dict | None:
@@ -188,6 +204,9 @@ class QuestScriptRunner:
             actions = self._do_tap_icon(step, screenshot, delay, description)
         elif "wait_text" in step:
             actions = self._do_wait_text(step, screenshot, description)
+        elif "ensure_main_city" in step:
+            actions = self._do_ensure_main_city(step, screenshot, delay,
+                                                description)
         elif "read_text" in step:
             actions = self._do_read_text(step, screenshot, description)
         elif "eval" in step:
@@ -201,6 +220,11 @@ class QuestScriptRunner:
         if actions is None:
             # Step is waiting (e.g. text not found) — don't advance
             return None
+
+        # Some verbs (ensure_main_city) return actions but stay on same step
+        if self._suppress_advance:
+            self._suppress_advance = False
+            return actions
 
         # Successful execution — decrement repeat counter
         self._repeat_remaining -= 1
@@ -358,3 +382,81 @@ class QuestScriptRunner:
             self.variables[var_name] = ""
 
         return []  # no action to execute
+
+    # -- Main city detection (mirrors SceneClassifier corner-region logic) --
+
+    _MAIN_CITY_CORNER = (0.78, 0.85, 1.0, 1.0)
+    _MAIN_CITY_CONFIDENCE = 0.5
+
+    def _is_main_city(self, screenshot: np.ndarray) -> bool:
+        """Check if screenshot shows main city (bottom-right corner icon)."""
+        h, w = screenshot.shape[:2]
+        rx1, ry1, rx2, ry2 = self._MAIN_CITY_CORNER
+        corner = screenshot[int(ry1*h):int(ry2*h), int(rx1*w):int(rx2*w)]
+        match = self.template_matcher.match_one(corner, "scenes/main_city")
+        return match is not None and match.confidence >= self._MAIN_CITY_CONFIDENCE
+
+    def _do_ensure_main_city(self, step: dict, screenshot: np.ndarray,
+                             delay: float,
+                             description: str) -> list[dict]:
+        """Ensure we are on the main city screen.
+
+        Returns ``[]`` to advance when main city is detected.
+        Returns tap actions (with ``_suppress_advance``) to navigate back.
+        Sets ``self.aborted`` if max retries exceeded.
+        """
+        if self._is_main_city(screenshot):
+            logger.info(
+                f"Quest script: ensure_main_city — at main city"
+            )
+            self._ensure_retries = 0
+            return []  # advance to next step
+
+        args = step.get("ensure_main_city", [])
+        if isinstance(args, (int, float)):
+            args = [args]
+        max_retries = int(args[0]) if args else 10
+
+        self._ensure_retries += 1
+        if self._ensure_retries > max_retries:
+            self.abort_reason = (
+                f"ensure_main_city failed after {max_retries} retries"
+            )
+            logger.error(f"Quest script: {self.abort_reason}")
+            self.aborted = True
+            return []
+
+        # Try back_arrow first
+        match = self.template_matcher.match_one(screenshot,
+                                                "buttons/back_arrow")
+        if match:
+            logger.info(
+                f"Quest script: ensure_main_city — tapping back_arrow "
+                f"({match.x}, {match.y}), attempt {self._ensure_retries}"
+            )
+            self._suppress_advance = True
+            return [{"type": "tap", "x": match.x, "y": match.y,
+                     "delay": delay,
+                     "reason": f"quest_script:ensure_main_city:back_arrow"}]
+
+        # Try close_x
+        match = self.template_matcher.match_one(screenshot,
+                                                "buttons/close_x")
+        if match:
+            logger.info(
+                f"Quest script: ensure_main_city — tapping close_x "
+                f"({match.x}, {match.y}), attempt {self._ensure_retries}"
+            )
+            self._suppress_advance = True
+            return [{"type": "tap", "x": match.x, "y": match.y,
+                     "delay": delay,
+                     "reason": f"quest_script:ensure_main_city:close_x"}]
+
+        # Fallback: Android BACK key
+        logger.info(
+            f"Quest script: ensure_main_city — pressing BACK key, "
+            f"attempt {self._ensure_retries}"
+        )
+        self._suppress_advance = True
+        return [{"type": "key_event", "keycode": 4, "delay": delay,
+                 "reason": f"quest_script:ensure_main_city:back_key"}]

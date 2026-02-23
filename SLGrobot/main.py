@@ -64,8 +64,6 @@ Commands:
   swipe <x1>,<y1> <x2>,<y2> [ms]  Swipe between points (default 300ms)
   longpress <x>,<y> [ms]       Long press (default 1000ms)
   screenshot [label]            Capture and save screenshot
-  back                          Press Android back button
-  home                          Press Android home button
   center                        Tap screen center
   status                        Show connection and game state
   state                         Show current game state
@@ -776,14 +774,6 @@ class CLI:
         h, w = image.shape[:2]
         print(f"Saved {w}x{h} -> {filepath}")
 
-    def cmd_back(self, args: list[str]) -> None:
-        self.bot.input_actions.press_back()
-        print("Back")
-
-    def cmd_home(self, args: list[str]) -> None:
-        self.bot.input_actions.press_home()
-        print("Home")
-
     def cmd_center(self, args: list[str]) -> None:
         self.bot.input_actions.tap_center()
         print(f"Tapped center ({config.SCREEN_WIDTH // 2}, {config.SCREEN_HEIGHT // 2})")
@@ -898,7 +888,9 @@ class CLI:
                 self.bot.runner.execute(action)
                 time.sleep(delay)
 
-        if runner.is_done():
+        if runner.is_aborted():
+            print(f"Quest script ABORTED: {runner.abort_reason}")
+        elif runner.is_done():
             print(f"Quest script completed ({len(steps)} steps)")
         else:
             print(f"Quest script stopped after {iteration} iterations")
@@ -917,7 +909,7 @@ class CLI:
             for j, step in enumerate(steps):
                 desc = step.get("description", "")
                 verb = "?"
-                for v in ("tap_xy", "tap_text", "tap_icon", "wait_text", "read_text", "eval"):
+                for v in ("tap_xy", "tap_text", "tap_icon", "wait_text", "ensure_main_city", "read_text", "eval"):
                     if v in step:
                         verb = f"{v}={step[v]}"
                         break
@@ -984,6 +976,13 @@ class CLI:
                     args_val = [args_val]
                 verb = "wait_text"
                 detail = f"'{args_val[0]}'"
+            elif "ensure_main_city" in step:
+                verb = "ensure_main_city"
+                args_val = step.get("ensure_main_city", [])
+                if isinstance(args_val, list) and args_val:
+                    detail = f"max_retries={args_val[0]}"
+                else:
+                    detail = "max_retries=10"
             elif "read_text" in step:
                 verb = "read_text"
                 detail = f"({step['read_text'][0]}, {step['read_text'][1]}) -> ${step['read_text'][2]}"

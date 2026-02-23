@@ -219,14 +219,135 @@ class TestTapIcon(unittest.TestCase):
         assert result is None
 
 
+class TestEnsureMainCity(unittest.TestCase):
+    """Tests for the ensure_main_city verb."""
+
+    def _mock_main_city(self, tm, is_main_city):
+        """Configure tm.match_one to return main_city match or None."""
+        def mock_match_one(screenshot, name):
+            if name == "scenes/main_city" and is_main_city:
+                return FakeMatchResult("scenes/main_city", 0.9, 50, 50,
+                                       (0, 0, 100, 100))
+            return None
+        tm.match_one.side_effect = mock_match_one
+
+    def test_already_at_main_city(self):
+        """ensure_main_city returns [] and advances when at main city."""
+        runner, _, tm = _make_runner()
+        self._mock_main_city(tm, True)
+        runner.load([
+            {"ensure_main_city": [], "description": "确认在主城"},
+            {"tap_xy": [100, 200], "delay": 0.5}
+        ])
+        result = runner.execute_one(_make_screenshot())
+        assert result == []
+        assert runner.step_index == 1
+        assert not runner.is_aborted()
+
+    def test_back_arrow_found(self):
+        """Taps back_arrow when not at main city, does not advance."""
+        runner, _, tm = _make_runner()
+        def mock_match_one(screenshot, name):
+            if name == "scenes/main_city":
+                return None
+            if name == "buttons/back_arrow":
+                return FakeMatchResult("buttons/back_arrow", 0.9, 60, 80,
+                                       (30, 50, 90, 110))
+            return None
+        tm.match_one.side_effect = mock_match_one
+        runner.load([{"ensure_main_city": [], "delay": 1.0}])
+        result = runner.execute_one(_make_screenshot())
+        assert len(result) == 1
+        assert result[0]["type"] == "tap"
+        assert result[0]["x"] == 60
+        assert runner.step_index == 0  # did NOT advance
+        assert not runner.is_aborted()
+
+    def test_close_x_fallback(self):
+        """Taps close_x when no back_arrow found."""
+        runner, _, tm = _make_runner()
+        def mock_match_one(screenshot, name):
+            if name == "buttons/close_x":
+                return FakeMatchResult("buttons/close_x", 0.85, 1000, 200,
+                                       (970, 170, 1030, 230))
+            return None
+        tm.match_one.side_effect = mock_match_one
+        runner.load([{"ensure_main_city": [], "delay": 1.0}])
+        result = runner.execute_one(_make_screenshot())
+        assert len(result) == 1
+        assert result[0]["type"] == "tap"
+        assert result[0]["x"] == 1000
+        assert runner.step_index == 0
+
+    def test_back_key_fallback(self):
+        """Presses BACK key when no buttons found."""
+        runner, _, tm = _make_runner()
+        tm.match_one.return_value = None
+        runner.load([{"ensure_main_city": [], "delay": 1.0}])
+        result = runner.execute_one(_make_screenshot())
+        assert len(result) == 1
+        assert result[0]["type"] == "key_event"
+        assert result[0]["keycode"] == 4
+        assert runner.step_index == 0
+
+    def test_abort_after_max_retries(self):
+        """Aborts script after max_retries exceeded."""
+        runner, _, tm = _make_runner()
+        tm.match_one.return_value = None
+        runner.load([{"ensure_main_city": [3], "delay": 0.1}])
+        # 3 attempts: not aborted yet
+        for _ in range(3):
+            result = runner.execute_one(_make_screenshot())
+            assert not runner.is_aborted()
+        # 4th attempt: exceeds max_retries=3
+        result = runner.execute_one(_make_screenshot())
+        assert runner.is_aborted()
+        assert "3 retries" in runner.abort_reason
+        assert runner.is_done()
+
+    def test_multi_round_then_success(self):
+        """Navigates back over multiple rounds then succeeds."""
+        runner, _, tm = _make_runner()
+        main_city_check_count = [0]
+        def mock_match_one(screenshot, name):
+            if name == "scenes/main_city":
+                main_city_check_count[0] += 1
+                # Succeed on 3rd main_city check
+                if main_city_check_count[0] >= 3:
+                    return FakeMatchResult("scenes/main_city", 0.9, 50, 50,
+                                           (0, 0, 100, 100))
+                return None
+            if name == "buttons/back_arrow":
+                return FakeMatchResult("buttons/back_arrow", 0.9, 60, 80,
+                                       (30, 50, 90, 110))
+            return None
+        tm.match_one.side_effect = mock_match_one
+        runner.load([
+            {"ensure_main_city": [], "delay": 0.1},
+            {"tap_xy": [100, 200], "delay": 0.5}
+        ])
+        # Round 1-2: tap back_arrow, don't advance
+        for _ in range(2):
+            result = runner.execute_one(_make_screenshot())
+            assert len(result) == 1
+            assert runner.step_index == 0
+        # Round 3: at main city, advance
+        result = runner.execute_one(_make_screenshot())
+        assert result == []
+        assert runner.step_index == 1
+        assert not runner.is_aborted()
+
+
 class TestExpeditionQuestScript(unittest.TestCase):
     """Integration test for the full pass_one_expedition quest script."""
 
     def test_expedition_full_flow(self):
-        """Run through all 6 steps of the expedition quest."""
+        """Run through all 7 steps of the expedition quest."""
         runner, ocr, tm = _make_runner()
 
         steps = [
+            {"ensure_main_city": [], "delay": 1.5,
+             "description": "确认在主城界面"},
             {"tap_icon": ["nav_bar/expedition"], "delay": 2.0,
              "description": "点击远征图标"},
             {"tap_text": ["开始战斗"], "delay": 1.5,
@@ -235,15 +356,24 @@ class TestExpeditionQuestScript(unittest.TestCase):
              "description": "点击一键上阵"},
             {"tap_xy": [900, 1870], "delay": 3.0,
              "description": "点击出战按钮"},
-            {"wait_text": ["战斗成功"],
-             "description": "等待战斗结束，出现战斗成功"},
+            {"wait_text": ["返回小镇"],
+             "description": "等待战斗结束，出现返回小镇"},
             {"tap_text": ["返回小镇"], "delay": 1.5,
              "description": "点击返回小镇"},
         ]
         runner.load(steps)
         assert not runner.is_done()
 
-        # Step 1: tap_icon expedition
+        # Step 1: ensure_main_city — mock as already at main city
+        tm.match_one.side_effect = lambda ss, name: (
+            FakeMatchResult("scenes/main_city", 0.9, 50, 50, (0, 0, 100, 100))
+            if name == "scenes/main_city" else None
+        )
+        result = runner.execute_one(_make_screenshot())
+        assert result == []
+        assert runner.step_index == 1
+
+        # Step 2: tap_icon expedition
         tm.match_one_multi.return_value = [
             FakeMatchResult("nav_bar/expedition", 0.9, 540, 1850,
                             (490, 1800, 590, 1900))
@@ -251,46 +381,46 @@ class TestExpeditionQuestScript(unittest.TestCase):
         result = runner.execute_one(_make_screenshot())
         assert result is not None and len(result) == 1
         assert result[0]["x"] == 540
-        assert runner.step_index == 1
+        assert runner.step_index == 2
 
-        # Step 2: tap_text 开始战斗
+        # Step 3: tap_text 开始战斗
         ocr.find_all_text.return_value = [
             FakeOCRResult("开始战斗", 0.9, (400, 1000, 600, 1050), (500, 1025))
         ]
         result = runner.execute_one(_make_screenshot())
         assert result is not None and len(result) == 1
-        assert runner.step_index == 2
+        assert runner.step_index == 3
 
-        # Step 3: tap_text 一键上阵
+        # Step 4: tap_text 一键上阵
         ocr.find_all_text.return_value = [
             FakeOCRResult("一键上阵", 0.9, (400, 1200, 600, 1250), (500, 1225))
         ]
         result = runner.execute_one(_make_screenshot())
         assert result is not None and len(result) == 1
-        assert runner.step_index == 3
+        assert runner.step_index == 4
 
-        # Step 4: tap_xy 出战按钮
+        # Step 5: tap_xy 出战按钮
         result = runner.execute_one(_make_screenshot())
         assert result is not None and len(result) == 1
         assert result[0]["x"] == 900
         assert result[0]["y"] == 1870
-        assert runner.step_index == 4
+        assert runner.step_index == 5
 
-        # Step 5: wait_text 战斗成功 — first attempt: not found
+        # Step 6: wait_text 返回小镇 — first attempt: not found
         ocr.find_all_text.return_value = []
         result = runner.execute_one(_make_screenshot())
         assert result is None
-        assert runner.step_index == 4  # still waiting
+        assert runner.step_index == 5  # still waiting
 
-        # Step 5: wait_text 战斗成功 — second attempt: found
+        # Step 6: wait_text 返回小镇 — second attempt: found
         ocr.find_all_text.return_value = [
-            FakeOCRResult("战斗成功", 0.95, (300, 800, 500, 850), (400, 825))
+            FakeOCRResult("返回小镇", 0.9, (200, 1400, 400, 1450), (300, 1425))
         ]
         result = runner.execute_one(_make_screenshot())
         assert result == []
-        assert runner.step_index == 5
+        assert runner.step_index == 6
 
-        # Step 6: tap_text 返回小镇
+        # Step 7: tap_text 返回小镇
         ocr.find_all_text.return_value = [
             FakeOCRResult("返回小镇", 0.9, (400, 1500, 600, 1550), (500, 1525))
         ]

@@ -111,6 +111,25 @@ OCR 搜索屏幕上的文本，找到后推进到下一步。不产生点击动�
 
 适用场景：等待战斗结束、等待加载完成等需要确认屏幕状态再继续的步骤。
 
+### `ensure_main_city` — 确认/返回主城
+
+```json
+{"ensure_main_city": [], "delay": 1.5, "description": "确认在主城界面"}
+{"ensure_main_city": [15], "delay": 1.5, "description": "最多重试15次"}
+```
+
+检测当前屏幕是否为主城（底部右下角模板匹配 `scenes/main_city`）。
+已在主城时直接推进到下一步（无动作）。
+不在主城时，按优先级尝试返回：
+1. 点击 `buttons/back_arrow`（返回箭头）
+2. 点击 `buttons/close_x`（关闭按钮）
+3. 发送 Android BACK 键
+
+每次尝试后不推进步骤，等待下次迭代重新检测。
+超过 `max_retries`（默认 10）次仍未回到主城时，**中止整个脚本**并报错。
+
+适用场景：脚本首步确认在主城、脚本末步返回主城。
+
 ### `read_text` — 区域 OCR 读取
 
 ```json
