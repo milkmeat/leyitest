@@ -83,6 +83,8 @@ SLGrobot/
     persistence.py       # JSON persistence
   brain/
     __init__.py
+    quest_script.py      # Quest script runner (multi-step JSON scripts)
+    quest_workflow.py     # Quest execution state machine
     auto_handler.py      # Automatic operations (no LLM, <100ms)
     rule_engine.py       # Rule-based decisions (<500ms)
     llm_planner.py       # Claude API strategic planning (3-10s)

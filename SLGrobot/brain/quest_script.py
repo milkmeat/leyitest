@@ -1,0 +1,332 @@
+"""Quest Script Runner - Execute multi-step quest scripts defined in JSON.
+
+Each quest script is a list of steps with verb + args.  Supported verbs:
+
+  tap_xy   [x, y]                  — unconditional tap at fixed coordinates
+  tap_text [text] or [text, nth]   — OCR search, tap nth match (1-indexed)
+  tap_icon [name] or [name, nth]   — template match, tap nth match (1-indexed)
+  read_text [x, y, var] or [x, y, var, w, h]
+                                   — OCR region around (x,y), store in variable
+  eval     [var, expression]       — safe arithmetic on variables
+
+Step fields:
+  delay       float, default 1.0   — seconds to wait after action
+  repeat      int, default 1       — repeat this step N times
+  description str                  — human-readable label
+"""
+
+import ast
+import logging
+import operator
+import re
+
+import numpy as np
+
+logger = logging.getLogger(__name__)
+
+# Operators allowed in eval expressions
+_SAFE_OPS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.FloorDiv: operator.floordiv,
+    ast.Mod: operator.mod,
+}
+
+# Functions allowed in eval expressions
+_SAFE_FUNCS = {"int": int, "str": str, "len": len, "abs": abs}
+
+
+def _safe_eval(expression: str, variables: dict[str, str]) -> str:
+    """Evaluate a simple arithmetic expression with variable substitution.
+
+    Variables are referenced as ``{var_name}`` and substituted before parsing.
+    Only arithmetic operators and whitelisted builtins are allowed.
+
+    Returns the result as a string.
+    """
+    # Substitute variables
+    expr = expression
+    for name, value in variables.items():
+        expr = expr.replace(f"{{{name}}}", value)
+
+    # Parse into AST
+    try:
+        tree = ast.parse(expr, mode="eval")
+    except SyntaxError as e:
+        raise ValueError(f"Invalid expression: {expr!r}") from e
+
+    def _eval_node(node):
+        if isinstance(node, ast.Expression):
+            return _eval_node(node.body)
+        if isinstance(node, ast.Constant):
+            if isinstance(node.value, (int, float, str)):
+                return node.value
+            raise ValueError(f"Unsupported constant type: {type(node.value)}")
+        if isinstance(node, ast.BinOp):
+            op_type = type(node.op)
+            if op_type not in _SAFE_OPS:
+                raise ValueError(f"Unsupported operator: {op_type.__name__}")
+            left = _eval_node(node.left)
+            right = _eval_node(node.right)
+            return _SAFE_OPS[op_type](left, right)
+        if isinstance(node, ast.UnaryOp):
+            if isinstance(node.op, ast.USub):
+                return -_eval_node(node.operand)
+            raise ValueError(f"Unsupported unary op: {type(node.op).__name__}")
+        if isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Name) and node.func.id in _SAFE_FUNCS:
+                args = [_eval_node(a) for a in node.args]
+                return _SAFE_FUNCS[node.func.id](*args)
+            raise ValueError(f"Unsupported function call")
+        if isinstance(node, ast.Name):
+            # Allow bare variable names (without braces) as fallback
+            if node.id in variables:
+                try:
+                    return int(variables[node.id])
+                except ValueError:
+                    return variables[node.id]
+            raise ValueError(f"Unknown variable: {node.id}")
+        raise ValueError(f"Unsupported AST node: {type(node).__name__}")
+
+    result = _eval_node(tree)
+    return str(result)
+
+
+class QuestScriptRunner:
+    """Execute a list of quest script steps one at a time.
+
+    Each call to ``execute_one()`` processes the current step and returns
+    a list of action dicts (or ``None`` if the step is waiting for a
+    condition like OCR text to appear).
+
+    Usage::
+
+        runner = QuestScriptRunner(ocr, template_matcher, adb, screenshot_fn)
+        runner.load(steps)
+        while not runner.is_done():
+            screenshot = screenshot_fn()
+            actions = runner.execute_one(screenshot)
+            if actions:
+                for a in actions:
+                    action_runner.execute(a)
+    """
+
+    def __init__(self, ocr_locator, template_matcher, adb_controller,
+                 screenshot_fn=None) -> None:
+        """
+        Args:
+            ocr_locator: OCRLocator instance for text detection.
+            template_matcher: TemplateMatcher instance for icon detection.
+            adb_controller: ADBController (unused directly, available for
+                            future verbs).
+            screenshot_fn: Optional callable returning a screenshot ndarray.
+        """
+        self.ocr = ocr_locator
+        self.template_matcher = template_matcher
+        self.adb = adb_controller
+        self.screenshot_fn = screenshot_fn
+        self.variables: dict[str, str] = {}
+        self.step_index: int = 0
+        self.steps: list[dict] = []
+        self._repeat_remaining: int = 0
+
+    def load(self, steps: list[dict]) -> None:
+        """Load a new script.  Resets all state."""
+        self.steps = list(steps)
+        self.step_index = 0
+        self._repeat_remaining = 0
+        self.variables.clear()
+
+    def reset(self) -> None:
+        """Reset execution state without clearing the loaded steps."""
+        self.step_index = 0
+        self._repeat_remaining = 0
+        self.variables.clear()
+
+    def is_done(self) -> bool:
+        """Return True when all steps have been executed."""
+        return self.step_index >= len(self.steps)
+
+    @property
+    def current_step(self) -> dict | None:
+        """Return current step dict, or None if done."""
+        if self.is_done():
+            return None
+        return self.steps[self.step_index]
+
+    def execute_one(self, screenshot: np.ndarray) -> list[dict] | None:
+        """Execute the current step against the given screenshot.
+
+        Returns:
+            - A list of action dicts to execute (may be empty for no-op
+              steps like read_text/eval).
+            - ``None`` if the step is waiting (e.g. tap_text target not
+              found on screen).  The caller should retry next iteration.
+        """
+        if self.is_done():
+            return None
+
+        step = self.steps[self.step_index]
+        delay = step.get("delay", 1.0)
+        repeat = step.get("repeat", 1)
+        description = step.get("description", "")
+
+        # Initialize repeat counter on first encounter of this step
+        if self._repeat_remaining <= 0:
+            self._repeat_remaining = repeat
+
+        # Dispatch by verb
+        actions: list[dict] | None = None
+
+        if "tap_xy" in step:
+            actions = self._do_tap_xy(step, delay, description)
+        elif "tap_text" in step:
+            actions = self._do_tap_text(step, screenshot, delay, description)
+        elif "tap_icon" in step:
+            actions = self._do_tap_icon(step, screenshot, delay, description)
+        elif "read_text" in step:
+            actions = self._do_read_text(step, screenshot, description)
+        elif "eval" in step:
+            actions = self._do_eval(step, description)
+        else:
+            logger.warning(
+                f"Quest script step {self.step_index}: unknown verb, skipping"
+            )
+            actions = []
+
+        if actions is None:
+            # Step is waiting (e.g. text not found) — don't advance
+            return None
+
+        # Successful execution — decrement repeat counter
+        self._repeat_remaining -= 1
+        if self._repeat_remaining <= 0:
+            self.step_index += 1
+            self._repeat_remaining = 0
+
+        logger.info(
+            f"Quest script step {self.step_index - (1 if self._repeat_remaining <= 0 else 0)}"
+            f"/{len(self.steps)}: {description or step}"
+            f" (repeats_left={self._repeat_remaining})"
+        )
+
+        return actions
+
+    # -- Verb implementations --
+
+    def _do_tap_xy(self, step: dict, delay: float,
+                   description: str) -> list[dict]:
+        args = step["tap_xy"]
+        x, y = int(args[0]), int(args[1])
+        return [{
+            "type": "tap",
+            "x": x,
+            "y": y,
+            "delay": delay,
+            "reason": f"quest_script:tap_xy:{x},{y}:{description}",
+        }]
+
+    def _do_tap_text(self, step: dict, screenshot: np.ndarray,
+                     delay: float, description: str) -> list[dict] | None:
+        args = step["tap_text"]
+        if isinstance(args, str):
+            args = [args]
+        target_text = str(args[0])
+        nth = int(args[1]) if len(args) > 1 else 1
+
+        # Find all matching text regions
+        all_results = self.ocr.find_all_text(screenshot)
+        target_lower = target_text.lower()
+        matches = [
+            r for r in all_results
+            if target_lower in r.text.lower()
+        ]
+
+        if not matches or nth > len(matches):
+            logger.debug(
+                f"Quest script: tap_text '{target_text}' not found "
+                f"(need #{nth}, got {len(matches)} matches)"
+            )
+            return None
+
+        match = matches[nth - 1]
+        cx, cy = match.center
+        return [{
+            "type": "tap",
+            "x": cx,
+            "y": cy,
+            "delay": delay,
+            "reason": f"quest_script:tap_text:{target_text}:{description}",
+        }]
+
+    def _do_tap_icon(self, step: dict, screenshot: np.ndarray,
+                     delay: float, description: str) -> list[dict] | None:
+        args = step["tap_icon"]
+        if isinstance(args, str):
+            args = [args]
+        icon_name = str(args[0])
+        nth = int(args[1]) if len(args) > 1 else 1
+
+        matches = self.template_matcher.match_one_multi(screenshot, icon_name)
+        if not matches or nth > len(matches):
+            logger.debug(
+                f"Quest script: tap_icon '{icon_name}' not found "
+                f"(need #{nth}, got {len(matches)} matches)"
+            )
+            return None
+
+        match = matches[nth - 1]
+        return [{
+            "type": "tap",
+            "x": match.x,
+            "y": match.y,
+            "delay": delay,
+            "reason": f"quest_script:tap_icon:{icon_name}:{description}",
+        }]
+
+    def _do_read_text(self, step: dict, screenshot: np.ndarray,
+                      description: str) -> list[dict]:
+        args = step["read_text"]
+        x, y = int(args[0]), int(args[1])
+        var_name = str(args[2])
+        w = int(args[3]) if len(args) > 3 else 200
+        h = int(args[4]) if len(args) > 4 else 80
+
+        # Crop region centered on (x, y)
+        sh, sw = screenshot.shape[:2]
+        x1 = max(0, x - w // 2)
+        y1 = max(0, y - h // 2)
+        x2 = min(sw, x1 + w)
+        y2 = min(sh, y1 + h)
+        crop = screenshot[y1:y2, x1:x2]
+
+        all_text = self.ocr.find_all_text(crop)
+        combined = "".join(r.text for r in all_text)
+        self.variables[var_name] = combined
+
+        logger.info(
+            f"Quest script: read_text at ({x},{y}) {w}x{h} -> "
+            f"'{var_name}' = '{combined}'"
+        )
+        return []  # no action to execute
+
+    def _do_eval(self, step: dict, description: str) -> list[dict]:
+        args = step["eval"]
+        var_name = str(args[0])
+        expression = str(args[1])
+
+        try:
+            result = _safe_eval(expression, self.variables)
+            self.variables[var_name] = result
+            logger.info(
+                f"Quest script: eval '{expression}' -> "
+                f"'{var_name}' = '{result}'"
+            )
+        except (ValueError, TypeError, ZeroDivisionError) as e:
+            logger.warning(
+                f"Quest script: eval '{expression}' failed: {e}"
+            )
+            self.variables[var_name] = ""
+
+        return []  # no action to execute

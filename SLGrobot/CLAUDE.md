@@ -52,7 +52,7 @@ python test_hardening.py    # Stuck recovery, reconnect, retry
 | `vision/` | Visual Perception | Template matching, OCR text detection, grid overlay, element detection |
 | `scene/` | Scene Understanding | Scene classification, popup detection/auto-close, scene-specific handlers |
 | `state/` | State Management | In-memory game state, OCR-based state extraction, JSON persistence |
-| `brain/` | Decision Making | Task queue, rule engine, LLM planner, stuck recovery, auto-handler |
+| `brain/` | Decision Making | Quest script runner, task queue, rule engine, LLM planner, stuck recovery, auto-handler |
 | `executor/` | Execution Pipeline | Action validation → execution (with retry) → result verification |
 | `utils/` | Utilities | Logging (console + `.log` + `.jsonl`), image helpers |
 
@@ -80,6 +80,10 @@ All modules exchange actions as dicts with a `type` field:
 Scene types: `main_city`, `world_map`, `hero`, `hero_recruit`, `battle`, `popup`, `loading`, `unknown`
 
 Known task types (handled by `RuleEngine`): `collect_resources`, `upgrade_building`, `train_troops`, `claim_rewards`, `navigate_main_city`, `navigate_world_map`, `close_popup`, `check_mail`, `collect_daily`
+
+### Quest Scripting System
+
+Game operations are defined as JSON quest scripts in `games/<id>/game.json` under `quest_action_rules`. Scripts are multi-step sequences with verbs: `tap_xy`, `tap_text`, `tap_icon`, `read_text`, `eval`. Executed by `QuestScriptRunner` (`brain/quest_script.py`), triggered automatically via quest bar matching or manually via `quest` CLI command. See `quest_scripting.md` for full reference.
 
 ## Configuration
 

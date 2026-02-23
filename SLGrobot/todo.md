@@ -1,6 +1,6 @@
 # SLGrobot TODO
 
-Phase 1-5 框架已完成，Phase 6 Quest Workflow 已实现，以下是后续工作方向。
+Phase 1-5 框架已完成，Phase 6 Quest Workflow 已实现，Quest Scripting 系统已实现，以下是后续工作方向。
 
 ---
 
@@ -145,6 +145,39 @@ Phase 1-5 框架已完成，Phase 6 Quest Workflow 已实现，以下是后续�
 ### 21. 全屏弹窗 close_x 检查（execute_quest 内）
 - [x] LLM 回退之前增加 close_x 模板检查（带位置验证）
 - [x] 在 quest workflow 内部也能关闭 "首充奖励" 等 unknown 分类的全屏弹窗
+
+---
+
+## Quest Scripting 系统（已完成）
+
+### Quest Script Runner (`brain/quest_script.py` — 新建)
+- [x] `QuestScriptRunner` 类：`load()` / `reset()` / `is_done()` / `execute_one()`
+- [x] 5 个动词实现：`tap_xy`、`tap_text`、`tap_icon`、`read_text`、`eval`
+- [x] `_safe_eval()` 安全表达式求值（`ast` 模块，白名单运算符和函数）
+- [x] `repeat` 逻辑：步骤可重复 N 次，`tap_text`/`tap_icon` 未找到时不递减
+- [x] 变量系统：`read_text` 写入、`eval` 计算、`{var}` 引用
+
+### Quest Workflow 集成 (`brain/quest_workflow.py` — 修改)
+- [x] `_match_quest_rule()` 委托给 `QuestScriptRunner`（替代手动 step index 追踪）
+- [x] `__init__` 新增 `adb_controller` / `screenshot_fn` 参数
+- [x] `start()` / `abort()` 重置 script runner
+- [x] `_loaded_quest_pattern` 跟踪已加载规则，避免重复加载
+
+### CLI 命令 (`main.py` — 修改)
+- [x] 删除 `cmd_task` / `cmd_tasks` / `cmd_save_tasks` / `cmd_load_tasks`
+- [x] 新增 `cmd_quest` — 匹配规则并执行脚本
+- [x] 新增 `cmd_quest_rules` — 列出所有规则（pattern + 步骤详情）
+- [x] 新增 `cmd_quest_test` — 干运行（显示步骤但不执行）
+- [x] 更新 help 文本
+
+### 文档
+- [x] `quest_scripting.md` — 完整设计文档和使用指南
+
+### 待做
+- [ ] 为更多任务类型编写脚本（采集、训练、研究等）
+- [ ] 实跑验证 `quest` CLI 命令和自动循环中的脚本执行
+- [ ] 确认 `tap_icon` 模板匹配在实际游戏中有效
+- [ ] 移除 `brain/rule_engine.py` 和 `brain/task_queue.py`（待脚本覆盖所有操作后）
 
 ---
 

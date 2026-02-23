@@ -18,6 +18,7 @@ from vision.quest_bar_detector import QuestBarDetector, QuestBarInfo
 from vision.element_detector import ElementDetector
 from vision.ocr_locator import is_on_colored_button
 from state.game_state import GameState
+from brain.quest_script import QuestScriptRunner
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +101,9 @@ class QuestWorkflow:
                  element_detector: ElementDetector,
                  llm_planner,
                  game_state: GameState,
-                 game_profile=None) -> None:
+                 game_profile=None,
+                 adb_controller=None,
+                 screenshot_fn=None) -> None:
         self.quest_bar_detector = quest_bar_detector
         self.element_detector = element_detector
         self.llm_planner = llm_planner
@@ -123,6 +126,15 @@ class QuestWorkflow:
         # Create horizontally flipped tutorial_finger template for mirror detection
         self._ensure_flipped_finger_template()
 
+        # Quest script runner for executing multi-step quest rules
+        self._script_runner = QuestScriptRunner(
+            ocr_locator=element_detector.ocr,
+            template_matcher=element_detector.template_matcher,
+            adb_controller=adb_controller,
+            screenshot_fn=screenshot_fn,
+        )
+        self._loaded_quest_pattern: str = ""  # pattern currently loaded
+
         # State
         self.phase: str = self.IDLE
         self.target_quest_name: str = ""
@@ -141,9 +153,6 @@ class QuestWorkflow:
         self._exhausted_buttons: set[str] = set()
         self._last_execute_scene: str = ""
 
-        # Quest rule step tracking — sequential execution index
-        self._quest_rule_step_done: int = 0
-
     def is_active(self) -> bool:
         """Return True if workflow is currently executing a quest."""
         return self.phase != self.IDLE
@@ -161,7 +170,8 @@ class QuestWorkflow:
         self._action_button_repeat_count = 0
         self._exhausted_buttons = set()
         self._last_execute_scene = ""
-        self._quest_rule_step_done = 0
+        self._script_runner.reset()
+        self._loaded_quest_pattern = ""
         self._sync_to_game_state()
 
     def abort(self) -> None:
@@ -176,7 +186,8 @@ class QuestWorkflow:
         self._action_button_repeat_count = 0
         self._exhausted_buttons = set()
         self._last_execute_scene = ""
-        self._quest_rule_step_done = 0
+        self._script_runner.reset()
+        self._loaded_quest_pattern = ""
         self._sync_to_game_state()
 
     def step(self, screenshot: np.ndarray, scene: str) -> list[dict]:
@@ -1230,14 +1241,11 @@ class QuestWorkflow:
             self._action_button_repeat_count = 0
 
     def _match_quest_rule(self, screenshot: np.ndarray) -> list[dict] | None:
-        """Match current quest against quest_action_rules and return an action.
+        """Match current quest against quest_action_rules and delegate to QuestScriptRunner.
 
-        Steps are executed **sequentially**: step 0 first, then step 1, etc.
-        ``_quest_rule_step_done`` tracks progress and is reset on start/abort.
-
-        Each step type:
-        - ``tap_text``: OCR search → tap if found, else try fallback_xy/grid.
-        - ``tap_xy`` (no tap_text): unconditional tap at fixed coordinates.
+        On first match, loads steps into ``_script_runner``.  Subsequent
+        calls to ``execute_one()`` advance through the script one step per
+        iteration.
 
         Returns ``None`` when all steps are done or no rule matches,
         letting the caller fall through to generic action buttons / LLM.
@@ -1251,90 +1259,35 @@ class QuestWorkflow:
                 continue
 
             steps = rule.get("steps", [])
-            if not steps or self._quest_rule_step_done >= len(steps):
-                # All steps done — fall through to generic logic
+            if not steps:
                 return None
 
-            idx = self._quest_rule_step_done
-            step = steps[idx]
-            tap_text = step.get("tap_text", "")
-            delay = step.get("delay", 1.0)
-            description = step.get("description", tap_text)
-
-            # Step with tap_text: try OCR, then fallback
-            if tap_text:
-                element = self.element_detector.locate(
-                    screenshot, tap_text, methods=["ocr"]
-                )
-                if element is not None:
-                    logger.info(
-                        f"Quest rule '{pattern}' step {idx}/{len(steps)}: "
-                        f"tap '{tap_text}' at ({element.x}, {element.y}) "
-                        f"— {description}"
-                    )
-                    self._quest_rule_step_done = idx + 1
-                    return [{
-                        "type": "tap",
-                        "x": element.x,
-                        "y": element.y,
-                        "delay": delay,
-                        "reason": f"quest_rule:{pattern}:step{idx}:{tap_text}",
-                    }]
-
-                # tap_text not found — try fallback_xy or fallback_grid
-                fallback_xy = step.get("fallback_xy")
-                fallback_grid = step.get("fallback_grid")
-                fx, fy = None, None
-                fallback_label = ""
-                if fallback_xy and len(fallback_xy) == 2:
-                    fx, fy = int(fallback_xy[0]), int(fallback_xy[1])
-                    fallback_label = f"xy:{fx},{fy}"
-                elif fallback_grid:
-                    grid_pos = self._grid_to_pixel(screenshot, fallback_grid)
-                    if grid_pos is not None:
-                        fx, fy = grid_pos
-                        fallback_label = f"grid:{fallback_grid}"
-                if fx is not None:
-                    logger.info(
-                        f"Quest rule '{pattern}' step {idx}/{len(steps)}: "
-                        f"fallback {fallback_label} at ({fx}, {fy}) "
-                        f"— {description}"
-                    )
-                    self._quest_rule_step_done = idx + 1
-                    return [{
-                        "type": "tap",
-                        "x": fx,
-                        "y": fy,
-                        "delay": delay,
-                        "reason": f"quest_rule:{pattern}:step{idx}:{fallback_label}",
-                    }]
-
-                # No fallback — wait for tap_text to appear
-                logger.debug(
-                    f"Quest rule '{pattern}' step {idx}: "
-                    f"'{tap_text}' not visible, waiting"
-                )
-                return None
-
-            # Step with tap_xy (unconditional)
-            tap_xy = step.get("tap_xy")
-            if tap_xy and len(tap_xy) == 2:
-                tx, ty = int(tap_xy[0]), int(tap_xy[1])
+            # Load steps into runner if not already loaded for this pattern
+            if self._loaded_quest_pattern != pattern:
+                self._script_runner.load(steps)
+                self._loaded_quest_pattern = pattern
                 logger.info(
-                    f"Quest rule '{pattern}' step {idx}/{len(steps)}: "
-                    f"tap_xy ({tx}, {ty}) — {description}"
+                    f"Quest rule '{pattern}': loaded {len(steps)} steps "
+                    f"into script runner"
                 )
-                self._quest_rule_step_done = idx + 1
-                return [{
-                    "type": "tap",
-                    "x": tx,
-                    "y": ty,
-                    "delay": delay,
-                    "reason": f"quest_rule:{pattern}:step{idx}:xy:{tx},{ty}",
-                }]
 
-            # Step has neither tap_text nor tap_xy — skip it
-            self._quest_rule_step_done = idx + 1
+            # All steps done — fall through to generic logic
+            if self._script_runner.is_done():
+                return None
+
+            # Execute one step
+            actions = self._script_runner.execute_one(screenshot)
+            if actions is not None:
+                step_desc = ""
+                cur = self._script_runner.current_step
+                if cur:
+                    step_desc = cur.get("description", "")
+                logger.info(
+                    f"Quest rule '{pattern}' step "
+                    f"{self._script_runner.step_index}/{len(steps)}: "
+                    f"{step_desc}"
+                )
+            return actions
 
         return None
 

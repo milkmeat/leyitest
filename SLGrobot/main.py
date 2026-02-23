@@ -22,6 +22,7 @@ Auto loop flow:
 """
 
 import os
+import re
 import sys
 import time
 import shlex
@@ -69,10 +70,9 @@ Commands:
   status                        Show connection and game state
   state                         Show current game state
   scene                         Classify current scene
-  task <name> [priority]        Add a task to the queue
-  tasks                         Show task queue
-  save_tasks                    Save task queue to file
-  load_tasks                    Load task queue from file
+  quest <quest text>            Execute a quest script by text match
+  quest_rules                   List all quest action rules
+  quest_test <quest text>       Dry-run a quest script (show steps)
   auto [loops]                  Run auto loop (default: infinite)
   llm                           Manually trigger LLM strategic consultation
   detect_finger                 Detect tutorial finger, print coords, save crop
@@ -195,6 +195,8 @@ class GameBot:
             llm_planner=self.llm_planner,
             game_state=self.game_state,
             game_profile=game_profile,
+            adb_controller=self.adb,
+            screenshot_fn=self.screenshot_mgr.capture,
         )
         self.game_state.quest_workflow_phase = "idle"
         self.game_state.quest_workflow_target = ""
@@ -371,7 +373,8 @@ class GameBot:
                                     self.quest_workflow.EXECUTE_QUEST
                                 )
                                 self.quest_workflow.execute_iterations = 0
-                                self.quest_workflow._quest_rule_step_done = 0
+                                self.quest_workflow._script_runner.reset()
+                                self.quest_workflow._loaded_quest_pattern = ""
                                 self.quest_workflow._exhausted_buttons = set()
                                 logger.info(
                                     f"Quest workflow fast-started to EXECUTE_QUEST "
@@ -818,34 +821,174 @@ class CLI:
             if score > 0:
                 print(f"  {s}: {score:.3f}")
 
-    def cmd_task(self, args: list[str]) -> None:
-        if len(args) < 1:
-            print("Usage: task <name> [priority]")
-            print(f"Known tasks: {', '.join(sorted(self.bot.rule_engine._known_tasks))}")
+    def cmd_quest(self, args: list[str]) -> None:
+        """Execute a quest script by matching quest text against rules."""
+        if not args:
+            print("Usage: quest <quest text in natural language>")
+            print("Example: quest 派遣3名镇民")
+            print("Example: quest 将驻防站升至2级")
             return
-        name = args[0]
-        priority = int(args[1]) if len(args) > 1 else 0
-        task = Task(name=name, priority=priority)
-        self.bot.task_queue.add(task)
-        print(f"Added task: '{name}' priority={priority}")
 
-    def cmd_tasks(self, args: list[str]) -> None:
-        status = self.bot.task_queue.get_status()
-        if not status:
-            print("Task queue is empty")
+        quest_text = " ".join(args)
+        rules = self.bot.quest_workflow._quest_action_rules
+        if not rules:
+            print("No quest action rules loaded.")
             return
-        for t in status:
-            print(f"  [{t['status']}] {t['name']} (priority={t['priority']}, retries={t['retry_count']})")
 
-    def cmd_save_tasks(self, args: list[str]) -> None:
-        filepath = args[0] if args else self.bot._tasks_file
-        self.bot.task_queue.save(filepath)
-        print(f"Saved {self.bot.task_queue.size()} tasks to {filepath}")
+        # Find matching rule
+        matched_rule = None
+        for rule in rules:
+            pattern = rule.get("pattern", "")
+            if pattern and re.search(pattern, quest_text):
+                matched_rule = rule
+                break
 
-    def cmd_load_tasks(self, args: list[str]) -> None:
-        filepath = args[0] if args else self.bot._tasks_file
-        count = self.bot.task_queue.load(filepath)
-        print(f"Loaded {count} tasks from {filepath}")
+        if matched_rule is None:
+            print(f"No rule matches '{quest_text}'")
+            print("Available patterns:")
+            for rule in rules:
+                print(f"  {rule.get('pattern', '?')}  ({len(rule.get('steps', []))} steps)")
+            return
+
+        pattern = matched_rule["pattern"]
+        steps = matched_rule.get("steps", [])
+        print(f"Matched rule: '{pattern}' ({len(steps)} steps)")
+
+        # Create standalone runner
+        from brain.quest_script import QuestScriptRunner
+        runner = QuestScriptRunner(
+            ocr_locator=self.bot.ocr,
+            template_matcher=self.bot.template_matcher,
+            adb_controller=self.bot.adb,
+            screenshot_fn=self.bot.screenshot_mgr.capture,
+        )
+        runner.load(steps)
+
+        max_iterations = len(steps) * 10  # safety limit
+        iteration = 0
+
+        while not runner.is_done() and iteration < max_iterations:
+            iteration += 1
+            try:
+                screenshot = self.bot.screenshot_mgr.capture()
+            except Exception as e:
+                print(f"Screenshot failed: {e}")
+                break
+
+            actions = runner.execute_one(screenshot)
+            if actions is None:
+                # Step waiting (e.g. text not found), retry
+                print(f"  Step {runner.step_index + 1}/{len(steps)}: waiting...")
+                time.sleep(1.0)
+                continue
+
+            if not actions:
+                # No-op step (read_text, eval)
+                cur = runner.steps[max(0, runner.step_index - 1)]
+                print(f"  Step {runner.step_index}/{len(steps)}: "
+                      f"{cur.get('description', 'done')}")
+                continue
+
+            # Execute actions
+            for action in actions:
+                delay = action.get("delay", 1.0)
+                desc = action.get("reason", "")
+                print(f"  Step {runner.step_index}/{len(steps)}: "
+                      f"tap ({action.get('x')}, {action.get('y')}) — {desc}")
+                self.bot.runner.execute(action)
+                time.sleep(delay)
+
+        if runner.is_done():
+            print(f"Quest script completed ({len(steps)} steps)")
+        else:
+            print(f"Quest script stopped after {iteration} iterations")
+
+    def cmd_quest_rules(self, args: list[str]) -> None:
+        """List all quest action rules."""
+        rules = self.bot.quest_workflow._quest_action_rules
+        if not rules:
+            print("No quest action rules loaded.")
+            return
+        print(f"{len(rules)} quest action rule(s):")
+        for i, rule in enumerate(rules):
+            pattern = rule.get("pattern", "?")
+            steps = rule.get("steps", [])
+            print(f"  {i + 1}. /{pattern}/  ({len(steps)} steps)")
+            for j, step in enumerate(steps):
+                desc = step.get("description", "")
+                verb = "?"
+                for v in ("tap_xy", "tap_text", "tap_icon", "read_text", "eval"):
+                    if v in step:
+                        verb = f"{v}={step[v]}"
+                        break
+                repeat = step.get("repeat", 1)
+                repeat_str = f" x{repeat}" if repeat > 1 else ""
+                print(f"      {j + 1}. {verb}{repeat_str}  {desc}")
+
+    def cmd_quest_test(self, args: list[str]) -> None:
+        """Dry-run a quest script — show steps without executing."""
+        if not args:
+            print("Usage: quest_test <quest text>")
+            return
+
+        quest_text = " ".join(args)
+        rules = self.bot.quest_workflow._quest_action_rules
+        if not rules:
+            print("No quest action rules loaded.")
+            return
+
+        matched_rule = None
+        for rule in rules:
+            pattern = rule.get("pattern", "")
+            if pattern and re.search(pattern, quest_text):
+                matched_rule = rule
+                break
+
+        if matched_rule is None:
+            print(f"No rule matches '{quest_text}'")
+            return
+
+        pattern = matched_rule["pattern"]
+        steps = matched_rule.get("steps", [])
+        print(f"Matched: /{pattern}/  ({len(steps)} steps)")
+        print(f"Dry run for quest text: '{quest_text}'")
+        print()
+        for i, step in enumerate(steps):
+            desc = step.get("description", "")
+            delay = step.get("delay", 1.0)
+            repeat = step.get("repeat", 1)
+            verb = "?"
+            detail = ""
+            if "tap_xy" in step:
+                verb = "tap_xy"
+                detail = f"({step['tap_xy'][0]}, {step['tap_xy'][1]})"
+            elif "tap_text" in step:
+                args_val = step["tap_text"]
+                if isinstance(args_val, str):
+                    args_val = [args_val]
+                verb = "tap_text"
+                detail = f"'{args_val[0]}'"
+                if len(args_val) > 1:
+                    detail += f" (#{args_val[1]})"
+            elif "tap_icon" in step:
+                args_val = step["tap_icon"]
+                if isinstance(args_val, str):
+                    args_val = [args_val]
+                verb = "tap_icon"
+                detail = f"'{args_val[0]}'"
+                if len(args_val) > 1:
+                    detail += f" (#{args_val[1]})"
+            elif "read_text" in step:
+                verb = "read_text"
+                detail = f"({step['read_text'][0]}, {step['read_text'][1]}) -> ${step['read_text'][2]}"
+            elif "eval" in step:
+                verb = "eval"
+                detail = f"${step['eval'][0]} = {step['eval'][1]}"
+
+            repeat_str = f" x{repeat}" if repeat > 1 else ""
+            print(f"  {i + 1}. [{verb}] {detail}  delay={delay}s{repeat_str}")
+            if desc:
+                print(f"     {desc}")
 
     def cmd_detect_finger(self, args: list[str]) -> None:
         """Detect tutorial finger on screen and save debug crop."""
