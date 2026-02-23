@@ -25,6 +25,12 @@ class MatchResult:
 class TemplateMatcher:
     """Match pre-stored template images against screenshots using OpenCV."""
 
+    # Templates that should use color-invariant matching (HSV Saturation channel).
+    # Useful when the same icon appears in different color variants (e.g. dark-red
+    # vs light-red close button).  Normal BGR matching fails across color variants,
+    # but the Saturation channel preserves shape while ignoring hue/lightness.
+    COLOR_INVARIANT_TEMPLATES: set[str] = {"buttons/close_x"}
+
     def __init__(self, template_dir: str = None, threshold: float = None) -> None:
         self.template_dir = template_dir or config.TEMPLATE_DIR
         self.threshold = threshold or config.TEMPLATE_MATCH_THRESHOLD
@@ -185,6 +191,39 @@ class TemplateMatcher:
         result = cv2.matchTemplate(screenshot, template, method, mask=mask)
         _, max_val, _, max_loc = cv2.minMaxLoc(result)
 
+        if max_val >= self.threshold:
+            x1, y1 = max_loc
+            x2, y2 = x1 + tw, y1 + th
+            cx, cy = x1 + tw // 2, y1 + th // 2
+            logger.debug(f"Template match: {name} confidence={max_val:.3f} at ({cx}, {cy})")
+            return MatchResult(
+                template_name=name,
+                confidence=float(max_val),
+                x=cx, y=cy,
+                bbox=(x1, y1, x2, y2),
+            )
+
+        # Fallback: color-invariant matching via HSV Saturation channel
+        if name in self.COLOR_INVARIANT_TEMPLATES and mask is None:
+            return self._match_saturation(screenshot, name, template)
+
+        return None
+
+    def _match_saturation(self, screenshot: np.ndarray, name: str,
+                          template: np.ndarray) -> MatchResult | None:
+        """Color-invariant matching using the HSV Saturation channel.
+
+        Converts both screenshot and template to HSV and matches on the S
+        channel only.  This makes matching robust to hue/lightness differences
+        (e.g. dark-red vs light-red icons) while preserving shape.
+        """
+        th, tw = template.shape[:2]
+        scr_s = cv2.cvtColor(screenshot, cv2.COLOR_BGR2HSV)[:, :, 1]
+        tmpl_s = cv2.cvtColor(template, cv2.COLOR_BGR2HSV)[:, :, 1]
+
+        result = cv2.matchTemplate(scr_s, tmpl_s, cv2.TM_CCOEFF_NORMED)
+        _, max_val, _, max_loc = cv2.minMaxLoc(result)
+
         if max_val < self.threshold:
             return None
 
@@ -192,7 +231,7 @@ class TemplateMatcher:
         x2, y2 = x1 + tw, y1 + th
         cx, cy = x1 + tw // 2, y1 + th // 2
 
-        logger.debug(f"Template match: {name} confidence={max_val:.3f} at ({cx}, {cy})")
+        logger.debug(f"Template match (saturation): {name} confidence={max_val:.3f} at ({cx}, {cy})")
         return MatchResult(
             template_name=name,
             confidence=float(max_val),
