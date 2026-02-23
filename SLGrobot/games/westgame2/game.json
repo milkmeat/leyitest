@@ -77,6 +77,17 @@
       ]
     },
     {
+      "pattern": "通过.*远征",
+      "steps": [
+        {"tap_icon": ["nav_bar/expedition"], "delay": 2.0, "description": "点击远征图标"},
+        {"tap_text": ["开始战斗"], "delay": 1.5, "description": "点击开始战斗"},
+        {"tap_text": ["一键上阵"], "delay": 1.5, "description": "点击一键上阵"},
+        {"tap_xy": [900, 1870], "delay": 3.0, "description": "点击出战按钮"},
+        {"wait_text": ["战斗成功"], "description": "等待战斗结束，出现战斗成功"},
+        {"tap_text": ["返回小镇"], "delay": 1.5, "description": "点击返回小镇"}
+      ]
+    },
+    {
       "pattern": "领取远征奖励",
       "steps": [
         {"tap_icon": ["nav_bar/expedition"], "delay": 2.0, "description": "点击远征图标"},

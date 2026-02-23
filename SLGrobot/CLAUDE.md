@@ -83,7 +83,7 @@ Known task types (handled by `RuleEngine`): `collect_resources`, `upgrade_buildi
 
 ### Quest Scripting System
 
-Game operations are defined as JSON quest scripts in `games/<id>/game.json` under `quest_action_rules`. Scripts are multi-step sequences with verbs: `tap_xy`, `tap_text`, `tap_icon`, `read_text`, `eval`. Executed by `QuestScriptRunner` (`brain/quest_script.py`), triggered automatically via quest bar matching or manually via `quest` CLI command. See `quest_scripting.md` for full reference.
+Game operations are defined as JSON quest scripts in `games/<id>/game.json` under `quest_action_rules`. Scripts are multi-step sequences with verbs: `tap_xy`, `tap_text`, `tap_icon`, `wait_text`, `read_text`, `eval`. Executed by `QuestScriptRunner` (`brain/quest_script.py`), triggered automatically via quest bar matching or manually via `quest` CLI command. See `quest_scripting.md` for full reference.
 
 ## Configuration
 
@@ -97,3 +97,13 @@ Game operations are defined as JSON quest scripts in `games/<id>/game.json` unde
 - **Windows only** — Nox ADB path is hardcoded at `D:\Program Files\Nox\bin\nox_adb.exe` in `config.py`
 - **Python 3.10+** — uses PEP 604 union types (`dict | None`) and PEP 585 generics (`tuple[int, int]`)
 - **Nox emulator** at 1080×1920 portrait resolution on ADB port 62001
+
+## ADB / Nox Emulator Notes
+
+本项目使用 Nox 模拟器自带的 ADB，**不是系统 PATH 中的 adb**。
+
+- **ADB 路径**: `D:\Program Files\Nox\bin\nox_adb.exe`，配置在 `config.py` 的 `NOX_ADB_PATH`
+- **设备地址**: `127.0.0.1:62001`，配置在 `config.py` 的 `ADB_HOST` / `ADB_PORT`
+- **ADBController 初始化必须传三个参数**: `ADBController(config.ADB_HOST, config.ADB_PORT, config.NOX_ADB_PATH)`
+- 直接用 `python -c` 写脚本访问模拟器时，必须用 `config.NOX_ADB_PATH`，否则会报 `ADB executable not found: adb`
+- `main.py` 的 CLI 命令已经正确初始化 ADB，直接用 `python main.py <command>` 即可

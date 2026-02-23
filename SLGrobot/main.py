@@ -917,7 +917,7 @@ class CLI:
             for j, step in enumerate(steps):
                 desc = step.get("description", "")
                 verb = "?"
-                for v in ("tap_xy", "tap_text", "tap_icon", "read_text", "eval"):
+                for v in ("tap_xy", "tap_text", "tap_icon", "wait_text", "read_text", "eval"):
                     if v in step:
                         verb = f"{v}={step[v]}"
                         break
@@ -978,6 +978,12 @@ class CLI:
                 detail = f"'{args_val[0]}'"
                 if len(args_val) > 1:
                     detail += f" (#{args_val[1]})"
+            elif "wait_text" in step:
+                args_val = step["wait_text"]
+                if isinstance(args_val, str):
+                    args_val = [args_val]
+                verb = "wait_text"
+                detail = f"'{args_val[0]}'"
             elif "read_text" in step:
                 verb = "read_text"
                 detail = f"({step['read_text'][0]}, {step['read_text'][1]}) -> ${step['read_text'][2]}"

@@ -100,6 +100,17 @@ OCR 搜索屏幕上的文本，点击第 nth 个匹配（1-indexed，默认 1）
 使用 `TemplateMatcher.match_one_multi()` 查找所有匹配，点击第 nth 个（1-indexed）。
 图标未找到时返回 `None`，下次迭代重试。
 
+### `wait_text` — 等待文本出现
+
+```json
+{"wait_text": ["目标文本"], "description": "等待文本出现在屏幕上"}
+```
+
+OCR 搜索屏幕上的文本，找到后推进到下一步。不产生点击动作。
+文本未找到时返回 `None`，下次迭代重试。
+
+适用场景：等待战斗结束、等待加载完成等需要确认屏幕状态再继续的步骤。
+
 ### `read_text` — 区域 OCR 读取
 
 ```json

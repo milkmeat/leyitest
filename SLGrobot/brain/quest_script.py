@@ -2,12 +2,13 @@
 
 Each quest script is a list of steps with verb + args.  Supported verbs:
 
-  tap_xy   [x, y]                  — unconditional tap at fixed coordinates
-  tap_text [text] or [text, nth]   — OCR search, tap nth match (1-indexed)
-  tap_icon [name] or [name, nth]   — template match, tap nth match (1-indexed)
+  tap_xy    [x, y]                  — unconditional tap at fixed coordinates
+  tap_text  [text] or [text, nth]   — OCR search, tap nth match (1-indexed)
+  tap_icon  [name] or [name, nth]   — template match, tap nth match (1-indexed)
+  wait_text [text]                  — wait until text appears on screen (no tap)
   read_text [x, y, var] or [x, y, var, w, h]
-                                   — OCR region around (x,y), store in variable
-  eval     [var, expression]       — safe arithmetic on variables
+                                    — OCR region around (x,y), store in variable
+  eval      [var, expression]       — safe arithmetic on variables
 
 Step fields:
   delay       float, default 1.0   — seconds to wait after action
@@ -185,6 +186,8 @@ class QuestScriptRunner:
             actions = self._do_tap_text(step, screenshot, delay, description)
         elif "tap_icon" in step:
             actions = self._do_tap_icon(step, screenshot, delay, description)
+        elif "wait_text" in step:
+            actions = self._do_wait_text(step, screenshot, description)
         elif "read_text" in step:
             actions = self._do_read_text(step, screenshot, description)
         elif "eval" in step:
@@ -284,6 +287,31 @@ class QuestScriptRunner:
             "delay": delay,
             "reason": f"quest_script:tap_icon:{icon_name}:{description}",
         }]
+
+    def _do_wait_text(self, step: dict, screenshot: np.ndarray,
+                      description: str) -> list[dict] | None:
+        args = step["wait_text"]
+        if isinstance(args, str):
+            args = [args]
+        target_text = str(args[0])
+
+        all_results = self.ocr.find_all_text(screenshot)
+        target_lower = target_text.lower()
+        matches = [
+            r for r in all_results
+            if target_lower in r.text.lower()
+        ]
+
+        if not matches:
+            logger.debug(
+                f"Quest script: wait_text '{target_text}' not found, waiting"
+            )
+            return None
+
+        logger.info(
+            f"Quest script: wait_text '{target_text}' found — {description}"
+        )
+        return []  # no action, just advance
 
     def _do_read_text(self, step: dict, screenshot: np.ndarray,
                       description: str) -> list[dict]:
