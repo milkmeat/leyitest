@@ -185,29 +185,50 @@ class TemplateMatcher:
         if tw > sw or th > sh:
             return None
 
-        # Use TM_CCORR_NORMED when mask is present (OpenCV only fully supports
-        # masked matching with TM_SQDIFF and TM_CCORR_NORMED, not TM_CCOEFF_NORMED)
-        method = cv2.TM_CCORR_NORMED if mask is not None else cv2.TM_CCOEFF_NORMED
-        result = cv2.matchTemplate(screenshot, template, method, mask=mask)
-        _, max_val, _, max_loc = cv2.minMaxLoc(result)
+        if mask is not None:
+            # Two-pass matching for masked (transparent) templates:
+            # Pass 1 — CCORR with mask finds the candidate location.
+            # Pass 2 — CCOEFF without mask verifies (rejects false positives
+            #          caused by near-white templates matching any bright area).
+            result_ccorr = cv2.matchTemplate(
+                screenshot, template, cv2.TM_CCORR_NORMED, mask=mask)
+            _, ccorr_val, _, ccorr_loc = cv2.minMaxLoc(result_ccorr)
+            if ccorr_val < self.threshold:
+                return None
 
-        if max_val >= self.threshold:
+            result_ccoeff = cv2.matchTemplate(
+                screenshot, template, cv2.TM_CCOEFF_NORMED)
+            ccoeff_val = float(result_ccoeff[ccorr_loc[1], ccorr_loc[0]])
+            if ccoeff_val < self.threshold:
+                logger.debug(
+                    f"Template match rejected (CCORR={ccorr_val:.3f}, "
+                    f"CCOEFF={ccoeff_val:.3f}): {name} at "
+                    f"({ccorr_loc[0] + tw // 2}, {ccorr_loc[1] + th // 2})"
+                )
+                return None
+
+            x1, y1 = ccorr_loc
+            max_val = ccoeff_val
+        else:
+            result = cv2.matchTemplate(
+                screenshot, template, cv2.TM_CCOEFF_NORMED)
+            _, max_val, _, max_loc = cv2.minMaxLoc(result)
+            if max_val < self.threshold:
+                # Fallback: color-invariant matching via HSV Saturation channel
+                if name in self.COLOR_INVARIANT_TEMPLATES:
+                    return self._match_saturation(screenshot, name, template)
+                return None
             x1, y1 = max_loc
-            x2, y2 = x1 + tw, y1 + th
-            cx, cy = x1 + tw // 2, y1 + th // 2
-            logger.debug(f"Template match: {name} confidence={max_val:.3f} at ({cx}, {cy})")
-            return MatchResult(
-                template_name=name,
-                confidence=float(max_val),
-                x=cx, y=cy,
-                bbox=(x1, y1, x2, y2),
-            )
 
-        # Fallback: color-invariant matching via HSV Saturation channel
-        if name in self.COLOR_INVARIANT_TEMPLATES and mask is None:
-            return self._match_saturation(screenshot, name, template)
-
-        return None
+        x2, y2 = x1 + tw, y1 + th
+        cx, cy = x1 + tw // 2, y1 + th // 2
+        logger.debug(f"Template match: {name} confidence={max_val:.3f} at ({cx}, {cy})")
+        return MatchResult(
+            template_name=name,
+            confidence=float(max_val),
+            x=cx, y=cy,
+            bbox=(x1, y1, x2, y2),
+        )
 
     def _match_saturation(self, screenshot: np.ndarray, name: str,
                           template: np.ndarray) -> MatchResult | None:
