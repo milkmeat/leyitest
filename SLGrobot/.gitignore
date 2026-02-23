@@ -3,3 +3,4 @@ __pycache__/
 data/screenshots/
 logs/
 debug*.png
+_debug*.png
