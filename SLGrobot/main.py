@@ -857,11 +857,15 @@ class CLI:
 
         # Find matching rule
         matched_rule = None
+        matched_match = None
         for rule in rules:
             pattern = rule.get("pattern", "")
-            if pattern and re.search(pattern, quest_text):
-                matched_rule = rule
-                break
+            if pattern:
+                m = re.search(pattern, quest_text)
+                if m:
+                    matched_rule = rule
+                    matched_match = m
+                    break
 
         if matched_rule is None:
             print(f"No rule matches '{quest_text}'")
@@ -883,6 +887,12 @@ class CLI:
             screenshot_fn=self.bot.screenshot_mgr.capture,
         )
         runner.load(steps)
+
+        # Extract named regex groups into runner variables
+        for name, value in matched_match.groupdict().items():
+            if value is not None:
+                runner.variables[name] = value
+                print(f"  Extracted: {name} = '{value}'")
 
         max_iterations = len(steps) * 10  # safety limit
         iteration = 0

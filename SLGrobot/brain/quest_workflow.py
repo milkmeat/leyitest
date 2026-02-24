@@ -1286,7 +1286,10 @@ class QuestWorkflow:
 
         for rule in self._quest_scripts:
             pattern = rule.get("pattern", "")
-            if not pattern or not re.search(pattern, self.target_quest_name):
+            if not pattern:
+                continue
+            match = re.search(pattern, self.target_quest_name)
+            if not match:
                 continue
 
             steps = rule.get("steps", [])
@@ -1297,6 +1300,14 @@ class QuestWorkflow:
             if self._loaded_quest_pattern != pattern:
                 self._script_runner.load(steps)
                 self._loaded_quest_pattern = pattern
+                # Extract named groups into runner variables
+                for name, value in match.groupdict().items():
+                    if value is not None:
+                        self._script_runner.variables[name] = value
+                        logger.info(
+                            f"Quest rule '{pattern}': "
+                            f"extracted {name}='{value}'"
+                        )
                 logger.info(
                     f"Quest rule '{pattern}': loaded {len(steps)} steps "
                     f"into script runner"

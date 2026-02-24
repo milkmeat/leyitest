@@ -139,6 +139,12 @@ class QuestScriptRunner:
         self._suppress_advance: bool = False
         self._ensure_retries: int = 0
 
+    def _subst(self, text: str) -> str:
+        """Substitute ``{var_name}`` placeholders with variable values."""
+        for name, value in self.variables.items():
+            text = text.replace(f"{{{name}}}", value)
+        return text
+
     def load(self, steps: list[dict]) -> None:
         """Load a new script.  Resets all state."""
         self.steps = list(steps)
@@ -274,7 +280,7 @@ class QuestScriptRunner:
         args = step["tap_text"]
         if isinstance(args, str):
             args = [args]
-        target_text = str(args[0])
+        target_text = self._subst(str(args[0]))
         nth = int(args[1]) if len(args) > 1 else 1
 
         # Find all matching text regions
@@ -285,14 +291,15 @@ class QuestScriptRunner:
             if target_lower in r.text.lower()
         ]
 
-        if not matches or nth > len(matches):
+        if not matches or (nth > 0 and nth > len(matches)):
             logger.debug(
                 f"Quest script: tap_text '{target_text}' not found "
                 f"(need #{nth}, got {len(matches)} matches)"
             )
             return None
 
-        match = matches[nth - 1]
+        # nth=-1 means last match, positive is 1-indexed
+        match = matches[nth - 1] if nth > 0 else matches[-1]
         cx, cy = match.center
         return [{
             "type": "tap",
@@ -307,7 +314,7 @@ class QuestScriptRunner:
         args = step["tap_icon"]
         if isinstance(args, str):
             args = [args]
-        icon_name = str(args[0])
+        icon_name = self._subst(str(args[0]))
         nth = int(args[1]) if len(args) > 1 else 1
 
         matches = self.template_matcher.match_one_multi(screenshot, icon_name)
@@ -332,7 +339,7 @@ class QuestScriptRunner:
         args = step["wait_text"]
         if isinstance(args, str):
             args = [args]
-        target_text = str(args[0])
+        target_text = self._subst(str(args[0]))
 
         all_results = self.ocr.find_all_text(screenshot)
         target_lower = target_text.lower()
@@ -405,7 +412,7 @@ class QuestScriptRunner:
         args = step["find_building"]
         if isinstance(args, str):
             args = [args]
-        building_name = str(args[0])
+        building_name = self._subst(str(args[0]))
         options = args[1] if isinstance(args, list) and len(args) > 1 else {}
         if not isinstance(options, dict):
             options = {}
@@ -488,6 +495,16 @@ class QuestScriptRunner:
             return [{"type": "tap", "x": match.x, "y": match.y,
                      "delay": delay,
                      "reason": f"quest_script:ensure_main_city:close_x"}]
+
+        # After 5 failed attempts, tap blank area in upper screen to dismiss
+        if self._ensure_retries >= 5:
+            logger.info(
+                f"Quest script: ensure_main_city — tapping blank area "
+                f"(500, 600), attempt {self._ensure_retries}"
+            )
+            self._suppress_advance = True
+            return [{"type": "tap", "x": 500, "y": 600, "delay": delay,
+                     "reason": "quest_script:ensure_main_city:tap_blank"}]
 
         # Fallback: Android BACK key
         logger.info(
