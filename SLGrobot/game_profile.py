@@ -67,8 +67,8 @@ class GameProfile:
     # OCR error corrections (common misrecognitions)
     ocr_corrections: dict[str, str] = field(default_factory=dict)
 
-    # Quest-specific action rules (multi-step patterns)
-    quest_action_rules: list[dict] = field(default_factory=list)
+    # Quest scripts (multi-step patterns)
+    quest_scripts: list[dict] = field(default_factory=list)
 
 
 def load_game_profile(game_id: str,
@@ -142,8 +142,8 @@ def load_game_profile(game_id: str,
         # OCR corrections
         ocr_corrections=data.get("ocr_corrections", {}),
 
-        # Quest action rules
-        quest_action_rules=data.get("quest_action_rules", []),
+        # Quest scripts
+        quest_scripts=data.get("quest_scripts", []),
     )
 
     logger.info(f"Loaded game profile: {profile.display_name} ({game_id})")

@@ -16,7 +16,7 @@ Quest Scripting 系统将游戏操作定义为 JSON 脚本，通过模式匹配�
 |------|------|
 | `brain/quest_script.py` | `QuestScriptRunner` — 脚本执行引擎 |
 | `brain/quest_workflow.py` | `QuestWorkflow._match_quest_rule()` — 自动循环中的脚本调度 |
-| `games/<id>/game.json` | `quest_action_rules` — 脚本定义（JSON） |
+| `games/<id>/game.json` | `quest_scripts` — 脚本定义（JSON） |
 | `main.py` | `cmd_quest` / `cmd_quest_rules` / `cmd_quest_test` — CLI 命令 |
 
 ### 执行流程
@@ -167,11 +167,11 @@ OCR 搜索屏幕上的文本，找到后推进到下一步。不产生点击动�
 
 ## 脚本格式示例
 
-### 完整规则定义（game.json 中的 `quest_action_rules`）
+### 完整规则定义（game.json 中的 `quest_scripts`）
 
 ```json
 {
-  "quest_action_rules": [
+  "quest_scripts": [
     {
       "pattern": "派遣.*镇民",
       "steps": [
@@ -224,7 +224,7 @@ python main.py quest 派遣3名镇民
 python main.py quest 将驻防站升至2级
 ```
 
-匹配 `quest_action_rules` 中的 pattern，创建独立的 `QuestScriptRunner`，
+匹配 `quest_scripts` 中的 pattern，创建独立的 `QuestScriptRunner`，
 循环执行直到完成或达到最大迭代次数。每步输出进度。
 
 交互模式下：
@@ -292,7 +292,7 @@ Quest Script 覆盖所有需要的操作后可移除。
 ## 添加新任务脚本
 
 1. 打开 `games/<game_id>/game.json`
-2. 在 `quest_action_rules` 数组中添加新规则
+2. 在 `quest_scripts` 数组中添加新规则
 3. `pattern` 为正则表达式，匹配任务栏文本
 4. `steps` 为步骤数组，使用上述动词
 5. 用 `quest_test` 验证匹配，用 `quest` 实际执行

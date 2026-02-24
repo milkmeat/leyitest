@@ -89,7 +89,7 @@ Quest script completed (2 steps)
 
 ### 添加新规则
 
-在 `games/<game_id>/game.json` 的 `quest_action_rules` 中添加规则，
+在 `games/<game_id>/game.json` 的 `quest_scripts` 中添加规则，
 详细语法参见 `quest_scripting.md`。
 
 ### 自动触发

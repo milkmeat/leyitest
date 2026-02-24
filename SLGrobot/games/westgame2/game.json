@@ -68,7 +68,7 @@
 
   "finger_ncc_threshold": 0.80,
 
-  "quest_action_rules": [
+  "quest_scripts": [
     {
       "pattern": "派遣.*镇民",
       "steps": [

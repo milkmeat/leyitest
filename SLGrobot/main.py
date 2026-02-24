@@ -820,9 +820,9 @@ class CLI:
             return
 
         quest_text = " ".join(args)
-        rules = self.bot.quest_workflow._quest_action_rules
+        rules = self.bot.quest_workflow._quest_scripts
         if not rules:
-            print("No quest action rules loaded.")
+            print("No quest scripts loaded.")
             return
 
         # Find matching rule
@@ -897,11 +897,11 @@ class CLI:
 
     def cmd_quest_rules(self, args: list[str]) -> None:
         """List all quest action rules."""
-        rules = self.bot.quest_workflow._quest_action_rules
+        rules = self.bot.quest_workflow._quest_scripts
         if not rules:
-            print("No quest action rules loaded.")
+            print("No quest scripts loaded.")
             return
-        print(f"{len(rules)} quest action rule(s):")
+        print(f"{len(rules)} quest script(s):")
         for i, rule in enumerate(rules):
             pattern = rule.get("pattern", "?")
             steps = rule.get("steps", [])
@@ -924,9 +924,9 @@ class CLI:
             return
 
         quest_text = " ".join(args)
-        rules = self.bot.quest_workflow._quest_action_rules
+        rules = self.bot.quest_workflow._quest_scripts
         if not rules:
-            print("No quest action rules loaded.")
+            print("No quest scripts loaded.")
             return
 
         matched_rule = None

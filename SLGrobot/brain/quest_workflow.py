@@ -118,9 +118,9 @@ class QuestWorkflow:
             self._FINGER_NCC_THRESHOLD = game_profile.finger_ncc_threshold
         if game_profile and game_profile.popup_close_texts:
             self._POPUP_DISMISS_TEXTS = game_profile.popup_close_texts
-        self._quest_action_rules = (
-            game_profile.quest_action_rules
-            if game_profile and game_profile.quest_action_rules
+        self._quest_scripts = (
+            game_profile.quest_scripts
+            if game_profile and game_profile.quest_scripts
             else []
         )
         # Create horizontally flipped tutorial_finger template for mirror detection
@@ -1241,7 +1241,7 @@ class QuestWorkflow:
             self._action_button_repeat_count = 0
 
     def _match_quest_rule(self, screenshot: np.ndarray) -> list[dict] | None:
-        """Match current quest against quest_action_rules and delegate to QuestScriptRunner.
+        """Match current quest against quest_scripts and delegate to QuestScriptRunner.
 
         On first match, loads steps into ``_script_runner``.  Subsequent
         calls to ``execute_one()`` advance through the script one step per
@@ -1250,10 +1250,10 @@ class QuestWorkflow:
         Returns ``None`` when all steps are done or no rule matches,
         letting the caller fall through to generic action buttons / LLM.
         """
-        if not self._quest_action_rules or not self.target_quest_name:
+        if not self._quest_scripts or not self.target_quest_name:
             return None
 
-        for rule in self._quest_action_rules:
+        for rule in self._quest_scripts:
             pattern = rule.get("pattern", "")
             if not pattern or not re.search(pattern, self.target_quest_name):
                 continue
