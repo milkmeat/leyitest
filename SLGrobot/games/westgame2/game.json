@@ -89,6 +89,19 @@
       ]
     },
     {
+      "pattern": "领取任务奖励",
+      "steps": [
+        {"ensure_main_city": [], "delay": 1.5, "description": "确认在主城界面"},
+        {"tap_xy": [70, 1600], "delay": 2.0, "description": "点击任务卷轴图标"},
+        {"tap_text": ["章节任务"], "delay": 1.5, "description": "点击章节任务"},
+        {"tap_text": ["全部领取"], "delay": 1.5, "optional": true, "description": "点击全部领取（可选）"},
+        {"tap_text": ["确定"], "delay": 1.5, "optional": true, "description": "点击确定（可选）"},
+        {"tap_text": ["成长任务"], "delay": 1.5, "description": "点击成长任务"},
+        {"tap_text": ["领取"], "delay": 1.5, "repeat": 10, "optional": true, "description": "重复点击领取，找不到则停止"},
+        {"tap_icon": ["buttons/close_x"], "delay": 1.5, "description": "关闭返回主城"}
+      ]
+    },
+    {
       "pattern": "领取远征奖励",
       "steps": [
         {"ensure_main_city": [], "delay": 1.5, "description": "确认在主城界面"},

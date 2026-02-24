@@ -13,6 +13,8 @@ Each quest script is a list of steps with verb + args.  Supported verbs:
 Step fields:
   delay       float, default 1.0   — seconds to wait after action
   repeat      int, default 1       — repeat this step N times
+  optional    bool, default False  — if True, skip step when target not found
+                                     (instead of waiting/retrying forever)
   description str                  — human-readable label
 """
 
@@ -219,6 +221,15 @@ class QuestScriptRunner:
 
         if actions is None:
             # Step is waiting (e.g. text not found) — don't advance
+            if step.get("optional", False):
+                # Optional step: not-found means skip (end repeat cycle too)
+                logger.info(
+                    f"Quest script step {self.step_index}: "
+                    f"optional step skipped — {description}"
+                )
+                self._repeat_remaining = 0
+                self.step_index += 1
+                return []
             return None
 
         # Some verbs (ensure_main_city) return actions but stay on same step
