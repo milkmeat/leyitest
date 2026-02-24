@@ -70,6 +70,9 @@ class GameProfile:
     # Quest scripts (multi-step patterns)
     quest_scripts: list[dict] = field(default_factory=list)
 
+    # City layout for building finder
+    city_layout: dict = field(default_factory=dict)
+
 
 def load_game_profile(game_id: str,
                       games_dir: str = "games") -> GameProfile:
@@ -144,6 +147,9 @@ def load_game_profile(game_id: str,
 
         # Quest scripts
         quest_scripts=data.get("quest_scripts", []),
+
+        # City layout
+        city_layout=data.get("city_layout", {}),
     )
 
     logger.info(f"Loaded game profile: {profile.display_name} ({game_id})")

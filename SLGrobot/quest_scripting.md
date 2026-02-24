@@ -149,6 +149,23 @@ OCR 搜索屏幕上的文本，找到后推进到下一步。不产生点击动�
 安全表达式求值器。变量以 `{var_name}` 引用。支持算术运算和 `int()`、`str()`、`len()`、`abs()`。
 使用 `ast` 模块安全解析，禁止 `exec`/`import`/`__builtins__`。
 
+### `find_building` — 查找并点击建筑
+
+```json
+{"find_building": ["兵营"], "delay": 2.0, "description": "找到并点击兵营"}
+{"find_building": ["兵营", {"scroll": true, "max_attempts": 5}], "delay": 2.0}
+```
+
+在城市地图上查找指定建筑并点击。使用 press-drag-read 技术：按住拖动屏幕显示建筑名称，OCR 识别目标，松手后点击记录的位置（含漂移补偿）。
+
+参数：
+- 第一个元素：建筑名称（字符串）
+- 第二个元素（可选）：选项字典
+  - `scroll`（bool，默认 true）：是否滚动地图寻找不可见的建筑
+  - `max_attempts`（int，默认 3）：最大尝试次数
+
+需要在 `game.json` 中配置 `city_layout`。详见 `docs/building_finder.md`。
+
 ### 通用步骤字段
 
 | 字段 | 类型 | 默认值 | 说明 |

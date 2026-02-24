@@ -39,6 +39,7 @@ from vision.screenshot import ScreenshotManager
 from vision.template_matcher import TemplateMatcher
 from vision.ocr_locator import OCRLocator
 from vision.grid_overlay import GridOverlay
+from vision.building_finder import BuildingFinder, parse_city_layout
 from vision.element_detector import ElementDetector
 from scene.classifier import SceneClassifier
 from scene.popup_filter import PopupFilter
@@ -75,6 +76,8 @@ Commands:
   llm                           Manually trigger LLM strategic consultation
   detect_finger                 Detect tutorial finger, print coords, save crop
   detect_close_x                Detect close_x button, print coords, save crop
+  find_building <name>           Find building on city map and tap it
+  press_read                     Press-drag-read: show all visible building names
   capture_template <category> <name> <x1>,<y1> <x2>,<y2>
                                 Capture screenshot region as template
   reload_templates              Reload template library
@@ -170,11 +173,35 @@ class GameBot:
             game_profile=game_profile,
         )
 
+        # Building finder (optional, depends on city_layout config)
+        self.building_finder: BuildingFinder | None = None
+        if game_profile and game_profile.city_layout:
+            city_cfg = game_profile.city_layout
+            layout_file = city_cfg.get("file", "city_layout.md")
+            layout_path = os.path.join(game_profile.game_dir, layout_file)
+            if os.path.isfile(layout_path):
+                layout_data = parse_city_layout(
+                    layout_path,
+                    reference_building=city_cfg.get("reference_building", "城堡"),
+                    pixels_per_unit=city_cfg.get("pixels_per_unit", 400),
+                )
+                if layout_data:
+                    self.building_finder = BuildingFinder(
+                        self.adb, self.ocr, city_cfg, layout_data,
+                    )
+                    logger.info(
+                        f"BuildingFinder initialized with "
+                        f"{len(layout_data)} buildings"
+                    )
+            else:
+                logger.info(f"City layout file not found: {layout_path}")
+
         # Executor layer (Phase 4)
         self.validator = ActionValidator(self.detector, self.classifier)
         self.runner = ActionRunner(
             self.adb, self.input_actions, self.detector,
-            self.grid, self.screenshot_mgr
+            self.grid, self.screenshot_mgr,
+            building_finder=self.building_finder,
         )
         self.checker = ResultChecker(
             self.screenshot_mgr, self.classifier, self.detector
@@ -912,7 +939,7 @@ class CLI:
             for j, step in enumerate(steps):
                 desc = step.get("description", "")
                 verb = "?"
-                for v in ("tap_xy", "tap_text", "tap_icon", "wait_text", "ensure_main_city", "read_text", "eval"):
+                for v in ("tap_xy", "tap_text", "tap_icon", "wait_text", "ensure_main_city", "read_text", "eval", "find_building"):
                     if v in step:
                         verb = f"{v}={step[v]}"
                         break
@@ -992,6 +1019,14 @@ class CLI:
             elif "eval" in step:
                 verb = "eval"
                 detail = f"${step['eval'][0]} = {step['eval'][1]}"
+            elif "find_building" in step:
+                verb = "find_building"
+                args_val = step["find_building"]
+                if isinstance(args_val, str):
+                    args_val = [args_val]
+                detail = f"'{args_val[0]}'"
+                if len(args_val) > 1 and isinstance(args_val[1], dict):
+                    detail += f" opts={args_val[1]}"
 
             repeat_str = f" x{repeat}" if repeat > 1 else ""
             print(f"  {i + 1}. [{verb}] {detail}  delay={delay}s{repeat_str}")
@@ -1107,6 +1142,38 @@ class CLI:
         out_path = "debug_close_x.png"
         cv2.imwrite(out_path, crop)
         print(f"Saved {crop.shape[1]}x{crop.shape[0]} crop -> {out_path}")
+
+    def cmd_find_building(self, args: list[str]) -> None:
+        """Find a building on the city map and tap it."""
+        if not args:
+            print("Usage: find_building <building_name>")
+            print("Example: find_building 兵营")
+            return
+        if not self.bot.building_finder:
+            print("BuildingFinder not initialized. Check city_layout in game.json.")
+            return
+        name = " ".join(args)
+        print(f"Searching for '{name}'...")
+        ok = self.bot.building_finder.find_and_tap(name)
+        if ok:
+            print(f"Found and tapped '{name}'")
+        else:
+            print(f"Building '{name}' not found")
+
+    def cmd_press_read(self, args: list[str]) -> None:
+        """Press-drag-read: show all visible building names on the city map."""
+        if not self.bot.building_finder:
+            print("BuildingFinder not initialized. Check city_layout in game.json.")
+            return
+        print("Press-drag-read in progress...")
+        results = self.bot.building_finder.read_all_buildings()
+        if not results:
+            print("No building names detected.")
+            print("Make sure you are on the main city screen.")
+            return
+        print(f"Detected {len(results)} building(s):")
+        for name, x, y in results:
+            print(f"  {name:20s}  ({x}, {y})")
 
     def cmd_capture_template(self, args: list[str]) -> None:
         """Capture a screenshot region and save as a template."""

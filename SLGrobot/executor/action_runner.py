@@ -37,12 +37,14 @@ class ActionRunner:
                  element_detector: ElementDetector,
                  grid_overlay: GridOverlay,
                  screenshot_mgr: ScreenshotManager,
-                 nav_paths_file: str = None) -> None:
+                 nav_paths_file: str = None,
+                 building_finder=None) -> None:
         self.adb = adb
         self.input_actions = input_actions
         self.detector = element_detector
         self.grid = grid_overlay
         self.screenshot_mgr = screenshot_mgr
+        self.building_finder = building_finder
         self.nav_paths: dict = {}
         self._load_nav_paths(nav_paths_file or config.NAV_PATHS_FILE)
 
@@ -83,6 +85,8 @@ class ActionRunner:
             return success  # No extra delay for wait actions
         elif action_type == "key_event":
             success = self._execute_key_event(action)
+        elif action_type == "find_building":
+            success = self._execute_find_building(action)
         else:
             logger.warning(f"Unknown action type: '{action_type}'")
             return False
@@ -270,3 +274,14 @@ class ActionRunner:
         self.adb.key_event(keycode)
         logger.debug(f"Key event: {keycode}")
         return True
+
+    def _execute_find_building(self, action: dict) -> bool:
+        """Execute a find_building action via BuildingFinder."""
+        if not self.building_finder:
+            logger.warning("BuildingFinder not initialized, cannot find building")
+            return False
+        return self.building_finder.find_and_tap(
+            action["building_name"],
+            scroll=action.get("scroll", True),
+            max_attempts=action.get("max_attempts", 3),
+        )

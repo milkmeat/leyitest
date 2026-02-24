@@ -66,6 +66,7 @@ SLGrobot/
     ocr_locator.py       # OCR text detection and positioning
     grid_overlay.py      # Grid annotation for LLM communication
     element_detector.py  # Unified detection entry point
+    building_finder.py   # Find and tap buildings on scrollable city map
   scene/
     __init__.py
     classifier.py        # Scene classification
@@ -1138,7 +1139,7 @@ All modules exchange actions as Python dicts with this schema:
 ```
 
 Fields:
-- `type` (required): `"tap"` | `"navigate"` | `"wait"` | `"swipe"`
+- `type` (required): `"tap"` | `"navigate"` | `"wait"` | `"swipe"` | `"key_event"` | `"find_building"`
 - `target_text` (optional): UI text to locate via OCR/template
 - `fallback_grid` (optional): Grid cell to use if text not found
 - `x`, `y` (optional): Direct pixel coordinates
@@ -1146,3 +1147,6 @@ Fields:
 - `seconds` (optional): For wait actions
 - `condition` (optional): For conditional waits
 - `target` (optional): For navigate actions, key in `navigation_paths.json`
+- `building_name` (optional): For `find_building` actions, building name to find
+- `scroll` (optional): For `find_building`, whether to scroll map (default true)
+- `max_attempts` (optional): For `find_building`, max search attempts (default 3)

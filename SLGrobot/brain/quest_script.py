@@ -9,6 +9,7 @@ Each quest script is a list of steps with verb + args.  Supported verbs:
   ensure_main_city [] or [max_retries]   — navigate to main city or abort
   read_text        [x, y, var, ...]      — OCR region, store in variable
   eval             [var, expression]     — safe arithmetic on variables
+  find_building    [name] or [name, {options}] — find building on city map and tap
 
 Step fields:
   delay       float, default 1.0   — seconds to wait after action
@@ -213,6 +214,9 @@ class QuestScriptRunner:
             actions = self._do_read_text(step, screenshot, description)
         elif "eval" in step:
             actions = self._do_eval(step, description)
+        elif "find_building" in step:
+            actions = self._do_find_building(step, screenshot, delay,
+                                             description)
         else:
             logger.warning(
                 f"Quest script step {self.step_index}: unknown verb, skipping"
@@ -393,6 +397,28 @@ class QuestScriptRunner:
             self.variables[var_name] = ""
 
         return []  # no action to execute
+
+    def _do_find_building(self, step: dict, screenshot: np.ndarray,
+                          delay: float,
+                          description: str) -> list[dict]:
+        """Produce a find_building action for the ActionRunner."""
+        args = step["find_building"]
+        if isinstance(args, str):
+            args = [args]
+        building_name = str(args[0])
+        options = args[1] if isinstance(args, list) and len(args) > 1 else {}
+        if not isinstance(options, dict):
+            options = {}
+
+        return [{
+            "type": "find_building",
+            "building_name": building_name,
+            "scroll": options.get("scroll", True),
+            "max_attempts": options.get("max_attempts", 3),
+            "delay": delay,
+            "reason": (f"quest_script:find_building:{building_name}"
+                       f":{description}"),
+        }]
 
     # -- Main city detection (mirrors SceneClassifier corner-region logic) --
 

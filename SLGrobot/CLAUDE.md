@@ -49,7 +49,7 @@ python test_hardening.py    # Stuck recovery, reconnect, retry
 | Directory | Layer | Role |
 |-----------|-------|------|
 | `device/` | Device Control | ADB connection, tap, swipe, screenshots, reconnect |
-| `vision/` | Visual Perception | Template matching, OCR text detection, grid overlay, element detection |
+| `vision/` | Visual Perception | Template matching, OCR text detection, grid overlay, element detection, building finder |
 | `scene/` | Scene Understanding | Scene classification, popup detection/auto-close, scene-specific handlers |
 | `state/` | State Management | In-memory game state, OCR-based state extraction, JSON persistence |
 | `brain/` | Decision Making | Quest script runner, task queue, rule engine, LLM planner, stuck recovery, auto-handler |
@@ -73,6 +73,7 @@ All modules exchange actions as dicts with a `type` field:
 {"type": "swipe", "x1": 640, "y1": 500, "x2": 640, "y2": 200, "duration_ms": 300}
 {"type": "wait", "seconds": 2}
 {"type": "key_event", "keycode": 4}  # 4=BACK, 3=HOME
+{"type": "find_building", "building_name": "兵营", "scroll": True, "max_attempts": 3}
 ```
 
 ### Scene Types and Task Types
@@ -83,7 +84,11 @@ Known task types (handled by `RuleEngine`): `collect_resources`, `upgrade_buildi
 
 ### Quest Scripting System
 
-Game operations are defined as JSON quest scripts in `games/<id>/game.json` under `quest_scripts`. Scripts are multi-step sequences with verbs: `tap_xy`, `tap_text`, `tap_icon`, `wait_text`, `ensure_main_city`, `read_text`, `eval`. Executed by `QuestScriptRunner` (`brain/quest_script.py`), triggered automatically via quest bar matching or manually via `quest` CLI command. See `quest_scripting.md` for full reference.
+Game operations are defined as JSON quest scripts in `games/<id>/game.json` under `quest_scripts`. Scripts are multi-step sequences with verbs: `tap_xy`, `tap_text`, `tap_icon`, `wait_text`, `ensure_main_city`, `read_text`, `eval`, `find_building`. Executed by `QuestScriptRunner` (`brain/quest_script.py`), triggered automatically via quest bar matching or manually via `quest` CLI command. See `quest_scripting.md` for full reference.
+
+### Building Finder
+
+`BuildingFinder` (`vision/building_finder.py`) finds and taps buildings on the scrollable city map. It uses a press-drag-read technique: ADB swipe reveals building names, a concurrent screenshot + OCR identifies the target, then taps at the compensated position after the swipe ends. Integrated as the `find_building` quest script verb and action type. Configuration in `game.json` under `city_layout`. See `docs/building_finder.md` for details.
 
 ## Configuration
 
@@ -91,6 +96,7 @@ Game operations are defined as JSON quest scripts in `games/<id>/game.json` unde
 - `model_presets.py` — LLM provider presets. Switch provider by changing `ACTIVE_PRESET` (currently `"zhipu"`)
 - `data/navigation_paths.json` — predefined tap sequences for navigating between game screens (17 paths)
 - `templates/` — PNG template images organized by category (`buttons/`, `icons/`, `nav_bar/`, `scenes/`, `popups/`)
+- `games/<id>/city_layout.md` — building positions on the city map (used by BuildingFinder)
 
 ## Platform Requirements
 
