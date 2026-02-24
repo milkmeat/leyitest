@@ -19,8 +19,6 @@ import re
 import threading
 import time
 
-import numpy as np
-
 from device.adb_controller import ADBController
 from vision.ocr_locator import OCRLocator, OCRResult
 
@@ -36,6 +34,7 @@ _DEFAULTS = {
     "drag_offset": 150,
     "tap_offset_x": 150,
     "tap_offset_y": 150,
+    "safe_zone": [100, 200, 900, 1500],
 }
 
 
@@ -86,8 +85,8 @@ def parse_city_layout(md_path: str,
             name = cell.strip()
             if not name:
                 continue
-            # Skip header cells that are just numbers
-            if re.match(r"^\d+$", name):
+            # Skip header cells that are just numbers (including negative)
+            if re.match(r"^-?\d+$", name):
                 continue
             buildings[name] = (row_idx, col_idx)
             if name == reference_building:
@@ -153,67 +152,92 @@ class BuildingFinder:
         self.drag_offset: int = int(cfg["drag_offset"])
         self.tap_offset_x: int = int(cfg.get("tap_offset_x", 150))
         self.tap_offset_y: int = int(cfg.get("tap_offset_y", 150))
+        sz = cfg.get("safe_zone", [100, 200, 900, 1500])
+        self.safe_zone: tuple[int, int, int, int] = (
+            int(sz[0]), int(sz[1]), int(sz[2]), int(sz[3]),
+        )
 
     # --- Public API ---
 
     def find_and_tap(self, target_name: str,
                      scroll: bool = True,
-                     max_attempts: int = 3) -> bool:
+                     max_attempts: int = 5) -> bool:
         """Find a building by name and tap it.
 
-        Strategy:
-        1. Press-drag-read to check if target is already visible
-        2. If not visible and scroll=True, use layout to navigate
-        3. Press-drag-read again to find and tap
-        4. Fall back to spiral search if layout navigation fails
+        Iterative strategy:
+        1. Press-drag-read — check if target is visible, also collect
+           all visible buildings for position estimation.
+        2. If found, tap and return.
+        3. If not found and scroll=True, estimate current viewport
+           position from visible buildings, calculate delta to target,
+           scroll, and repeat from step 1.
+
+        Each press-drag-read shifts the map slightly, so position is
+        re-estimated every iteration.
 
         Args:
             target_name: Building name to find (Chinese).
             scroll: Whether to scroll the map to find the building.
-            max_attempts: Maximum press-drag-read attempts.
+            max_attempts: Maximum navigation iterations.
 
         Returns:
             True if building was found and tapped.
         """
         logger.info(f"BuildingFinder: looking for '{target_name}'")
 
-        # Attempt 1: check if already visible
-        pos = self._press_drag_read(target_name)
-        if pos is not None:
-            time.sleep(0.3)
-            self.adb.tap(pos[0], pos[1])
-            logger.info(
-                f"BuildingFinder: tapped '{target_name}' at {pos} "
-                f"(visible without scrolling)"
+        for attempt in range(max_attempts):
+            # Press-drag-read: look for target AND collect visible buildings
+            all_text, pos = self._press_drag_read_full(target_name)
+
+            if pos is not None:
+                time.sleep(0.3)
+                self.adb.tap(pos[0], pos[1])
+                logger.info(
+                    f"BuildingFinder: tapped '{target_name}' at {pos} "
+                    f"(attempt {attempt + 1})"
+                )
+                return True
+
+            if not scroll or target_name not in self.layout:
+                break
+
+            # Log recognized buildings for debugging
+            matched = []
+            for r in all_text:
+                name = self._match_building_name(r.text)
+                if name:
+                    cx, cy = r.center
+                    sz = "ok" if self._in_safe_zone(cx, cy) else "OUT"
+                    matched.append(f"{name}({cx},{cy})[{sz}]")
+            logger.debug(
+                f"BuildingFinder: visible buildings: [{', '.join(matched)}]"
             )
-            return True
 
-        if not scroll:
+            # Estimate current position from visible buildings
+            current = self._estimate_position(all_text)
+            target = self.layout[target_name]
+            dx = target[0] - current[0]
+            dy = target[1] - current[1]
+
+            if abs(dx) < 50 and abs(dy) < 50:
+                logger.info(
+                    f"BuildingFinder: should be nearby but not found "
+                    f"(delta={dx:.0f},{dy:.0f})"
+                )
+                break
+
             logger.info(
-                f"BuildingFinder: '{target_name}' not visible, scroll=False"
+                f"BuildingFinder: attempt {attempt + 1}, "
+                f"delta=({dx:.0f}, {dy:.0f}), scrolling..."
             )
-            return False
+            self._scroll_by(-dx, -dy)
+            time.sleep(0.5)
 
-        # Attempt 2: navigate using layout, then press-drag-read
-        if target_name in self.layout:
-            if self._navigate_to(target_name):
-                time.sleep(0.5)
-                pos = self._press_drag_read(target_name)
-                if pos is not None:
-                    time.sleep(0.3)
-                    self.adb.tap(pos[0], pos[1])
-                    logger.info(
-                        f"BuildingFinder: tapped '{target_name}' at {pos} "
-                        f"(after layout navigation)"
-                    )
-                    return True
-
-        # Attempt 3: spiral search
-        logger.info(
-            f"BuildingFinder: '{target_name}' not found via layout, "
-            f"trying spiral search"
+        logger.warning(
+            f"BuildingFinder: '{target_name}' not found after "
+            f"{max_attempts} attempts"
         )
-        return self._spiral_search(target_name, max_steps=max_attempts * 4)
+        return False
 
     def read_all_buildings(self) -> list[tuple[str, int, int]]:
         """Press-drag-read and return all visible building names + positions.
@@ -223,9 +247,9 @@ class BuildingFinder:
         Returns:
             List of (name, x, y) tuples.
         """
-        results = self._read_all_buildings_raw()
+        all_text, _ = self._press_drag_read_full(None)
         out: list[tuple[str, int, int]] = []
-        for r in results:
+        for r in all_text:
             cx, cy = r.center
             matched = self._match_building_name(r.text)
             name = matched if matched else r.text
@@ -234,14 +258,24 @@ class BuildingFinder:
 
     # --- Internal ---
 
-    def _press_drag_read(self, target_name: str) -> tuple[int, int] | None:
-        """Press+drag to reveal names, screenshot, OCR, find target.
+    def _press_drag_read_full(
+        self, target_name: str | None,
+    ) -> tuple[list[OCRResult], tuple[int, int] | None]:
+        """Press+drag to reveal names, screenshot, OCR.
+
+        Returns ALL OCR results (for position estimation) and the target
+        tap position if found.
 
         Runs the swipe in a background thread so we can take a screenshot
         while the finger is still down (names visible).
 
+        Args:
+            target_name: Building name to search for, or None to just
+                         read all visible text.
+
         Returns:
-            (x, y) tap position if target found, None otherwise.
+            (all_text, pos) — all_text is the full OCR result list;
+            pos is (x, y) tap position if target found, else None.
         """
         hx, hy = self.hold_point
         dx = self.drag_offset
@@ -263,7 +297,7 @@ class BuildingFinder:
         except Exception as e:
             logger.warning(f"BuildingFinder: screenshot during hold failed: {e}")
             thread.join(timeout=5)
-            return None
+            return ([], None)
 
         # OCR to find all text on screen
         all_text = self.ocr.find_all_text(screenshot)
@@ -271,15 +305,21 @@ class BuildingFinder:
         # Wait for swipe to complete (finger releases)
         thread.join(timeout=5)
 
+        if target_name is None:
+            return (all_text, None)
+
         # Compensate for map drift: after the screenshot the swipe
         # continues, shifting the map further.  The map content follows
         # the finger, so buildings move in the swipe direction.
         remaining = 1.0 - (self.screenshot_delay_ms / self.hold_duration_ms)
         drift = int(self.drag_offset * remaining)
 
-        # Search for target building name
+        # Search for target building name (exact substring)
         target_lower = target_name.lower()
         for result in all_text:
+            cx, cy = result.center
+            if not self._in_safe_zone(cx, cy):
+                continue
             if target_lower in result.text.lower():
                 x1, y1 = result.bbox[0], result.bbox[1]
                 tap_x = x1 + self.tap_offset_x + drift
@@ -289,10 +329,13 @@ class BuildingFinder:
                     f"text='{result.text}' bbox={result.bbox}, "
                     f"drift={drift}, tap at ({tap_x}, {tap_y})"
                 )
-                return (tap_x, tap_y)
+                return (all_text, (tap_x, tap_y))
 
         # Also try fuzzy matching against known building names
         for result in all_text:
+            cx, cy = result.center
+            if not self._in_safe_zone(cx, cy):
+                continue
             matched = self._match_building_name(result.text)
             if matched and target_lower in matched.lower():
                 x1, y1 = result.bbox[0], result.bbox[1]
@@ -303,39 +346,13 @@ class BuildingFinder:
                     f"'{result.text}' -> '{matched}' bbox={result.bbox}, "
                     f"drift={drift}, tap at ({tap_x}, {tap_y})"
                 )
-                return (tap_x, tap_y)
+                return (all_text, (tap_x, tap_y))
 
         logger.debug(
             f"BuildingFinder: '{target_name}' not found in "
             f"{len(all_text)} OCR results"
         )
-        return None
-
-    def _read_all_buildings_raw(self) -> list[OCRResult]:
-        """Press+drag, screenshot, return all OCR results."""
-        hx, hy = self.hold_point
-        dx = self.drag_offset
-
-        thread = threading.Thread(
-            target=self.adb.swipe,
-            args=(hx, hy, hx + dx, hy + dx, self.hold_duration_ms),
-            daemon=True,
-        )
-        thread.start()
-
-        time.sleep(self.screenshot_delay_ms / 1000.0)
-
-        try:
-            screenshot = self.adb.screenshot()
-        except Exception as e:
-            logger.warning(f"BuildingFinder: screenshot during hold failed: {e}")
-            thread.join(timeout=5)
-            return []
-
-        all_text = self.ocr.find_all_text(screenshot)
-        thread.join(timeout=5)
-
-        return all_text
+        return (all_text, None)
 
     def _estimate_position(self,
                            visible_buildings: list[OCRResult],
@@ -351,6 +368,8 @@ class BuildingFinder:
 
         for result in visible_buildings:
             cx, cy = result.center
+            if not self._in_safe_zone(cx, cy):
+                continue
             name = self._match_building_name(result.text)
             if name and name in self.layout:
                 layout_x, layout_y = self.layout[name]
@@ -370,39 +389,6 @@ class BuildingFinder:
             f"from {len(estimates)} buildings"
         )
         return (avg_x, avg_y)
-
-    def _navigate_to(self, target_name: str) -> bool:
-        """Scroll map to bring target building into view.
-
-        1. Read visible buildings to estimate current viewport position
-        2. Calculate delta to target building
-        3. Execute swipe (drag direction is opposite to desired movement)
-        """
-        visible = self._read_all_buildings_raw()
-        current = self._estimate_position(visible)
-
-        target = self.layout.get(target_name)
-        if not target:
-            logger.warning(
-                f"BuildingFinder: '{target_name}' not in layout"
-            )
-            return False
-
-        dx = target[0] - current[0]
-        dy = target[1] - current[1]
-
-        # Skip if delta is very small (already nearby)
-        if abs(dx) < 50 and abs(dy) < 50:
-            logger.debug("BuildingFinder: target already nearby, skip scroll")
-            return True
-
-        # Swipe direction is opposite: drag map left to see right
-        self._scroll_by(-dx, -dy)
-        logger.info(
-            f"BuildingFinder: navigated toward '{target_name}' "
-            f"delta=({dx:.0f}, {dy:.0f})"
-        )
-        return True
 
     def _scroll_by(self, dx: float, dy: float) -> None:
         """Execute a swipe to scroll the map by pixel delta.
@@ -435,58 +421,6 @@ class BuildingFinder:
             remaining_dx -= step_dx
             remaining_dy -= step_dy
 
-    def _spiral_search(self, target_name: str,
-                       max_steps: int = 12) -> bool:
-        """Search for building using expanding spiral swipe pattern.
-
-        Fallback when layout navigation fails.
-        """
-        step_size = 300
-
-        for dx, dy in self._spiral_pattern(step_size, max_steps):
-            self._scroll_by(dx, dy)
-            time.sleep(0.5)
-            pos = self._press_drag_read(target_name)
-            if pos is not None:
-                time.sleep(0.3)
-                self.adb.tap(pos[0], pos[1])
-                logger.info(
-                    f"BuildingFinder: tapped '{target_name}' at {pos} "
-                    f"(found via spiral search)"
-                )
-                return True
-
-        logger.warning(
-            f"BuildingFinder: '{target_name}' not found after "
-            f"{max_steps} spiral steps"
-        )
-        return False
-
-    def _spiral_pattern(self, step_size: int,
-                        max_steps: int) -> list[tuple[int, int]]:
-        """Generate expanding spiral search swipe vectors.
-
-        Pattern: right, down, left*2, up*2, right*3, down*3, ...
-        """
-        directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]  # R, D, L, U
-        pattern: list[tuple[int, int]] = []
-        steps_in_leg = 1
-        dir_idx = 0
-        turns = 0
-
-        while len(pattern) < max_steps:
-            ddx, ddy = directions[dir_idx % 4]
-            for _ in range(steps_in_leg):
-                if len(pattern) >= max_steps:
-                    break
-                pattern.append((ddx * step_size, ddy * step_size))
-            dir_idx += 1
-            turns += 1
-            if turns % 2 == 0:
-                steps_in_leg += 1
-
-        return pattern
-
     def _match_building_name(self, ocr_text: str) -> str | None:
         """Fuzzy match OCR text against known building names.
 
@@ -512,3 +446,8 @@ class BuildingFinder:
                     return name
 
         return None
+
+    def _in_safe_zone(self, x: float, y: float) -> bool:
+        """Check if coordinates are inside the safe zone (not UI elements)."""
+        x1, y1, x2, y2 = self.safe_zone
+        return x1 <= x <= x2 and y1 <= y <= y2

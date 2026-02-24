@@ -70,11 +70,10 @@ QuestScript / RuleEngine / CLI
    ┌─────────────────┐
    │  BuildingFinder  │  vision/building_finder.py
    │                  │
-   │  find_and_tap()  │  主入口
-   │    ├─ _press_drag_read()   按住拖动、OCR、找目标
-   │    ├─ _navigate_to()       根据布局滚动地图
-   │    ├─ _estimate_position() 通过可见建筑估算视口位置
-   │    └─ _spiral_search()     螺旋搜索兜底
+   │  find_and_tap()  │  主入口（迭代式导航）
+   │    ├─ _press_drag_read_full() 按住拖动、OCR、返回全部结果+目标位置
+   │    ├─ _estimate_position()    通过可见建筑估算视口位置
+   │    └─ _scroll_by()            执行滚动（分步+限幅）
    └─────────────────┘
          │
     ┌────┴────┐
@@ -123,6 +122,13 @@ QuestScript / RuleEngine / CLI
 | `drag_offset` | swipe 总偏移量（像素） | 150 |
 | `tap_offset_x` | bbox 左上角到建筑中心的 x 偏移 | 100 |
 | `tap_offset_y` | bbox 左上角到建筑中心的 y 偏移 | 150 |
+| `safe_zone` | [x1, y1, x2, y2] 有效建筑区域 | [100, 200, 900, 1500] |
+
+### Safe Zone
+
+屏幕上除了地图建筑名称外，还有 UI 元素（如 quest bar）也包含建筑名称文字。例如任务栏显示"将5号起居室升至6级"，OCR 会识别出"5号起居室"。如果不过滤，`_estimate_position` 会把 quest bar 上的文字当作地图上的建筑来估算视口位置，导致导航偏移无法收敛。
+
+`safe_zone` 定义了地图建筑名称可能出现的屏幕区域 `[x1, y1, x2, y2]`。OCR 结果中心点不在此区域内的文字会被忽略，不参与目标匹配和位置估算。
 
 ### 参数调校要点
 
@@ -149,11 +155,15 @@ QuestScript / RuleEngine / CLI
 3. 找到参考建筑位置作为原点 (0,0)
 4. 计算所有建筑相对于参考建筑的像素偏移
 
-## 导航策略
+## 导航策略：迭代式位置修正
 
-1. **估算当前视口**：press-drag-read 获取可见建筑名，与布局匹配估算视口中心
-2. **计算并执行 swipe**：目标偏移 - 当前视口 = 需要滚动的距离（方向取反）
-3. **螺旋搜索兜底**：如果布局导航失败，使用扩展螺旋 swipe 模式搜索
+每次 press-drag-read 都会轻微移动地图，因此不能用一次性估算+滚动。采用迭代方式：
+
+1. **press-drag-read**：同时获取目标位置（如在屏幕上）和所有可见建筑
+2. **如果找到目标**：直接点击，完成
+3. **如果未找到**：用可见建筑估算当前视口中心，计算到目标的偏移，滚动
+4. **重复步骤 1-3**：每次滚动后重新估算位置，逐步逼近目标
+5. **终止条件**：找到目标 / 估算偏移很小但看不到目标 / 达到最大尝试次数
 
 ## Quest Script 集成
 
@@ -222,5 +232,5 @@ Detected 34 building(s):
 | OCR 无结果 | 可能 hold_point 在 UI 元素上，或时序不对 |
 | 目标未在 OCR 结果中 | 尝试滚动+重试。超过 max_attempts 返回 False |
 | 线程挂起 | `thread.join(timeout=5)`，daemon 线程随进程退出 |
-| 布局中无匹配建筑 | 回退到螺旋搜索 |
+| 布局中无匹配建筑 | 无法估算位置，返回 False |
 | 并发 ADB 失败 | 已在 Nox 上验证可行 |
