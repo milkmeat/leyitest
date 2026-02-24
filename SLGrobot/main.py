@@ -523,7 +523,10 @@ class GameBot:
                     if (not self.quest_workflow.is_active()
                             and scene == "main_city"
                             and self.game_state.quest_bar_visible
-                            and self.game_state.quest_bar_current_quest):
+                            and self.game_state.quest_bar_current_quest
+                            and self.quest_workflow.should_start(
+                                self.game_state.quest_bar_current_quest,
+                                self.game_state.quest_bar_has_green_check)):
                         logger.info(
                             "Quest bar active, starting quest workflow "
                             f"(pausing {self.task_queue.pending_count()} queued tasks), "

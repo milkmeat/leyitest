@@ -11,6 +11,7 @@ and persists across iterations.
 
 import logging
 import re
+import time
 
 import numpy as np
 
@@ -153,9 +154,32 @@ class QuestWorkflow:
         self._exhausted_buttons: set[str] = set()
         self._last_execute_scene: str = ""
 
+        # Abort cooldown — prevent immediate restart of the same quest
+        self._last_abort_time: float = 0.0
+        self._last_aborted_quest: str = ""
+        self._ABORT_COOLDOWN: int = 180  # seconds (3 minutes)
+
     def is_active(self) -> bool:
         """Return True if workflow is currently executing a quest."""
         return self.phase != self.IDLE
+
+    def should_start(self, quest_name: str, has_green_check: bool = False) -> bool:
+        """Check if we should start a new quest workflow for this quest.
+
+        Returns True unless the quest was recently aborted and is still
+        within the cooldown period (and doesn't have a green check).
+        """
+        if has_green_check:
+            return True  # Always start if quest is already complete
+        if self._last_aborted_quest and quest_name == self._last_aborted_quest:
+            elapsed = time.time() - self._last_abort_time
+            if elapsed < self._ABORT_COOLDOWN:
+                logger.debug(
+                    f"Quest workflow: cooldown active for '{quest_name}' "
+                    f"({int(elapsed)}s / {self._ABORT_COOLDOWN}s)"
+                )
+                return False
+        return True
 
     def start(self) -> None:
         """Start the quest workflow from ENSURE_MAIN_CITY phase."""
@@ -177,6 +201,8 @@ class QuestWorkflow:
     def abort(self) -> None:
         """Abort the workflow and reset to IDLE."""
         logger.info(f"Quest workflow: aborting from phase={self.phase}")
+        self._last_abort_time = time.time()
+        self._last_aborted_quest = self.target_quest_name
         self.phase = self.IDLE
         self.target_quest_name = ""
         self.execute_iterations = 0
@@ -650,6 +676,11 @@ class QuestWorkflow:
                 "delay": 1.5,
                 "reason": f"quest_workflow:action_button:{best.name}",
             }]
+        elif self._exhausted_buttons:
+            # All known buttons exhausted — action likely triggered, go check
+            logger.info("Quest workflow: all action buttons exhausted, returning to city")
+            self.phase = self.RETURN_TO_CITY
+            return []
 
         # Try close_x for full-screen popups that lack dark borders
         # (e.g. "First Purchase Reward") — classified as "unknown" not "popup"
@@ -1343,6 +1374,8 @@ class QuestWorkflow:
 
         # Stage 1: template matching for button images
         for tpl_name in self._ACTION_BUTTON_TEMPLATES:
+            if tpl_name in self._exhausted_buttons:
+                continue
             match = self.element_detector.locate(
                 screenshot, tpl_name, methods=["template"]
             )
