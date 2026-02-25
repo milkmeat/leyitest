@@ -42,7 +42,10 @@ class TemplateMatcher:
     # check is performed: the mean absolute difference between the template and
     # the matched region must be below STRICT_COLOR_MAX_DIFF.  This prevents
     # similarly-shaped but differently-colored icons from matching.
-    STRICT_COLOR_TEMPLATES: set[str] = {"icons/upgrade_arrow"}
+    STRICT_COLOR_TEMPLATES: set[str] = {
+        "icons/upgrade_arrow",
+        "icons/train_brawler",
+    }
     STRICT_COLOR_MAX_DIFF: float = 30.0
     STRICT_COLOR_CCOEFF_THRESHOLD: float = 0.6
 

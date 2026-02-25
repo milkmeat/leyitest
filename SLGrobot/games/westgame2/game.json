@@ -130,6 +130,18 @@
       ]
     },
     {
+      "name": "train",
+      "pattern": "训练.*?(?P<troop_type>步兵|骑兵|远程兵)",
+      "steps": [
+        {"ensure_main_city": [], "delay": 1.5, "description": "确认在主城界面"},
+        {"find_building": ["步兵营"], "delay": 2.0, "description": "定位到步兵营并点击"},
+        {"tap_icon": ["icons/train_brawler"], "delay": 2.0, "description": "点击训练步兵图标进入训练界面"},
+        {"tap_text": ["{troop_type}", -1], "delay": 1.5, "description": "点击兵种切换到目标兵种"},
+        {"tap_text": ["训练", -1], "delay": 1.5, "description": "点击训练开始训练"},
+        {"tap_icon": ["buttons/back_arrow"], "delay": 1.5, "description": "返回主城"}
+      ]
+    },
+    {
       "name": "upgrade_building",
       "pattern": "将?(?P<building>.+?)升[至级]",
       "steps": [
