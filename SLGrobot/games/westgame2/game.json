@@ -82,6 +82,26 @@
 
   "quest_scripts": [
     {
+      "name": "collect_resource",
+      "pattern": "采集(?:资源)?(?P<resource_type>小麦|木材|石材|铁块|银币)",
+      "steps": [
+        {"ensure_world_map": [], "delay": 1.5, "description": "确认在世界地图"},
+        {"tap_xy": [65, 1300], "delay": 2.0, "description": "点击搜索图标"},
+        {"tap_text": ["木材"], "delay": 1.0, "optional": true, "description": "点击木材文字定位"},
+        {"tap_text": ["铁块"], "delay": 1.0, "optional": true, "description": "点击铁块文字定位"},
+        {"tap_xy": [540, 900], "delay": 1.5, "description": "点击空白位置关闭面板"},
+        {"tap_xy": [65, 1300], "delay": 2.0, "description": "点击搜索图标"},
+        {"tap_text": ["石材"], "delay": 1.0, "optional": true, "description": "点击石材文字定位"},
+        {"tap_xy": [540, 900], "delay": 1.5, "description": "点击空白位置关闭面板"},
+        {"tap_xy": [65, 1300], "delay": 2.0, "description": "点击搜索图标"},
+        {"tap_text": ["{resource_type}", -1], "delay": 1.5, "description": "点击最后一个资源类型"},
+        {"tap_text": ["搜索", -1], "delay": 1.5, "description": "点击最后一个搜索"},
+        {"tap_text": ["采集", -1], "delay": 1.5, "description": "点击最后一个采集"},
+        {"tap_text": ["均衡配置"], "offset_y": -100, "delay": 1.5, "description": "点击均衡配置（上移100px）"},
+        {"tap_text": ["行军", -1], "delay": 1.5, "description": "点击最后一个行军"}
+      ]
+    },
+    {
       "name": "dispatch_citizens",
       "pattern": "派遣.*镇民",
       "steps": [

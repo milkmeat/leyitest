@@ -84,9 +84,23 @@ Known task types (handled by `RuleEngine`): `collect_resources`, `upgrade_buildi
 
 ### Quest Scripting System
 
-Game operations are defined as JSON quest scripts in `games/<id>/game.json` under `quest_scripts`. Each script has an optional `name` (English identifier) and a `pattern` (Chinese regex). CLI supports bilingual matching: `quest claim_quest_reward` or `quest 领取任务奖励` both work (name match first, then pattern regex). Scripts are multi-step sequences with verbs: `tap_xy`, `tap_text`, `tap_icon`, `wait_text`, `ensure_main_city`, `read_text`, `eval`, `find_building`. Executed by `QuestScriptRunner` (`brain/quest_script.py`), triggered automatically via quest bar matching or manually via `quest` CLI command. See `quest_scripting.md` for full reference.
+Game operations are defined as JSON quest scripts in `games/<id>/game.json` under `quest_scripts`. Each script has an optional `name` (English identifier) and a `pattern` (Chinese regex). CLI supports bilingual matching: `quest claim_quest_reward` or `quest 领取任务奖励` both work (name match first, then pattern regex). Scripts are multi-step sequences with verbs: `tap_xy`, `tap_text`, `tap_icon`, `swipe`, `wait_text`, `ensure_main_city`, `ensure_world_map`, `read_text`, `eval`, `find_building`. Executed by `QuestScriptRunner` (`brain/quest_script.py`), triggered automatically via quest bar matching or manually via `quest` CLI command. See `quest_scripting.md` for full reference.
 
 Quest script MD 文件中图标引用可以只写文件名（如 `[[upgrade_arrow.png]]`），生成 JSON 时需根据模板文件在 `templates/` 下的实际位置补全目录前缀（如 `"icons/upgrade_arrow"`）。`QuestScriptRunner` 的 `tap_icon` 直接调用 `TemplateMatcher`，不会自动补全前缀。
+
+### Template Matcher 路径规则
+
+`TemplateMatcher` 加载 `games/<id>/templates/` 下的所有 PNG 文件，缓存 key 为**相对路径去掉扩展名**，`\` 替换为 `/`。
+
+- 磁盘文件: `games/westgame2/templates/icons/search.png`
+- 缓存 key: `icons/search`
+- 代码调用: `template_matcher.match_one(screenshot, "icons/search")`
+
+常用目录前缀：`buttons/`、`icons/`、`nav_bar/`、`scenes/`、`popups/`。
+
+**编写脚本时**：`tap_icon` 的参数必须是缓存 key（含目录前缀、不含 `.png`），如 `["icons/balance_config"]`，不能只写文件名 `"balance_config"`。
+
+**调试模板匹配**：使用 `python -c` 脚本时，`TemplateMatcher` 必须传入正确的模板目录 `games/<id>/templates`（而非默认的 `config.TEMPLATE_DIR`，那个指向旧的 `templates/`）。
 
 ### Building Finder
 
@@ -97,7 +111,7 @@ Quest script MD 文件中图标引用可以只写文件名（如 `[[upgrade_arro
 - `config.py` — all global constants (ADB host/port, screen resolution, timing, thresholds, file paths)
 - `model_presets.py` — LLM provider presets. Switch provider by changing `ACTIVE_PRESET` (currently `"zhipu"`)
 - `data/navigation_paths.json` — predefined tap sequences for navigating between game screens (17 paths)
-- `templates/` — PNG template images organized by category (`buttons/`, `icons/`, `nav_bar/`, `scenes/`, `popups/`)
+- `games/<id>/templates/` — PNG template images organized by category (`buttons/`, `icons/`, `nav_bar/`, `scenes/`, `popups/`), loaded by `TemplateMatcher` via `game_profile.template_dir`
 - `games/<id>/city_layout.md` — building positions on the city map (used by BuildingFinder)
 
 ## Platform Requirements

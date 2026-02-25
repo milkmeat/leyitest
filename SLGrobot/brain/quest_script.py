@@ -5,6 +5,7 @@ Each quest script is a list of steps with verb + args.  Supported verbs:
   tap_xy           [x, y]                — unconditional tap at fixed coordinates
   tap_text         [text] or [text, nth] — OCR search, tap nth match (1-indexed)
   tap_icon         [name] or [name, nth] — template match, tap nth match
+  swipe            [x1,y1,x2,y2] or [x1,y1,x2,y2,ms] — swipe gesture
   wait_text        [text]                — wait until text appears (no tap)
   ensure_main_city [] or [max_retries]   — navigate to main city or abort
   ensure_world_map [] or [max_retries]   — navigate to world map or abort
@@ -212,6 +213,8 @@ class QuestScriptRunner:
             actions = self._do_tap_text(step, screenshot, delay, description)
         elif "tap_icon" in step:
             actions = self._do_tap_icon(step, screenshot, delay, description)
+        elif "swipe" in step:
+            actions = self._do_swipe(step, delay, description)
         elif "wait_text" in step:
             actions = self._do_wait_text(step, screenshot, description)
         elif "ensure_main_city" in step:
@@ -305,6 +308,8 @@ class QuestScriptRunner:
         # nth=-1 means last match, positive is 1-indexed
         match = matches[nth - 1] if nth > 0 else matches[-1]
         cx, cy = match.center
+        cx += step.get("offset_x", 0)
+        cy += step.get("offset_y", 0)
         return [{
             "type": "tap",
             "x": cx,
@@ -336,6 +341,23 @@ class QuestScriptRunner:
             "y": match.y,
             "delay": delay,
             "reason": f"quest_script:tap_icon:{icon_name}:{description}",
+        }]
+
+    def _do_swipe(self, step: dict, delay: float,
+                  description: str) -> list[dict]:
+        args = step["swipe"]
+        x1, y1, x2, y2 = int(args[0]), int(args[1]), int(args[2]), int(args[3])
+        duration_ms = int(args[4]) if len(args) > 4 else 300
+        return [{
+            "type": "swipe",
+            "x1": x1,
+            "y1": y1,
+            "x2": x2,
+            "y2": y2,
+            "duration_ms": duration_ms,
+            "delay": delay,
+            "reason": (f"quest_script:swipe:{x1},{y1}->{x2},{y2}"
+                       f":{description}"),
         }]
 
     def _do_wait_text(self, step: dict, screenshot: np.ndarray,
@@ -614,6 +636,16 @@ class QuestScriptRunner:
             return [{"type": "tap", "x": match.x, "y": match.y,
                      "delay": delay,
                      "reason": "quest_script:ensure_world_map:close_x"}]
+
+        # After 5 failed attempts, tap blank area in upper screen to dismiss
+        if self._ensure_retries >= 5:
+            logger.info(
+                f"Quest script: ensure_world_map — tapping blank area "
+                f"(500, 600), attempt {self._ensure_retries}"
+            )
+            self._suppress_advance = True
+            return [{"type": "tap", "x": 500, "y": 600, "delay": delay,
+                     "reason": "quest_script:ensure_world_map:tap_blank"}]
 
         # Fallback: Android BACK key
         logger.info(

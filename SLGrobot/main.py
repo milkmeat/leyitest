@@ -984,7 +984,7 @@ class CLI:
             for j, step in enumerate(steps):
                 desc = step.get("description", "")
                 verb = "?"
-                for v in ("tap_xy", "tap_text", "tap_icon", "wait_text", "ensure_main_city", "read_text", "eval", "find_building"):
+                for v in ("tap_xy", "tap_text", "tap_icon", "swipe", "wait_text", "ensure_main_city", "ensure_world_map", "read_text", "eval", "find_building"):
                     if v in step:
                         verb = f"{v}={step[v]}"
                         break
@@ -1042,6 +1042,12 @@ class CLI:
                 detail = f"'{args_val[0]}'"
                 if len(args_val) > 1:
                     detail += f" (#{args_val[1]})"
+            elif "swipe" in step:
+                verb = "swipe"
+                args_val = step["swipe"]
+                detail = f"({args_val[0]},{args_val[1]})->({args_val[2]},{args_val[3]})"
+                if len(args_val) > 4:
+                    detail += f" {args_val[4]}ms"
             elif "wait_text" in step:
                 args_val = step["wait_text"]
                 if isinstance(args_val, str):
@@ -1051,6 +1057,13 @@ class CLI:
             elif "ensure_main_city" in step:
                 verb = "ensure_main_city"
                 args_val = step.get("ensure_main_city", [])
+                if isinstance(args_val, list) and args_val:
+                    detail = f"max_retries={args_val[0]}"
+                else:
+                    detail = "max_retries=10"
+            elif "ensure_world_map" in step:
+                verb = "ensure_world_map"
+                args_val = step.get("ensure_world_map", [])
                 if isinstance(args_val, list) and args_val:
                     detail = f"max_retries={args_val[0]}"
                 else:
