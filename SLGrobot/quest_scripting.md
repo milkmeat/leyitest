@@ -22,8 +22,8 @@ Quest Scripting 系统将游戏操作定义为 JSON 脚本，通过模式匹配�
 ### 执行流程
 
 ```
-CLI "quest 派遣3名镇民"
-  → 正则匹配 "派遣.*镇民"
+CLI "quest dispatch_citizens" 或 "quest 派遣3名镇民"
+  → 双语匹配: name 精确匹配 → pattern 正则匹配
   → QuestScriptRunner.load(steps)
   → 循环:
       screenshot → execute_one() → action dict → ActionRunner.execute() → 输出进度
@@ -197,10 +197,13 @@ OCR 搜索屏幕上的文本，找到后推进到下一步。不产生点击动�
 
 ### 完整规则定义（game.json 中的 `quest_scripts`）
 
+每条规则支持双语匹配：`name`（英文标识）用于 CLI 快速调用，`pattern`（中文正则）用于任务栏文本匹配。
+
 ```json
 {
   "quest_scripts": [
     {
+      "name": "dispatch_citizens",
       "pattern": "派遣.*镇民",
       "steps": [
         {"tap_xy": [790, 1815], "delay": 1.0, "description": "切换到镇民标签"},
@@ -208,6 +211,7 @@ OCR 搜索屏幕上的文本，找到后推进到下一步。不产生点击动�
       ]
     },
     {
+      "name": "upgrade_building",
       "pattern": "将.*升至\\d+级",
       "steps": [
         {"tap_text": ["升级"], "delay": 1.5, "description": "点击升级按钮"},
@@ -215,6 +219,7 @@ OCR 搜索屏幕上的文本，找到后推进到下一步。不产生点击动�
       ]
     },
     {
+      "name": "collect_resources",
       "pattern": "采集.*资源",
       "steps": [
         {"tap_icon": ["icons/food"], "delay": 1.0, "description": "点击食物图标"},
@@ -226,6 +231,12 @@ OCR 搜索屏幕上的文本，找到后推进到下一步。不产生点击动�
   ]
 }
 ```
+
+| 字段 | 必填 | 说明 |
+|------|------|------|
+| `name` | 否 | 英文标识，用于 CLI 双语匹配（大小写不敏感） |
+| `pattern` | 是 | 中文正则表达式，用于任务栏文本匹配和 CLI 文本匹配 |
+| `steps` | 是 | 步骤数组 |
 
 ### 使用 repeat 简化重复步骤
 
@@ -245,20 +256,27 @@ OCR 搜索屏幕上的文本，找到后推进到下一步。不产生点击动�
 
 ## CLI 命令
 
-### `quest <quest text>` — 执行任务脚本
+### `quest <name or text>` — 执行任务脚本
+
+支持双语匹配：英文 `name` 或中文任务文本均可。
 
 ```bash
+# 用英文 name 匹配
+python main.py quest dispatch_citizens
+python main.py quest claim_quest_reward
+
+# 用中文任务文本匹配（正则 pattern）
 python main.py quest 派遣3名镇民
 python main.py quest 将驻防站升至2级
 ```
 
-匹配 `quest_scripts` 中的 pattern，创建独立的 `QuestScriptRunner`，
-循环执行直到完成或达到最大迭代次数。每步输出进度。
+匹配优先级：先按 `name` 精确匹配（大小写不敏感），再按 `pattern` 正则匹配。
+创建独立的 `QuestScriptRunner`，循环执行直到完成或达到最大迭代次数。每步输出进度。
 
 交互模式下：
 ```
-> quest 派遣3名镇民
-Matched rule: '派遣.*镇民' (2 steps)
+> quest dispatch_citizens
+Matched rule: dispatch_citizens  /派遣.*镇民/ (2 steps)
   Step 1/2: tap (790, 1815) — quest_script:tap_xy:790,1815:切换到镇民标签
   Step 2/2: tap (750, 1598) — quest_script:tap_xy:750,1598:点击+添加镇民
   Step 2/2: tap (750, 1598) — quest_script:tap_xy:750,1598:点击+添加镇民
@@ -270,18 +288,18 @@ Quest script completed (2 steps)
 
 ```
 > quest_rules
-1 quest action rule(s):
-  1. /派遣.*镇民/  (2 steps)
+5 quest script(s):
+  1. dispatch_citizens  /派遣.*镇民/  (2 steps)
       1. tap_xy=[790, 1815]  切换到镇民标签
       2. tap_xy=[750, 1598] x3  点击+添加镇民
 ```
 
-### `quest_test <quest text>` — 干运行
+### `quest_test <name or text>` — 干运行
 
 ```
-> quest_test 派遣3名镇民
-Matched: /派遣.*镇民/  (2 steps)
-Dry run for quest text: '派遣3名镇民'
+> quest_test dispatch_citizens
+Matched: dispatch_citizens  /派遣.*镇民/  (2 steps)
+Dry run for quest text: 'dispatch_citizens'
 
   1. [tap_xy] (790, 1815)  delay=1.0s
      切换到镇民标签
@@ -321,20 +339,23 @@ Quest Script 覆盖所有需要的操作后可移除。
 
 1. 打开 `games/<game_id>/game.json`
 2. 在 `quest_scripts` 数组中添加新规则
-3. `pattern` 为正则表达式，匹配任务栏文本
-4. `steps` 为步骤数组，使用上述动词
-5. 用 `quest_test` 验证匹配，用 `quest` 实际执行
+3. `name` 为英文标识（可选，用于 CLI 双语匹配）
+4. `pattern` 为正则表达式，匹配任务栏文本
+5. `steps` 为步骤数组，使用上述动词
+6. 用 `quest_test` 验证匹配，用 `quest` 实际执行
 
 建议工作流：
 ```bash
 # 1. 查看当前任务栏文本
 python main.py status
 
-# 2. 添加规则到 game.json
+# 2. 添加规则到 game.json（包含 name 和 pattern）
 
-# 3. 干运行验证
+# 3. 干运行验证（英文 name 或中文文本均可）
+python main.py quest_test dispatch_citizens
 python main.py quest_test 派遣3名镇民到采石场
 
 # 4. 实际执行
+python main.py quest dispatch_citizens
 python main.py quest 派遣3名镇民到采石场
 ```

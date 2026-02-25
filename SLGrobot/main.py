@@ -69,9 +69,9 @@ Commands:
   status                        Show connection and game state
   state                         Show current game state
   scene                         Classify current scene
-  quest <quest text>            Execute a quest script by text match
-  quest_rules                   List all quest action rules
-  quest_test <quest text>       Dry-run a quest script (show steps)
+  quest <name or text>           Execute a quest script (bilingual: name or text)
+  quest_rules                   List all quest scripts (name + pattern)
+  quest_test <name or text>     Dry-run a quest script (show steps)
   auto [loops]                  Run auto loop (default: infinite)
   llm                           Manually trigger LLM strategic consultation
   detect_finger                 Detect tutorial finger, print coords, save crop

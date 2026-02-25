@@ -84,7 +84,7 @@ Known task types (handled by `RuleEngine`): `collect_resources`, `upgrade_buildi
 
 ### Quest Scripting System
 
-Game operations are defined as JSON quest scripts in `games/<id>/game.json` under `quest_scripts`. Scripts are multi-step sequences with verbs: `tap_xy`, `tap_text`, `tap_icon`, `wait_text`, `ensure_main_city`, `read_text`, `eval`, `find_building`. Executed by `QuestScriptRunner` (`brain/quest_script.py`), triggered automatically via quest bar matching or manually via `quest` CLI command. See `quest_scripting.md` for full reference.
+Game operations are defined as JSON quest scripts in `games/<id>/game.json` under `quest_scripts`. Each script has an optional `name` (English identifier) and a `pattern` (Chinese regex). CLI supports bilingual matching: `quest claim_quest_reward` or `quest 领取任务奖励` both work (name match first, then pattern regex). Scripts are multi-step sequences with verbs: `tap_xy`, `tap_text`, `tap_icon`, `wait_text`, `ensure_main_city`, `read_text`, `eval`, `find_building`. Executed by `QuestScriptRunner` (`brain/quest_script.py`), triggered automatically via quest bar matching or manually via `quest` CLI command. See `quest_scripting.md` for full reference.
 
 ### Building Finder
 
