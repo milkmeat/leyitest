@@ -131,7 +131,7 @@
     },
     {
       "name": "upgrade_building",
-      "pattern": "将(?P<building>.+?)[升至].*级",
+      "pattern": "将?(?P<building>.+?)升[至级]",
       "steps": [
         {"ensure_main_city": [], "delay": 1.5, "description": "确认在主城界面"},
         {"find_building": ["{building}"], "delay": 2.0, "description": "定位到建筑并点击"},
