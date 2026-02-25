@@ -123,8 +123,8 @@
       "steps": [
         {"ensure_main_city": [], "delay": 1.5, "description": "确认在主城界面"},
         {"tap_icon": ["nav_bar/expedition"], "delay": 2.0, "description": "点击远征图标"},
-        {"tap_text": ["领取奖励"], "delay": 1.5, "description": "点击领取奖励"},
-        {"tap_text": ["领取"], "delay": 1.5, "description": "点击领取"},
+        {"tap_text": ["领取"], "delay": 1.5, "description": "点击领取奖励"},
+        {"tap_text": ["领取"], "delay": 1.5, "optional": true, "description": "点击领取"},
         {"tap_text": ["确定"], "delay": 1.5, "description": "点击确定"},
         {"tap_icon": ["buttons/back_arrow"], "delay": 1.5, "description": "返回主城"}
       ]

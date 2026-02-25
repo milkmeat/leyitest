@@ -1,7 +1,5 @@
-opencv-python
-Pillow
+opencv-python-headless
 numpy
-adbutils
 rapidocr-onnxruntime
 anthropic
 openai
