@@ -7,6 +7,7 @@ Each quest script is a list of steps with verb + args.  Supported verbs:
   tap_icon         [name] or [name, nth] — template match, tap nth match
   wait_text        [text]                — wait until text appears (no tap)
   ensure_main_city [] or [max_retries]   — navigate to main city or abort
+  ensure_world_map [] or [max_retries]   — navigate to world map or abort
   read_text        [x, y, var, ...]      — OCR region, store in variable
   eval             [var, expression]     — safe arithmetic on variables
   find_building    [name] or [name, {options}] — find building on city map and tap
@@ -216,6 +217,9 @@ class QuestScriptRunner:
         elif "ensure_main_city" in step:
             actions = self._do_ensure_main_city(step, screenshot, delay,
                                                 description)
+        elif "ensure_world_map" in step:
+            actions = self._do_ensure_world_map(step, screenshot, delay,
+                                                description)
         elif "read_text" in step:
             actions = self._do_read_text(step, screenshot, description)
         elif "eval" in step:
@@ -242,7 +246,7 @@ class QuestScriptRunner:
                 return []
             return None
 
-        # Some verbs (ensure_main_city) return actions but stay on same step
+        # Some verbs (ensure_main_city, ensure_world_map) return actions but stay on same step
         if self._suppress_advance:
             self._suppress_advance = False
             return actions
@@ -427,18 +431,28 @@ class QuestScriptRunner:
                        f":{description}"),
         }]
 
-    # -- Main city detection (mirrors SceneClassifier corner-region logic) --
+    # -- Scene detection (mirrors SceneClassifier corner-region logic) --
 
-    _MAIN_CITY_CORNER = (0.78, 0.85, 1.0, 1.0)
-    _MAIN_CITY_CONFIDENCE = 0.5
+    _SCENE_CORNER = (0.78, 0.85, 1.0, 1.0)
+    _SCENE_CONFIDENCE = 0.5
+
+    def _crop_corner(self, screenshot: np.ndarray) -> np.ndarray:
+        """Crop the bottom-right corner used for main_city/world_map detection."""
+        h, w = screenshot.shape[:2]
+        rx1, ry1, rx2, ry2 = self._SCENE_CORNER
+        return screenshot[int(ry1*h):int(ry2*h), int(rx1*w):int(rx2*w)]
 
     def _is_main_city(self, screenshot: np.ndarray) -> bool:
         """Check if screenshot shows main city (bottom-right corner icon)."""
-        h, w = screenshot.shape[:2]
-        rx1, ry1, rx2, ry2 = self._MAIN_CITY_CORNER
-        corner = screenshot[int(ry1*h):int(ry2*h), int(rx1*w):int(rx2*w)]
+        corner = self._crop_corner(screenshot)
         match = self.template_matcher.match_one(corner, "scenes/main_city")
-        return match is not None and match.confidence >= self._MAIN_CITY_CONFIDENCE
+        return match is not None and match.confidence >= self._SCENE_CONFIDENCE
+
+    def _is_world_map(self, screenshot: np.ndarray) -> bool:
+        """Check if screenshot shows world map (bottom-right corner icon)."""
+        corner = self._crop_corner(screenshot)
+        match = self.template_matcher.match_one(corner, "scenes/world_map")
+        return match is not None and match.confidence >= self._SCENE_CONFIDENCE
 
     def _do_ensure_main_city(self, step: dict, screenshot: np.ndarray,
                              delay: float,
@@ -469,6 +483,21 @@ class QuestScriptRunner:
             logger.error(f"Quest script: {self.abort_reason}")
             self.aborted = True
             return []
+
+        # Shortcut: if on world_map, tap territory icon to go back to main city
+        if self._is_world_map(screenshot):
+            match = self.template_matcher.match_one(screenshot,
+                                                    "nav_bar/territory")
+            if match:
+                logger.info(
+                    f"Quest script: ensure_main_city — on world_map, "
+                    f"tapping territory ({match.x}, {match.y}), "
+                    f"attempt {self._ensure_retries}"
+                )
+                self._suppress_advance = True
+                return [{"type": "tap", "x": match.x, "y": match.y,
+                         "delay": delay,
+                         "reason": "quest_script:ensure_main_city:territory"}]
 
         # Try back_arrow first
         match = self.template_matcher.match_one(screenshot,
@@ -514,3 +543,83 @@ class QuestScriptRunner:
         self._suppress_advance = True
         return [{"type": "key_event", "keycode": 4, "delay": delay,
                  "reason": f"quest_script:ensure_main_city:back_key"}]
+
+    def _do_ensure_world_map(self, step: dict, screenshot: np.ndarray,
+                             delay: float,
+                             description: str) -> list[dict]:
+        """Ensure we are on the world map screen.
+
+        Returns ``[]`` to advance when world map is detected.
+        Returns tap actions (with ``_suppress_advance``) to navigate there.
+        Sets ``self.aborted`` if max retries exceeded.
+        """
+        if self._is_world_map(screenshot):
+            logger.info(
+                f"Quest script: ensure_world_map — at world map"
+            )
+            self._ensure_retries = 0
+            return []  # advance to next step
+
+        args = step.get("ensure_world_map", [])
+        if isinstance(args, (int, float)):
+            args = [args]
+        max_retries = int(args[0]) if args else 10
+
+        self._ensure_retries += 1
+        if self._ensure_retries > max_retries:
+            self.abort_reason = (
+                f"ensure_world_map failed after {max_retries} retries"
+            )
+            logger.error(f"Quest script: {self.abort_reason}")
+            self.aborted = True
+            return []
+
+        # Shortcut: if on main_city, tap world icon to switch to world map
+        if self._is_main_city(screenshot):
+            match = self.template_matcher.match_one(screenshot,
+                                                    "nav_bar/world")
+            if match:
+                logger.info(
+                    f"Quest script: ensure_world_map — on main_city, "
+                    f"tapping world ({match.x}, {match.y}), "
+                    f"attempt {self._ensure_retries}"
+                )
+                self._suppress_advance = True
+                return [{"type": "tap", "x": match.x, "y": match.y,
+                         "delay": delay,
+                         "reason": "quest_script:ensure_world_map:world"}]
+
+        # Try back_arrow first
+        match = self.template_matcher.match_one(screenshot,
+                                                "buttons/back_arrow")
+        if match:
+            logger.info(
+                f"Quest script: ensure_world_map — tapping back_arrow "
+                f"({match.x}, {match.y}), attempt {self._ensure_retries}"
+            )
+            self._suppress_advance = True
+            return [{"type": "tap", "x": match.x, "y": match.y,
+                     "delay": delay,
+                     "reason": "quest_script:ensure_world_map:back_arrow"}]
+
+        # Try close_x
+        match = self.template_matcher.match_one(screenshot,
+                                                "buttons/close_x")
+        if match:
+            logger.info(
+                f"Quest script: ensure_world_map — tapping close_x "
+                f"({match.x}, {match.y}), attempt {self._ensure_retries}"
+            )
+            self._suppress_advance = True
+            return [{"type": "tap", "x": match.x, "y": match.y,
+                     "delay": delay,
+                     "reason": "quest_script:ensure_world_map:close_x"}]
+
+        # Fallback: Android BACK key
+        logger.info(
+            f"Quest script: ensure_world_map — pressing BACK key, "
+            f"attempt {self._ensure_retries}"
+        )
+        self._suppress_advance = True
+        return [{"type": "key_event", "keycode": 4, "delay": delay,
+                 "reason": "quest_script:ensure_world_map:back_key"}]

@@ -121,14 +121,36 @@ OCR 搜索屏幕上的文本，找到后推进到下一步。不产生点击动�
 检测当前屏幕是否为主城（底部右下角模板匹配 `scenes/main_city`）。
 已在主城时直接推进到下一步（无动作）。
 不在主城时，按优先级尝试返回：
-1. 点击 `buttons/back_arrow`（返回箭头）
-2. 点击 `buttons/close_x`（关闭按钮）
-3. 发送 Android BACK 键
+1. 若在世界地图（`scenes/world_map`），点击 `nav_bar/territory`（领地按钮）
+2. 点击 `buttons/back_arrow`（返回箭头）
+3. 点击 `buttons/close_x`（关闭按钮）
+4. 5 次失败后点击空白区域
+5. 发送 Android BACK 键
 
 每次尝试后不推进步骤，等待下次迭代重新检测。
 超过 `max_retries`（默认 10）次仍未回到主城时，**中止整个脚本**并报错。
 
 适用场景：脚本首步确认在主城、脚本末步返回主城。
+
+### `ensure_world_map` — 确认/切换到世界地图
+
+```json
+{"ensure_world_map": [], "delay": 1.5, "description": "确认在世界地图"}
+{"ensure_world_map": [15], "delay": 1.5, "description": "最多重试15次"}
+```
+
+检测当前屏幕是否为世界地图（底部右下角模板匹配 `scenes/world_map`）。
+已在世界地图时直接推进到下一步（无动作）。
+不在世界地图时，按优先级尝试导航：
+1. 若在主城（`scenes/main_city`），点击 `nav_bar/world`（世界按钮）
+2. 点击 `buttons/back_arrow`（返回箭头）
+3. 点击 `buttons/close_x`（关闭按钮）
+4. 发送 Android BACK 键
+
+每次尝试后不推进步骤，等待下次迭代重新检测。
+超过 `max_retries`（默认 10）次仍未到达世界地图时，**中止整个脚本**并报错。
+
+适用场景：需要从主城切换到世界地图执行操作（如出征、采集）。
 
 ### `read_text` — 区域 OCR 读取
 
