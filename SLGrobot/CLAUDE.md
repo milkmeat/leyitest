@@ -86,6 +86,8 @@ Known task types (handled by `RuleEngine`): `collect_resources`, `upgrade_buildi
 
 Game operations are defined as JSON quest scripts in `games/<id>/game.json` under `quest_scripts`. Each script has an optional `name` (English identifier) and a `pattern` (Chinese regex). CLI supports bilingual matching: `quest claim_quest_reward` or `quest 领取任务奖励` both work (name match first, then pattern regex). Scripts are multi-step sequences with verbs: `tap_xy`, `tap_text`, `tap_icon`, `wait_text`, `ensure_main_city`, `read_text`, `eval`, `find_building`. Executed by `QuestScriptRunner` (`brain/quest_script.py`), triggered automatically via quest bar matching or manually via `quest` CLI command. See `quest_scripting.md` for full reference.
 
+Quest script MD 文件中图标引用可以只写文件名（如 `[[upgrade_arrow.png]]`），生成 JSON 时需根据模板文件在 `templates/` 下的实际位置补全目录前缀（如 `"icons/upgrade_arrow"`）。`QuestScriptRunner` 的 `tap_icon` 直接调用 `TemplateMatcher`，不会自动补全前缀。
+
 ### Building Finder
 
 `BuildingFinder` (`vision/building_finder.py`) finds and taps buildings on the scrollable city map. It uses a press-drag-read technique: ADB swipe reveals building names, a concurrent screenshot + OCR identifies the target, then taps at the compensated position after the swipe ends. Integrated as the `find_building` quest script verb and action type. Configuration in `game.json` under `city_layout`. See `docs/building_finder.md` for details.

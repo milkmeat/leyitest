@@ -136,6 +136,7 @@
         {"ensure_main_city": [], "delay": 1.5, "description": "确认在主城界面"},
         {"find_building": ["{building}"], "delay": 2.0, "description": "定位到建筑并点击"},
         {"tap_text": ["建造"], "delay": 2.0, "optional": true, "description": "点击建造（新建筑时出现）"},
+        {"tap_icon": ["icons/upgrade_arrow"], "delay": 2.0, "optional": true, "description": "点击升级箭头图标"},
         {"tap_text": ["升级"], "delay": 2.0, "repeat": 5, "optional": true, "description": "点击升级"},
         {"tap_text": ["建造"], "delay": 2.0, "repeat": 2, "optional": true, "description": "点击建造"},
         {"tap_text": ["下一个"], "delay": 2.0, "repeat": 5, "optional": true, "description": "点击下一个"},
