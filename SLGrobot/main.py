@@ -1335,7 +1335,11 @@ def main():
             break
         i += 1
 
-    parser = argparse.ArgumentParser(description="SLGrobot - SLG Game AI Agent")
+    parser = argparse.ArgumentParser(
+        description="SLGrobot - SLG Game AI Agent",
+        epilog=HELP_TEXT,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument(
         "--auto", action="store_true",
         help="Run in autonomous mode (three-layer decision loop)"
