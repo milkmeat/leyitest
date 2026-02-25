@@ -31,6 +31,12 @@ class TemplateMatcher:
     # but the Saturation channel preserves shape while ignoring hue/lightness.
     COLOR_INVARIANT_TEMPLATES: set[str] = {"buttons/close_x"}
 
+    # Templates that should prefer the top-right match when multiple instances
+    # exist on screen.  Close/X buttons semantically belong to the top-right
+    # corner of popups; when a similar shape appears elsewhere (e.g. mid-screen),
+    # the top-right one is almost always the correct target.
+    PREFER_TOP_RIGHT_TEMPLATES: set[str] = {"buttons/close_x"}
+
     # Templates that require strict size AND color matching.
     # After the normal CCOEFF shape match, an additional BGR pixel-level color
     # check is performed: the mean absolute difference between the template and
@@ -100,11 +106,32 @@ class TemplateMatcher:
         """Match a specific template against screenshot.
 
         Returns MatchResult if confidence >= threshold, else None.
+        For templates in PREFER_TOP_RIGHT_TEMPLATES, finds all matches and
+        returns the one closest to the top-right corner.
         """
         entry = self._cache.get(template_name)
         if entry is None:
             logger.warning(f"Template not found in cache: {template_name}")
             return None
+
+        if template_name in self.PREFER_TOP_RIGHT_TEMPLATES:
+            matches = self.match_one_multi(screenshot, template_name, max_matches=5)
+            if not matches:
+                # Fallback to _match (includes saturation fallback for
+                # COLOR_INVARIANT_TEMPLATES) when multi-match finds nothing.
+                template, mask = entry
+                return self._match(screenshot, template_name, template, mask)
+            if len(matches) == 1:
+                return matches[0]
+            # Score: prefer small y (high on screen) and large x (right side).
+            # Normalize both axes to [0,1] so they contribute equally.
+            sh, sw = screenshot.shape[:2]
+            best = min(matches, key=lambda m: (m.y / sh) - (m.x / sw))
+            logger.debug(
+                f"PREFER_TOP_RIGHT: {template_name} picked ({best.x}, {best.y}) "
+                f"from {len(matches)} candidates"
+            )
+            return best
 
         template, mask = entry
         return self._match(screenshot, template_name, template, mask)
@@ -155,8 +182,17 @@ class TemplateMatcher:
 
         template, mask = entry
         th, tw = template.shape[:2]
-        method = cv2.TM_CCORR_NORMED if mask is not None else cv2.TM_CCOEFF_NORMED
-        result_map = cv2.matchTemplate(screenshot, template, method, mask=mask)
+
+        # Color-invariant templates: match on HSV Saturation channel so that
+        # differently-colored variants (e.g. red X vs orange X) all match.
+        if template_name in self.COLOR_INVARIANT_TEMPLATES and mask is None:
+            scr_s = cv2.cvtColor(screenshot, cv2.COLOR_BGR2HSV)[:, :, 1]
+            tmpl_s = cv2.cvtColor(template, cv2.COLOR_BGR2HSV)[:, :, 1]
+            result_map = cv2.matchTemplate(scr_s, tmpl_s, cv2.TM_CCOEFF_NORMED)
+        else:
+            method = cv2.TM_CCORR_NORMED if mask is not None else cv2.TM_CCOEFF_NORMED
+            result_map = cv2.matchTemplate(screenshot, template, method, mask=mask)
+
         is_strict = template_name in self.STRICT_COLOR_TEMPLATES
         effective_threshold = (
             self.STRICT_COLOR_CCOEFF_THRESHOLD if is_strict
