@@ -2,10 +2,47 @@
 
 import os
 
+
+def _find_nox_adb() -> str:
+    """Auto-detect nox_adb.exe from common install locations and registry."""
+    # Common candidate paths across C/D drives
+    candidates = [
+        r"D:\Program Files\Nox\bin\nox_adb.exe",
+        r"C:\Program Files\Nox\bin\nox_adb.exe",
+        r"D:\Program Files (x86)\Nox\bin\nox_adb.exe",
+        r"C:\Program Files (x86)\Nox\bin\nox_adb.exe",
+    ]
+    for path in candidates:
+        if os.path.isfile(path):
+            return path
+
+    # Fallback: check Windows registry for Nox install path
+    try:
+        import winreg
+        for reg_path in [
+            r"SOFTWARE\BigNox\VirtualBox Guest Additions",
+            r"SOFTWARE\WOW6432Node\BigNox\VirtualBox Guest Additions",
+        ]:
+            try:
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, reg_path) as key:
+                    install_dir, _ = winreg.QueryValueEx(key, "InstallDir")
+                    # install_dir is typically "X:\Program Files\Nox\bin\"
+                    adb_path = os.path.join(install_dir, "nox_adb.exe")
+                    if os.path.isfile(adb_path):
+                        return adb_path
+            except (FileNotFoundError, OSError):
+                continue
+    except ImportError:
+        pass  # winreg not available (non-Windows)
+
+    # Ultimate fallback: return legacy hardcoded path
+    return r"D:\Program Files\Nox\bin\nox_adb.exe"
+
+
 # ADB - Nox emulator default port
 ADB_HOST = "127.0.0.1"
 ADB_PORT = 62001
-NOX_ADB_PATH = r"D:\Program Files\Nox\bin\nox_adb.exe"
+NOX_ADB_PATH = _find_nox_adb()
 
 # Screenshot
 SCREENSHOT_DIR = "data/screenshots"
