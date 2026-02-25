@@ -454,5 +454,189 @@ class TestMultiStepScript(unittest.TestCase):
         assert runner.is_done()
 
 
+class TestTapTextNth(unittest.TestCase):
+    """Tests for tap_text with nth parameter (selecting specific match)."""
+
+    def test_tap_text_nth_negative_one_selects_last(self):
+        """tap_text with nth=-1 taps the LAST matching text."""
+        runner, ocr, _ = _make_runner()
+        ocr.find_all_text.return_value = [
+            FakeOCRResult("领取", 0.9, (800, 400, 900, 440), (850, 420)),
+            FakeOCRResult("领取", 0.9, (800, 600, 900, 640), (850, 620)),
+            FakeOCRResult("领取", 0.9, (800, 800, 900, 840), (850, 820)),
+        ]
+        runner.load([
+            {"tap_text": ["领取", -1], "delay": 1.0, "description": "tap last"}
+        ])
+        result = runner.execute_one(_make_screenshot())
+        assert len(result) == 1
+        assert result[0]["y"] == 820, "Should tap the last (bottom-most) match"
+
+    def test_tap_text_nth_positive_selects_indexed(self):
+        """tap_text with nth=2 taps the second match (1-indexed)."""
+        runner, ocr, _ = _make_runner()
+        ocr.find_all_text.return_value = [
+            FakeOCRResult("领取", 0.9, (800, 400, 900, 440), (850, 420)),
+            FakeOCRResult("领取", 0.9, (800, 600, 900, 640), (850, 620)),
+            FakeOCRResult("领取", 0.9, (800, 800, 900, 840), (850, 820)),
+        ]
+        runner.load([
+            {"tap_text": ["领取", 2], "delay": 1.0, "description": "tap 2nd"}
+        ])
+        result = runner.execute_one(_make_screenshot())
+        assert len(result) == 1
+        assert result[0]["y"] == 620, "Should tap the 2nd match"
+
+    def test_tap_text_default_nth_selects_first(self):
+        """tap_text without nth defaults to first match."""
+        runner, ocr, _ = _make_runner()
+        ocr.find_all_text.return_value = [
+            FakeOCRResult("领取", 0.9, (800, 400, 900, 440), (850, 420)),
+            FakeOCRResult("领取", 0.9, (800, 800, 900, 840), (850, 820)),
+        ]
+        runner.load([
+            {"tap_text": ["领取"], "delay": 1.0, "description": "tap first"}
+        ])
+        result = runner.execute_one(_make_screenshot())
+        assert len(result) == 1
+        assert result[0]["y"] == 420, "Should tap the first match"
+
+
+class TestClaimQuestRewardScript(unittest.TestCase):
+    """Integration test for the claim_quest_reward quest script from game.json."""
+
+    def _load_claim_quest_reward(self):
+        """Load the claim_quest_reward steps from game.json."""
+        import json
+        import os
+        game_json_path = os.path.join(
+            os.path.dirname(__file__),
+            "games", "westgame2", "game.json"
+        )
+        with open(game_json_path, encoding="utf-8") as f:
+            game = json.load(f)
+        for script in game["quest_scripts"]:
+            if script["name"] == "claim_quest_reward":
+                return script["steps"]
+        raise RuntimeError("claim_quest_reward not found in game.json")
+
+    def test_claim_quest_reward_uses_last_match(self):
+        """Verify the 领取 steps use nth=-1 (last match)."""
+        steps = self._load_claim_quest_reward()
+        claim_steps = [
+            s for s in steps
+            if "tap_text" in s and s["tap_text"][0] == "领取"
+        ]
+        assert len(claim_steps) == 3, "Should have 3 领取 steps (章节/成长/每日)"
+        for s in claim_steps:
+            assert len(s["tap_text"]) == 2, f"Missing nth param: {s}"
+            assert s["tap_text"][1] == -1, (
+                f"nth should be -1 (last match): {s}"
+            )
+
+    def test_claim_quest_reward_full_flow(self):
+        """Run through the full claim_quest_reward script."""
+        runner, ocr, tm = _make_runner()
+        steps = self._load_claim_quest_reward()
+        runner.load(steps)
+
+        # Step 1: ensure_main_city — mock as already at main city
+        tm.match_one.side_effect = lambda ss, name: (
+            FakeMatchResult("scenes/main_city", 0.9, 50, 50, (0, 0, 100, 100))
+            if name == "scenes/main_city" else None
+        )
+        result = runner.execute_one(_make_screenshot())
+        assert result == []
+        assert runner.step_index == 1
+
+        # Step 2: tap_xy [70, 1600] — quest scroll icon
+        result = runner.execute_one(_make_screenshot())
+        assert len(result) == 1
+        assert result[0]["x"] == 70
+        assert result[0]["y"] == 1600
+        assert runner.step_index == 2
+
+        # Step 3: tap_text 章节任务
+        ocr.find_all_text.return_value = [
+            FakeOCRResult("章节任务", 0.9, (300, 200, 500, 240), (400, 220)),
+            FakeOCRResult("成长任务", 0.9, (300, 250, 500, 290), (400, 270)),
+            FakeOCRResult("每日任务", 0.9, (300, 300, 500, 340), (400, 320)),
+        ]
+        result = runner.execute_one(_make_screenshot())
+        assert len(result) == 1
+        assert runner.step_index == 3
+
+        # Step 4: tap_text ["领取", -1] — last 领取 (repeat 10, optional)
+        # First iteration: 3 领取 buttons visible, should tap last one (y=820)
+        ocr.find_all_text.return_value = [
+            FakeOCRResult("领取", 0.9, (800, 400, 900, 440), (850, 420)),
+            FakeOCRResult("领取", 0.9, (800, 600, 900, 640), (850, 620)),
+            FakeOCRResult("领取", 0.9, (800, 800, 900, 840), (850, 820)),
+        ]
+        result = runner.execute_one(_make_screenshot())
+        assert len(result) == 1
+        assert result[0]["y"] == 820, "Should tap LAST 领取 (bottom-most)"
+        assert runner.step_index == 3  # still on this step (repeat)
+
+        # Second iteration: still matches
+        result = runner.execute_one(_make_screenshot())
+        assert len(result) == 1
+        assert result[0]["y"] == 820
+
+        # Third iteration: no more 领取 — optional step skips
+        ocr.find_all_text.return_value = [
+            FakeOCRResult("已完成", 0.9, (800, 400, 900, 440), (850, 420)),
+        ]
+        result = runner.execute_one(_make_screenshot())
+        assert result == []  # optional step skipped
+        assert runner.step_index == 4  # advanced to 成长任务
+
+        # Step 5: tap_text 成长任务
+        ocr.find_all_text.return_value = [
+            FakeOCRResult("成长任务", 0.9, (300, 250, 500, 290), (400, 270)),
+        ]
+        result = runner.execute_one(_make_screenshot())
+        assert len(result) == 1
+        assert runner.step_index == 5
+
+        # Step 6: tap_text ["领取", -1] — no 领取 found, optional skip
+        ocr.find_all_text.return_value = []
+        result = runner.execute_one(_make_screenshot())
+        assert result == []
+        assert runner.step_index == 6
+
+        # Step 7: tap_text 每日任务
+        ocr.find_all_text.return_value = [
+            FakeOCRResult("每日任务", 0.9, (300, 300, 500, 340), (400, 320)),
+        ]
+        result = runner.execute_one(_make_screenshot())
+        assert len(result) == 1
+        assert runner.step_index == 7
+
+        # Step 8: tap_text ["领取", -1] — one 领取, then disappears
+        ocr.find_all_text.return_value = [
+            FakeOCRResult("领取", 0.9, (800, 500, 900, 540), (850, 520)),
+        ]
+        result = runner.execute_one(_make_screenshot())
+        assert len(result) == 1
+        assert result[0]["y"] == 520
+        # Gone next time
+        ocr.find_all_text.return_value = []
+        result = runner.execute_one(_make_screenshot())
+        assert result == []
+        assert runner.step_index == 8
+
+        # Step 9: tap_icon close_x
+        tm.match_one_multi.return_value = [
+            FakeMatchResult("buttons/close_x", 0.9, 1020, 200,
+                            (990, 170, 1050, 230))
+        ]
+        result = runner.execute_one(_make_screenshot())
+        assert len(result) == 1
+        assert result[0]["x"] == 1020
+        assert runner.is_done()
+        assert not runner.is_aborted()
+
+
 if __name__ == "__main__":
     unittest.main()
