@@ -841,12 +841,39 @@ class CLI:
             if score > 0:
                 print(f"  {s}: {score:.3f}")
 
+    @staticmethod
+    def _match_quest_rule(rules: list[dict], quest_text: str) -> tuple[dict | None, re.Match | None]:
+        """Match quest text against rules by name (bilingual) or regex pattern.
+
+        Tries exact name match first (case-insensitive), then falls back
+        to regex pattern matching.  Returns (rule, regex_match) or
+        (None, None) when nothing matches.
+        """
+        quest_lower = quest_text.lower().strip()
+
+        # Pass 1: match by name (exact, case-insensitive)
+        for rule in rules:
+            name = rule.get("name", "")
+            if name and name.lower() == quest_lower:
+                return rule, None
+
+        # Pass 2: match by regex pattern
+        for rule in rules:
+            pattern = rule.get("pattern", "")
+            if pattern:
+                m = re.search(pattern, quest_text)
+                if m:
+                    return rule, m
+
+        return None, None
+
     def cmd_quest(self, args: list[str]) -> None:
         """Execute a quest script by matching quest text against rules."""
         if not args:
-            print("Usage: quest <quest text in natural language>")
+            print("Usage: quest <quest text or script name>")
             print("Example: quest 派遣3名镇民")
             print("Example: quest 将驻防站升至2级")
+            print("Example: quest claim_quest_reward")
             return
 
         quest_text = " ".join(args)
@@ -855,28 +882,24 @@ class CLI:
             print("No quest scripts loaded.")
             return
 
-        # Find matching rule
-        matched_rule = None
-        matched_match = None
-        for rule in rules:
-            pattern = rule.get("pattern", "")
-            if pattern:
-                m = re.search(pattern, quest_text)
-                if m:
-                    matched_rule = rule
-                    matched_match = m
-                    break
+        # Find matching rule (by name or pattern)
+        matched_rule, matched_match = self._match_quest_rule(rules, quest_text)
 
         if matched_rule is None:
             print(f"No rule matches '{quest_text}'")
-            print("Available patterns:")
+            print("Available scripts:")
             for rule in rules:
-                print(f"  {rule.get('pattern', '?')}  ({len(rule.get('steps', []))} steps)")
+                name = rule.get("name", "")
+                pattern = rule.get("pattern", "?")
+                label = f"{name}  /{pattern}/" if name else f"/{pattern}/"
+                print(f"  {label}  ({len(rule.get('steps', []))} steps)")
             return
 
-        pattern = matched_rule["pattern"]
+        rule_name = matched_rule.get("name", "")
+        pattern = matched_rule.get("pattern", "")
         steps = matched_rule.get("steps", [])
-        print(f"Matched rule: '{pattern}' ({len(steps)} steps)")
+        header = f"{rule_name}  /{pattern}/" if rule_name else f"/{pattern}/"
+        print(f"Matched rule: {header} ({len(steps)} steps)")
 
         # Create standalone runner
         from brain.quest_script import QuestScriptRunner
@@ -889,10 +912,11 @@ class CLI:
         runner.load(steps)
 
         # Extract named regex groups into runner variables
-        for name, value in matched_match.groupdict().items():
-            if value is not None:
-                runner.variables[name] = value
-                print(f"  Extracted: {name} = '{value}'")
+        if matched_match:
+            for var_name, value in matched_match.groupdict().items():
+                if value is not None:
+                    runner.variables[var_name] = value
+                    print(f"  Extracted: {var_name} = '{value}'")
 
         max_iterations = len(steps) * 10  # safety limit
         iteration = 0
@@ -943,9 +967,11 @@ class CLI:
             return
         print(f"{len(rules)} quest script(s):")
         for i, rule in enumerate(rules):
+            name = rule.get("name", "")
             pattern = rule.get("pattern", "?")
             steps = rule.get("steps", [])
-            print(f"  {i + 1}. /{pattern}/  ({len(steps)} steps)")
+            header = f"{name}  /{pattern}/" if name else f"/{pattern}/"
+            print(f"  {i + 1}. {header}  ({len(steps)} steps)")
             for j, step in enumerate(steps):
                 desc = step.get("description", "")
                 verb = "?"
@@ -960,7 +986,7 @@ class CLI:
     def cmd_quest_test(self, args: list[str]) -> None:
         """Dry-run a quest script — show steps without executing."""
         if not args:
-            print("Usage: quest_test <quest text>")
+            print("Usage: quest_test <quest text or script name>")
             return
 
         quest_text = " ".join(args)
@@ -969,20 +995,17 @@ class CLI:
             print("No quest scripts loaded.")
             return
 
-        matched_rule = None
-        for rule in rules:
-            pattern = rule.get("pattern", "")
-            if pattern and re.search(pattern, quest_text):
-                matched_rule = rule
-                break
+        matched_rule, _ = self._match_quest_rule(rules, quest_text)
 
         if matched_rule is None:
             print(f"No rule matches '{quest_text}'")
             return
 
-        pattern = matched_rule["pattern"]
+        name = matched_rule.get("name", "")
+        pattern = matched_rule.get("pattern", "?")
         steps = matched_rule.get("steps", [])
-        print(f"Matched: /{pattern}/  ({len(steps)} steps)")
+        header = f"{name}  /{pattern}/" if name else f"/{pattern}/"
+        print(f"Matched: {header}  ({len(steps)} steps)")
         print(f"Dry run for quest text: '{quest_text}'")
         print()
         for i, step in enumerate(steps):

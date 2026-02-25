@@ -82,6 +82,7 @@
 
   "quest_scripts": [
     {
+      "name": "dispatch_citizens",
       "pattern": "派遣.*镇民",
       "steps": [
         {"tap_xy": [790, 1815], "delay": 1.0, "description": "切换到镇民标签"},
@@ -89,6 +90,7 @@
       ]
     },
     {
+      "name": "pass_expedition",
       "pattern": "通过.*远征",
       "steps": [
         {"ensure_main_city": [], "delay": 1.5, "description": "确认在主城界面"},
@@ -101,6 +103,7 @@
       ]
     },
     {
+      "name": "claim_quest_reward",
       "pattern": "领取任务奖励",
       "steps": [
         {"ensure_main_city": [], "delay": 1.5, "description": "确认在主城界面"},
@@ -115,6 +118,7 @@
       ]
     },
     {
+      "name": "claim_expedition_reward",
       "pattern": "领取远征奖励",
       "steps": [
         {"ensure_main_city": [], "delay": 1.5, "description": "确认在主城界面"},
@@ -126,6 +130,7 @@
       ]
     },
     {
+      "name": "upgrade_building",
       "pattern": "将(?P<building>.+?)[升至].*级",
       "steps": [
         {"ensure_main_city": [], "delay": 1.5, "description": "确认在主城界面"},
