@@ -236,6 +236,15 @@ class GameBot:
         h, w = img.shape[:2]
         print(f"Connected. Screen: {w}x{h}")
 
+        # Verify emulator resolution matches expected 1080x1920
+        if w != config.SCREEN_WIDTH or h != config.SCREEN_HEIGHT:
+            print(
+                f"ERROR: 模拟器分辨率不匹配！"
+                f"当前: {w}x{h}，要求: {config.SCREEN_WIDTH}x{config.SCREEN_HEIGHT}。"
+                f"请在 Nox 模拟器设置中将分辨率调整为 {config.SCREEN_WIDTH}x{config.SCREEN_HEIGHT}（竖屏）后重试。"
+            )
+            return False
+
         # Load persisted state
         saved = self.persistence.load()
         if saved:
