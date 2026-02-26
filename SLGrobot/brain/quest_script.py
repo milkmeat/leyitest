@@ -19,6 +19,7 @@ Step fields:
   optional    bool, default False  — if True, skip step when target not found
                                      (instead of waiting/retrying forever)
   description str                  — human-readable label
+  region      [x1,y1,x2,y2]      — (tap_text only) restrict OCR matching area
 """
 
 import ast
@@ -290,13 +291,39 @@ class QuestScriptRunner:
         target_text = self._subst(str(args[0]))
         nth = int(args[1]) if len(args) > 1 else 1
 
-        # Find all matching text regions
-        all_results = self.ocr.find_all_text(screenshot)
+        # Optional region: [x1, y1, x2, y2] — crop screenshot and run
+        # a dedicated OCR pass on just that area (better detection for
+        # small text).  Coordinates are mapped back to full-screen space.
+        region = step.get("region")
+        if region:
+            rx1, ry1, rx2, ry2 = int(region[0]), int(region[1]), int(region[2]), int(region[3])
+            h, w = screenshot.shape[:2]
+            rx1, ry1 = max(0, rx1), max(0, ry1)
+            rx2, ry2 = min(w, rx2), min(h, ry2)
+            crop = screenshot[ry1:ry2, rx1:rx2]
+            all_results = self.ocr.find_all_text(crop)
+            # Shift coordinates back to full-screen space
+            for r in all_results:
+                r.center = (r.center[0] + rx1, r.center[1] + ry1)
+                r.bbox = (r.bbox[0] + rx1, r.bbox[1] + ry1,
+                          r.bbox[2] + rx1, r.bbox[3] + ry1)
+        else:
+            all_results = self.ocr.find_all_text(screenshot)
+
         target_lower = target_text.lower()
         matches = [
             r for r in all_results
             if target_lower in r.text.lower()
         ]
+
+        # Sort by reading order (top-to-bottom, left-to-right) so nth
+        # indexing is spatially consistent: 1 = first, -1 = last.
+        matches.sort(key=lambda r: (r.center[1], r.center[0]))
+        if len(matches) > 1:
+            logger.debug(
+                f"Quest script: tap_text '{target_text}' found {len(matches)} "
+                f"matches (sorted): {[(m.text, m.center) for m in matches]}"
+            )
 
         if not matches or (nth > 0 and nth > len(matches)):
             logger.debug(
@@ -305,8 +332,8 @@ class QuestScriptRunner:
             )
             return None
 
-        # nth=-1 means last match, positive is 1-indexed
-        match = matches[nth - 1] if nth > 0 else matches[-1]
+        # nth=1 means topmost match, -1 means bottommost match
+        match = matches[nth - 1] if nth > 0 else matches[nth]
         cx, cy = match.center
         cx += step.get("offset_x", 0)
         cy += step.get("offset_y", 0)
