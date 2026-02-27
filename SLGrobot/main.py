@@ -489,6 +489,17 @@ class GameBot:
                         time.sleep(0.5)
                         continue
 
+                    # 3d. Shooting mini-game — swipe right to aim and wait
+                    #     for the mini-game to finish automatically.
+                    if scene == "shoot_mini_game":
+                        logger.info(
+                            "Shooting mini-game detected — swiping right "
+                            "150px and waiting 10s"
+                        )
+                        self.adb.swipe(540, 1490, 690, 1490, 300)
+                        time.sleep(10)
+                        continue
+
                     # 4. Handle popups immediately (skip when quest workflow
                     #    is active — workflow handles its own popups like
                     #    battle result screens with "返回领地")

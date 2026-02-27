@@ -19,7 +19,8 @@
 
   "scenes": [
     "main_city", "world_map", "hero", "hero_recruit", "hero_upgrade",
-    "battle", "popup", "exit_dialog", "loading", "story_dialogue", "unknown"
+    "battle", "popup", "exit_dialog", "loading", "story_dialogue",
+    "shoot_mini_game", "unknown"
   ],
 
   "known_tasks": [

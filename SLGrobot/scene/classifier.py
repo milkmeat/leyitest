@@ -37,7 +37,7 @@ class SceneClassifier:
     SCENES = [
         "main_city", "world_map", "hero", "hero_recruit", "hero_upgrade",
         "battle", "popup", "exit_dialog", "loading", "story_dialogue",
-        "unknown",
+        "shoot_mini_game", "unknown",
     ]
 
     # Bottom-right corner region (ratio of screen) for main_city/world_map detection
