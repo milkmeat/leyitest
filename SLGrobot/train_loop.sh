@@ -63,6 +63,28 @@ while true; do
         fi
     done
 
+    sleep 10
+
+    # --- 领取奖励 ---
+    REWARDS=("领取任务奖励" "领取远征奖励")
+    for i in "${!REWARDS[@]}"; do
+        reward="${REWARDS[$i]}"
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] 执行: quest ${reward}"
+
+        python main.py quest "${reward}"
+        exit_code=$?
+
+        if [ $exit_code -ne 0 ]; then
+            echo "[$(date '+%Y-%m-%d %H:%M:%S')] 警告: quest ${reward} 退出码 ${exit_code}"
+        else
+            echo "[$(date '+%Y-%m-%d %H:%M:%S')] 完成: quest ${reward}"
+        fi
+
+        if [ $i -lt $((${#REWARDS[@]} - 1)) ]; then
+            sleep 10
+        fi
+    done
+
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] 第${cycle}轮完成，等待 70 分钟..."
     cycle=$((cycle + 1))
     sleep $INTERVAL
