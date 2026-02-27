@@ -52,7 +52,7 @@ SCREEN_WIDTH = 1080
 SCREEN_HEIGHT = 1920
 
 # Timing
-LOOP_INTERVAL = 2.0          # seconds between main loop iterations
+LOOP_INTERVAL = 0.5          # seconds between main loop iterations
 
 # Template matching
 TEMPLATE_MATCH_THRESHOLD = 0.8

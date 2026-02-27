@@ -43,11 +43,17 @@ class PopupFilter:
         self.template_matcher = template_matcher
         self.adb = adb
         self.ocr = ocr
-        self._close_templates = (
+        candidates = (
             game_profile.popup_close_templates
             if game_profile and game_profile.popup_close_templates
             else self.CLOSE_TEMPLATES
         )
+        # Filter to only templates that exist in the cache
+        available = set(template_matcher.get_template_names())
+        self._close_templates = [t for t in candidates if t in available]
+        skipped = [t for t in candidates if t not in available]
+        if skipped:
+            logger.debug(f"Popup close templates not in cache (skipped): {skipped}")
         self._close_texts = (
             game_profile.popup_close_texts
             if game_profile and game_profile.popup_close_texts
@@ -74,12 +80,30 @@ class PopupFilter:
         """Detect and close popup. Returns True if popup was found and closed.
 
         Strategy (ordered by reliability):
+        0. Quick dark overlay pre-check — skip expensive OCR/template
+           matching if the screen doesn't look like a popup at all
         1. OCR text search for dismiss buttons (most reliable — finds actual
            text buttons like "返回领地", "确定", "关闭")
         2. Template match for close/X button images
         3. Search all button templates in the popup area
         4. Fallback: tap outside the popup area (top-left corner)
         """
+        # Strategy 0: Quick pre-check — if no dark overlay and no close
+        # templates found, this isn't a popup. Skip expensive OCR.
+        has_overlay = self._has_dark_overlay(screenshot)
+        if not has_overlay and not self._close_templates:
+            return False
+        if not has_overlay:
+            # No dark overlay — only try template match (fast), skip OCR
+            for name in self._close_templates:
+                match = self.template_matcher.match_one(screenshot, name)
+                if match is not None:
+                    logger.info(f"Popup: tapping close button '{name}' at ({match.x}, {match.y})")
+                    self.adb.tap(match.x, match.y)
+                    time.sleep(0.3)
+                    return True
+            return False
+
         # Strategy 1: OCR text search for dismiss buttons (e.g. "返回领地")
         # Tried first because template matching can false-positive on
         # non-close elements (e.g. ">" chevron arrows).

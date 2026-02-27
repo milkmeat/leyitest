@@ -588,14 +588,14 @@ class QuestScriptRunner:
             return [{"type": "tap", "x": 500, "y": 600, "delay": delay,
                      "reason": "quest_script:ensure_main_city:tap_blank"}]
 
-        # Fallback: Android BACK key
+        # Fallback: tap blank area to dismiss panels
         logger.info(
-            f"Quest script: ensure_main_city — pressing BACK key, "
+            f"Quest script: ensure_main_city — tapping blank area, "
             f"attempt {self._ensure_retries}"
         )
         self._suppress_advance = True
-        return [{"type": "key_event", "keycode": 4, "delay": delay,
-                 "reason": f"quest_script:ensure_main_city:back_key"}]
+        return [{"type": "tap", "x": 500, "y": 100, "delay": delay,
+                 "reason": "quest_script:ensure_main_city:tap_blank"}]
 
     def _do_ensure_world_map(self, step: dict, screenshot: np.ndarray,
                              delay: float,
@@ -678,14 +678,14 @@ class QuestScriptRunner:
             return [{"type": "tap", "x": 500, "y": 600, "delay": delay,
                      "reason": "quest_script:ensure_world_map:tap_blank"}]
 
-        # Fallback: Android BACK key
+        # Fallback: tap blank area to dismiss panels
         logger.info(
-            f"Quest script: ensure_world_map — pressing BACK key, "
+            f"Quest script: ensure_world_map — tapping blank area, "
             f"attempt {self._ensure_retries}"
         )
         self._suppress_advance = True
-        return [{"type": "key_event", "keycode": 4, "delay": delay,
-                 "reason": "quest_script:ensure_world_map:back_key"}]
+        return [{"type": "tap", "x": 500, "y": 100, "delay": delay,
+                 "reason": "quest_script:ensure_world_map:tap_blank"}]
 
     def _do_tap_primary_button(self, step: dict, screenshot: np.ndarray,
                                delay: float,

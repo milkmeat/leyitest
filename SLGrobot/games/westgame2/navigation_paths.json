@@ -24,7 +24,7 @@
     {"type": "wait", "seconds": 1}
   ],
   "main_city": [
-    {"type": "key_event", "keycode": 4, "delay": 0.5, "reason": "nav_back_to_city"},
+    {"type": "tap", "x": 500, "y": 100, "delay": 0.5, "reason": "nav_tap_blank_to_city"},
     {"type": "wait", "seconds": 1},
     {"type": "tap", "target_text": "城镇", "fallback_grid": "D3", "delay": 1.0, "reason": "nav_main_city"},
     {"type": "wait", "seconds": 1}

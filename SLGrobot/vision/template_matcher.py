@@ -120,7 +120,7 @@ class TemplateMatcher:
         """
         entry = self._cache.get(template_name)
         if entry is None:
-            logger.warning(f"Template not found in cache: {template_name}")
+            logger.debug(f"Template not found in cache: {template_name}")
             return None
 
         if template_name in self.PREFER_TOP_RIGHT_TEMPLATES:

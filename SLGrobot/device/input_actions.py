@@ -33,9 +33,9 @@ class InputActions:
         self.adb.tap(cx, cy)
 
     def press_back(self) -> None:
-        """Press the Android back button."""
-        logger.debug("Press back")
-        self.adb.key_event(4)
+        """Tap blank area to dismiss panels (replaces Android BACK key)."""
+        logger.debug("Tap blank area (500, 100) to go back")
+        self.adb.tap(500, 100)
 
     def press_home(self) -> None:
         """Press the Android home button."""

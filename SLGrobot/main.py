@@ -272,6 +272,7 @@ class GameBot:
         try:
             while max_loops == 0 or loop < max_loops:
                 loop += 1
+                self.game_logger.loop_count = loop
                 logger.info(f"=== Loop {loop} ===")
 
                 try:
@@ -314,7 +315,10 @@ class GameBot:
                     scene = self.classifier.classify(screenshot)
                     logger.info(f"Scene: {scene}")
 
-                    # 2a. Stuck detection
+                    # 2a. Save loop screenshot (one per loop)
+                    self.game_logger.save_loop_screenshot(screenshot, scene)
+
+                    # 2b. Stuck detection
                     scene_history.append(scene)
                     # Keep history bounded
                     if len(scene_history) > config.STUCK_MAX_SAME_SCENE * 2:
@@ -324,8 +328,7 @@ class GameBot:
                         action = self.stuck_recovery.recover(self.adb)
                         self.game_logger.log_recovery(
                             "stuck_recovery",
-                            f"Stuck on '{scene}', recovery action: {action}",
-                            screenshot
+                            f"Stuck on '{scene}', recovery action: {action}"
                         )
                         scene_history.clear()
                         time.sleep(config.LOOP_INTERVAL)
@@ -335,15 +338,9 @@ class GameBot:
                     if len(scene_history) >= 2 and scene_history[-1] != scene_history[-2]:
                         self.stuck_recovery.reset()
 
-                    # 2c. Update state on main_city before finger check so
-                    #     quest bar info is always extracted even when a
-                    #     tutorial finger is present and causes a continue.
-                    if scene == "main_city":
-                        self.state_tracker.update(screenshot, scene)
-
-                    # 2d. Tutorial finger detection — highest priority so
-                    #     fingers are tapped even on popup/unknown scenes
-                    #     and during all quest workflow phases.
+                    # 2c. Tutorial finger detection — highest priority.
+                    #     Runs BEFORE state update so finger can be tapped
+                    #     within the ~3s it stays on screen.
                     finger, flip = self.quest_workflow._detect_tutorial_finger(
                         screenshot
                     )
@@ -394,8 +391,17 @@ class GameBot:
                                     f"Quest workflow fast-started to EXECUTE_QUEST "
                                     f"(quest bar finger), quest='{quest_text}'"
                                 )
-                        time.sleep(0.8)
+                        # Short delay for game scene transition after tap.
+                        # Too short → next screenshot still shows old scene.
+                        # Too long → next finger may disappear (~3s window).
+                        # 0.8s + ~1s ADB screenshot ≈ 1.8s post-tap capture.
+                        time.sleep(1.5)
                         continue
+
+                    # 2d. Update state on main_city (after finger check so
+                    #     the expensive OCR doesn't delay finger detection).
+                    if scene == "main_city":
+                        self.state_tracker.update(screenshot, scene)
 
                     # 3. Exit dialog — game's pause/quit overlay.
                     #    Must be handled before popup/loading/quest workflow
@@ -423,8 +429,9 @@ class GameBot:
                             )
                             self.adb.tap(back.x, back.y)
                         else:
-                            self.adb.key_event(4)  # BACK
-                        time.sleep(1.0)
+                            logger.info("Hero list: no back arrow, tapping blank area")
+                            self.adb.tap(500, 100)
+                        time.sleep(0.5)
                         continue
 
                     if scene == "hero_recruit":
@@ -435,7 +442,7 @@ class GameBot:
                                 f"at ({primary.x}, {primary.y})"
                             )
                             self.adb.tap(primary.x, primary.y)
-                            time.sleep(2.0)
+                            time.sleep(0.8)
                         # Back arrow to exit
                         back = self.template_matcher.match_one(
                             screenshot, "buttons/back_arrow"
@@ -447,8 +454,9 @@ class GameBot:
                             )
                             self.adb.tap(back.x, back.y)
                         else:
-                            self.adb.key_event(4)  # BACK
-                        time.sleep(1.0)
+                            logger.info("Hero recruit: no back arrow, tapping blank area")
+                            self.adb.tap(500, 100)
+                        time.sleep(0.5)
                         continue
 
                     # 3c. Hero upgrade — click primary button if no red
@@ -463,7 +471,7 @@ class GameBot:
                                 f"primary button at ({primary.x}, {primary.y})"
                             )
                             self.adb.tap(primary.x, primary.y)
-                            time.sleep(2.0)
+                            time.sleep(0.8)
                         else:
                             reason = (
                                 "red text (insufficient resources)"
@@ -476,8 +484,9 @@ class GameBot:
                         if back:
                             self.adb.tap(back.x, back.y)
                         else:
-                            self.adb.key_event(4)
-                        time.sleep(1.0)
+                            logger.info("Hero upgrade: no back arrow, tapping blank area")
+                            self.adb.tap(500, 100)
+                        time.sleep(0.5)
                         continue
 
                     # 4. Handle popups immediately (skip when quest workflow
@@ -491,11 +500,11 @@ class GameBot:
                             self._execute_validated_actions(
                                 [reward_action], scene, screenshot
                             )
-                            time.sleep(0.5)
+                            time.sleep(0.3)
                             continue
                         logger.info("Popup detected, attempting to close")
                         self.popup_filter.handle(screenshot)
-                        time.sleep(0.5)
+                        time.sleep(0.3)
                         continue
 
                     # 4. Story dialogue — try skip button first, then
@@ -529,7 +538,7 @@ class GameBot:
                             else:
                                 logger.info("Story dialogue: tapping center")
                                 self.adb.tap(540, 960)
-                        time.sleep(0.5)
+                        time.sleep(0.3)
                         continue
 
                     # 5. Skip loading screens (but check for buttons first —
@@ -544,7 +553,7 @@ class GameBot:
                                 f"likely a reward popup, tapping"
                             )
                             self.adb.tap(primary.x, primary.y)
-                            time.sleep(0.8)
+                            time.sleep(0.3)
                         else:
                             logger.info("Loading screen, waiting...")
                             time.sleep(config.LOOP_INTERVAL)
@@ -568,49 +577,73 @@ class GameBot:
                         time.sleep(config.LOOP_INTERVAL)
                         continue
 
-                    # 6. Handle unknown scenes with counter + BACK escape
+                    # 6. Handle unknown scenes with escalating escape
+                    #    Level 1 (counter 1): back_arrow / popup / BACK
+                    #    Level 2 (counter 2): primary button / BACK
+                    #    Level 3 (counter >=3): tap blank area to reach main city
                     if scene == "unknown":
                         consecutive_unknown_scenes += 1
                         logger.info(
                             f"Unknown scene ({consecutive_unknown_scenes} consecutive)"
                         )
 
-                        # Try primary button first (building panels
-                        # with blue/green action buttons like 建造/升级).
-                        primary = find_primary_button(screenshot)
-                        if primary is not None:
-                            logger.info(
-                                f"Unknown scene: primary button "
-                                f"at ({primary.x}, {primary.y})"
+                        handled = False
+
+                        # Try back arrow template (building panels have
+                        # a visible back arrow in the top-left corner).
+                        if not handled:
+                            back = self.template_matcher.match_one(
+                                screenshot, "buttons/back_arrow"
                             )
-                            self.adb.tap(primary.x, primary.y)
-                            consecutive_unknown_scenes = 0
-                        elif consecutive_unknown_scenes >= 3:
-                            # Stuck in unknown scene — press BACK to escape
-                            logger.warning(
-                                "3+ consecutive unknown scenes, pressing BACK to escape"
-                            )
-                            self.adb.key_event(4)
-                            self.game_logger.log_recovery(
-                                "unknown_scene_escape",
-                                f"Pressed BACK after {consecutive_unknown_scenes} "
-                                f"consecutive unknown scenes",
-                                screenshot,
-                            )
-                            consecutive_unknown_scenes = 0
-                        elif self.popup_filter.handle(screenshot):
-                            # Some popup-like screens (e.g. first-purchase
-                            # reward) lack the dark border that the classifier
-                            # uses for popup detection.  Try the popup filter
-                            # before pressing BACK.
+                            if back:
+                                logger.info(
+                                    f"Unknown scene: back arrow "
+                                    f"at ({back.x}, {back.y})"
+                                )
+                                self.adb.tap(back.x, back.y)
+                                handled = True
+                                consecutive_unknown_scenes = 0
+
+                        # Try primary button (blue/green action buttons).
+                        if not handled:
+                            primary = find_primary_button(screenshot)
+                            if primary is not None:
+                                logger.info(
+                                    f"Unknown scene: primary button "
+                                    f"at ({primary.x}, {primary.y})"
+                                )
+                                self.adb.tap(primary.x, primary.y)
+                                handled = True
+                                consecutive_unknown_scenes = 0
+
+                        # Try popup filter (skips OCR if no dark overlay).
+                        if not handled and self.popup_filter.handle(screenshot):
                             logger.info(
                                 "Unknown scene handled by popup filter"
                             )
+                            handled = True
                             consecutive_unknown_scenes = 0
-                        else:
-                            # Press BACK to escape unknown scene
-                            self.adb.key_event(4)
+
+                        # Escalation: tap blank area to navigate to main city
+                        if not handled and consecutive_unknown_scenes >= 3:
+                            logger.warning(
+                                f"Unknown scene stuck ({consecutive_unknown_scenes}x),"
+                                f" tapping blank area to escape"
+                            )
+                            self.adb.tap(500, 100)
+                            self.game_logger.log_recovery(
+                                "unknown_scene_escape",
+                                f"Tapped blank area after "
+                                f"{consecutive_unknown_scenes} "
+                                f"consecutive unknown scenes"
+                            )
                             consecutive_unknown_scenes = 0
+
+                        # Fallback: tap blank area (don't reset counter
+                        # to allow escalation on next iteration).
+                        if not handled:
+                            logger.info("Unknown scene: tapping blank area")
+                            self.adb.tap(500, 100)
 
                         time.sleep(config.LOOP_INTERVAL)
                         continue
@@ -749,32 +782,13 @@ class GameBot:
                     logger.warning(f"Action rejected by validator: {action}")
                     continue
 
-            before_screenshot = pre_screenshot
-
             # Execute with retry
             if self.runner.execute_with_retry(
                 action, max_retries=config.ACTION_MAX_RETRIES
             ):
                 self.game_state.record_action(action)
                 success_count += 1
-
-                # Check result
-                try:
-                    post_screenshot = self.screenshot_mgr.capture()
-                    ok = self.checker.check(action, pre_scene, post_screenshot)
-                    if not ok:
-                        logger.warning(
-                            f"Result check failed for action: {action.get('type')}"
-                        )
-                    pre_screenshot = post_screenshot
-                except Exception as e:
-                    logger.warning(f"Result check error: {e}")
-                    post_screenshot = None
-
-                # Log action with before/after screenshots
-                self.game_logger.log_action_with_screenshots(
-                    action, before_screenshot, post_screenshot
-                )
+                self.game_logger.log_action(action)
             else:
                 logger.warning(f"Action execution failed: {action}")
 

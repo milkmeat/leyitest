@@ -80,33 +80,25 @@ class ResultChecker:
                    post_screenshot: np.ndarray) -> bool:
         """Verify tap action effect.
 
-        Success indicators:
-        - Scene changed (e.g., navigated to new screen)
-        - Target text/button disappeared (was tapped successfully)
-        - A new expected element appeared
+        For coordinate-based taps (no target_text), skip expensive checks
+        since they always succeed. Only do full verification for text-based
+        targeting where element disappearance confirms success.
         """
         target_text = action.get("target_text")
-        post_scene = self.classifier.classify(post_screenshot)
 
-        # Scene change is a strong success signal
-        if post_scene != pre_scene:
+        # Fast path: coordinate-based taps always succeed
+        if not target_text:
+            return True
+
+        # Text-based tap: check if target disappeared
+        element = self.detector.locate(post_screenshot, target_text,
+                                       methods=["template", "ocr"])
+        if element is None:
             logger.debug(
-                f"Tap result: scene changed {pre_scene} -> {post_scene}"
+                f"Tap result: target '{target_text}' disappeared"
             )
             return True
 
-        # Check if tapped element disappeared
-        if target_text:
-            element = self.detector.locate(post_screenshot, target_text,
-                                           methods=["template", "ocr"])
-            if element is None:
-                logger.debug(
-                    f"Tap result: target '{target_text}' disappeared"
-                )
-                return True
-
-        # If nothing changed, the tap may not have had visible effect
-        # This isn't necessarily a failure (e.g., tapping a toggle)
         logger.debug("Tap result: no visible change detected (may still be OK)")
         return True
 
@@ -143,14 +135,7 @@ class ResultChecker:
     def _check_key_event(self, action: dict, pre_scene: str,
                          post_screenshot: np.ndarray) -> bool:
         """Verify key event: scene should change (e.g., BACK closes popup)."""
-        keycode = action.get("keycode", 4)
         post_scene = self.classifier.classify(post_screenshot)
-
-        if keycode == 4:  # BACK key
-            # BACK should close popup or change scene
-            if pre_scene == "popup" and post_scene != "popup":
-                logger.debug("Key BACK result: popup closed")
-                return True
 
         # Scene change is success
         if post_scene != pre_scene:

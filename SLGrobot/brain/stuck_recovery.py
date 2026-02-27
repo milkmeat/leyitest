@@ -54,10 +54,10 @@ class StuckRecovery:
         self._recovery_count += 1
 
         if self._level == 1:
-            logger.warning("Stuck recovery level 1: pressing BACK")
+            logger.warning("Stuck recovery level 1: tapping blank area")
             if controller:
-                controller.key_event(4)  # KEYCODE_BACK
-            return "back"
+                controller.tap(500, 100)
+            return "tap_blank"
 
         if self._level == 2:
             logger.warning("Stuck recovery level 2: tapping screen center")

@@ -57,6 +57,8 @@ class SceneClassifier:
 
         Returns scene name string.
         """
+        import time
+        t0 = time.time()
         scores = self.get_confidence(screenshot)
 
         best_scene = "unknown"
@@ -67,7 +69,8 @@ class SceneClassifier:
                 best_score = score
                 best_scene = scene
 
-        logger.debug(f"Scene classified: {best_scene} (score={best_score:.3f})")
+        dt = time.time() - t0
+        logger.info(f"Scene classified: {best_scene} (score={best_score:.3f}, {dt:.2f}s)")
         return best_scene
 
     def get_confidence(self, screenshot: np.ndarray) -> dict[str, float]:

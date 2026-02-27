@@ -245,7 +245,7 @@ class QuestWorkflow:
             logger.info("Quest workflow: hero list scene, backing out")
             return [{
                 "type": "tap", "x": 83, "y": 1820,
-                "delay": 1.0, "reason": "hero:back_arrow",
+                "delay": 0.5, "reason": "hero:back_arrow",
             }]
 
         # Hero recruit — tap primary button once, then back arrow to leave.
@@ -256,11 +256,11 @@ class QuestWorkflow:
             if primary is not None:
                 actions.append({
                     "type": "tap", "x": primary.x, "y": primary.y,
-                    "delay": 2.0, "reason": "hero_recruit:primary_button",
+                    "delay": 0.8, "reason": "hero_recruit:primary_button",
                 })
             actions.append({
                 "type": "tap", "x": 83, "y": 1820,
-                "delay": 1.0, "reason": "hero_recruit:back_arrow",
+                "delay": 0.5, "reason": "hero_recruit:back_arrow",
             })
             return actions
 
@@ -278,13 +278,13 @@ class QuestWorkflow:
                 )
                 actions.append({
                     "type": "tap", "x": primary.x, "y": primary.y,
-                    "delay": 2.0, "reason": "hero_upgrade:primary_button",
+                    "delay": 0.8, "reason": "hero_upgrade:primary_button",
                 })
             else:
                 logger.info("Quest workflow: hero_upgrade, insufficient resources, backing out")
             actions.append({
                 "type": "tap", "x": 83, "y": 1820,
-                "delay": 1.0, "reason": "hero_upgrade:back_arrow",
+                "delay": 0.5, "reason": "hero_upgrade:back_arrow",
             })
             return actions
 
@@ -351,7 +351,7 @@ class QuestWorkflow:
                     "type": "tap",
                     "x": element.x,
                     "y": element.y,
-                    "delay": 1.0,
+                    "delay": 0.5,
                     "reason": f"quest_workflow:navigate_main_city:{target_text}",
                 }]
 
@@ -366,7 +366,7 @@ class QuestWorkflow:
                 "type": "tap",
                 "x": match.x,
                 "y": match.y,
-                "delay": 1.0,
+                "delay": 0.5,
                 "reason": "quest_workflow:navigate_main_city:back_arrow",
             }]
 
@@ -380,7 +380,7 @@ class QuestWorkflow:
             "type": "tap",
             "x": tx,
             "y": ty,
-            "delay": 1.0,
+            "delay": 0.5,
             "reason": "quest_workflow:navigate_main_city:tap_blank",
         }]
 
@@ -445,7 +445,7 @@ class QuestWorkflow:
             "type": "tap",
             "x": cx,
             "y": cy,
-            "delay": 1.5,
+            "delay": 0.8,
             "reason": f"quest_workflow:click_quest:{info.current_quest_text}",
         }]
 
@@ -504,7 +504,7 @@ class QuestWorkflow:
                             "type": "tap",
                             "x": cx,
                             "y": cy,
-                            "delay": 1.5,
+                            "delay": 0.8,
                             "reason": f"quest_workflow:dismiss_popup:{dismiss_text}",
                         }]
 
@@ -529,7 +529,7 @@ class QuestWorkflow:
                         "type": "tap",
                         "x": match.x,
                         "y": match.y,
-                        "delay": 1.0,
+                        "delay": 0.5,
                         "reason": "quest_workflow:dismiss_popup:close_x",
                     }]
 
@@ -551,7 +551,7 @@ class QuestWorkflow:
                     "type": "tap",
                     "x": tap_x,
                     "y": tap_y,
-                    "delay": 1.5,
+                    "delay": 0.8,
                     "reason": "quest_workflow:popup_follow_finger",
                 }]
 
@@ -571,7 +571,7 @@ class QuestWorkflow:
                     "type": "tap",
                     "x": best.x,
                     "y": best.y,
-                    "delay": 1.5,
+                    "delay": 0.8,
                     "reason": f"quest_workflow:popup_action:{best.name}",
                 }]
 
@@ -587,7 +587,7 @@ class QuestWorkflow:
                     "type": "tap",
                     "x": primary.x,
                     "y": primary.y,
-                    "delay": 1.5,
+                    "delay": 0.8,
                     "reason": "quest_workflow:popup_primary_button",
                 }]
 
@@ -608,7 +608,7 @@ class QuestWorkflow:
                         "type": "tap",
                         "x": match.x,
                         "y": match.y,
-                        "delay": 1.0,
+                        "delay": 0.5,
                         "reason": "quest_workflow:dismiss_popup:back_arrow",
                     }]
                 h, w = screenshot.shape[:2]
@@ -620,7 +620,7 @@ class QuestWorkflow:
                     "type": "tap",
                     "x": w // 2,
                     "y": int(h * 0.95),
-                    "delay": 1.0,
+                    "delay": 0.5,
                     "reason": "quest_workflow:dismiss_popup:tap_blank",
                 }]
 
@@ -635,7 +635,7 @@ class QuestWorkflow:
                     "type": "tap",
                     "x": w // 2,
                     "y": h // 2,
-                    "delay": 1.0,
+                    "delay": 0.5,
                     "reason": "quest_workflow:dismiss_popup:center_tap",
                 }]
 
@@ -646,7 +646,7 @@ class QuestWorkflow:
                 "type": "tap",
                 "x": w // 2,
                 "y": h // 2,
-                "delay": 1.0,
+                "delay": 0.5,
                 "reason": "quest_workflow:dismiss_popup:final_center_tap",
             }]
 
@@ -665,7 +665,7 @@ class QuestWorkflow:
                 "type": "tap",
                 "x": tap_x,
                 "y": tap_y,
-                "delay": 1.0,
+                "delay": 0.5,
                 "reason": "quest_workflow:follow_tutorial_finger",
             }]
 
@@ -733,7 +733,7 @@ class QuestWorkflow:
                 "type": "tap",
                 "x": best.x,
                 "y": best.y,
-                "delay": 1.5,
+                "delay": 0.8,
                 "reason": f"quest_workflow:action_button:{best.name}",
             }]
         # Color-based primary button detection (blue/green action buttons
@@ -751,7 +751,7 @@ class QuestWorkflow:
                 "type": "tap",
                 "x": primary.x,
                 "y": primary.y,
-                "delay": 1.5,
+                "delay": 0.8,
                 "reason": "quest_workflow:primary_button",
             }]
         elif self._exhausted_buttons:
@@ -774,7 +774,7 @@ class QuestWorkflow:
                 "type": "tap",
                 "x": match.x,
                 "y": match.y,
-                "delay": 1.0,
+                "delay": 0.5,
                 "reason": "quest_workflow:dismiss_unknown_popup:close_x",
             }]
 
@@ -785,7 +785,7 @@ class QuestWorkflow:
             "type": "tap",
             "x": w // 2,
             "y": h // 2,
-            "delay": 1.0,
+            "delay": 0.5,
             "reason": "quest_workflow:execute_tap_center",
         }]
 
@@ -829,7 +829,7 @@ class QuestWorkflow:
                             "type": "tap",
                             "x": cx,
                             "y": cy,
-                            "delay": 1.5,
+                            "delay": 0.8,
                             "reason": f"quest_workflow:return_dismiss_popup:{dismiss_text}",
                         }]
 
@@ -854,7 +854,7 @@ class QuestWorkflow:
                         "type": "tap",
                         "x": match.x,
                         "y": match.y,
-                        "delay": 1.0,
+                        "delay": 0.5,
                         "reason": "quest_workflow:return_dismiss_popup:close_x",
                     }]
 
@@ -873,7 +873,7 @@ class QuestWorkflow:
                         "type": "tap",
                         "x": match.x,
                         "y": match.y,
-                        "delay": 1.0,
+                        "delay": 0.5,
                         "reason": "quest_workflow:return_dismiss_popup:back_arrow",
                     }]
                 h, w = screenshot.shape[:2]
@@ -885,7 +885,7 @@ class QuestWorkflow:
                     "type": "tap",
                     "x": w // 2,
                     "y": int(h * 0.95),
-                    "delay": 1.0,
+                    "delay": 0.5,
                     "reason": "quest_workflow:return_dismiss_popup:tap_blank",
                 }]
 
@@ -899,7 +899,7 @@ class QuestWorkflow:
                     "type": "tap",
                     "x": w // 2,
                     "y": h // 2,
-                    "delay": 1.0,
+                    "delay": 0.5,
                     "reason": "quest_workflow:return_dismiss_popup:center_tap",
                 }]
 
@@ -910,7 +910,7 @@ class QuestWorkflow:
                 "type": "tap",
                 "x": w // 2,
                 "y": int(h * 0.95),
-                "delay": 1.0,
+                "delay": 0.5,
                 "reason": "quest_workflow:return_dismiss_popup:tap_blank_reset",
             }]
 
@@ -937,7 +937,7 @@ class QuestWorkflow:
                     "type": "tap",
                     "x": primary.x,
                     "y": primary.y,
-                    "delay": 1.5,
+                    "delay": 0.8,
                     "reason": "quest_workflow:check_primary_button",
                 }]
 
@@ -998,7 +998,7 @@ class QuestWorkflow:
             "type": "tap",
             "x": cx,
             "y": cy,
-            "delay": 2.0,
+            "delay": 1.0,
             "reason": "quest_workflow:claim_reward",
         }]
 
@@ -1028,7 +1028,7 @@ class QuestWorkflow:
                             "type": "tap",
                             "x": cx,
                             "y": cy,
-                            "delay": 2.0,
+                            "delay": 1.0,
                             "reason": f"quest_workflow:verify_claim:{claim_text}",
                         }]
 
@@ -1199,7 +1199,8 @@ class QuestWorkflow:
     def _detect_tutorial_finger(self, screenshot: np.ndarray) -> tuple:
         """Detect tutorial finger with two-stage validation.
 
-        Checks all orientation variants (normal, h-flip, v-flip, hv-flip).
+        Checks orientation variants in priority order (normal first).
+        Returns immediately on first verified match for speed.
 
         Stage 1: TM_CCORR_NORMED with mask (sensitive, may have false positives).
         Stage 2: Masked NCC on opaque pixels only (pattern-based,
@@ -1209,7 +1210,6 @@ class QuestWorkflow:
             (match, flip_type) where match is an Element or None,
             and flip_type is one of "normal", "hflip", "vflip", "hvflip".
         """
-        verified = []
         for cache_name, _, flip_type in self._FINGER_VARIANTS:
             match = self.element_detector.locate(
                 screenshot, cache_name, methods=["template"]
@@ -1239,15 +1239,9 @@ class QuestWorkflow:
                 f"Finger {flip_type} verified: conf={match.confidence:.3f}, "
                 f"ncc={ncc:.3f} at ({match.x}, {match.y})"
             )
-            verified.append((match, flip_type))
+            return match, flip_type
 
-        if not verified:
-            return None, "normal"
-
-        # Pick highest confidence; prefer "normal" on ties.
-        verified.sort(key=lambda v: (v[0].confidence, v[1] == "normal"),
-                      reverse=True)
-        return verified[0]
+        return None, "normal"
 
     def _find_back_arrow(self, screenshot: np.ndarray):
         """Detect back_arrow button (left arrow) via template matching.

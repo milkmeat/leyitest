@@ -225,12 +225,12 @@ class RuleEngine:
                     "reason": "navigate_to_city",
                 })
             else:
-                # Fallback: press back button
+                # Fallback: tap blank area to dismiss panels
                 actions.append({
-                    "type": "key_event",
-                    "keycode": 4,
-                    "delay": 1.0,
-                    "reason": "press_back_to_city",
+                    "type": "tap",
+                    "x": 500, "y": 100,
+                    "delay": 0.5,
+                    "reason": "tap_blank_to_city",
                 })
 
         return actions
@@ -293,13 +293,13 @@ class RuleEngine:
                     "reason": f"close_popup:ocr:{text}",
                 }]
 
-        # Stage 3: fallback — press BACK key
-        logger.info("close_popup: no button found, falling back to BACK key")
+        # Stage 3: fallback — tap blank area to dismiss
+        logger.info("close_popup: no button found, tapping blank area")
         return [{
-            "type": "key_event",
-            "keycode": 4,
+            "type": "tap",
+            "x": 500, "y": 100,
             "delay": 0.5,
-            "reason": "close_popup:back_key_fallback",
+            "reason": "close_popup:tap_blank_fallback",
         }]
 
     def _plan_check_mail(self, task: Task, screenshot: np.ndarray,

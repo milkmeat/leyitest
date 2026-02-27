@@ -62,6 +62,7 @@ python test_hardening.py    # Stuck recovery, reconnect, retry
 - **LLM is stateless** — game state is persisted in `data/game_state.json` and passed as context to each LLM call
 - **Scene-first dispatch** — every auto-loop iteration starts with scene classification before deciding what to do
 - **Validate-execute-confirm pipeline** — `ActionValidator` → `ActionRunner` (with retry) → `ResultChecker`
+- **禁止使用 Android 系统 BACK 键 (keycode=4)** — SLG 游戏的建筑面板和内嵌 UI 不响应系统 BACK 键，使用 BACK 会导致循环卡死。退出策略优先级：① 点击 `buttons/back_arrow` 模板 ② 点击空白区域 `(500, 100)` ③ 使用 `popup_filter` 关闭弹窗
 
 ### Action Dict Protocol
 
@@ -72,7 +73,7 @@ All modules exchange actions as dicts with a `type` field:
 {"type": "navigate", "target": "barracks"}  # follows navigation_paths.json
 {"type": "swipe", "x1": 640, "y1": 500, "x2": 640, "y2": 200, "duration_ms": 300}
 {"type": "wait", "seconds": 2}
-{"type": "key_event", "keycode": 4}  # 4=BACK, 3=HOME
+{"type": "key_event", "keycode": 3}  # 3=HOME (BACK 键已禁用，见下方规则)
 {"type": "find_building", "building_name": "兵营", "scroll": True, "max_attempts": 3}
 ```
 

@@ -67,7 +67,7 @@ class ActionRunner:
             True if action executed successfully.
         """
         action_type = action.get("type", "")
-        delay = action.get("delay", 0.5)
+        delay = action.get("delay", 0.3)
         reason = action.get("reason", "")
 
         logger.info(f"ActionRunner: {action_type} reason='{reason}'")
@@ -98,7 +98,7 @@ class ActionRunner:
         return success
 
     def execute_with_retry(self, action: dict, max_retries: int = 3,
-                            retry_delay: float = 1.0) -> bool:
+                            retry_delay: float = 0.3) -> bool:
         """Execute an action with retry on failure.
 
         Args:
@@ -270,7 +270,7 @@ class ActionRunner:
 
     def _execute_key_event(self, action: dict) -> bool:
         """Execute an Android key event."""
-        keycode = action.get("keycode", 4)  # Default: BACK
+        keycode = action.get("keycode", 3)  # Default: HOME (BACK key disabled)
         self.adb.key_event(keycode)
         logger.debug(f"Key event: {keycode}")
         return True

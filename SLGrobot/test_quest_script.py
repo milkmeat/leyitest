@@ -286,8 +286,9 @@ class TestEnsureMainCity(unittest.TestCase):
         runner.load([{"ensure_main_city": [], "delay": 1.0}])
         result = runner.execute_one(_make_screenshot())
         assert len(result) == 1
-        assert result[0]["type"] == "key_event"
-        assert result[0]["keycode"] == 4
+        assert result[0]["type"] == "tap"
+        assert result[0]["x"] == 500
+        assert result[0]["y"] == 100
         assert runner.step_index == 0
 
     def test_abort_after_max_retries(self):
