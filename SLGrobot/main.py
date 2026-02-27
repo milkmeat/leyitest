@@ -313,7 +313,7 @@ class GameBot:
 
                     # 2. Classify scene
                     scene = self.classifier.classify(screenshot)
-                    logger.info(f"Scene: {scene}")
+                    logger.debug(f"Scene: {scene}")
 
                     # 2a. Save loop screenshot (one per loop)
                     self.game_logger.save_loop_screenshot(screenshot, scene)

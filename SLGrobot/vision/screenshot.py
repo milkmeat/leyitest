@@ -27,7 +27,7 @@ class ScreenshotManager:
     def capture(self) -> np.ndarray:
         """Capture and return current screenshot. Also stores in history."""
         t0 = time.time()
-        logger.info("ADB screenshot starting")
+        logger.debug("ADB screenshot starting")
         image = self.adb.screenshot()
         dt = time.time() - t0
         logger.info(f"ADB screenshot done ({dt:.2f}s)")
