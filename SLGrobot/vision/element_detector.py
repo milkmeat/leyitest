@@ -285,6 +285,40 @@ def find_primary_button(screenshot: np.ndarray,
     return result
 
 
+def find_purple_button(screenshot: np.ndarray,
+                       min_area: int = 10000,
+                       min_aspect: float = 1.8,
+                       max_aspect: float = 8.0,
+                       y_fraction: float = 0.4,
+                       ) -> Element | None:
+    """Detect a purple action button only (招募, 免费).
+
+    Unlike :func:`find_primary_button` which checks all color tiers,
+    this function only looks for purple buttons (HSV 130-160).
+
+    Returns:
+        Element with center coordinates and bbox, or None if not found.
+    """
+    sh, sw = screenshot.shape[:2]
+    hsv = cv2.cvtColor(screenshot, cv2.COLOR_BGR2HSV)
+    gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray, 50, 150)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
+    y_min = int(sh * y_fraction)
+
+    purple_mask = cv2.inRange(hsv, (130, 80, 100), (160, 255, 255))
+    purple_mask = cv2.morphologyEx(purple_mask, cv2.MORPH_CLOSE, kernel)
+
+    result = _pick_bottommost_button(purple_mask, sh, sw, y_min,
+                                     min_area, min_aspect, max_aspect,
+                                     edges=edges)
+    if result is not None:
+        logger.debug(
+            f"Purple button: ({result.x}, {result.y}) bbox={result.bbox}"
+        )
+    return result
+
+
 def _pick_bottommost_button(mask: np.ndarray,
                             sh: int, sw: int, y_min: int,
                             min_area: int, min_aspect: float,

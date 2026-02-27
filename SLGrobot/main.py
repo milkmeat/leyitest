@@ -38,7 +38,7 @@ from vision.template_matcher import TemplateMatcher
 from vision.ocr_locator import OCRLocator
 from vision.grid_overlay import GridOverlay
 from vision.building_finder import BuildingFinder, parse_city_layout
-from vision.element_detector import ElementDetector, find_primary_button, has_red_text_near_button
+from vision.element_detector import ElementDetector, find_primary_button, find_purple_button, has_red_text_near_button
 from scene.classifier import SceneClassifier
 from scene.popup_filter import PopupFilter
 from state.game_state import GameState
@@ -441,27 +441,27 @@ class GameBot:
                         continue
 
                     if scene == "hero_recruit":
-                        primary = find_primary_button(screenshot)
-                        if primary is not None:
+                        purple = find_purple_button(screenshot)
+                        if purple is not None:
                             logger.info(
-                                f"Hero recruit: tapping primary button "
-                                f"at ({primary.x}, {primary.y})"
+                                f"Hero recruit: tapping purple button "
+                                f"at ({purple.x}, {purple.y})"
                             )
-                            self.adb.tap(primary.x, primary.y)
-                            time.sleep(0.8)
-                        # Back arrow to exit
-                        back = self.template_matcher.match_one(
-                            screenshot, "buttons/back_arrow"
-                        )
-                        if back:
-                            logger.info(
-                                f"Hero recruit: tapping back arrow "
-                                f"at ({back.x}, {back.y})"
-                            )
-                            self.adb.tap(back.x, back.y)
+                            self.adb.tap(purple.x, purple.y)
                         else:
-                            logger.info("Hero recruit: no back arrow, tapping blank area")
-                            self.tap_blank_area()
+                            # No purple button — exit via back arrow
+                            back = self.template_matcher.match_one(
+                                screenshot, "buttons/back_arrow"
+                            )
+                            if back:
+                                logger.info(
+                                    f"Hero recruit: no purple button, "
+                                    f"tapping back arrow at ({back.x}, {back.y})"
+                                )
+                                self.adb.tap(back.x, back.y)
+                            else:
+                                logger.info("Hero recruit: no purple button, tapping blank area")
+                                self.tap_blank_area()
                         time.sleep(0.5)
                         continue
 

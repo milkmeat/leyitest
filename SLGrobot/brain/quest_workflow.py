@@ -16,7 +16,7 @@ import time
 import numpy as np
 
 from vision.quest_bar_detector import QuestBarDetector, QuestBarInfo
-from vision.element_detector import ElementDetector, find_primary_button, has_red_text_near_button
+from vision.element_detector import ElementDetector, find_primary_button, find_purple_button, has_red_text_near_button
 from vision.ocr_locator import is_on_colored_button
 from state.game_state import GameState
 from brain.quest_script import QuestScriptRunner
@@ -248,21 +248,20 @@ class QuestWorkflow:
                 "delay": 0.5, "reason": "hero:back_arrow",
             }]
 
-        # Hero recruit — tap primary button once, then back arrow to leave.
+        # Hero recruit — tap purple button if present, otherwise back out.
         if scene == "hero_recruit":
-            logger.info("Quest workflow: hero_recruit scene, tapping + leaving")
-            actions = []
-            primary = find_primary_button(screenshot)
-            if primary is not None:
-                actions.append({
-                    "type": "tap", "x": primary.x, "y": primary.y,
-                    "delay": 0.8, "reason": "hero_recruit:primary_button",
-                })
-            actions.append({
+            purple = find_purple_button(screenshot)
+            if purple is not None:
+                logger.info("Quest workflow: hero_recruit scene, tapping purple button")
+                return [{
+                    "type": "tap", "x": purple.x, "y": purple.y,
+                    "delay": 0.8, "reason": "hero_recruit:purple_button",
+                }]
+            logger.info("Quest workflow: hero_recruit scene, no purple button — backing out")
+            return [{
                 "type": "tap", "x": 83, "y": 1820,
                 "delay": 0.5, "reason": "hero_recruit:back_arrow",
-            })
-            return actions
+            }]
 
         # Hero upgrade — tap primary button if resources sufficient
         # (no red text), otherwise back out.
