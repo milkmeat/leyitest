@@ -211,14 +211,15 @@ def find_primary_button(screenshot: np.ndarray,
                         ) -> Element | None:
     """Detect the primary action button by HSV color filtering.
 
-    Uses a two-tier priority system:
-      Tier 1 (high): Blue / green buttons — always action buttons
-                     (建造, 升级, 前往, 下一个, 训练)
-      Tier 2 (low):  Gold / yellow buttons — reward / confirm buttons
-                     (领取, 全部领取, 确定)
+    Uses a three-tier priority system:
+      Tier 1 (high):   Blue / green buttons — always action buttons
+                       (建造, 升级, 前往, 下一个, 训练)
+      Tier 2 (medium): Purple buttons — special action buttons
+                       (招募, 免费)
+      Tier 3 (low):    Gold / yellow buttons — reward / confirm buttons
+                       (领取, 全部领取, 确定)
 
-    If any Tier 1 button is found, it wins regardless of position.
-    Tier 2 is only used when no Tier 1 exists.  Within each tier,
+    Higher-tier buttons win regardless of position.  Within each tier,
     the bottommost button is preferred.
 
     Args:
@@ -233,6 +234,8 @@ def find_primary_button(screenshot: np.ndarray,
     """
     sh, sw = screenshot.shape[:2]
     hsv = cv2.cvtColor(screenshot, cv2.COLOR_BGR2HSV)
+    gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray, 50, 150)
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
     y_min = int(sh * y_fraction)
 
@@ -243,7 +246,8 @@ def find_primary_button(screenshot: np.ndarray,
     tier1_mask = cv2.morphologyEx(tier1_mask, cv2.MORPH_CLOSE, kernel)
 
     result = _pick_bottommost_button(tier1_mask, sh, sw, y_min,
-                                     min_area, min_aspect, max_aspect)
+                                     min_area, min_aspect, max_aspect,
+                                     edges=edges)
     if result is not None:
         logger.debug(
             f"Primary button (blue/green): ({result.x}, {result.y}) "
@@ -251,13 +255,28 @@ def find_primary_button(screenshot: np.ndarray,
         )
         return result
 
-    # Tier 2: Gold / yellow (lower priority, only when no blue/green)
+    # Tier 2: Purple (medium priority, only when no blue/green)
+    purple_mask = cv2.inRange(hsv, (130, 80, 100), (160, 255, 255))
+    purple_mask = cv2.morphologyEx(purple_mask, cv2.MORPH_CLOSE, kernel)
+
+    result = _pick_bottommost_button(purple_mask, sh, sw, y_min,
+                                     min_area, min_aspect, max_aspect,
+                                     edges=edges)
+    if result is not None:
+        logger.debug(
+            f"Primary button (purple): ({result.x}, {result.y}) "
+            f"bbox={result.bbox}"
+        )
+        return result
+
+    # Tier 3: Gold / yellow (lowest priority)
     # Higher S threshold separates gold buttons from parchment backgrounds.
     gold_mask = cv2.inRange(hsv, (10, 150, 150), (30, 255, 255))
     gold_mask = cv2.morphologyEx(gold_mask, cv2.MORPH_CLOSE, kernel)
 
     result = _pick_bottommost_button(gold_mask, sh, sw, y_min,
-                                     min_area, min_aspect, max_aspect)
+                                     min_area, min_aspect, max_aspect,
+                                     edges=edges)
     if result is not None:
         logger.debug(
             f"Primary button (gold): ({result.x}, {result.y}) "
@@ -269,8 +288,16 @@ def find_primary_button(screenshot: np.ndarray,
 def _pick_bottommost_button(mask: np.ndarray,
                             sh: int, sw: int, y_min: int,
                             min_area: int, min_aspect: float,
-                            max_aspect: float) -> Element | None:
-    """Pick the bottommost button-shaped contour from a binary mask."""
+                            max_aspect: float,
+                            edges: np.ndarray | None = None,
+                            min_edge_density: float = 0.06,
+                            ) -> Element | None:
+    """Pick the bottommost button-shaped contour from a binary mask.
+
+    When *edges* (Canny edge map) is provided, candidates whose bounding
+    box has an edge-pixel density below *min_edge_density* are rejected.
+    Real buttons have crisp borders; background gradients (e.g. sky) do not.
+    """
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL,
                                    cv2.CHAIN_APPROX_SIMPLE)
     best = None
@@ -291,6 +318,17 @@ def _pick_bottommost_button(mask: np.ndarray,
         cy = y + h // 2
         if cy < y_min:
             continue
+
+        # Reject regions that lack clear edges (gradient backgrounds)
+        if edges is not None:
+            edge_roi = edges[y:y+h, x:x+w]
+            density = np.count_nonzero(edge_roi) / max(edge_roi.size, 1)
+            if density < min_edge_density:
+                logger.debug(
+                    f"Rejected contour at ({x+w//2}, {cy}): "
+                    f"edge density {density:.3f} < {min_edge_density}"
+                )
+                continue
 
         if cy > best_y:
             best_y = cy

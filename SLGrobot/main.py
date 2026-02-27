@@ -213,6 +213,12 @@ class GameBot:
         self.game_state.quest_workflow_phase = "idle"
         self.game_state.quest_workflow_target = ""
 
+    def tap_blank_area(self) -> None:
+        """Tap blank areas at bottom then top to dismiss overlays."""
+        self.adb.tap(540, 1820)
+        time.sleep(0.3)
+        self.adb.tap(540, 100)
+
     def connect(self) -> bool:
         """Connect to emulator and load persisted state."""
         if not self.adb.connect():
@@ -430,7 +436,7 @@ class GameBot:
                             self.adb.tap(back.x, back.y)
                         else:
                             logger.info("Hero list: no back arrow, tapping blank area")
-                            self.adb.tap(500, 100)
+                            self.tap_blank_area()
                         time.sleep(0.5)
                         continue
 
@@ -455,7 +461,7 @@ class GameBot:
                             self.adb.tap(back.x, back.y)
                         else:
                             logger.info("Hero recruit: no back arrow, tapping blank area")
-                            self.adb.tap(500, 100)
+                            self.tap_blank_area()
                         time.sleep(0.5)
                         continue
 
@@ -485,7 +491,7 @@ class GameBot:
                             self.adb.tap(back.x, back.y)
                         else:
                             logger.info("Hero upgrade: no back arrow, tapping blank area")
-                            self.adb.tap(500, 100)
+                            self.tap_blank_area()
                         time.sleep(0.5)
                         continue
 
@@ -641,7 +647,7 @@ class GameBot:
                                 f"Unknown scene stuck ({consecutive_unknown_scenes}x),"
                                 f" tapping blank area to escape"
                             )
-                            self.adb.tap(500, 100)
+                            self.tap_blank_area()
                             self.game_logger.log_recovery(
                                 "unknown_scene_escape",
                                 f"Tapped blank area after "
@@ -654,7 +660,7 @@ class GameBot:
                         # to allow escalation on next iteration).
                         if not handled:
                             logger.info("Unknown scene: tapping blank area")
-                            self.adb.tap(500, 100)
+                            self.tap_blank_area()
 
                         time.sleep(config.LOOP_INTERVAL)
                         continue
