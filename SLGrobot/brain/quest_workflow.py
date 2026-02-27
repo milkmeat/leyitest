@@ -32,7 +32,7 @@ class QuestWorkflow:
         ensure_main_city - Navigate to main city if not there
         read_quest       - Detect quest bar, read quest name
         click_quest      - Click quest text to jump to execution entry
-        execute_quest    - Execute quest (follow finger / LLM suggestions)
+        execute_quest    - Execute quest (follow finger / action buttons)
         return_to_city   - Navigate back to main city after execution
         check_completion - Check if quest has green check mark
         claim_reward     - Click quest text to claim reward
@@ -100,14 +100,12 @@ class QuestWorkflow:
 
     def __init__(self, quest_bar_detector: QuestBarDetector,
                  element_detector: ElementDetector,
-                 llm_planner,
                  game_state: GameState,
                  game_profile=None,
                  adb_controller=None,
                  screenshot_fn=None) -> None:
         self.quest_bar_detector = quest_bar_detector
         self.element_detector = element_detector
-        self.llm_planner = llm_planner
         self.game_state = game_state
 
         # Override button patterns from game profile
@@ -330,7 +328,7 @@ class QuestWorkflow:
         # Popup during ensure_main_city — likely a quest-related screen
         # opened by a tutorial finger tap.  Advance to EXECUTE_QUEST which
         # has comprehensive popup handling (dismiss buttons, close_x, finger,
-        # action buttons, LLM escalation).
+        # action buttons).
         if scene == "popup":
             logger.info(
                 "Quest workflow: popup during ensure_main_city, "
@@ -453,12 +451,12 @@ class QuestWorkflow:
 
     def _step_execute_quest(self, screenshot: np.ndarray,
                             scene: str) -> list[dict]:
-        """Execute the quest: follow tutorial finger or ask LLM.
+        """Execute the quest: follow tutorial finger or action buttons.
 
         Transitions:
         - tutorial finger detected -> tap fingertip (highest priority)
         - scene == main_city (no finger) -> CHECK_COMPLETION
-        - else -> ask LLM for guidance
+        - else -> tap action buttons or screen center
         - iterations exceeded -> RETURN_TO_CITY
         """
         self.execute_iterations += 1
@@ -641,22 +639,6 @@ class QuestWorkflow:
                     "reason": "quest_workflow:dismiss_popup:center_tap",
                 }]
 
-            # Level 3: ask LLM to analyze the popup
-            if self.llm_planner and self.llm_planner.api_key:
-                logger.info(
-                    f"Quest workflow: popup stuck ({self.popup_back_count}), "
-                    f"asking LLM for help"
-                )
-                self.popup_back_count = 0  # reset to avoid infinite LLM calls
-                try:
-                    actions = self.llm_planner.analyze_unknown_scene(
-                        screenshot, self.game_state
-                    )
-                    if actions:
-                        return actions
-                except Exception as e:
-                    logger.warning(f"Quest workflow: LLM popup analysis failed: {e}")
-
             # Final fallback: tap screen center
             h, w = screenshot.shape[:2]
             self.popup_back_count = 0
@@ -795,20 +777,6 @@ class QuestWorkflow:
                 "delay": 1.0,
                 "reason": "quest_workflow:dismiss_unknown_popup:close_x",
             }]
-
-        # Fallback: ask LLM for quest execution guidance
-        if self.llm_planner and self.llm_planner.api_key:
-            try:
-                actions = self.llm_planner.analyze_quest_execution(
-                    screenshot, self.target_quest_name, self.game_state
-                )
-                if actions:
-                    logger.info(
-                        f"Quest workflow: LLM suggested {len(actions)} actions"
-                    )
-                    return actions
-            except Exception as e:
-                logger.warning(f"Quest workflow: LLM analysis failed: {e}")
 
         # No guidance available, try tapping screen center as last resort
         h, w = screenshot.shape[:2]
@@ -1402,7 +1370,7 @@ class QuestWorkflow:
         iteration.
 
         Returns ``None`` when all steps are done or no rule matches,
-        letting the caller fall through to generic action buttons / LLM.
+        letting the caller fall through to generic action buttons.
         """
         if not self._quest_scripts or not self.target_quest_name:
             return None

@@ -393,7 +393,7 @@ def test_integration():
         persistence.save(gs2)
 
         # 8. Verify summary for LLM
-        summary = gs2.summary_for_llm()
+        summary = gs2.summary()
         assert "main_city" in summary
         assert "food" in summary or "10000" in summary
 

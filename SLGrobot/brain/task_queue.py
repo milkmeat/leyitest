@@ -36,7 +36,7 @@ class TaskQueue:
         logger.info(f"Task added: '{task.name}' priority={task.priority}")
 
     def add_tasks(self, tasks: list[Task]) -> None:
-        """Add multiple tasks (e.g. from LLM plan)."""
+        """Add multiple tasks at once."""
         for task in tasks:
             self._queue.append(task)
         self._queue.sort(key=lambda t: t.priority, reverse=True)

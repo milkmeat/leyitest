@@ -1,7 +1,7 @@
-"""Rule Engine - Rule-based task execution without LLM (<500ms).
+"""Rule Engine - Rule-based task execution (<500ms).
 
 Decomposes high-level tasks into action sequences using predefined rules.
-No LLM calls -- purely deterministic, pattern-matched logic.
+Purely deterministic, pattern-matched logic.
 """
 
 import json
@@ -24,7 +24,7 @@ class RuleEngine:
     Uses element detection to adapt actions to current screen state.
     """
 
-    # Tasks this engine can handle without LLM
+    # Tasks this engine can handle
     KNOWN_TASKS = {
         "collect_resources",
         "upgrade_building",

@@ -1,22 +1,20 @@
-"""SLGrobot - Main entry point with three-layer decision loop.
+"""SLGrobot - Main entry point with two-layer decision loop.
 
 Supports two modes:
   - Interactive CLI (default): manual game control
-  - Auto mode (--auto): autonomous three-layer decision loop (Phase 4)
+  - Auto mode (--auto): autonomous two-layer decision loop
 
-Three-layer decision loop:
-  1. Strategic Layer  - Claude LLM (~30min interval) for long-term planning
-  2. Tactical Layer   - Local rule engine (<500ms) decomposes tasks
-  3. Execution Layer  - CV + ADB (<100ms) screenshot -> detect -> tap
+Two-layer decision loop:
+  1. Tactical Layer   - Local rule engine (<500ms) decomposes tasks
+  2. Execution Layer  - CV + ADB (<100ms) screenshot -> detect -> tap
 
 Auto loop flow:
   screenshot -> classify scene ->
     popup   -> auto-close -> continue
     loading -> wait -> continue
-    unknown -> LLM analyze -> execute suggestions -> continue
+    unknown -> press BACK -> continue
     other   -> update game_state ->
       has_pending tasks -> rule_engine.plan(task) -> validate -> execute -> verify
-      no tasks + LLM due -> llm_planner.get_plan() -> add to queue -> continue
       no tasks           -> auto_handler.get_actions() -> execute
     -> persist state -> sleep -> repeat
 """
@@ -49,7 +47,6 @@ from state.persistence import StatePersistence
 from brain.task_queue import TaskQueue, Task
 from brain.auto_handler import AutoHandler
 from brain.rule_engine import RuleEngine
-from brain.llm_planner import LLMPlanner
 from brain.stuck_recovery import StuckRecovery
 from brain.quest_workflow import QuestWorkflow
 from executor.action_validator import ActionValidator
@@ -73,7 +70,6 @@ Commands:
   quest_rules                   List all quest scripts (name + pattern)
   quest_test <name or text>     Dry-run a quest script (show steps)
   auto [loops]                  Run auto loop (default: infinite)
-  llm                           Manually trigger LLM strategic consultation
   detect_finger                 Detect tutorial finger, print coords, save crop
   detect_close_x                Detect close_x button, print coords, save crop
   find_building <name>           Find building on city map and tap it
@@ -96,12 +92,11 @@ def parse_coord(s: str) -> tuple[int, int]:
 
 
 class GameBot:
-    """Main game bot with three-layer decision loop.
+    """Main game bot with two-layer decision loop.
 
     Layers:
-    1. Strategic (LLM):  llm_planner   - called every ~30min
-    2. Tactical (Rules): rule_engine    - called per task
-    3. Execution (ADB):  action_runner  - called per action
+    1. Tactical (Rules): rule_engine    - called per task
+    2. Execution (ADB):  action_runner  - called per action
 
     Validation pipeline: validator -> runner -> checker
     """
@@ -166,13 +161,6 @@ class GameBot:
             self.detector, self.game_state, nav_paths_file,
             game_profile=game_profile,
         )
-        self.llm_planner = LLMPlanner(
-            api_key=config.LLM_API_KEY,
-            model=config.LLM_MODEL,
-            grid_overlay=self.grid,
-            game_profile=game_profile,
-        )
-
         # Building finder (optional, depends on city_layout config)
         self.building_finder: BuildingFinder | None = None
         if game_profile and game_profile.city_layout:
@@ -217,7 +205,6 @@ class GameBot:
         self.quest_workflow = QuestWorkflow(
             quest_bar_detector=self.state_tracker.quest_bar_detector,
             element_detector=self.detector,
-            llm_planner=self.llm_planner,
             game_state=self.game_state,
             game_profile=game_profile,
             adb_controller=self.adb,
@@ -253,23 +240,16 @@ class GameBot:
         else:
             print("Starting with fresh state")
 
-        # Report LLM availability
-        if config.LLM_API_KEY:
-            print(f"LLM enabled: {config.LLM_PROVIDER}/{config.LLM_VISION_MODEL}")
-        else:
-            print("LLM disabled (no API key configured)")
-
         return True
 
     def auto_loop(self, max_loops: int = 0) -> None:
-        """Run the autonomous three-layer decision loop with error recovery.
+        """Run the autonomous two-layer decision loop with error recovery.
 
         Decision hierarchy:
         1. Popup/loading -> handle immediately (auto layer)
-        2. Unknown scene  -> consult LLM for scene analysis
+        2. Unknown scene  -> press BACK to escape
         3. Pending tasks   -> rule engine plans, executor runs with validation
-        4. LLM consult due -> get strategic plan, add tasks to queue
-        5. Nothing to do   -> auto-handler scans for opportunistic actions
+        4. Nothing to do   -> auto-handler scans for opportunistic actions
 
         Hardening (Phase 5):
         - ADB reconnect on disconnection
@@ -622,29 +602,13 @@ class GameBot:
                             # Some popup-like screens (e.g. first-purchase
                             # reward) lack the dark border that the classifier
                             # uses for popup detection.  Try the popup filter
-                            # before the more expensive LLM call.
+                            # before pressing BACK.
                             logger.info(
                                 "Unknown scene handled by popup filter"
                             )
                             consecutive_unknown_scenes = 0
-                        elif config.LLM_API_KEY:
-                            actions = self.llm_planner.analyze_unknown_scene(
-                                screenshot, self.game_state
-                            )
-                            if actions:
-                                self._execute_validated_actions(
-                                    actions, scene, screenshot
-                                )
-                                # Check if scene changed after LLM suggestion
-                                try:
-                                    post = self.screenshot_mgr.capture()
-                                    post_scene = self.classifier.classify(post)
-                                    if post_scene != "unknown":
-                                        consecutive_unknown_scenes = 0
-                                except Exception:
-                                    pass
                         else:
-                            # No LLM — press BACK immediately
+                            # Press BACK to escape unknown scene
                             self.adb.key_event(4)
                             consecutive_unknown_scenes = 0
 
@@ -659,8 +623,7 @@ class GameBot:
                         self.state_tracker.update(screenshot, scene)
 
                     # 7.5 Quest workflow has highest priority — start it
-                    #     when quest bar is visible, before LLM tasks or
-                    #     strategic consultation can take over.
+                    #     when quest bar is visible.
                     if (not self.quest_workflow.is_active()
                             and scene == "main_city"
                             and self.game_state.quest_bar_visible
@@ -700,15 +663,6 @@ class GameBot:
                             elif task.status == "running":
                                 self.task_queue.mark_failed(task)
 
-                    elif self.llm_planner.should_consult(self.game_state):
-                        logger.info("LLM consultation due, requesting strategic plan...")
-                        tasks = self.llm_planner.get_plan(screenshot, self.game_state)
-                        if tasks:
-                            self.task_queue.add_tasks(tasks)
-                            logger.info(f"LLM added {len(tasks)} tasks to queue")
-                        self.persistence.save(self.game_state)
-                        time.sleep(config.LOOP_INTERVAL)
-                        continue
                     else:
                         actions = self.auto_handler.get_actions(
                             screenshot, self.game_state
@@ -826,26 +780,13 @@ class GameBot:
 
         return success_count
 
-    def consult_llm(self) -> list[Task]:
-        """Manually trigger LLM strategic consultation.
-
-        Returns:
-            List of tasks added to queue.
-        """
-        screenshot = self.screenshot_mgr.capture()
-        tasks = self.llm_planner.get_plan(screenshot, self.game_state)
-        if tasks:
-            self.task_queue.add_tasks(tasks)
-        return tasks
-
     def _log_status(self) -> None:
         """Log current status summary."""
         gs = self.game_state
         logger.info(
             f"Status: scene={gs.scene}, resources={gs.resources}, "
             f"buildings={len(gs.buildings)}, loop={gs.loop_count}, "
-            f"tasks_pending={self.task_queue.pending_count()}, "
-            f"last_llm={gs.last_llm_consult or 'never'}"
+            f"tasks_pending={self.task_queue.pending_count()}"
         )
 
 
@@ -933,7 +874,6 @@ class CLI:
         print(f"Resources: {gs.resources}")
         print(f"Buildings: {len(gs.buildings)}  Marches: {len(gs.troops_marching)}")
         print(f"Tasks pending: {self.bot.task_queue.pending_count()}")
-        print(f"Last LLM consult: {gs.last_llm_consult or 'never'}")
         if gs.quest_bar_visible:
             print(f"Quest bar: '{gs.quest_bar_current_quest}' "
                   f"red_badge={gs.quest_bar_has_red_badge} "
@@ -944,7 +884,7 @@ class CLI:
 
     def cmd_state(self, args: list[str]) -> None:
         gs = self.bot.game_state
-        print(gs.summary_for_llm())
+        print(gs.summary())
 
     def cmd_scene(self, args: list[str]) -> None:
         screenshot = self.bot.screenshot_mgr.capture()
@@ -1418,19 +1358,6 @@ class CLI:
     def cmd_auto(self, args: list[str]) -> None:
         max_loops = int(args[0]) if args else 0
         self.bot.auto_loop(max_loops)
-
-    def cmd_llm(self, args: list[str]) -> None:
-        if not config.LLM_API_KEY:
-            print("Error: ANTHROPIC_API_KEY not set")
-            return
-        print(f"Consulting {config.LLM_MODEL}...")
-        tasks = self.bot.consult_llm()
-        if tasks:
-            print(f"LLM generated {len(tasks)} tasks:")
-            for t in tasks:
-                print(f"  [{t.priority}] {t.name} params={t.params}")
-        else:
-            print("LLM returned no tasks")
 
     def cmd_help(self, args: list[str]) -> None:
         print(HELP_TEXT)

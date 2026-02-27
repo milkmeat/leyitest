@@ -28,7 +28,7 @@ class GameState:
     """Central game state container.
 
     Tracks resources, buildings, troops, task queue status, and action history.
-    Serializable to/from dict for JSON persistence and LLM context.
+    Serializable to/from dict for JSON persistence.
     """
 
     def __init__(self, default_resources: dict[str, int] | None = None) -> None:
@@ -44,7 +44,6 @@ class GameState:
         self.task_queue: list[str] = []
         self.last_actions: list[dict] = []
         self.cooldowns: dict[str, str] = {}
-        self.last_llm_consult: str = ""
         self.last_update: str = ""
         self.loop_count: int = 0
 
@@ -60,7 +59,7 @@ class GameState:
         self.quest_workflow_target: str = ""
 
     def to_dict(self) -> dict:
-        """Serialize to dict for JSON persistence and LLM context."""
+        """Serialize to dict for JSON persistence."""
         return {
             "scene": self.scene,
             "resources": self.resources,
@@ -71,7 +70,6 @@ class GameState:
             "task_queue": self.task_queue,
             "last_actions": self.last_actions[-20:],  # Keep last 20
             "cooldowns": self.cooldowns,
-            "last_llm_consult": self.last_llm_consult,
             "last_update": self.last_update,
             "loop_count": self.loop_count,
             "quest_bar_visible": self.quest_bar_visible,
@@ -101,7 +99,6 @@ class GameState:
         self.task_queue = data.get("task_queue", [])
         self.last_actions = data.get("last_actions", [])
         self.cooldowns = data.get("cooldowns", {})
-        self.last_llm_consult = data.get("last_llm_consult", "")
         self.last_update = data.get("last_update", "")
         self.loop_count = data.get("loop_count", 0)
 
@@ -130,8 +127,8 @@ class GameState:
         if len(self.last_actions) > 50:
             self.last_actions = self.last_actions[-20:]
 
-    def summary_for_llm(self) -> str:
-        """Generate concise text summary for LLM prompt (minimize tokens)."""
+    def summary(self) -> str:
+        """Generate concise text summary of current game state."""
         lines = [f"Scene: {self.scene}"]
 
         # Resources
@@ -172,7 +169,7 @@ class GameState:
                 quest_parts.append("tutorial_finger")
             lines.append(f"Quest bar: {', '.join(quest_parts)}")
 
-        # Quest workflow (always include so LLM knows current objective)
+        # Quest workflow
         lines.append(
             f"Quest workflow: phase={self.quest_workflow_phase}, "
             f"target='{self.quest_workflow_target}'"

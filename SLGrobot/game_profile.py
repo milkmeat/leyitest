@@ -39,10 +39,6 @@ class GameProfile:
     scenes: list[str] = field(default_factory=list)
     known_tasks: list[str] = field(default_factory=list)
 
-    # LLM prompt fragments
-    llm_game_description: str = ""
-    llm_task_types: str = ""
-
     # Auto-handler patterns
     known_popups: list[list[str]] = field(default_factory=list)
     reward_templates: list[str] = field(default_factory=list)
@@ -116,10 +112,6 @@ def load_game_profile(game_id: str,
         # Scenes and tasks
         scenes=data.get("scenes", []),
         known_tasks=data.get("known_tasks", []),
-
-        # LLM
-        llm_game_description=data.get("llm_game_description", ""),
-        llm_task_types=data.get("llm_task_types", ""),
 
         # Auto-handler
         known_popups=data.get("known_popups", []),

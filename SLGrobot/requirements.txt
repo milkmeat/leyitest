@@ -1,5 +1,3 @@
 opencv-python-headless
 numpy
 rapidocr-onnxruntime
-anthropic
-openai

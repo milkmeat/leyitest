@@ -207,17 +207,14 @@ class TestQuestWorkflow(unittest.TestCase):
         # empty list so the method short-circuits to None without touching
         # the cache.
         ed.template_matcher.match_one_multi.return_value = []
-        llm = MagicMock()
-        llm.api_key = "test-key"
         gs = GameState()
 
         wf = QuestWorkflow(
             quest_bar_detector=qbd,
             element_detector=ed,
-            llm_planner=llm,
             game_state=gs,
         )
-        return wf, qbd, ed, llm, gs
+        return wf, qbd, ed, gs
 
     def _make_quest_info(self, visible=True, text="升级城堡", red_badge=False,
                          green_check=False, bbox=(200, 1620, 400, 1660)):
@@ -270,7 +267,7 @@ class TestQuestWorkflow(unittest.TestCase):
 
     def test_ensure_main_city_navigate_via_ocr(self):
         """If not at main_city, try OCR to find navigation text."""
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
         wf.start()
 
         element = MagicMock()
@@ -286,7 +283,7 @@ class TestQuestWorkflow(unittest.TestCase):
 
     def test_ensure_main_city_fallback_back_arrow(self):
         """If no navigation text found, try back_arrow template."""
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
         wf.start()
 
         back_arrow = MagicMock()
@@ -308,7 +305,7 @@ class TestQuestWorkflow(unittest.TestCase):
 
     def test_ensure_main_city_fallback_tap_blank(self):
         """If no navigation text and no back_arrow, tap blank area."""
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
         wf.start()
         ed.locate.return_value = None
 
@@ -323,7 +320,7 @@ class TestQuestWorkflow(unittest.TestCase):
 
     def test_read_quest_normal(self):
         """Normal quest reading -> records name, moves to CLICK_QUEST."""
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
         wf.start()
         wf.phase = "read_quest"
 
@@ -334,7 +331,7 @@ class TestQuestWorkflow(unittest.TestCase):
 
     def test_read_quest_red_badge_skipped(self):
         """Red badge is noted but doesn't interrupt — proceeds to read quest."""
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
         wf.start()
         wf.phase = "read_quest"
 
@@ -347,7 +344,7 @@ class TestQuestWorkflow(unittest.TestCase):
 
     def test_read_quest_not_visible(self):
         """Quest bar not visible -> abort."""
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
         wf.start()
         wf.phase = "read_quest"
 
@@ -359,7 +356,7 @@ class TestQuestWorkflow(unittest.TestCase):
 
     def test_click_quest(self):
         """Click quest text and move to EXECUTE_QUEST."""
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
         wf.start()
         wf.phase = "click_quest"
 
@@ -377,7 +374,7 @@ class TestQuestWorkflow(unittest.TestCase):
 
     def test_execute_quest_back_to_main_city(self):
         """If scene is main_city and no finger during execution -> CHECK_COMPLETION."""
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
         wf.start()
         wf.phase = "execute_quest"
         wf.target_quest_name = "升级城堡"
@@ -389,7 +386,7 @@ class TestQuestWorkflow(unittest.TestCase):
 
     def test_execute_quest_tutorial_finger_with_button(self):
         """Tutorial finger on popup -> follow fingertip (buttons ignored)."""
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
         wf.start()
         wf.phase = "execute_quest"
         wf.target_quest_name = "升级城堡"
@@ -420,7 +417,7 @@ class TestQuestWorkflow(unittest.TestCase):
 
     def test_execute_quest_tutorial_finger_no_button(self):
         """Tutorial finger (normal) found but no OCR button -> tap fingertip."""
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
         wf.start()
         wf.phase = "execute_quest"
         wf.target_quest_name = "升级城堡"
@@ -445,7 +442,7 @@ class TestQuestWorkflow(unittest.TestCase):
 
     def test_execute_quest_tutorial_finger_flipped(self):
         """Flipped finger (hflip) found -> tap with mirrored x offset."""
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
         wf.start()
         wf.phase = "execute_quest"
         wf.target_quest_name = "升级城堡"
@@ -468,25 +465,9 @@ class TestQuestWorkflow(unittest.TestCase):
         assert actions[0]["y"] == 1500 + wf._FINGERTIP_OFFSET[1]
         assert "follow_tutorial_finger" in actions[0]["reason"]
 
-    def test_execute_quest_llm_fallback(self):
-        """No finger, no buttons -> use LLM suggestions."""
-        wf, qbd, ed, llm, gs = self._make_workflow()
-        wf.start()
-        wf.phase = "execute_quest"
-        wf.target_quest_name = "升级城堡"
-
-        ed.locate.return_value = None
-        llm.analyze_quest_execution.return_value = [
-            {"type": "tap", "x": 300, "y": 500, "reason": "llm_suggestion"}
-        ]
-
-        actions = wf.step(_make_screenshot(), "unknown")
-        assert len(actions) == 1
-        assert actions[0]["x"] == 300
-
     def test_execute_quest_max_iterations(self):
         """Exceeding max iterations -> RETURN_TO_CITY."""
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
         wf.start()
         wf.phase = "execute_quest"
         wf.target_quest_name = "升级城堡"
@@ -512,7 +493,7 @@ class TestQuestWorkflow(unittest.TestCase):
 
     def test_check_completion_green_check(self):
         """Green check -> CLAIM_REWARD."""
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
         wf.start()
         wf.phase = "check_completion"
 
@@ -522,7 +503,7 @@ class TestQuestWorkflow(unittest.TestCase):
 
     def test_check_completion_no_check_retry(self):
         """No green check -> retry via CLICK_QUEST."""
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
         wf.start()
         wf.phase = "check_completion"
 
@@ -533,7 +514,7 @@ class TestQuestWorkflow(unittest.TestCase):
 
     def test_check_completion_max_retries(self):
         """Exceeding max check retries -> abort."""
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
         wf.start()
         wf.phase = "check_completion"
         wf.check_retries = wf.max_check_retries
@@ -546,7 +527,7 @@ class TestQuestWorkflow(unittest.TestCase):
 
     def test_claim_reward(self):
         """Click quest text to claim, move to VERIFY."""
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
         wf.start()
         wf.phase = "claim_reward"
 
@@ -563,7 +544,7 @@ class TestQuestWorkflow(unittest.TestCase):
 
     def test_verify_quest_changed(self):
         """Quest name changed -> complete, back to IDLE."""
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
         wf.start()
         wf.phase = "verify"
         wf.target_quest_name = "升级城堡"
@@ -574,7 +555,7 @@ class TestQuestWorkflow(unittest.TestCase):
 
     def test_verify_quest_unchanged_retry(self):
         """Quest name unchanged -> retry with wait."""
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
         wf.start()
         wf.phase = "verify"
         wf.target_quest_name = "升级城堡"
@@ -588,7 +569,7 @@ class TestQuestWorkflow(unittest.TestCase):
 
     def test_verify_max_retries(self):
         """Exceeding verify retries -> give up, IDLE."""
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
         wf.start()
         wf.phase = "verify"
         wf.target_quest_name = "升级城堡"
@@ -602,7 +583,7 @@ class TestQuestWorkflow(unittest.TestCase):
 
     def test_full_quest_lifecycle(self):
         """Walk through the complete lifecycle: start -> claim -> idle."""
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
 
         # 1. Start
         wf.start()
@@ -655,19 +636,19 @@ class TestQuestWorkflow(unittest.TestCase):
     # -- Game state sync tests --
 
     def test_game_state_sync_on_start(self):
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
         wf.start()
         assert gs.quest_workflow_phase == "ensure_main_city"
 
     def test_game_state_sync_on_abort(self):
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
         wf.start()
         wf.abort()
         assert gs.quest_workflow_phase == "idle"
         assert gs.quest_workflow_target == ""
 
     def test_game_state_sync_on_step(self):
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
         wf.start()
         wf.step(_make_screenshot(), "main_city")  # -> read_quest
         assert gs.quest_workflow_phase == "read_quest"
@@ -689,7 +670,7 @@ class TestQuestWorkflow(unittest.TestCase):
 
     def test_exhausted_button_skipped(self):
         """Exhausted buttons are skipped by _find_action_buttons OCR stage."""
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
         wf.start()
         wf.phase = "execute_quest"
 
@@ -721,7 +702,7 @@ class TestQuestWorkflow(unittest.TestCase):
 
     def test_exhausted_reset_on_scene_change(self):
         """Scene change clears exhausted buttons."""
-        wf, qbd, ed, llm, gs = self._make_workflow()
+        wf, qbd, ed, gs = self._make_workflow()
         wf.start()
         wf.phase = "execute_quest"
         wf.target_quest_name = "通关远征"
@@ -734,7 +715,6 @@ class TestQuestWorkflow(unittest.TestCase):
 
         # Step with a different scene triggers reset
         ed.locate.return_value = None
-        llm.analyze_quest_execution.return_value = []
         wf.step(_make_screenshot(), "popup")
 
         assert wf._exhausted_buttons == set()

@@ -1,4 +1,4 @@
-"""Grid Overlay - Draw labeled grid on screenshots for LLM communication."""
+"""Grid Overlay - Draw labeled grid on screenshots for visual debugging."""
 
 import logging
 
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class GridOverlay:
-    """Overlay a labeled grid (A1, B3, C4...) on screenshots for LLM communication.
+    """Overlay a labeled grid (A1, B3, C4...) on screenshots for visual debugging.
 
     Grid uses column letters (A-H) and row numbers (1-6).
     Cell "A1" is top-left, "H6" is bottom-right.

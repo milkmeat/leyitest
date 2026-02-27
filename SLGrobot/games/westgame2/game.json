@@ -28,9 +28,6 @@
     "close_popup", "check_mail", "collect_daily"
   ],
 
-  "llm_game_description": "a mobile Western-themed SLG game called \"West Game II\" (西部游戏2)",
-  "llm_task_types": "collect_resources, upgrade_building, train_troops, claim_rewards, navigate_main_city, navigate_world_map, close_popup, check_mail, collect_daily, gather_resource, scout_enemy, send_troops, custom",
-
   "known_popups": [
     ["buttons/view", "buttons/close_x"]
   ],
@@ -106,7 +103,7 @@
       "pattern": "派遣.*镇民",
       "steps": [
         {"tap_xy": [790, 1815], "delay": 1.0, "description": "切换到镇民标签"},
-        {"tap_xy": [750, 1598], "delay": 1.5, "repeat": 3, "description": "点击+添加镇民"}
+        {"tap_xy": [750, 1598], "delay": 1.5, "repeat": 3, "description": "点击+添加镇民"},
         {"tap_xy": [500, 200], "delay": 1.5, "description": "点击上方空白处退出"}
       ]
     },

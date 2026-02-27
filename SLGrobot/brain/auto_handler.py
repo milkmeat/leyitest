@@ -1,4 +1,4 @@
-"""Auto Handler - Instant automatic operations that never need LLM (<100ms).
+"""Auto Handler - Instant automatic operations (<100ms).
 
 Handles:
 - Close known popups (identified by content, then tap close_x)

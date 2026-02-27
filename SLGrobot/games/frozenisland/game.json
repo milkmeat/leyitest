@@ -28,9 +28,6 @@
     "close_popup", "check_mail", "collect_daily"
   ],
 
-  "llm_game_description": "a mobile SLG game called \"Frozen Island\" (冰封岛屿)",
-  "llm_task_types": "collect_resources, upgrade_building, train_troops, claim_rewards, navigate_main_city, navigate_world_map, close_popup, check_mail, collect_daily, gather_resource, scout_enemy, send_troops, custom",
-
   "known_popups": [
     ["buttons/view", "buttons/close_x"]
   ],
