@@ -35,8 +35,9 @@ class SceneClassifier:
     """
 
     SCENES = [
-        "main_city", "world_map", "hero", "hero_recruit",
-        "battle", "popup", "loading", "story_dialogue", "unknown",
+        "main_city", "world_map", "hero", "hero_recruit", "hero_upgrade",
+        "battle", "popup", "exit_dialog", "loading", "story_dialogue",
+        "unknown",
     ]
 
     # Bottom-right corner region (ratio of screen) for main_city/world_map detection
@@ -83,7 +84,17 @@ class SceneClassifier:
                     scores[scene] = 0.0
             return scores
 
-        # 2. Check for loading screen
+        # 2. Check for exit dialog (dark background with blue play icons).
+        #    Must come before loading detection — the dark background would
+        #    trigger loading misclassification (mean_val < 30 → 0.6).
+        scores["exit_dialog"] = self._detect_exit_dialog_score(screenshot)
+        if scores["exit_dialog"] >= 0.7:
+            for scene in self._scenes:
+                if scene not in scores:
+                    scores[scene] = 0.0
+            return scores
+
+        # 3. Check for loading screen
         scores["loading"] = self._detect_loading_score(screenshot)
         if scores["loading"] >= 0.7:
             for scene in self._scenes:
@@ -91,7 +102,7 @@ class SceneClassifier:
                     scores[scene] = 0.0
             return scores
 
-        # 3. Story dialogue: detected by the down-triangle "continue" icon
+        # 4. Story dialogue: detected by the down-triangle "continue" icon
         triangle_match = self.template_matcher.match_one(screenshot, "icons/down_triangle")
         if triangle_match and triangle_match.confidence >= 0.9:
             scores["story_dialogue"] = triangle_match.confidence
@@ -100,7 +111,7 @@ class SceneClassifier:
                     scores[scene] = 0.0
             return scores
 
-        # 4. Primary: bottom-right corner icon → main_city or world_map
+        # 5. Primary: bottom-right corner icon → main_city or world_map
         rx1, ry1, rx2, ry2 = self.CORNER_REGION
         corner = screenshot[int(ry1*h):int(ry2*h), int(rx1*w):int(rx2*w)]
 
@@ -117,7 +128,7 @@ class SceneClassifier:
                     scores[scene] = 0.0
             return scores
 
-        # 5. Secondary: check other scene templates on full screenshot
+        # 6. Secondary: check other scene templates on full screenshot
         scene_templates = self.template_matcher.match_all(screenshot, "scenes")
         for match in scene_templates:
             # Template names like "scenes/hero", "scenes/hero_recruit"
@@ -162,6 +173,22 @@ class SceneClassifier:
                     return max(0.9, m.confidence)
             return 0.7
 
+        return 0.0
+
+    def _detect_exit_dialog_score(self, screenshot: np.ndarray) -> float:
+        """Detect the game's exit/pause dialog.
+
+        The exit dialog has a dark background with three blue square icons
+        (退出 / 重新开始 / 继续).  We use template matching on the play icon
+        (scenes/exit_dialog) in the center-lower region of the screen.
+        """
+        match = self.template_matcher.match_one(screenshot, "scenes/exit_dialog")
+        if match and match.confidence >= 0.8:
+            logger.debug(
+                f"Exit dialog detected: conf={match.confidence:.3f} "
+                f"at ({match.x}, {match.y})"
+            )
+            return match.confidence
         return 0.0
 
     def _detect_loading_score(self, screenshot: np.ndarray) -> float:

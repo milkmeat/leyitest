@@ -140,46 +140,9 @@ class ElementDetector:
         return None
 
     def _locate_by_contour(self, screenshot: np.ndarray, target: str) -> Element | None:
-        """Try to find target by color/contour analysis.
-
-        This is a basic implementation that looks for prominent button-like
-        rectangles. Works for common UI elements with distinct colors.
-        """
-        # Convert to HSV for color-based detection
-        hsv = cv2.cvtColor(screenshot, cv2.COLOR_BGR2HSV)
-        gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
-
-        # Look for bright, saturated button-like regions
-        # Common game UI colors: red, green, gold buttons
-        # Use edge detection + contour finding
-        edges = cv2.Canny(gray, 50, 150)
-        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-        # Filter for button-sized rectangles
-        min_area = 2000
-        max_area = screenshot.shape[0] * screenshot.shape[1] // 4
-        candidates = []
-
-        for contour in contours:
-            area = cv2.contourArea(contour)
-            if area < min_area or area > max_area:
-                continue
-
-            # Approximate to polygon
-            peri = cv2.arcLength(contour, True)
-            approx = cv2.approxPolyDP(contour, 0.04 * peri, True)
-
-            # Look for roughly rectangular shapes (4-6 vertices)
-            if 4 <= len(approx) <= 6:
-                x, y, w, h = cv2.boundingRect(contour)
-                aspect = w / h if h > 0 else 0
-                # Button-like aspect ratio
-                if 0.5 < aspect < 8:
-                    cx, cy = x + w // 2, y + h // 2
-                    candidates.append((area, cx, cy, (x, y, x + w, y + h)))
-
-        # This method is imprecise, so we return None unless we have a strong signal
-        # It's primarily a fallback and real usage will be refined per-game
+        """Try to find target by color/contour analysis."""
+        if target == "primary_button":
+            return find_primary_button(screenshot)
         return None
 
     def _locate_by_grid(self, target: str) -> Element | None:
@@ -206,3 +169,137 @@ class ElementDetector:
             x=match.x, y=match.y,
             bbox=match.bbox,
         )
+
+
+def has_red_text_near_button(screenshot: np.ndarray,
+                            button: Element,
+                            above_px: int = 120,
+                            min_red_pixels: int = 200) -> bool:
+    """Check if there is red text near a button (above or overlapping).
+
+    Red text typically indicates insufficient resources.  Checks a region
+    from ``above_px`` pixels above the button center down to the button
+    center, spanning ±200 px horizontally.
+
+    Returns True if the number of red pixels exceeds *min_red_pixels*.
+    """
+    h, w = screenshot.shape[:2]
+    y1 = max(0, button.y - above_px)
+    y2 = min(h, button.y + 20)
+    x1 = max(0, button.x - 200)
+    x2 = min(w, button.x + 200)
+    region = screenshot[y1:y2, x1:x2]
+
+    hsv = cv2.cvtColor(region, cv2.COLOR_BGR2HSV)
+    red_lo = cv2.inRange(hsv, (0, 100, 80), (10, 255, 255))
+    red_hi = cv2.inRange(hsv, (165, 100, 80), (180, 255, 255))
+    red_mask = cv2.bitwise_or(red_lo, red_hi)
+    red_count = int(red_mask.sum() / 255)
+
+    logger.debug(
+        f"Red text check near ({button.x},{button.y}): "
+        f"{red_count} red pixels (threshold={min_red_pixels})"
+    )
+    return red_count >= min_red_pixels
+
+
+def find_primary_button(screenshot: np.ndarray,
+                        min_area: int = 10000,
+                        min_aspect: float = 1.8,
+                        max_aspect: float = 8.0,
+                        y_fraction: float = 0.4,
+                        ) -> Element | None:
+    """Detect the primary action button by HSV color filtering.
+
+    Uses a two-tier priority system:
+      Tier 1 (high): Blue / green buttons — always action buttons
+                     (建造, 升级, 前往, 下一个, 训练)
+      Tier 2 (low):  Gold / yellow buttons — reward / confirm buttons
+                     (领取, 全部领取, 确定)
+
+    If any Tier 1 button is found, it wins regardless of position.
+    Tier 2 is only used when no Tier 1 exists.  Within each tier,
+    the bottommost button is preferred.
+
+    Args:
+        screenshot: BGR numpy array.
+        min_area: Minimum contour area in pixels (rejects small icons).
+        min_aspect: Minimum width/height ratio (buttons are wide).
+        max_aspect: Maximum width/height ratio.
+        y_fraction: Button center must be below this fraction of screen height.
+
+    Returns:
+        Element with center coordinates and bbox, or None if not found.
+    """
+    sh, sw = screenshot.shape[:2]
+    hsv = cv2.cvtColor(screenshot, cv2.COLOR_BGR2HSV)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
+    y_min = int(sh * y_fraction)
+
+    # Tier 1: Blue + Green (high priority)
+    blue_mask = cv2.inRange(hsv, (90, 80, 120), (115, 255, 255))
+    green_mask = cv2.inRange(hsv, (35, 80, 120), (85, 255, 255))
+    tier1_mask = cv2.bitwise_or(blue_mask, green_mask)
+    tier1_mask = cv2.morphologyEx(tier1_mask, cv2.MORPH_CLOSE, kernel)
+
+    result = _pick_bottommost_button(tier1_mask, sh, sw, y_min,
+                                     min_area, min_aspect, max_aspect)
+    if result is not None:
+        logger.debug(
+            f"Primary button (blue/green): ({result.x}, {result.y}) "
+            f"bbox={result.bbox}"
+        )
+        return result
+
+    # Tier 2: Gold / yellow (lower priority, only when no blue/green)
+    # Higher S threshold separates gold buttons from parchment backgrounds.
+    gold_mask = cv2.inRange(hsv, (10, 150, 150), (30, 255, 255))
+    gold_mask = cv2.morphologyEx(gold_mask, cv2.MORPH_CLOSE, kernel)
+
+    result = _pick_bottommost_button(gold_mask, sh, sw, y_min,
+                                     min_area, min_aspect, max_aspect)
+    if result is not None:
+        logger.debug(
+            f"Primary button (gold): ({result.x}, {result.y}) "
+            f"bbox={result.bbox}"
+        )
+    return result
+
+
+def _pick_bottommost_button(mask: np.ndarray,
+                            sh: int, sw: int, y_min: int,
+                            min_area: int, min_aspect: float,
+                            max_aspect: float) -> Element | None:
+    """Pick the bottommost button-shaped contour from a binary mask."""
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL,
+                                   cv2.CHAIN_APPROX_SIMPLE)
+    best = None
+    best_y = -1
+
+    for contour in contours:
+        area = cv2.contourArea(contour)
+        if area < min_area:
+            continue
+
+        x, y, w, h = cv2.boundingRect(contour)
+        if h == 0:
+            continue
+        aspect = w / h
+        if aspect < min_aspect or aspect > max_aspect:
+            continue
+
+        cy = y + h // 2
+        if cy < y_min:
+            continue
+
+        if cy > best_y:
+            best_y = cy
+            best = Element(
+                name="primary_button",
+                source="contour",
+                confidence=area / (sh * sw),
+                x=x + w // 2, y=cy,
+                bbox=(x, y, x + w, y + h),
+            )
+
+    return best

@@ -40,7 +40,7 @@ from vision.template_matcher import TemplateMatcher
 from vision.ocr_locator import OCRLocator
 from vision.grid_overlay import GridOverlay
 from vision.building_finder import BuildingFinder, parse_city_layout
-from vision.element_detector import ElementDetector
+from vision.element_detector import ElementDetector, find_primary_button, has_red_text_near_button
 from scene.classifier import SceneClassifier
 from scene.popup_filter import PopupFilter
 from state.game_state import GameState
@@ -417,7 +417,90 @@ class GameBot:
                         time.sleep(0.8)
                         continue
 
-                    # 3. Handle popups immediately (skip when quest workflow
+                    # 3. Exit dialog — game's pause/quit overlay.
+                    #    Must be handled before popup/loading/quest workflow
+                    #    since the dark background can be misclassified.
+                    #    Tap "继续" (rightmost icon) and wait 60s cooldown.
+                    if scene == "exit_dialog":
+                        logger.info(
+                            "Exit dialog detected — tapping '继续' and "
+                            "waiting 60s cooldown"
+                        )
+                        self.adb.tap(826, 843)
+                        time.sleep(60)
+                        continue
+
+                    # 3b. Hero list / Hero recruit — not part of normal
+                    #     quest flow, just back out immediately.
+                    if scene == "hero":
+                        back = self.template_matcher.match_one(
+                            screenshot, "buttons/back_arrow"
+                        )
+                        if back:
+                            logger.info(
+                                f"Hero list: tapping back arrow "
+                                f"at ({back.x}, {back.y})"
+                            )
+                            self.adb.tap(back.x, back.y)
+                        else:
+                            self.adb.key_event(4)  # BACK
+                        time.sleep(1.0)
+                        continue
+
+                    if scene == "hero_recruit":
+                        primary = find_primary_button(screenshot)
+                        if primary is not None:
+                            logger.info(
+                                f"Hero recruit: tapping primary button "
+                                f"at ({primary.x}, {primary.y})"
+                            )
+                            self.adb.tap(primary.x, primary.y)
+                            time.sleep(2.0)
+                        # Back arrow to exit
+                        back = self.template_matcher.match_one(
+                            screenshot, "buttons/back_arrow"
+                        )
+                        if back:
+                            logger.info(
+                                f"Hero recruit: tapping back arrow "
+                                f"at ({back.x}, {back.y})"
+                            )
+                            self.adb.tap(back.x, back.y)
+                        else:
+                            self.adb.key_event(4)  # BACK
+                        time.sleep(1.0)
+                        continue
+
+                    # 3c. Hero upgrade — click primary button if no red
+                    #     text (insufficient resources), otherwise back out.
+                    if scene == "hero_upgrade":
+                        primary = find_primary_button(screenshot)
+                        if primary is not None and not has_red_text_near_button(
+                            screenshot, primary
+                        ):
+                            logger.info(
+                                f"Hero upgrade: resources OK, tapping "
+                                f"primary button at ({primary.x}, {primary.y})"
+                            )
+                            self.adb.tap(primary.x, primary.y)
+                            time.sleep(2.0)
+                        else:
+                            reason = (
+                                "red text (insufficient resources)"
+                                if primary else "no primary button"
+                            )
+                            logger.info(f"Hero upgrade: {reason}, backing out")
+                        back = self.template_matcher.match_one(
+                            screenshot, "buttons/back_arrow"
+                        )
+                        if back:
+                            self.adb.tap(back.x, back.y)
+                        else:
+                            self.adb.key_event(4)
+                        time.sleep(1.0)
+                        continue
+
+                    # 4. Handle popups immediately (skip when quest workflow
                     #    is active — workflow handles its own popups like
                     #    battle result screens with "返回领地")
                     if scene == "popup" and not self.quest_workflow.is_active():
@@ -469,10 +552,22 @@ class GameBot:
                         time.sleep(0.5)
                         continue
 
-                    # 5. Skip loading screens
+                    # 5. Skip loading screens (but check for buttons first —
+                    #    reward popups with dark backgrounds get misclassified
+                    #    as loading; real loading screens have no buttons).
                     if scene == "loading":
-                        logger.info("Loading screen, waiting...")
-                        time.sleep(config.LOOP_INTERVAL)
+                        primary = find_primary_button(screenshot)
+                        if primary is not None:
+                            logger.info(
+                                f"Loading screen has primary button "
+                                f"at ({primary.x}, {primary.y}) — "
+                                f"likely a reward popup, tapping"
+                            )
+                            self.adb.tap(primary.x, primary.y)
+                            time.sleep(0.8)
+                        else:
+                            logger.info("Loading screen, waiting...")
+                            time.sleep(config.LOOP_INTERVAL)
                         continue
 
                     # 5. Quest workflow state machine (before unknown scene
@@ -500,7 +595,17 @@ class GameBot:
                             f"Unknown scene ({consecutive_unknown_scenes} consecutive)"
                         )
 
-                        if consecutive_unknown_scenes >= 3:
+                        # Try primary button first (building panels
+                        # with blue/green action buttons like 建造/升级).
+                        primary = find_primary_button(screenshot)
+                        if primary is not None:
+                            logger.info(
+                                f"Unknown scene: primary button "
+                                f"at ({primary.x}, {primary.y})"
+                            )
+                            self.adb.tap(primary.x, primary.y)
+                            consecutive_unknown_scenes = 0
+                        elif consecutive_unknown_scenes >= 3:
                             # Stuck in unknown scene — press BACK to escape
                             logger.warning(
                                 "3+ consecutive unknown scenes, pressing BACK to escape"

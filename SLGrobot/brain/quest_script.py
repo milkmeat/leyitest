@@ -2,16 +2,17 @@
 
 Each quest script is a list of steps with verb + args.  Supported verbs:
 
-  tap_xy           [x, y]                — unconditional tap at fixed coordinates
-  tap_text         [text] or [text, nth] — OCR search, tap nth match (1-indexed)
-  tap_icon         [name] or [name, nth] — template match, tap nth match
-  swipe            [x1,y1,x2,y2] or [x1,y1,x2,y2,ms] — swipe gesture
-  wait_text        [text]                — wait until text appears (no tap)
-  ensure_main_city [] or [max_retries]   — navigate to main city or abort
-  ensure_world_map [] or [max_retries]   — navigate to world map or abort
-  read_text        [x, y, var, ...]      — OCR region, store in variable
-  eval             [var, expression]     — safe arithmetic on variables
-  find_building    [name] or [name, {options}] — find building on city map and tap
+  tap_xy              [x, y]                — unconditional tap at fixed coordinates
+  tap_text            [text] or [text, nth] — OCR search, tap nth match (1-indexed)
+  tap_icon            [name] or [name, nth] — template match, tap nth match
+  tap_primary_button  [] or [{options}]    — HSV color detection for large action button
+  swipe               [x1,y1,x2,y2] or [x1,y1,x2,y2,ms] — swipe gesture
+  wait_text           [text]                — wait until text appears (no tap)
+  ensure_main_city    [] or [max_retries]   — navigate to main city or abort
+  ensure_world_map    [] or [max_retries]   — navigate to world map or abort
+  read_text           [x, y, var, ...]      — OCR region, store in variable
+  eval                [var, expression]     — safe arithmetic on variables
+  find_building       [name] or [name, {options}] — find building on city map and tap
 
 Step fields:
   delay       float, default 1.0   — seconds to wait after action
@@ -231,6 +232,9 @@ class QuestScriptRunner:
         elif "find_building" in step:
             actions = self._do_find_building(step, screenshot, delay,
                                              description)
+        elif "tap_primary_button" in step:
+            actions = self._do_tap_primary_button(step, screenshot, delay,
+                                                  description)
         else:
             logger.warning(
                 f"Quest script step {self.step_index}: unknown verb, skipping"
@@ -682,3 +686,42 @@ class QuestScriptRunner:
         self._suppress_advance = True
         return [{"type": "key_event", "keycode": 4, "delay": delay,
                  "reason": "quest_script:ensure_world_map:back_key"}]
+
+    def _do_tap_primary_button(self, step: dict, screenshot: np.ndarray,
+                               delay: float,
+                               description: str) -> list[dict] | None:
+        """Detect and tap the primary colored action button on screen.
+
+        Uses HSV color filtering to find large blue/green buttons typical of
+        building panels (建造, 升级, 训练, etc.).
+
+        Args format: [] or [{options_dict}]
+          options_dict keys: min_area, min_aspect, max_aspect, y_fraction
+        """
+        from vision.element_detector import find_primary_button
+
+        args = step.get("tap_primary_button", [])
+        kwargs = {}
+        if isinstance(args, list) and args and isinstance(args[0], dict):
+            kwargs = args[0]
+
+        result = find_primary_button(screenshot, **kwargs)
+        if result is None:
+            logger.debug(
+                f"Quest script step {self.step_index}: "
+                f"tap_primary_button — no button found"
+            )
+            return None  # waiting — retry or skip if optional
+
+        logger.info(
+            f"Quest script step {self.step_index}: "
+            f"tap_primary_button at ({result.x}, {result.y}) "
+            f"bbox={result.bbox} — {description}"
+        )
+        return [{
+            "type": "tap",
+            "x": result.x,
+            "y": result.y,
+            "delay": delay,
+            "reason": f"quest_script:tap_primary_button:{description}",
+        }]

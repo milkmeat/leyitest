@@ -49,6 +49,12 @@ class TemplateMatcher:
     STRICT_COLOR_MAX_DIFF: float = 30.0
     STRICT_COLOR_CCOEFF_THRESHOLD: float = 0.6
 
+    # Masked NCC threshold for templates with significant transparency
+    # (<90% opaque).  CCOEFF without mask is unreliable for these, so we
+    # compute NCC on opaque pixels only.  True positives: NCC ≥ 0.8;
+    # false positives: NCC ≤ 0.5 (back_arrow) / ≤ 0.69 (tutorial_finger).
+    _MASKED_NCC_THRESHOLD: float = 0.7
+
     def __init__(self, template_dir: str = None, threshold: float = None) -> None:
         self.template_dir = template_dir or config.TEMPLATE_DIR
         self.threshold = threshold or config.TEMPLATE_MATCH_THRESHOLD
@@ -258,27 +264,65 @@ class TemplateMatcher:
         if mask is not None:
             # Two-pass matching for masked (transparent) templates:
             # Pass 1 — CCORR with mask finds the candidate location.
-            # Pass 2 — CCOEFF without mask verifies (rejects false positives
-            #          caused by near-white templates matching any bright area).
+            # Pass 2 — verify the match to reject false positives.
+            #
+            # For mostly-opaque templates (≥90%), CCOEFF without mask works
+            # well (rejects near-white templates matching bright areas).
+            # For templates with significant transparency (<90% opaque),
+            # CCOEFF without mask is unreliable (transparent pixels stored
+            # as black drag down the score).  Instead, use masked NCC:
+            # normalized cross-correlation on opaque pixels only.
             result_ccorr = cv2.matchTemplate(
                 screenshot, template, cv2.TM_CCORR_NORMED, mask=mask)
             _, ccorr_val, _, ccorr_loc = cv2.minMaxLoc(result_ccorr)
             if ccorr_val < self.threshold:
                 return None
 
-            result_ccoeff = cv2.matchTemplate(
-                screenshot, template, cv2.TM_CCOEFF_NORMED)
-            ccoeff_val = float(result_ccoeff[ccorr_loc[1], ccorr_loc[0]])
-            if ccoeff_val < self.threshold:
+            # Check opaque ratio to decide verification strategy.
+            # mask is 3-channel (H, H, H); check single channel.
+            opaque_mask = mask[:, :, 0] > 0
+            opaque_ratio = float(opaque_mask.sum()) / (th * tw)
+            if opaque_ratio >= 0.9:
+                # Mostly opaque — CCOEFF verification is reliable.
+                result_ccoeff = cv2.matchTemplate(
+                    screenshot, template, cv2.TM_CCOEFF_NORMED)
+                ccoeff_val = float(result_ccoeff[ccorr_loc[1], ccorr_loc[0]])
+                if ccoeff_val < self.threshold:
+                    logger.debug(
+                        f"Template match rejected (CCORR={ccorr_val:.3f}, "
+                        f"CCOEFF={ccoeff_val:.3f}): {name} at "
+                        f"({ccorr_loc[0] + tw // 2}, {ccorr_loc[1] + th // 2})"
+                    )
+                    return None
+                max_val = ccoeff_val
+            else:
+                # Significant transparency — use masked NCC on opaque pixels.
+                x1c, y1c = ccorr_loc
+                crop = screenshot[y1c:y1c + th, x1c:x1c + tw]
+                if crop.shape[:2] != (th, tw):
+                    return None
+                t = template[opaque_mask].astype(np.float32).flatten()
+                s = crop[opaque_mask].astype(np.float32).flatten()
+                t = t - t.mean()
+                s = s - s.mean()
+                denom = np.sqrt(np.dot(t, t) * np.dot(s, s))
+                ncc = float(np.dot(t, s) / denom) if denom > 1e-10 else 0.0
+                if ncc < self._MASKED_NCC_THRESHOLD:
+                    logger.debug(
+                        f"Template match rejected (CCORR={ccorr_val:.3f}, "
+                        f"masked_ncc={ncc:.3f}, opaque={opaque_ratio:.0%}): "
+                        f"{name} at "
+                        f"({x1c + tw // 2}, {y1c + th // 2})"
+                    )
+                    return None
                 logger.debug(
-                    f"Template match rejected (CCORR={ccorr_val:.3f}, "
-                    f"CCOEFF={ccoeff_val:.3f}): {name} at "
-                    f"({ccorr_loc[0] + tw // 2}, {ccorr_loc[1] + th // 2})"
+                    f"Template match (masked NCC, opaque={opaque_ratio:.0%}): "
+                    f"{name} CCORR={ccorr_val:.3f}, ncc={ncc:.3f} at "
+                    f"({x1c + tw // 2}, {y1c + th // 2})"
                 )
-                return None
+                max_val = ccorr_val
 
             x1, y1 = ccorr_loc
-            max_val = ccoeff_val
         else:
             result_map = cv2.matchTemplate(
                 screenshot, template, cv2.TM_CCOEFF_NORMED)

@@ -18,8 +18,8 @@
   "resource_order": ["food", "wood", "stone", "silver"],
 
   "scenes": [
-    "main_city", "world_map", "hero", "hero_recruit",
-    "battle", "popup", "loading", "story_dialogue", "unknown"
+    "main_city", "world_map", "hero", "hero_recruit", "hero_upgrade",
+    "battle", "popup", "exit_dialog", "loading", "story_dialogue", "unknown"
   ],
 
   "known_tasks": [
@@ -107,6 +107,7 @@
       "steps": [
         {"tap_xy": [790, 1815], "delay": 1.0, "description": "切换到镇民标签"},
         {"tap_xy": [750, 1598], "delay": 1.5, "repeat": 3, "description": "点击+添加镇民"}
+        {"tap_xy": [500, 200], "delay": 1.5, "description": "点击上方空白处退出"}
       ]
     },
     {

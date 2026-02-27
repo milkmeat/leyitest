@@ -16,7 +16,7 @@ import time
 import numpy as np
 
 from vision.quest_bar_detector import QuestBarDetector, QuestBarInfo
-from vision.element_detector import ElementDetector
+from vision.element_detector import ElementDetector, find_primary_button, has_red_text_near_button
 from vision.ocr_locator import is_on_colored_button
 from state.game_state import GameState
 from brain.quest_script import QuestScriptRunner
@@ -231,6 +231,65 @@ class QuestWorkflow:
         if self.phase == self.IDLE:
             return []
 
+        # Exit dialog overrides all phases — tap "继续" and wait 60s.
+        if scene == "exit_dialog":
+            logger.info(
+                "Quest workflow: exit dialog detected, "
+                "tapping '继续' and waiting 60s"
+            )
+            return [
+                {"type": "tap", "x": 826, "y": 843,
+                 "delay": 60.0, "reason": "exit_dialog:继续"},
+            ]
+
+        # Hero list — just back out.
+        if scene == "hero":
+            logger.info("Quest workflow: hero list scene, backing out")
+            return [{
+                "type": "tap", "x": 83, "y": 1820,
+                "delay": 1.0, "reason": "hero:back_arrow",
+            }]
+
+        # Hero recruit — tap primary button once, then back arrow to leave.
+        if scene == "hero_recruit":
+            logger.info("Quest workflow: hero_recruit scene, tapping + leaving")
+            actions = []
+            primary = find_primary_button(screenshot)
+            if primary is not None:
+                actions.append({
+                    "type": "tap", "x": primary.x, "y": primary.y,
+                    "delay": 2.0, "reason": "hero_recruit:primary_button",
+                })
+            actions.append({
+                "type": "tap", "x": 83, "y": 1820,
+                "delay": 1.0, "reason": "hero_recruit:back_arrow",
+            })
+            return actions
+
+        # Hero upgrade — tap primary button if resources sufficient
+        # (no red text), otherwise back out.
+        if scene == "hero_upgrade":
+            actions = []
+            primary = find_primary_button(screenshot)
+            if primary is not None and not has_red_text_near_button(
+                screenshot, primary
+            ):
+                logger.info(
+                    f"Quest workflow: hero_upgrade, resources OK, "
+                    f"tapping primary at ({primary.x}, {primary.y})"
+                )
+                actions.append({
+                    "type": "tap", "x": primary.x, "y": primary.y,
+                    "delay": 2.0, "reason": "hero_upgrade:primary_button",
+                })
+            else:
+                logger.info("Quest workflow: hero_upgrade, insufficient resources, backing out")
+            actions.append({
+                "type": "tap", "x": 83, "y": 1820,
+                "delay": 1.0, "reason": "hero_upgrade:back_arrow",
+            })
+            return actions
+
         logger.info(f"Quest workflow step: phase={self.phase}, scene={scene}")
 
         actions = []
@@ -313,13 +372,16 @@ class QuestWorkflow:
                 "reason": "quest_workflow:navigate_main_city:back_arrow",
             }]
 
-        # Last resort: tap blank area outside any dialog
-        h, w = screenshot.shape[:2]
-        logger.info("Quest workflow: tapping blank area to navigate to main city")
+        # Last resort: tap blank area at top of screen
+        tx, ty = 500, 100
+        logger.info(
+            f"Quest workflow: tapping blank area at ({tx}, {ty}) "
+            f"to navigate to main city"
+        )
         return [{
             "type": "tap",
-            "x": w // 2,
-            "y": int(h * 0.95),
+            "x": tx,
+            "y": ty,
             "delay": 1.0,
             "reason": "quest_workflow:navigate_main_city:tap_blank",
         }]
@@ -515,6 +577,22 @@ class QuestWorkflow:
                     "reason": f"quest_workflow:popup_action:{best.name}",
                 }]
 
+            # Stage 5: Color-based primary button on popup
+            primary = find_primary_button(screenshot)
+            if primary is not None:
+                logger.info(
+                    f"Quest workflow: popup primary button "
+                    f"at ({primary.x}, {primary.y})"
+                )
+                self.popup_back_count = 0
+                return [{
+                    "type": "tap",
+                    "x": primary.x,
+                    "y": primary.y,
+                    "delay": 1.5,
+                    "reason": "quest_workflow:popup_primary_button",
+                }]
+
             # No known dismiss method found — escalate
             self.popup_back_count += 1
 
@@ -676,8 +754,27 @@ class QuestWorkflow:
                 "delay": 1.5,
                 "reason": f"quest_workflow:action_button:{best.name}",
             }]
+        # Color-based primary button detection (blue/green action buttons
+        # on building panels).  Catches buttons that OCR/template misses or
+        # that have been exhausted by the repeat tracker.  find_primary_button
+        # does not participate in the exhaustion system — the stuck recovery
+        # mechanism handles infinite loops at a higher level.
+        primary = find_primary_button(screenshot)
+        if primary is not None:
+            logger.info(
+                f"Quest workflow: primary button at ({primary.x}, {primary.y}) "
+                f"bbox={primary.bbox}"
+            )
+            return [{
+                "type": "tap",
+                "x": primary.x,
+                "y": primary.y,
+                "delay": 1.5,
+                "reason": "quest_workflow:primary_button",
+            }]
         elif self._exhausted_buttons:
-            # All known buttons exhausted — action likely triggered, go check
+            # All known buttons exhausted AND no color-detected button —
+            # action likely triggered, go check.
             logger.info("Quest workflow: all action buttons exhausted, returning to city")
             self.phase = self.RETURN_TO_CITY
             return []
@@ -858,10 +955,36 @@ class QuestWorkflow:
 
         if not info.visible:
             logger.warning("Quest workflow: quest bar not visible for check")
+
+            # Not at main city — try primary button first (may still be
+            # on a building panel mid-quest), then fall back to
+            # return_to_city navigation.
+            primary = find_primary_button(screenshot)
+            if primary is not None:
+                logger.info(
+                    f"Quest workflow (check): primary button "
+                    f"at ({primary.x}, {primary.y}), tapping"
+                )
+                return [{
+                    "type": "tap",
+                    "x": primary.x,
+                    "y": primary.y,
+                    "delay": 1.5,
+                    "reason": "quest_workflow:check_primary_button",
+                }]
+
             self.check_retries += 1
             if self.check_retries > self.max_check_retries:
                 logger.warning("Quest workflow: too many check retries, aborting")
                 self.abort()
+                return []
+
+            # Switch to return_to_city to navigate back properly
+            logger.info(
+                "Quest workflow (check): quest bar not visible, "
+                "switching to return_to_city"
+            )
+            self.phase = self.RETURN_TO_CITY
             return []
 
         if info.has_green_check:
