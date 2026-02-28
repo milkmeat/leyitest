@@ -628,6 +628,17 @@ class GameBot:
                             )
                             time.sleep(0.3)
                             continue
+                        # Check for primary action button (前往, 升级, etc.)
+                        # Popup buttons can appear anywhere, use relaxed y_fraction.
+                        primary = find_primary_button(screenshot, y_fraction=0.2)
+                        if primary is not None:
+                            logger.info(
+                                f"Popup: primary button at "
+                                f"({primary.x}, {primary.y}), tapping"
+                            )
+                            self.adb.tap(primary.x, primary.y)
+                            time.sleep(0.3)
+                            continue
                         logger.info("Popup detected, attempting to close")
                         self.popup_filter.handle(screenshot)
                         time.sleep(0.3)
@@ -671,7 +682,7 @@ class GameBot:
                     #    reward popups with dark backgrounds get misclassified
                     #    as loading; real loading screens have no buttons).
                     if scene == "loading":
-                        primary = find_primary_button(screenshot)
+                        primary = find_primary_button(screenshot, y_fraction=0.2)
                         if primary is not None:
                             logger.info(
                                 f"Loading screen has primary button "
@@ -689,6 +700,36 @@ class GameBot:
                             logger.info("Loading screen, waiting...")
                             time.sleep(config.LOOP_INTERVAL)
                         continue
+
+                    # 5b. Expedition formation — tap "一键上阵" then "出战".
+                    #     Detected by OCR since there's no dedicated scene
+                    #     template; runs only when scene is unknown.
+                    if scene == "unknown":
+                        one_click = self.detector.locate(
+                            screenshot, "一键上阵", methods=["ocr"]
+                        )
+                        if one_click is not None:
+                            logger.info(
+                                f"Expedition formation: tapping "
+                                f"'一键上阵' at ({one_click.x}, {one_click.y})"
+                            )
+                            self.adb.tap(one_click.x, one_click.y)
+                            time.sleep(1.0)
+                            # "出战" is the gold button to the right of
+                            # "一键上阵".  OCR can't read white-on-gold text
+                            # and find_primary_button picks the blue button
+                            # (Tier 1) instead, so use layout position.
+                            sh, sw = screenshot.shape[:2]
+                            battle_x = int(sw * 0.7)
+                            battle_y = one_click.y
+                            logger.info(
+                                f"Expedition formation: tapping "
+                                f"'出战' at ({battle_x}, {battle_y})"
+                            )
+                            self.adb.tap(battle_x, battle_y)
+                            time.sleep(0.5)
+                            consecutive_unknown_scenes = 0
+                            continue
 
                     # 6. Handle unknown scenes with escalating escape
                     #    Level 1 (counter 1): back_arrow / popup / BACK
@@ -723,7 +764,8 @@ class GameBot:
                         # counter keeps rising toward the escalation
                         # threshold (tap blank area at >=3).
                         if not handled:
-                            primary = find_primary_button(screenshot)
+                            primary = find_primary_button(
+                                screenshot, y_fraction=0.2)
                             if primary is not None:
                                 pos = (primary.x, primary.y)
                                 if pos == last_unknown_primary_pos:
