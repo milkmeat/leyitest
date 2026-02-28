@@ -30,6 +30,7 @@ class QuestBarInfo:
     current_quest_text: str = ""
     current_quest_bbox: tuple[int, int, int, int] | None = None
     has_green_check: bool = False
+    green_check_pos: tuple[int, int] | None = None
     has_tutorial_finger: bool = False
     tutorial_finger_pos: tuple[int, int] | None = None
 
@@ -113,9 +114,11 @@ class QuestBarDetector:
 
         # 5. Green check detection (right of quest text bbox)
         if info.current_quest_bbox is not None:
-            info.has_green_check = self._detect_green_check(
+            has_check, check_pos = self._detect_green_check(
                 screenshot, info.current_quest_bbox
             )
+            info.has_green_check = has_check
+            info.green_check_pos = check_pos
 
         # 6. Tutorial finger icon
         self._detect_tutorial_finger(screenshot, info)
@@ -207,12 +210,15 @@ class QuestBarDetector:
             bx2 + text_x1, by2 + text_y1
         )
 
-    def _detect_green_check(self, screenshot: np.ndarray,
-                            quest_bbox: tuple[int, int, int, int]) -> bool:
+    def _detect_green_check(
+        self, screenshot: np.ndarray,
+        quest_bbox: tuple[int, int, int, int],
+    ) -> tuple[bool, tuple[int, int] | None]:
         """Check for green check mark right of quest text bbox.
 
-        Uses HSV color analysis (H:35-85, S>80, V>100).
-        Returns True if green pixel count exceeds threshold.
+        Uses HSV color analysis (H:50-85, S>100, V>100).
+        Returns (detected, center_pos) where center_pos is the tap
+        target in full-screenshot coordinates.
         """
         h, w = screenshot.shape[:2]
         qx1, qy1, qx2, qy2 = quest_bbox
@@ -224,11 +230,11 @@ class QuestBarDetector:
         check_y2 = qy2
 
         if check_x2 <= check_x1 or check_y2 <= check_y1:
-            return False
+            return False, None
 
         region = screenshot[check_y1:check_y2, check_x1:check_x2]
         if region.size == 0:
-            return False
+            return False, None
 
         hsv = cv2.cvtColor(region, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(
@@ -239,10 +245,15 @@ class QuestBarDetector:
         green_count = cv2.countNonZero(mask)
 
         if green_count >= self.GREEN_PIXEL_THRESHOLD:
-            logger.debug(f"Quest bar: green check detected ({green_count} pixels)")
-            return True
+            center_x = (check_x1 + check_x2) // 2
+            center_y = (check_y1 + check_y2) // 2
+            logger.debug(
+                f"Quest bar: green check detected ({green_count} pixels) "
+                f"at ({center_x}, {center_y})"
+            )
+            return True, (center_x, center_y)
 
-        return False
+        return False, None
 
     def _detect_tutorial_finger(self, screenshot: np.ndarray,
                                 info: QuestBarInfo) -> None:

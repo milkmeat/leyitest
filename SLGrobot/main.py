@@ -329,10 +329,10 @@ class GameBot:
         return False
 
     def _try_claim_quest_reward(self) -> bool:
-        """Detect green check on quest bar and claim reward.
+        """Detect green check on quest bar and tap it to claim reward.
 
-        Takes a fresh screenshot, checks for green check, clicks quest text
-        to claim, then waits briefly for the reward animation.
+        Takes a fresh screenshot, checks for green check, taps the green
+        check icon, then waits briefly for the reward animation.
 
         Returns True if reward was claimed.
         """
@@ -345,16 +345,22 @@ class GameBot:
         if not info.visible or not info.has_green_check:
             return False
 
-        if info.current_quest_bbox is None:
+        if info.green_check_pos is not None:
+            cx, cy = info.green_check_pos
+            logger.info(
+                f"Claiming quest reward: tapping green check at ({cx}, {cy})"
+            )
+        elif info.current_quest_bbox is not None:
+            # Fallback: tap quest text center if green check pos unavailable
+            bx1, by1, bx2, by2 = info.current_quest_bbox
+            cx = (bx1 + bx2) // 2
+            cy = (by1 + by2) // 2
+            logger.info(
+                f"Claiming quest reward: tapping quest text at ({cx}, {cy})"
+            )
+        else:
             return False
 
-        bx1, by1, bx2, by2 = info.current_quest_bbox
-        cx = (bx1 + bx2) // 2
-        cy = (by1 + by2) // 2
-
-        logger.info(
-            f"Claiming quest reward: tapping quest text at ({cx}, {cy})"
-        )
         self.adb.tap(cx, cy)
         time.sleep(2.0)
         return True
@@ -771,12 +777,12 @@ class GameBot:
                     if scene != "main_city":
                         self.state_tracker.update(screenshot, scene)
 
-                    # 7.5 Quest reward — claim if green check visible.
-                    #     No quest scripts in auto mode; scripts are
-                    #     CLI-only via the `quest` command.
+                    # 7.5 Quest reward — claim if green check visible
+                    #     and no tutorial finger on screen.
                     if (scene == "main_city"
                             and self.game_state.quest_bar_visible
-                            and self.game_state.quest_bar_has_green_check):
+                            and self.game_state.quest_bar_has_green_check
+                            and not self.game_state.quest_bar_has_tutorial_finger):
                         self._try_claim_quest_reward()
                         continue
 
