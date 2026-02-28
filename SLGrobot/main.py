@@ -48,7 +48,7 @@ from brain.task_queue import TaskQueue, Task
 from brain.auto_handler import AutoHandler
 from brain.rule_engine import RuleEngine
 from brain.stuck_recovery import StuckRecovery
-from brain.quest_workflow import QuestWorkflow
+from brain.finger_detector import FingerDetector
 from executor.action_validator import ActionValidator
 from executor.action_runner import ActionRunner
 from executor.result_checker import ResultChecker
@@ -201,23 +201,180 @@ class GameBot:
         )
         self.game_logger = GameLogger(config.LOG_DIR)
 
-        # Quest workflow (reset stale persisted state — workflow always starts IDLE)
-        self.quest_workflow = QuestWorkflow(
-            quest_bar_detector=self.state_tracker.quest_bar_detector,
-            element_detector=self.detector,
-            game_state=self.game_state,
-            game_profile=game_profile,
-            adb_controller=self.adb,
-            screenshot_fn=self.screenshot_mgr.capture,
+        # Finger detector (extracted from old QuestWorkflow)
+        self.finger_detector = FingerDetector(self.detector, game_profile)
+
+        # Quest scripts for synchronous execution
+        self._quest_scripts = (
+            game_profile.quest_scripts
+            if game_profile and game_profile.quest_scripts
+            else []
         )
-        self.game_state.quest_workflow_phase = "idle"
-        self.game_state.quest_workflow_target = ""
+
+        # Abort cooldown — prevent immediate restart of the same quest
+        self._last_abort_time: float = 0.0
+        self._last_aborted_quest: str = ""
+        self._ABORT_COOLDOWN: int = 180  # seconds (3 minutes)
 
     def tap_blank_area(self) -> None:
         """Tap blank areas at bottom then top to dismiss overlays."""
         self.adb.tap(540, 1820)
         time.sleep(0.3)
         self.adb.tap(540, 100)
+
+    # -- Quest helpers (synchronous execution) --
+
+    def _find_matching_script(self, quest_name: str) -> tuple[dict | None, re.Match | None]:
+        """Find quest script matching quest_name by name or regex pattern."""
+        if not self._quest_scripts or not quest_name:
+            return None, None
+        quest_lower = quest_name.lower().strip()
+        # Pass 1: match by name (exact, case-insensitive)
+        for rule in self._quest_scripts:
+            name = rule.get("name", "")
+            if name and name.lower() == quest_lower:
+                return rule, None
+        # Pass 2: match by regex pattern
+        for rule in self._quest_scripts:
+            pattern = rule.get("pattern", "")
+            if pattern:
+                m = re.search(pattern, quest_name)
+                if m:
+                    return rule, m
+        return None, None
+
+    def _has_matching_script(self, quest_name: str) -> bool:
+        """Return True if quest_name matches any quest_script pattern."""
+        rule, _ = self._find_matching_script(quest_name)
+        return rule is not None
+
+    def _should_start_quest(self, quest_name: str,
+                            has_green_check: bool = False) -> bool:
+        """Check if we should start this quest (respects abort cooldown)."""
+        if has_green_check:
+            return True
+        if self._last_aborted_quest and quest_name == self._last_aborted_quest:
+            elapsed = time.time() - self._last_abort_time
+            if elapsed < self._ABORT_COOLDOWN:
+                logger.debug(
+                    f"Quest cooldown active for '{quest_name}' "
+                    f"({int(elapsed)}s / {self._ABORT_COOLDOWN}s)"
+                )
+                return False
+        return True
+
+    def _run_quest_script(self, quest_name: str, steps: list[dict],
+                          regex_match: re.Match | None = None) -> bool:
+        """Synchronously execute a quest script (blocks auto loop).
+
+        Returns True if script completed successfully, False on abort/timeout.
+        """
+        from brain.quest_script import QuestScriptRunner
+
+        runner = QuestScriptRunner(
+            ocr_locator=self.ocr,
+            template_matcher=self.template_matcher,
+            adb_controller=self.adb,
+            screenshot_fn=self.screenshot_mgr.capture,
+        )
+        runner.load(steps)
+
+        # Extract named regex groups into runner variables
+        if regex_match:
+            for var_name, value in regex_match.groupdict().items():
+                if value is not None:
+                    runner.variables[var_name] = value
+
+        max_iterations = len(steps) * 10
+        timeout = 120.0  # seconds
+        start_time = time.time()
+        iteration = 0
+
+        logger.info(f"Running quest script for '{quest_name}' ({len(steps)} steps)")
+
+        while not runner.is_done() and iteration < max_iterations:
+            if time.time() - start_time > timeout:
+                logger.warning(
+                    f"Quest script timeout ({timeout}s) for '{quest_name}'"
+                )
+                self._last_abort_time = time.time()
+                self._last_aborted_quest = quest_name
+                return False
+
+            iteration += 1
+            try:
+                screenshot = self.screenshot_mgr.capture()
+            except Exception as e:
+                logger.error(f"Screenshot failed during quest script: {e}")
+                self._last_abort_time = time.time()
+                self._last_aborted_quest = quest_name
+                return False
+
+            actions = runner.execute_one(screenshot)
+            if actions is None:
+                # Step waiting (e.g. text not found), retry
+                time.sleep(1.0)
+                continue
+
+            if not actions:
+                # No-op step (read_text, eval)
+                continue
+
+            for action in actions:
+                self.runner.execute(action)
+                time.sleep(action.get("delay", 1.0))
+
+        if runner.is_aborted():
+            logger.warning(
+                f"Quest script aborted for '{quest_name}': "
+                f"{runner.abort_reason}"
+            )
+            self._last_abort_time = time.time()
+            self._last_aborted_quest = quest_name
+            return False
+
+        if runner.is_done():
+            logger.info(f"Quest script completed for '{quest_name}'")
+            return True
+
+        logger.warning(
+            f"Quest script stopped after {iteration} iterations "
+            f"for '{quest_name}'"
+        )
+        self._last_abort_time = time.time()
+        self._last_aborted_quest = quest_name
+        return False
+
+    def _try_claim_quest_reward(self) -> bool:
+        """Detect green check on quest bar and claim reward.
+
+        Takes a fresh screenshot, checks for green check, clicks quest text
+        to claim, then waits briefly for the reward animation.
+
+        Returns True if reward was claimed.
+        """
+        try:
+            screenshot = self.screenshot_mgr.capture()
+        except Exception:
+            return False
+
+        info = self.state_tracker.quest_bar_detector.detect(screenshot)
+        if not info.visible or not info.has_green_check:
+            return False
+
+        if info.current_quest_bbox is None:
+            return False
+
+        bx1, by1, bx2, by2 = info.current_quest_bbox
+        cx = (bx1 + bx2) // 2
+        cy = (by1 + by2) // 2
+
+        logger.info(
+            f"Claiming quest reward: tapping quest text at ({cx}, {cy})"
+        )
+        self.adb.tap(cx, cy)
+        time.sleep(2.0)
+        return True
 
     def connect(self) -> bool:
         """Connect to emulator and load persisted state."""
@@ -282,7 +439,10 @@ class GameBot:
                 logger.info(f"=== Loop {loop} ===")
 
                 try:
-                    # 0. Check ADB connection
+                    # 0. Brief pause at start of each loop
+                    time.sleep(0.5)
+
+                    # 0b. Check ADB connection
                     if not self.adb.is_connected():
                         logger.warning("ADB disconnected, attempting reconnect...")
                         self.game_logger.log_recovery(
@@ -347,61 +507,21 @@ class GameBot:
                     # 2c. Tutorial finger detection — highest priority.
                     #     Runs BEFORE state update so finger can be tapped
                     #     within the ~3s it stays on screen.
-                    finger, flip = self.quest_workflow._detect_tutorial_finger(
-                        screenshot
-                    )
+                    #     Always tap the finger directly (no quest scripts
+                    #     in auto mode — scripts are CLI-only via `quest`).
+                    finger, flip = self.finger_detector.detect(screenshot)
                     if finger is not None:
-                        tip_x, tip_y = self.quest_workflow._fingertip_pos(
+                        tip_x, tip_y = self.finger_detector.fingertip_pos(
                             finger.x, finger.y, flip
                         )
                         logger.info(
-                            f"Tutorial finger detected at ({finger.x}, {finger.y}) "
-                            f"{flip}, tapping fingertip ({tip_x}, {tip_y})"
+                            f"Tutorial finger detected at "
+                            f"({finger.x}, {finger.y}) {flip}, "
+                            f"tapping fingertip ({tip_x}, {tip_y})"
                         )
                         self.adb.tap(tip_x, tip_y)
                         consecutive_unknown_scenes = 0
-                        # Fast-start quest workflow to EXECUTE_QUEST when
-                        # finger is on the quest bar — the finger tap already
-                        # navigates us past the read→click phases, so skip
-                        # directly to execution so quest rules are active on
-                        # the next loop.
-                        # Also handles the case where workflow is already active
-                        # in an early phase (ENSURE_MAIN_CITY / READ_QUEST /
-                        # CLICK_QUEST) — the finger tap navigates away from
-                        # main_city, so the workflow must advance to
-                        # EXECUTE_QUEST to avoid a back-and-forth loop.
-                        if (scene == "main_city"
-                                and self.game_state.quest_bar_has_tutorial_finger
-                                and self.game_state.quest_bar_visible
-                                and self.game_state.quest_bar_current_quest):
-                            quest_text = self.game_state.quest_bar_current_quest
-                            early_phases = {
-                                self.quest_workflow.IDLE,
-                                self.quest_workflow.ENSURE_MAIN_CITY,
-                                self.quest_workflow.READ_QUEST,
-                                self.quest_workflow.CLICK_QUEST,
-                            }
-                            if (not self.quest_workflow.is_active()
-                                    or self.quest_workflow.phase in early_phases):
-                                if not self.quest_workflow.is_active():
-                                    self.quest_workflow.start()
-                                self.quest_workflow.target_quest_name = quest_text
-                                self.quest_workflow.phase = (
-                                    self.quest_workflow.EXECUTE_QUEST
-                                )
-                                self.quest_workflow.execute_iterations = 0
-                                self.quest_workflow._script_runner.reset()
-                                self.quest_workflow._loaded_quest_pattern = ""
-                                self.quest_workflow._exhausted_buttons = set()
-                                logger.info(
-                                    f"Quest workflow fast-started to EXECUTE_QUEST "
-                                    f"(quest bar finger), quest='{quest_text}'"
-                                )
-                        # Short delay for game scene transition after tap.
-                        # Too short → next screenshot still shows old scene.
-                        # Too long → next finger may disappear (~3s window).
-                        # 0.8s + ~1s ADB screenshot ≈ 1.8s post-tap capture.
-                        time.sleep(1.5)
+                        time.sleep(0.8)
                         continue
 
                     # 2d. Update state on main_city (after finger check so
@@ -506,10 +626,9 @@ class GameBot:
                         time.sleep(10)
                         continue
 
-                    # 4. Handle popups immediately (skip when quest workflow
-                    #    is active — workflow handles its own popups like
-                    #    battle result screens with "返回领地")
-                    if scene == "popup" and not self.quest_workflow.is_active():
+                    # 4. Handle popups immediately (quest scripts run
+                    #    synchronously so auto loop is already paused)
+                    if scene == "popup":
                         # Check for claimable rewards before closing
                         reward_action = self.auto_handler._check_rewards(screenshot)
                         if reward_action:
@@ -574,24 +693,6 @@ class GameBot:
                         else:
                             logger.info("Loading screen, waiting...")
                             time.sleep(config.LOOP_INTERVAL)
-                        continue
-
-                    # 5. Quest workflow state machine (before unknown scene
-                    #    handling — workflow may navigate through non-main scenes
-                    #    like expedition that get classified as "unknown")
-                    if self.quest_workflow.is_active():
-                        if scene == "unknown":
-                            consecutive_unknown_scenes += 1
-                        else:
-                            consecutive_unknown_scenes = 0
-                        actions = self.quest_workflow.step(screenshot, scene)
-                        if actions:
-                            self._execute_validated_actions(
-                                actions, scene, screenshot
-                            )
-                        self.state_tracker.update(screenshot, scene)
-                        self.persistence.save(self.game_state)
-                        time.sleep(config.LOOP_INTERVAL)
                         continue
 
                     # 6. Handle unknown scenes with escalating escape
@@ -672,21 +773,13 @@ class GameBot:
                     if scene != "main_city":
                         self.state_tracker.update(screenshot, scene)
 
-                    # 7.5 Quest workflow has highest priority — start it
-                    #     when quest bar is visible.
-                    if (not self.quest_workflow.is_active()
-                            and scene == "main_city"
+                    # 7.5 Quest reward — claim if green check visible.
+                    #     No quest scripts in auto mode; scripts are
+                    #     CLI-only via the `quest` command.
+                    if (scene == "main_city"
                             and self.game_state.quest_bar_visible
-                            and self.game_state.quest_bar_current_quest
-                            and self.quest_workflow.should_start(
-                                self.game_state.quest_bar_current_quest,
-                                self.game_state.quest_bar_has_green_check)):
-                        logger.info(
-                            "Quest bar active, starting quest workflow "
-                            f"(pausing {self.task_queue.pending_count()} queued tasks), "
-                            f"quest='{self.game_state.quest_bar_current_quest}'"
-                        )
-                        self.quest_workflow.start()
+                            and self.game_state.quest_bar_has_green_check):
+                        self._try_claim_quest_reward()
                         continue
 
                     # 8. Three-layer decision
@@ -909,9 +1002,6 @@ class CLI:
             print(f"Quest bar: '{gs.quest_bar_current_quest}' "
                   f"red_badge={gs.quest_bar_has_red_badge} "
                   f"green_check={gs.quest_bar_has_green_check}")
-        if gs.quest_workflow_phase != "idle":
-            print(f"Quest workflow: phase={gs.quest_workflow_phase} "
-                  f"target='{gs.quest_workflow_target}'")
 
     def cmd_state(self, args: list[str]) -> None:
         gs = self.bot.game_state
@@ -962,7 +1052,7 @@ class CLI:
             return
 
         quest_text = " ".join(args)
-        rules = self.bot.quest_workflow._quest_scripts
+        rules = self.bot._quest_scripts
         if not rules:
             print("No quest scripts loaded.")
             return
@@ -1046,7 +1136,7 @@ class CLI:
 
     def cmd_quest_rules(self, args: list[str]) -> None:
         """List all quest action rules."""
-        rules = self.bot.quest_workflow._quest_scripts
+        rules = self.bot._quest_scripts
         if not rules:
             print("No quest scripts loaded.")
             return
@@ -1075,7 +1165,7 @@ class CLI:
             return
 
         quest_text = " ".join(args)
-        rules = self.bot.quest_workflow._quest_scripts
+        rules = self.bot._quest_scripts
         if not rules:
             print("No quest scripts loaded.")
             return
@@ -1173,28 +1263,28 @@ class CLI:
                 return
         else:
             screenshot = self.bot.screenshot_mgr.capture()
-        wf = self.bot.quest_workflow
+        fd = self.bot.finger_detector
 
         # Show raw matches for all variants (before threshold filter)
-        for cache_name, _, flip_type in wf._FINGER_VARIANTS:
-            raw = wf.element_detector.locate(
+        for cache_name, _, flip_type in fd._FINGER_VARIANTS:
+            raw = fd.element_detector.locate(
                 screenshot, cache_name, methods=["template"]
             )
             if raw is not None:
-                ncc = wf._verify_finger_ncc(screenshot, raw.x, raw.y, flip_type)
+                ncc = fd.verify_ncc(screenshot, raw.x, raw.y, flip_type)
                 print(f"Raw {flip_type:7s}: ccorr={raw.confidence:.3f} "
                       f"at ({raw.x}, {raw.y})  ncc={ncc:.3f}")
             else:
                 print(f"Raw {flip_type:7s}: no match")
-        print(f"  (threshold: ccorr>={wf._FINGER_CONFIDENCE_THRESHOLD}, "
-              f"ncc>={wf._FINGER_NCC_THRESHOLD})")
+        print(f"  (threshold: ccorr>={fd._FINGER_CONFIDENCE_THRESHOLD}, "
+              f"ncc>={fd._FINGER_NCC_THRESHOLD})")
 
-        finger_match, flip_type = wf._detect_tutorial_finger(screenshot)
+        finger_match, flip_type = fd.detect(screenshot)
         if finger_match is None:
             print("No finger detected (rejected by two-stage filter).")
             return
 
-        tip_x, tip_y = wf._fingertip_pos(
+        tip_x, tip_y = fd.fingertip_pos(
             finger_match.x, finger_match.y, flip_type)
 
         print(f"Finger center: ({finger_match.x}, {finger_match.y})  "
@@ -1223,8 +1313,9 @@ class CLI:
         else:
             screenshot = self.bot.screenshot_mgr.capture()
 
-        wf = self.bot.quest_workflow
-        tm = wf.element_detector.template_matcher
+        tm = self.bot.template_matcher
+        RED_OPAQUE_MIN = 0.15
+        RED_BG_MAX = 0.30
 
         # Show raw top-5 CCORR candidates with red-pixel ratios
         candidates = tm.match_one_multi(screenshot, "buttons/close_x",
@@ -1237,6 +1328,8 @@ class CLI:
                 opaque = mask[:, :, 0] > 0
                 transparent = ~opaque
 
+        best = None
+        best_score = -1.0
         for i, m in enumerate(candidates):
             patch = screenshot[m.bbox[1]:m.bbox[3], m.bbox[0]:m.bbox[2]]
             hsv = cv2.cvtColor(patch, cv2.COLOR_BGR2HSV)
@@ -1251,11 +1344,15 @@ class CLI:
                 r_bg = 0.0
             print(f"  #{i+1}: ccorr={m.confidence:.3f} "
                   f"red_x={r_op:.3f} red_bg={r_bg:.3f} at ({m.x}, {m.y})")
-        print(f"  (need: red_x>={wf._CLOSE_X_RED_OPAQUE_MIN}, "
-              f"red_bg<={wf._CLOSE_X_RED_BG_MAX})")
+            if r_op >= RED_OPAQUE_MIN and r_bg <= RED_BG_MAX:
+                score = r_op - r_bg
+                if score > best_score:
+                    best_score = score
+                    best = m
+        print(f"  (need: red_x>={RED_OPAQUE_MIN}, "
+              f"red_bg<={RED_BG_MAX})")
 
-        # Run verified detection
-        match = wf._find_close_x(screenshot)
+        match = best
         if match is None:
             print("No close_x detected (rejected by red-pixel filter).")
             return
