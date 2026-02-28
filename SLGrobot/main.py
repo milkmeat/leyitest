@@ -1,22 +1,17 @@
-"""SLGrobot - Main entry point with two-layer decision loop.
+"""SLGrobot - Main entry point with scene-driven auto loop.
 
 Supports two modes:
   - Interactive CLI (default): manual game control
-  - Auto mode (--auto): autonomous two-layer decision loop
-
-Two-layer decision loop:
-  1. Tactical Layer   - Local rule engine (<500ms) decomposes tasks
-  2. Execution Layer  - CV + ADB (<100ms) screenshot -> detect -> tap
+  - Auto mode (--auto): autonomous scene-driven loop
 
 Auto loop flow:
   screenshot -> classify scene ->
-    popup   -> auto-close -> continue
-    loading -> wait -> continue
-    unknown -> press BACK -> continue
-    other   -> update game_state ->
-      has_pending tasks -> rule_engine.plan(task) -> validate -> execute -> verify
-      no tasks           -> auto_handler.get_actions() -> execute
-    -> persist state -> sleep -> repeat
+    popup/loading    -> handle -> continue
+    tutorial_finger  -> follow tap -> continue
+    quest_bar green  -> claim reward -> continue
+    known popup      -> auto close -> continue
+    otherwise        -> auto_handler.get_actions() -> execute
+  -> persist state -> sleep -> repeat
 """
 
 import os
@@ -44,9 +39,7 @@ from scene.popup_filter import PopupFilter
 from state.game_state import GameState
 from state.state_tracker import StateTracker
 from state.persistence import StatePersistence
-from brain.task_queue import TaskQueue, Task
 from brain.auto_handler import AutoHandler
-from brain.rule_engine import RuleEngine
 from brain.stuck_recovery import StuckRecovery
 from brain.finger_detector import FingerDetector
 from executor.action_validator import ActionValidator
@@ -92,12 +85,9 @@ def parse_coord(s: str) -> tuple[int, int]:
 
 
 class GameBot:
-    """Main game bot with two-layer decision loop.
+    """Main game bot with scene-driven auto loop.
 
-    Layers:
-    1. Tactical (Rules): rule_engine    - called per task
-    2. Execution (ADB):  action_runner  - called per action
-
+    Uses AutoHandler + Quest Scripts for decision making.
     Validation pipeline: validator -> runner -> checker
     """
 
@@ -108,12 +98,10 @@ class GameBot:
         template_dir = game_profile.template_dir if game_profile else config.TEMPLATE_DIR
         nav_paths_file = game_profile.nav_paths_file if game_profile else config.NAV_PATHS_FILE
         state_file = game_profile.state_file if game_profile else config.STATE_FILE
-        tasks_file = game_profile.tasks_file if game_profile else config.TASKS_FILE
         game_package = game_profile.package if game_profile else config.GAME_PACKAGE
         grid_cols = game_profile.grid_cols if game_profile else config.GRID_COLS
         grid_rows = game_profile.grid_rows if game_profile else config.GRID_ROWS
 
-        self._tasks_file = tasks_file
         self._template_dir = template_dir
 
         # Device layer
@@ -152,13 +140,8 @@ class GameBot:
         )
 
         # Brain layer
-        self.task_queue = TaskQueue()
         self.auto_handler = AutoHandler(
             self.template_matcher, self.detector,
-            game_profile=game_profile,
-        )
-        self.rule_engine = RuleEngine(
-            self.detector, self.game_state, nav_paths_file,
             game_profile=game_profile,
         )
         # Building finder (optional, depends on city_layout config)
@@ -806,34 +789,10 @@ class GameBot:
                         time.sleep(0.3)
                         continue
 
-                    # 8. Three-layer decision
-                    actions = []
-                    if self.task_queue.has_pending():
-                        # Tactical layer: rule engine decomposes task
-                        task = self.task_queue.next()
-                        if task:
-                            logger.info(f"Executing task: '{task.name}'")
-                            if self.rule_engine.can_handle(task):
-                                actions = self.rule_engine.plan(
-                                    task, screenshot, self.game_state
-                                )
-                            elif task.params.get("actions"):
-                                actions = task.params["actions"]
-                            else:
-                                logger.warning(
-                                    f"No rule for task '{task.name}', skipping"
-                                )
-                                self.task_queue.mark_failed(task)
-
-                            if actions:
-                                self.task_queue.mark_done(task)
-                            elif task.status == "running":
-                                self.task_queue.mark_failed(task)
-
-                    else:
-                        actions = self.auto_handler.get_actions(
-                            screenshot, self.game_state
-                        )
+                    # 8. Auto-handler decision
+                    actions = self.auto_handler.get_actions(
+                        screenshot, self.game_state
+                    )
 
                     # 8. Execute actions with validation pipeline
                     self._execute_validated_actions(actions, scene, screenshot)
@@ -844,9 +803,6 @@ class GameBot:
                     # 10. Log summary
                     if loop % 10 == 0:
                         self._log_status()
-
-                    if loop % 20 == 0:
-                        self.task_queue.clear_completed()
 
                     # Reset error counter on successful iteration
                     consecutive_errors = 0
@@ -933,8 +889,7 @@ class GameBot:
         gs = self.game_state
         logger.info(
             f"Status: scene={gs.scene}, resources={gs.resources}, "
-            f"buildings={len(gs.buildings)}, loop={gs.loop_count}, "
-            f"tasks_pending={self.task_queue.pending_count()}"
+            f"buildings={len(gs.buildings)}, loop={gs.loop_count}"
         )
 
 
@@ -1021,7 +976,6 @@ class CLI:
         print(f"Scene: {gs.scene}  Loop: {gs.loop_count}")
         print(f"Resources: {gs.resources}")
         print(f"Buildings: {len(gs.buildings)}  Marches: {len(gs.troops_marching)}")
-        print(f"Tasks pending: {self.bot.task_queue.pending_count()}")
         if gs.quest_bar_visible:
             print(f"Quest bar: '{gs.quest_bar_current_quest}' "
                   f"red_badge={gs.quest_bar_has_red_badge} "

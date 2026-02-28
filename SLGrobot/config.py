@@ -64,7 +64,6 @@ GRID_ROWS = 6
 # Paths
 TEMPLATE_DIR = "templates"
 STATE_FILE = "data/game_state.json"
-TASKS_FILE = "data/tasks.json"
 NAV_PATHS_FILE = "data/navigation_paths.json"
 
 # Multi-game support

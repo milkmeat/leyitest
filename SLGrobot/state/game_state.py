@@ -41,7 +41,6 @@ class GameState:
         }
         self.buildings: dict[str, BuildingState] = {}
         self.troops_marching: list[MarchState] = []
-        self.task_queue: list[str] = []
         self.last_actions: list[dict] = []
         self.cooldowns: dict[str, str] = {}
         self.last_update: str = ""
@@ -63,7 +62,6 @@ class GameState:
                 name: asdict(b) for name, b in self.buildings.items()
             },
             "troops_marching": [asdict(m) for m in self.troops_marching],
-            "task_queue": self.task_queue,
             "last_actions": self.last_actions[-20:],  # Keep last 20
             "cooldowns": self.cooldowns,
             "last_update": self.last_update,
@@ -90,7 +88,6 @@ class GameState:
         for mdata in data.get("troops_marching", []):
             self.troops_marching.append(MarchState(**mdata))
 
-        self.task_queue = data.get("task_queue", [])
         self.last_actions = data.get("last_actions", [])
         self.cooldowns = data.get("cooldowns", {})
         self.last_update = data.get("last_update", "")
@@ -143,10 +140,6 @@ class GameState:
                 for m in self.troops_marching
             ]
             lines.append(f"Marches: {'; '.join(march_parts)}")
-
-        # Pending tasks
-        if self.task_queue:
-            lines.append(f"Pending tasks: {', '.join(self.task_queue[:5])}")
 
         # Quest bar
         if self.quest_bar_visible:

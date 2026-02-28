@@ -28,8 +28,6 @@ class GameProfile:
     template_dir: str = ""
     nav_paths_file: str = ""
     state_file: str = ""
-    tasks_file: str = ""
-
     # Resources
     default_resources: dict[str, int] = field(default_factory=dict)
     resource_keywords: dict[str, list[str]] = field(default_factory=dict)
@@ -37,8 +35,6 @@ class GameProfile:
 
     # Scenes and tasks
     scenes: list[str] = field(default_factory=list)
-    known_tasks: list[str] = field(default_factory=list)
-
     # Auto-handler patterns
     known_popups: list[list[str]] = field(default_factory=list)
     reward_templates: list[str] = field(default_factory=list)
@@ -102,8 +98,6 @@ def load_game_profile(game_id: str,
         template_dir=os.path.join(game_dir, "templates"),
         nav_paths_file=os.path.join(game_dir, "navigation_paths.json"),
         state_file=os.path.join(game_dir, "game_state.json"),
-        tasks_file=os.path.join(game_dir, "tasks.json"),
-
         # Resources
         default_resources=data.get("default_resources", {}),
         resource_keywords=data.get("resource_keywords", {}),
@@ -111,8 +105,6 @@ def load_game_profile(game_id: str,
 
         # Scenes and tasks
         scenes=data.get("scenes", []),
-        known_tasks=data.get("known_tasks", []),
-
         # Auto-handler
         known_popups=data.get("known_popups", []),
         reward_templates=data.get("reward_templates", []),

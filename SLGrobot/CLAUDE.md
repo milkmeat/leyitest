@@ -29,20 +29,21 @@ Tests use raw `assert` statements (no pytest fixtures). Each file tests one deve
 ```bash
 python test_phase1.py       # ADB + device layer
 python test_vision.py       # Template matching, OCR, grid overlay
-python test_state.py        # Game state, persistence, task queue
+python test_state.py        # Game state, persistence, auto-handler
 python test_llm.py          # LLM planner API calls
 python test_hardening.py    # Stuck recovery, reconnect, retry
 ```
 
 ## Architecture
 
-### Three-Layer Decision Loop
+### Scene-Driven Auto Loop
 
-1. **Strategic Layer** — LLM (Claude or GLM-4V), consulted every ~30 minutes, generates high-level task plans
-2. **Tactical Layer** — Local rule engine (<500ms), decomposes tasks into action sequences
-3. **Execution Layer** — CV + ADB (<100ms), screenshot → detect → tap
+The auto loop is scene-first: each iteration takes a screenshot, classifies the scene, then dispatches to the appropriate handler:
+- **AutoHandler** — pattern-matched actions for each scene type (popups, loading, main city idle, etc.)
+- **Quest Scripts** — multi-step scripted sequences triggered by quest bar matching or manual CLI command
+- **LLM (optional)** — Claude or GLM-4V, consulted for strategic planning when needed
 
-90% of operations bypass the LLM entirely; the local CV + rule engine handles routine tasks.
+90% of operations are handled locally by AutoHandler + Quest Scripts without LLM calls.
 
 ### Module Layers
 
@@ -52,7 +53,7 @@ python test_hardening.py    # Stuck recovery, reconnect, retry
 | `vision/` | Visual Perception | Template matching, OCR text detection, grid overlay, element detection, building finder |
 | `scene/` | Scene Understanding | Scene classification, popup detection/auto-close, scene-specific handlers |
 | `state/` | State Management | In-memory game state, OCR-based state extraction, JSON persistence |
-| `brain/` | Decision Making | Quest script runner, task queue, rule engine, LLM planner, stuck recovery, auto-handler |
+| `brain/` | Decision Making | Quest script runner, auto-handler, LLM planner, stuck recovery |
 | `executor/` | Execution Pipeline | Action validation → execution (with retry) → result verification |
 | `utils/` | Utilities | Logging (console + `.log` + `.jsonl`), image helpers |
 
@@ -77,11 +78,9 @@ All modules exchange actions as dicts with a `type` field:
 {"type": "find_building", "building_name": "兵营", "scroll": True, "max_attempts": 3}
 ```
 
-### Scene Types and Task Types
+### Scene Types
 
 Scene types: `main_city`, `world_map`, `hero`, `hero_recruit`, `battle`, `popup`, `loading`, `unknown`
-
-Known task types (handled by `RuleEngine`): `collect_resources`, `upgrade_building`, `train_troops`, `claim_rewards`, `navigate_main_city`, `navigate_world_map`, `close_popup`, `check_mail`, `collect_daily`
 
 ### Quest Scripting System
 
