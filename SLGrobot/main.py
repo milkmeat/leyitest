@@ -811,10 +811,6 @@ class GameBot:
                     # 9. Persist state
                     self.persistence.save(self.game_state)
 
-                    # 10. Log summary
-                    if loop % 10 == 0:
-                        self._log_status()
-
                     # Reset error counter on successful iteration
                     consecutive_errors = 0
 
@@ -895,13 +891,6 @@ class GameBot:
 
         return success_count
 
-    def _log_status(self) -> None:
-        """Log current status summary."""
-        gs = self.game_state
-        logger.info(
-            f"Status: scene={gs.scene}, resources={gs.resources}, "
-            f"buildings={len(gs.buildings)}, loop={gs.loop_count}"
-        )
 
 
 class CLI:
