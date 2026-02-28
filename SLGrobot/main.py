@@ -427,6 +427,7 @@ class GameBot:
         consecutive_errors = 0
         consecutive_screenshot_failures = 0
         consecutive_unknown_scenes = 0
+        last_unknown_primary_pos: tuple[int, int] | None = None
         max_consecutive_errors = 5
 
         print(f"Starting auto loop (max_loops={max_loops or 'infinite'})...")
@@ -440,7 +441,7 @@ class GameBot:
 
                 try:
                     # 0. Brief pause at start of each loop
-                    time.sleep(0.5)
+                    time.sleep(0.7)
 
                     # 0b. Check ADB connection
                     if not self.adb.is_connected():
@@ -723,16 +724,29 @@ class GameBot:
                                 consecutive_unknown_scenes = 0
 
                         # Try primary button (blue/green action buttons).
+                        # If we tap the same position as last time, the
+                        # previous tap had no effect — skip it so the
+                        # counter keeps rising toward the escalation
+                        # threshold (tap blank area at >=3).
                         if not handled:
                             primary = find_primary_button(screenshot)
                             if primary is not None:
-                                logger.info(
-                                    f"Unknown scene: primary button "
-                                    f"at ({primary.x}, {primary.y})"
-                                )
-                                self.adb.tap(primary.x, primary.y)
-                                handled = True
-                                consecutive_unknown_scenes = 0
+                                pos = (primary.x, primary.y)
+                                if pos == last_unknown_primary_pos:
+                                    logger.info(
+                                        f"Unknown scene: primary button "
+                                        f"at {pos} same as last time, "
+                                        f"skipping"
+                                    )
+                                else:
+                                    logger.info(
+                                        f"Unknown scene: primary button "
+                                        f"at {pos}, tapping"
+                                    )
+                                    self.adb.tap(primary.x, primary.y)
+                                    last_unknown_primary_pos = pos
+                                    handled = True
+                                    consecutive_unknown_scenes = 0
 
                         # Try popup filter (skips OCR if no dark overlay).
                         if not handled and self.popup_filter.handle(screenshot):
@@ -767,6 +781,7 @@ class GameBot:
                         continue
                     else:
                         consecutive_unknown_scenes = 0
+                        last_unknown_primary_pos = None
 
                     # 7. Update game state (main_city already updated
                     #    in step 2c before finger detection)
@@ -780,6 +795,15 @@ class GameBot:
                             and self.game_state.quest_bar_visible
                             and self.game_state.quest_bar_has_green_check):
                         self._try_claim_quest_reward()
+                        continue
+
+                    # 7.6 Known popup banners (e.g. alliance recruit).
+                    #     Runs every iteration regardless of task queue.
+                    popup_action = self.auto_handler._check_popup(screenshot)
+                    if popup_action:
+                        self._execute_validated_actions(
+                            [popup_action], scene, screenshot)
+                        time.sleep(0.3)
                         continue
 
                     # 8. Three-layer decision
