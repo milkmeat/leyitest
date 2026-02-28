@@ -680,6 +680,11 @@ class GameBot:
                             )
                             self.adb.tap(primary.x, primary.y)
                             time.sleep(0.3)
+                        elif self.popup_filter.handle(screenshot):
+                            logger.info(
+                                "Loading screen had popup elements, "
+                                "handled by popup filter"
+                            )
                         else:
                             logger.info("Loading screen, waiting...")
                             time.sleep(config.LOOP_INTERVAL)

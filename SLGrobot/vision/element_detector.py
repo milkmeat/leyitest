@@ -324,7 +324,7 @@ def _pick_bottommost_button(mask: np.ndarray,
                             min_area: int, min_aspect: float,
                             max_aspect: float,
                             edges: np.ndarray | None = None,
-                            min_edge_density: float = 0.06,
+                            min_edge_density: float = 0.04,
                             ) -> Element | None:
     """Pick the bottommost button-shaped contour from a binary mask.
 
