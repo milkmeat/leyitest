@@ -1286,7 +1286,7 @@ class CLI:
         fd = self.bot.finger_detector
 
         # Show raw matches for all variants (before threshold filter)
-        for cache_name, _, flip_type in fd._FINGER_VARIANTS:
+        for cache_name, _, flip_type in fd._all_variants:
             raw = fd.element_detector.locate(
                 screenshot, cache_name, methods=["template"]
             )

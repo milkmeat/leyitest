@@ -2,7 +2,7 @@
 
 Extracted from QuestWorkflow to be a standalone CV component.  Detects the
 animated tutorial finger icon in various orientations (normal, flipped,
-rotated) using:
+rotated) and scales using:
   Stage 1: TM_CCORR_NORMED with alpha mask (sensitive but may false-positive)
   Stage 2: Masked NCC on opaque pixels only (eliminates false positives)
 """
@@ -47,6 +47,12 @@ class FingerDetector:
         ("icons/tutorial_finger_rot117cw", "cw117",  "rot117cw"),
     ]
 
+    # Scale factors for multi-scale detection.  The game renders the
+    # tutorial finger at different sizes depending on context (e.g.
+    # battle-scene Auto button uses a smaller finger than quest guide).
+    # Original template (scale 1.0) is always tried first.
+    _SCALE_FACTORS = [0.5, 0.7]
+
     # Stage-1 threshold (TM_CCORR_NORMED with mask).
     # Lowered from 0.93 to 0.85 to catch partially-visible fingers;
     # false positives are caught by stage-2 validation instead.
@@ -64,20 +70,31 @@ class FingerDetector:
         self.element_detector = element_detector
         if game_profile and game_profile.finger_ncc_threshold > 0:
             self._FINGER_NCC_THRESHOLD = game_profile.finger_ncc_threshold
+        # _all_variants: superset of _FINGER_VARIANTS including scaled entries.
+        # Each entry: (cache_name, transform_unused, flip_type_key)
+        self._all_variants: list[tuple[str, None, str]] = []
+        # Maps scaled flip_type -> (base_flip_type, scale) for offset calc.
+        self._variant_scales: dict[str, tuple[str, float]] = {}
         self._ensure_flipped_finger_template()
 
     def fingertip_pos(self, cx: int, cy: int,
                       flip_type: str) -> tuple[int, int]:
         """Compute fingertip tap position from match center and flip type."""
-        if flip_type in self._ROTATION_FINGERTIP_OFFSETS:
-            dx, dy = self._ROTATION_FINGERTIP_OFFSETS[flip_type]
-            return cx + dx, cy + dy
+        # Resolve scale: if this is a scaled variant, get base flip and scale
+        scale = 1.0
+        base_flip = flip_type
+        if flip_type in self._variant_scales:
+            base_flip, scale = self._variant_scales[flip_type]
+
+        if base_flip in self._ROTATION_FINGERTIP_OFFSETS:
+            dx, dy = self._ROTATION_FINGERTIP_OFFSETS[base_flip]
+            return cx + int(dx * scale), cy + int(dy * scale)
         dx, dy = self._FINGERTIP_OFFSET
-        if flip_type in ("hflip", "hvflip"):
+        if base_flip in ("hflip", "hvflip"):
             dx = -dx
-        if flip_type in ("vflip", "hvflip"):
+        if base_flip in ("vflip", "hvflip"):
             dy = -dy
-        return cx + dx, cy + dy
+        return cx + int(dx * scale), cy + int(dy * scale)
 
     def verify_ncc(self, screenshot: np.ndarray,
                    cx: int, cy: int,
@@ -124,10 +141,9 @@ class FingerDetector:
 
         Returns:
             (match, flip_type) where match is an Element or None,
-            and flip_type is one of "normal", "hflip", "vflip", "hvflip",
-            "rot117cw".
+            and flip_type is e.g. "normal", "vflip", "normal_s50", etc.
         """
-        for cache_name, _, flip_type in self._FINGER_VARIANTS:
+        for cache_name, _, flip_type in self._all_variants:
             match = self.element_detector.locate(
                 screenshot, cache_name, methods=["template"]
             )
@@ -161,13 +177,16 @@ class FingerDetector:
         return None, "normal"
 
     def _ensure_flipped_finger_template(self) -> None:
-        """Create all finger template variants (flips and rotations).
+        """Create all finger template variants (flips, rotations, scales).
 
-        The game shows the finger icon in various orientations.
+        The game shows the finger icon in various orientations and sizes.
         For each variant, caches the template + mask for stage-1 matching,
         and stores BGR + boolean mask for stage-2 masked NCC.
+        Scaled-down variants are also created for each orientation.
         """
         self._finger_ncc = {}
+        self._all_variants = list(self._FINGER_VARIANTS)
+        self._variant_scales = {}
         try:
             tm = self.element_detector.template_matcher
             cache = tm._cache
@@ -228,9 +247,52 @@ class FingerDetector:
                 cache[cache_name] = (var_tpl, var_mask)
                 self._finger_ncc[flip_type] = (var_tpl.copy(), var_bool)
 
+            # --- Multi-scale variants ---
+            # Create scaled-down copies of every orientation variant.
+            # Original-scale variants are tried first (already in
+            # _all_variants); scaled variants are appended after.
+            ori_variants = list(self._all_variants)  # snapshot before append
+            for scale in self._SCALE_FACTORS:
+                suffix = f"_s{int(scale * 100)}"
+                for ori_cache, _, ori_flip in ori_variants:
+                    ori_entry = cache.get(ori_cache)
+                    if ori_entry is None:
+                        continue
+                    ori_tpl, ori_mask = ori_entry
+
+                    new_w = max(1, int(ori_tpl.shape[1] * scale))
+                    new_h = max(1, int(ori_tpl.shape[0] * scale))
+
+                    s_tpl = cv2.resize(
+                        ori_tpl, (new_w, new_h),
+                        interpolation=cv2.INTER_AREA)
+                    s_mask = (
+                        cv2.resize(ori_mask, (new_w, new_h),
+                                   interpolation=cv2.INTER_AREA)
+                        if ori_mask is not None else None)
+
+                    # Boolean mask for NCC: resize then re-threshold
+                    ori_ncc = self._finger_ncc.get(ori_flip)
+                    if ori_ncc is not None:
+                        _, ori_bool = ori_ncc
+                        s_bool = cv2.resize(
+                            ori_bool.astype(np.uint8), (new_w, new_h),
+                            interpolation=cv2.INTER_AREA
+                        ) > 0
+                    else:
+                        s_bool = np.ones((new_h, new_w), dtype=bool)
+
+                    s_cache_name = ori_cache + suffix
+                    s_flip = ori_flip + suffix
+                    cache[s_cache_name] = (s_tpl, s_mask)
+                    self._finger_ncc[s_flip] = (s_tpl.copy(), s_bool)
+                    self._all_variants.append((s_cache_name, None, s_flip))
+                    self._variant_scales[s_flip] = (ori_flip, scale)
+
             logger.debug(
                 f"Created finger template variants: "
                 f"{list(self._finger_ncc.keys())}"
             )
         except Exception:
             self._finger_ncc = {}
+            self._all_variants = list(self._FINGER_VARIANTS)
