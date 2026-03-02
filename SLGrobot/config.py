@@ -94,13 +94,17 @@ NAV_PATHS_FILE = "data/navigation_paths.json"
 
 # Multi-game support
 GAMES_DIR = "games"
-ACTIVE_GAME = "westgame2"
+ACTIVE_GAME = "frozenisland"
+GAME_PACKAGES = {
+    "frozenisland": "leyi.frozenislandpro",
+    "westgame2": "leyi.cowboyclash3",
+}
+GAME_PACKAGE = GAME_PACKAGES[ACTIVE_GAME]
 
 # Logging
 LOG_DIR = "logs"
 
 # Phase 5: Hardening
-GAME_PACKAGE = "leyi.cowboyclash3"  # Android package name (for app restart recovery)
 STUCK_MAX_SAME_SCENE = 10       # Trigger stuck recovery after N identical scenes
 ADB_RECONNECT_RETRIES = 3       # Max ADB reconnection attempts
 ACTION_MAX_RETRIES = 3           # Max retries per failed action

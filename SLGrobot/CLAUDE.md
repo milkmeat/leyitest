@@ -110,7 +110,7 @@ Quest script MD 文件中图标引用可以只写文件名（如 `[[upgrade_arro
 ## Configuration
 
 - `config.py` — all global constants (ADB host/port, screen resolution, timing, thresholds, file paths). Emulator presets (`EMULATOR_PRESETS`) allow switching between BlueStacks and Nox via `ACTIVE_EMULATOR` or `--emulator` CLI flag
-- `model_presets.py` — LLM provider presets. Switch provider by changing `ACTIVE_PRESET` (currently `"zhipu"`)
+- **切换游戏**：只需改 `config.py` 中的 `ACTIVE_GAME`（当前为 `"frozenisland"`），`GAME_PACKAGE` 和所有 `games/<id>/` 资源路径自动跟随。支持的游戏见 `GAME_PACKAGES` 字典。详见 `how_to_change_game.md`
 - `data/navigation_paths.json` — predefined tap sequences for navigating between game screens (17 paths)
 - `games/<id>/templates/` — PNG template images organized by category (`buttons/`, `icons/`, `nav_bar/`, `scenes/`, `popups/`), loaded by `TemplateMatcher` via `game_profile.template_dir`
 - `games/<id>/city_layout.md` — building positions on the city map (used by BuildingFinder)
