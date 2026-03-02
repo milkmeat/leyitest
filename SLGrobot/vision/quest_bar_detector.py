@@ -54,12 +54,13 @@ class QuestBarDetector:
     RED_PIXEL_THRESHOLD = 50
 
     # HSV thresholds for green check detection
-    # H_MIN raised from 35→50 and S_MIN from 80→100 to exclude
-    # tutorial finger skin tones (yellow/orange, H~25-50, low S).
-    GREEN_H_MIN = 50
+    # H_MIN=30 covers actual check mark hue (H≈44 mean). S_MIN=70 still
+    # excludes tutorial finger skin tones (S<60). Contour filtering
+    # provides a second layer of protection against false positives.
+    GREEN_H_MIN = 30
     GREEN_H_MAX = 85
-    GREEN_S_MIN = 100
-    GREEN_V_MIN = 100
+    GREEN_S_MIN = 70
+    GREEN_V_MIN = 80
     GREEN_PIXEL_THRESHOLD = 50
 
     def __init__(self, template_matcher: TemplateMatcher,
@@ -112,13 +113,13 @@ class QuestBarDetector:
         # 4. OCR quest text (region right of scroll icon)
         self._detect_quest_text(screenshot, match, info)
 
-        # 5. Green check detection (right of quest text bbox)
-        if info.current_quest_bbox is not None:
-            has_check, check_pos = self._detect_green_check(
-                screenshot, info.current_quest_bbox
-            )
-            info.has_green_check = has_check
-            info.green_check_pos = check_pos
+        # 5. Green check detection (search area based on scroll icon bbox,
+        #    independent of OCR success)
+        has_check, check_pos = self._detect_green_check(
+            screenshot, match.bbox
+        )
+        info.has_green_check = has_check
+        info.green_check_pos = check_pos
 
         # 6. Tutorial finger icon
         self._detect_tutorial_finger(screenshot, info)
@@ -212,22 +213,33 @@ class QuestBarDetector:
 
     def _detect_green_check(
         self, screenshot: np.ndarray,
-        quest_bbox: tuple[int, int, int, int],
+        scroll_bbox: tuple[int, int, int, int],
     ) -> tuple[bool, tuple[int, int] | None]:
-        """Check for green check mark right of quest text bbox.
+        """Check for green check mark in the quest bar area.
 
-        Uses HSV color analysis (H:50-85, S>100, V>100).
-        Returns (detected, center_pos) where center_pos is the tap
-        target in full-screenshot coordinates.
+        Uses HSV color analysis with contour filtering to find the
+        green check mark. The search area spans from the right edge
+        of the scroll icon to 90% of screen width, covering the
+        entire quest bar regardless of OCR success.
+
+        Args:
+            screenshot: BGR numpy array.
+            scroll_bbox: Bounding box of the scroll icon (x1, y1, x2, y2).
+
+        Returns:
+            (detected, center_pos) where center_pos is the contour
+            centroid in full-screenshot coordinates.
         """
         h, w = screenshot.shape[:2]
-        qx1, qy1, qx2, qy2 = quest_bbox
+        sx1, sy1, sx2, sy2 = scroll_bbox
 
-        # Check region right of quest text
-        check_x1 = qx2
-        check_y1 = qy1
-        check_x2 = min(qx2 + (qy2 - qy1) * 2, w)  # Width ~2x text height
-        check_y2 = qy2
+        # Search from right edge of scroll icon to 90% of screen width,
+        # with vertical padding matching red badge detection
+        pad_y = (sy2 - sy1) // 4
+        check_x1 = sx2
+        check_y1 = max(0, sy1 - pad_y)
+        check_x2 = min(int(w * 0.90), w)
+        check_y2 = min(h, sy2 + pad_y)
 
         if check_x2 <= check_x1 or check_y2 <= check_y1:
             return False, None
@@ -236,6 +248,7 @@ class QuestBarDetector:
         if region.size == 0:
             return False, None
 
+        # HSV mask for green pixels
         hsv = cv2.cvtColor(region, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(
             hsv,
@@ -244,15 +257,51 @@ class QuestBarDetector:
         )
         green_count = cv2.countNonZero(mask)
 
-        if green_count >= self.GREEN_PIXEL_THRESHOLD:
-            center_x = (check_x1 + check_x2) // 2
-            center_y = (check_y1 + check_y2) // 2
-            logger.debug(
-                f"Quest bar: green check detected ({green_count} pixels) "
-                f"at ({center_x}, {center_y})"
-            )
-            return True, (center_x, center_y)
+        # Fast reject: not enough green pixels at all
+        if green_count < self.GREEN_PIXEL_THRESHOLD:
+            return False, None
 
+        # Morphological close to merge nearby green pixels into blobs
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+        closed = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+
+        # Find contours and filter by area + aspect ratio
+        contours, _ = cv2.findContours(
+            closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
+
+        for cnt in contours:
+            area = cv2.contourArea(cnt)
+            if area < 100 or area > 4000:
+                continue
+            bx, by, bw, bh = cv2.boundingRect(cnt)
+            if bh == 0:
+                continue
+            aspect = bw / bh
+            if aspect < 0.3 or aspect > 3.0:
+                continue
+
+            # Valid green check blob — use contour centroid
+            M = cv2.moments(cnt)
+            if M["m00"] == 0:
+                cx, cy = bx + bw // 2, by + bh // 2
+            else:
+                cx = int(M["m10"] / M["m00"])
+                cy = int(M["m01"] / M["m00"])
+
+            # Translate back to full-screenshot coordinates
+            abs_x = cx + check_x1
+            abs_y = cy + check_y1
+            logger.debug(
+                f"Quest bar: green check detected ({green_count} green px, "
+                f"contour area={area:.0f}) at ({abs_x}, {abs_y})"
+            )
+            return True, (abs_x, abs_y)
+
+        logger.debug(
+            f"Quest bar: {green_count} green px but no valid contour "
+            f"(checked {len(contours)} contours)"
+        )
         return False, None
 
     def _detect_tutorial_finger(self, screenshot: np.ndarray,
