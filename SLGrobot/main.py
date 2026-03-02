@@ -418,6 +418,8 @@ class GameBot:
         _finger_last_pos: tuple[int, int] | None = None
         _finger_same_count = 0
         _FINGER_EXHAUST_LIMIT = 3
+        # Popup primary button exhaust: close popup if same button repeats
+        _popup_last_primary_pos: tuple[int, int] | None = None
 
         print(f"Starting auto loop (max_loops={max_loops or 'infinite'})...")
         print("Press Ctrl+C to stop.\n")
@@ -519,6 +521,25 @@ class GameBot:
                             _finger_last_pos = finger_pos
                             _finger_same_count = 1
                         if _finger_same_count > _FINGER_EXHAUST_LIMIT:
+                            # Re-detect excluding the exhausted position
+                            # to find a different (real) finger.
+                            finger2, flip2 = self.finger_detector.detect(
+                                screenshot,
+                                exclude_positions=[_finger_last_pos],
+                            )
+                            if finger2 is not None:
+                                tip2_x, tip2_y = self.finger_detector.fingertip_pos(
+                                    finger2.x, finger2.y, flip2
+                                )
+                                logger.info(
+                                    f"Finger exhausted at ({tip_x}, {tip_y}), "
+                                    f"found alternative {flip2} at "
+                                    f"({tip2_x}, {tip2_y})"
+                                )
+                                self.adb.tap(tip2_x, tip2_y)
+                                consecutive_unknown_scenes = 0
+                                time.sleep(0.8)
+                                continue
                             logger.info(
                                 f"Finger exhausted at ({tip_x}, {tip_y}) "
                                 f"after {_finger_same_count} repeats, skipping"
@@ -654,15 +675,26 @@ class GameBot:
                             continue
                         # Check for primary action button (前往, 升级, etc.)
                         # Popup buttons can appear anywhere, use relaxed y_fraction.
+                        # If same position as last time, the tap had no effect
+                        # — skip primary and close the popup instead.
                         primary = find_primary_button(screenshot, y_fraction=0.2)
                         if primary is not None:
-                            logger.info(
-                                f"Popup: primary button at "
-                                f"({primary.x}, {primary.y}), tapping"
-                            )
-                            self.adb.tap(primary.x, primary.y)
-                            time.sleep(0.3)
-                            continue
+                            pos = (primary.x, primary.y)
+                            if pos == _popup_last_primary_pos:
+                                logger.info(
+                                    f"Popup: primary button at {pos} "
+                                    f"same as last time, closing popup instead"
+                                )
+                                _popup_last_primary_pos = None
+                            else:
+                                logger.info(
+                                    f"Popup: primary button at "
+                                    f"({primary.x}, {primary.y}), tapping"
+                                )
+                                self.adb.tap(primary.x, primary.y)
+                                _popup_last_primary_pos = pos
+                                time.sleep(0.3)
+                                continue
                         logger.info("Popup detected, attempting to close")
                         self.popup_filter.handle(screenshot)
                         time.sleep(0.3)
@@ -775,7 +807,7 @@ class GameBot:
                             )
                             if back:
                                 logger.info(
-                                    f"Unknown scene: back arrow "
+                                    f"Unknown scene: tapping back arrow "
                                     f"at ({back.x}, {back.y})"
                                 )
                                 self.adb.tap(back.x, back.y)
@@ -842,6 +874,7 @@ class GameBot:
                     else:
                         consecutive_unknown_scenes = 0
                         last_unknown_primary_pos = None
+                        _popup_last_primary_pos = None
 
                     # 7. Update game state (main_city already updated
                     #    in step 2c before finger detection)
@@ -1313,6 +1346,28 @@ class CLI:
             screenshot = self.bot.screenshot_mgr.capture()
         fd = self.bot.finger_detector
 
+        # Show prescan scores
+        if fd._prescan_templates:
+            sh, sw = screenshot.shape[:2]
+            gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
+            small_w = max(1, int(sw * fd._PRESCAN_SCALE))
+            small_h = max(1, int(sh * fd._PRESCAN_SCALE))
+            small = cv2.resize(gray, (small_w, small_h),
+                               interpolation=cv2.INTER_AREA)
+            labels = ["normal", "rot117cw"]
+            for i, (ps_tpl, ps_mask) in enumerate(fd._prescan_templates):
+                if (ps_tpl.shape[0] > small_h
+                        or ps_tpl.shape[1] > small_w):
+                    print(f"Prescan[{labels[i]}]: skipped (template too large)")
+                    continue
+                res = cv2.matchTemplate(small, ps_tpl,
+                                        cv2.TM_CCORR_NORMED,
+                                        mask=ps_mask)
+                _, val, _, loc = cv2.minMaxLoc(res)
+                label = labels[i] if i < len(labels) else f"#{i}"
+                print(f"Prescan[{label}]: {val:.3f} at {loc} "
+                      f"(threshold={fd._PRESCAN_THRESHOLD})")
+
         # Show raw matches for all variants (before threshold filter)
         for cache_name, _, flip_type in fd._all_variants:
             raw = fd.element_detector.locate(
@@ -1327,7 +1382,12 @@ class CLI:
         print(f"  (threshold: ccorr>={fd._FINGER_CONFIDENCE_THRESHOLD}, "
               f"ncc>={fd._FINGER_NCC_THRESHOLD})")
 
+        import time as _time
+        t0 = _time.perf_counter()
         finger_match, flip_type = fd.detect(screenshot)
+        elapsed = _time.perf_counter() - t0
+        print(f"detect elapsed: {int(elapsed * 1000)}ms")
+
         if finger_match is None:
             print("No finger detected (rejected by two-stage filter).")
             return
@@ -1350,6 +1410,47 @@ class CLI:
         out_path = "debug_finger.png"
         cv2.imwrite(out_path, crop)
         print(f"Saved {crop.shape[1]}x{crop.shape[0]} crop -> {out_path}")
+
+    def cmd_detect_finger_old(self, args: list[str]) -> None:
+        """Detect tutorial finger using the original (unoptimized) method."""
+        if args:
+            screenshot = cv2.imread(args[0])
+            if screenshot is None:
+                print(f"Failed to read image: {args[0]}")
+                return
+        else:
+            screenshot = self.bot.screenshot_mgr.capture()
+        fd = self.bot.finger_detector
+
+        # Show raw matches for all variants (before threshold filter)
+        for cache_name, _, flip_type in fd._all_variants:
+            raw = fd.element_detector.locate(
+                screenshot, cache_name, methods=["template"]
+            )
+            if raw is not None:
+                ncc = fd.verify_ncc(screenshot, raw.x, raw.y, flip_type)
+                print(f"Raw {flip_type:7s}: ccorr={raw.confidence:.3f} "
+                      f"at ({raw.x}, {raw.y})  ncc={ncc:.3f}")
+            else:
+                print(f"Raw {flip_type:7s}: no match")
+        print(f"  (threshold: ccorr>={fd._FINGER_CONFIDENCE_THRESHOLD}, "
+              f"ncc>={fd._FINGER_NCC_THRESHOLD})")
+
+        import time
+        t0 = time.perf_counter()
+        finger_match, flip_type = fd.detect_old(screenshot)
+        elapsed = time.perf_counter() - t0
+        print(f"detect_old elapsed: {int(elapsed * 1000)}ms")
+
+        if finger_match is None:
+            print("No finger detected (rejected by two-stage filter).")
+            return
+
+        tip_x, tip_y = fd.fingertip_pos(
+            finger_match.x, finger_match.y, flip_type)
+        print(f"Finger center: ({finger_match.x}, {finger_match.y})  "
+              f"confidence={finger_match.confidence:.3f}  {flip_type}")
+        print(f"Fingertip:     ({tip_x}, {tip_y})")
 
     def cmd_detect_close_x(self, args: list[str]) -> None:
         """Detect close_x button on screen and save debug crop."""

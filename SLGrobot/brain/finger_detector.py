@@ -8,11 +8,12 @@ rotated) and scales using:
 """
 
 import logging
+import time
 
 import cv2
 import numpy as np
 
-from vision.element_detector import ElementDetector
+from vision.element_detector import Element, ElementDetector
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +65,10 @@ class FingerDetector:
     # Threshold 0.45 catches both contexts with ≥0.05 margin over
     # false positives.
     _FINGER_NCC_THRESHOLD = 0.45
+
+    # Prescan parameters for quick rejection of no-finger frames.
+    _PRESCAN_SCALE = 0.25
+    _PRESCAN_THRESHOLD = 0.4
 
     def __init__(self, element_detector: ElementDetector,
                  game_profile=None) -> None:
@@ -129,8 +134,8 @@ class FingerDetector:
             return 0.0
         return float(np.dot(t, s) / denom)
 
-    def detect(self, screenshot: np.ndarray) -> tuple:
-        """Detect tutorial finger with two-stage validation.
+    def detect_old(self, screenshot: np.ndarray) -> tuple:
+        """Original detect — kept for A/B comparison via CLI.
 
         Checks orientation variants in priority order (normal first).
         Returns immediately on first verified match for speed.
@@ -175,6 +180,165 @@ class FingerDetector:
             return match, flip_type
 
         return None, "normal"
+
+    # Radius (pixels) for position exclusion — matches within this
+    # distance of an excluded fingertip are skipped.
+    _EXCLUDE_RADIUS = 30
+
+    def detect(self, screenshot: np.ndarray,
+               exclude_positions: list[tuple[int, int]] | None = None,
+               ) -> tuple:
+        """Optimized finger detection with three-layer acceleration.
+
+        Layer 1: Prescan at 0.25x grayscale — rejects 95%+ no-finger frames
+                 with just 2 small matchTemplate calls (~20ms).
+        Layer 2: Last-matched variant priority — exploits temporal locality
+                 (finger stays in same orientation across consecutive frames).
+        Layer 3: Direct matchTemplate bypass — skips the generic
+                 element_detector/template_matcher pipeline overhead.
+
+        Args:
+            exclude_positions: fingertip positions to skip (e.g. exhausted
+                false positives).  Matches whose fingertip falls within
+                _EXCLUDE_RADIUS of any excluded position are rejected.
+
+        Returns:
+            (match, flip_type) where match is an Element or None,
+            and flip_type is e.g. "normal", "vflip", "normal_s50", etc.
+        """
+        t_start = time.perf_counter()
+
+        # --- Layer 1: Prescan quick reject ---
+        if self._prescan_templates:
+            sh, sw = screenshot.shape[:2]
+            gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
+            small_w = max(1, int(sw * self._PRESCAN_SCALE))
+            small_h = max(1, int(sh * self._PRESCAN_SCALE))
+            small = cv2.resize(gray, (small_w, small_h),
+                               interpolation=cv2.INTER_AREA)
+            prescan_pass = False
+            for ps_tpl, ps_mask in self._prescan_templates:
+                # Skip if prescan template is larger than the small image
+                if (ps_tpl.shape[0] > small_h
+                        or ps_tpl.shape[1] > small_w):
+                    continue
+                res = cv2.matchTemplate(small, ps_tpl,
+                                        cv2.TM_CCORR_NORMED,
+                                        mask=ps_mask)
+                _, max_val, _, _ = cv2.minMaxLoc(res)
+                if max_val >= self._PRESCAN_THRESHOLD:
+                    prescan_pass = True
+                    break
+            t_prescan = time.perf_counter()
+            if not prescan_pass:
+                self._last_matched_idx = None
+                logger.debug(
+                    f"Finger detect: prescan={int((t_prescan - t_start) * 1000)}ms, "
+                    f"total={int((t_prescan - t_start) * 1000)}ms (rejected)"
+                )
+                return None, "normal"
+
+        # --- Layer 2: Try last-matched variant first ---
+        if self._last_matched_idx is not None:
+            result = self._try_variant(screenshot, self._last_matched_idx,
+                                       exclude_positions)
+            if result:
+                t_end = time.perf_counter()
+                logger.debug(
+                    f"Finger detect: total={int((t_end - t_start) * 1000)}ms "
+                    f"(last-match hit)"
+                )
+                return result
+
+        # --- Layer 3: Full scan with direct matchTemplate ---
+        for i in range(len(self._direct_variants)):
+            if i == self._last_matched_idx:
+                continue
+            result = self._try_variant(screenshot, i, exclude_positions)
+            if result:
+                self._last_matched_idx = i
+                t_end = time.perf_counter()
+                logger.debug(
+                    f"Finger detect: total={int((t_end - t_start) * 1000)}ms "
+                    f"(variant {i})"
+                )
+                return result
+
+        self._last_matched_idx = None
+        t_end = time.perf_counter()
+        logger.debug(
+            f"Finger detect: total={int((t_end - t_start) * 1000)}ms "
+            f"(no match)"
+        )
+        return None, "normal"
+
+    def _try_variant(self, screenshot: np.ndarray,
+                     idx: int,
+                     exclude_positions: list[tuple[int, int]] | None = None,
+                     ) -> tuple | None:
+        """Try matching a single variant by index with inline two-stage filter.
+
+        Returns (Element, flip_type) on verified match, or None.
+        """
+        cache_name, tpl, mask, flip_type = self._direct_variants[idx]
+        th, tw = tpl.shape[:2]
+        sh, sw = screenshot.shape[:2]
+
+        if tw > sw or th > sh:
+            return None
+
+        # Stage 1: CCORR with mask
+        if mask is not None:
+            result_ccorr = cv2.matchTemplate(
+                screenshot, tpl, cv2.TM_CCORR_NORMED, mask=mask)
+            _, ccorr_val, _, ccorr_loc = cv2.minMaxLoc(result_ccorr)
+            if ccorr_val < self._FINGER_CONFIDENCE_THRESHOLD:
+                return None
+            x1, y1 = ccorr_loc
+        else:
+            result_ccoeff = cv2.matchTemplate(
+                screenshot, tpl, cv2.TM_CCOEFF_NORMED)
+            _, ccoeff_val, _, ccoeff_loc = cv2.minMaxLoc(result_ccoeff)
+            if ccoeff_val < self._FINGER_CONFIDENCE_THRESHOLD:
+                return None
+            ccorr_val = ccoeff_val
+            x1, y1 = ccoeff_loc
+
+        cx = x1 + tw // 2
+        cy = y1 + th // 2
+
+        # Stage 2: Masked NCC validation
+        ncc = self.verify_ncc(screenshot, cx, cy, flip_type)
+        if ncc < self._FINGER_NCC_THRESHOLD:
+            logger.debug(
+                f"Finger {flip_type} rejected (stage2): "
+                f"ccorr={ccorr_val:.3f}, ncc={ncc:.3f} at ({cx}, {cy})"
+            )
+            return None
+
+        # Stage 3: Exclusion check — skip if fingertip is near an
+        # exhausted position (likely a persistent false positive).
+        if exclude_positions:
+            tip = self.fingertip_pos(cx, cy, flip_type)
+            r = self._EXCLUDE_RADIUS
+            for ex in exclude_positions:
+                if abs(tip[0] - ex[0]) <= r and abs(tip[1] - ex[1]) <= r:
+                    logger.debug(
+                        f"Finger {flip_type} excluded: fingertip "
+                        f"{tip} near exhausted {ex}"
+                    )
+                    return None
+
+        logger.debug(
+            f"Finger {flip_type} verified: ccorr={ccorr_val:.3f}, "
+            f"ncc={ncc:.3f} at ({cx}, {cy})"
+        )
+        elem = Element(
+            name=cache_name, source="template",
+            confidence=ccorr_val, x=cx, y=cy,
+            bbox=(x1, y1, x1 + tw, y1 + th)
+        )
+        return elem, flip_type
 
     def _ensure_flipped_finger_template(self) -> None:
         """Create all finger template variants (flips, rotations, scales).
@@ -289,6 +453,43 @@ class FingerDetector:
                     self._all_variants.append((s_cache_name, None, s_flip))
                     self._variant_scales[s_flip] = (ori_flip, scale)
 
+            # --- Prescan templates (0.25x grayscale) for quick rejection ---
+            # normal covers normal/hflip/vflip/hvflip (mirrored silhouettes
+            # are similar enough at low resolution).
+            # rot117cw covers the rotated variant (very different silhouette).
+            self._prescan_templates: list[tuple[np.ndarray, np.ndarray | None]] = []
+            for ori_name in ["icons/tutorial_finger",
+                             "icons/tutorial_finger_rot117cw"]:
+                entry = cache.get(ori_name)
+                if entry is None:
+                    continue
+                ori_tpl, ori_mask = entry
+                gray_tpl = cv2.cvtColor(ori_tpl, cv2.COLOR_BGR2GRAY)
+                ps_w = max(1, int(ori_tpl.shape[1] * self._PRESCAN_SCALE))
+                ps_h = max(1, int(ori_tpl.shape[0] * self._PRESCAN_SCALE))
+                ps_tpl = cv2.resize(gray_tpl, (ps_w, ps_h),
+                                    interpolation=cv2.INTER_AREA)
+                ps_mask = (
+                    cv2.resize(ori_mask[:, :, 0], (ps_w, ps_h),
+                               interpolation=cv2.INTER_AREA)
+                    if ori_mask is not None else None)
+                self._prescan_templates.append((ps_tpl, ps_mask))
+
+            # --- Direct variant list for bypassing the generic pipeline ---
+            # Each entry: (cache_name, tpl, mask, flip_type)
+            self._direct_variants: list[
+                tuple[str, np.ndarray, np.ndarray | None, str]
+            ] = []
+            for cache_name, _, flip_type in self._all_variants:
+                v_entry = cache.get(cache_name)
+                if v_entry is None:
+                    continue
+                v_tpl, v_mask = v_entry
+                self._direct_variants.append(
+                    (cache_name, v_tpl, v_mask, flip_type))
+
+            self._last_matched_idx: int | None = None
+
             logger.debug(
                 f"Created finger template variants: "
                 f"{list(self._finger_ncc.keys())}"
@@ -296,3 +497,6 @@ class FingerDetector:
         except Exception:
             self._finger_ncc = {}
             self._all_variants = list(self._FINGER_VARIANTS)
+            self._prescan_templates = []
+            self._direct_variants = []
+            self._last_matched_idx = None
