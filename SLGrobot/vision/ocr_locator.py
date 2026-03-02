@@ -60,6 +60,9 @@ class OCRLocator:
     def __init__(self, corrections: dict[str, str] | None = None) -> None:
         self._ocr = None
         self._corrections = corrections or {}
+        # Frame-level cache: avoids redundant full-screen OCR within one loop
+        self._frame_img: np.ndarray | None = None
+        self._frame_results: list[OCRResult] | None = None
 
     def _get_ocr(self):
         """Lazy-load RapidOCR to avoid slow import at startup."""
@@ -74,6 +77,17 @@ class OCRLocator:
                 )
                 raise
         return self._ocr
+
+    def set_frame(self, screenshot: np.ndarray) -> None:
+        """Mark a new frame for caching.
+
+        Call this once per loop iteration with the freshly captured screenshot.
+        Subsequent ``find_all_text`` calls on the **same** numpy object will
+        return cached results instantly, eliminating redundant full-screen OCR.
+        Region-specific calls (cropped arrays) are unaffected.
+        """
+        self._frame_img = screenshot
+        self._frame_results = None
 
     def find_text(self, screenshot: np.ndarray, target_text: str) -> OCRResult | None:
         """Find specific text in screenshot. Returns position or None.
@@ -95,7 +109,19 @@ class OCRLocator:
         return best
 
     def find_all_text(self, screenshot: np.ndarray) -> list[OCRResult]:
-        """Extract all text with positions from screenshot."""
+        """Extract all text with positions from screenshot.
+
+        If *screenshot* is the same object passed to :meth:`set_frame`,
+        cached results are returned without re-running OCR.
+        """
+        # Frame cache hit: exact same array object, already computed
+        if (self._frame_img is not None
+                and screenshot is self._frame_img
+                and self._frame_results is not None):
+            logger.debug(
+                f"OCR frame cache hit ({len(self._frame_results)} regions)")
+            return self._frame_results
+
         ocr = self._get_ocr()
 
         raw_results, _elapse = ocr(screenshot)
@@ -130,6 +156,11 @@ class OCRLocator:
             ))
 
         logger.debug(f"OCR found {len(results)} text regions")
+
+        # Store in frame cache if this is the current frame
+        if screenshot is self._frame_img:
+            self._frame_results = results
+
         return results
 
     def find_numbers_in_region(self, screenshot: np.ndarray,

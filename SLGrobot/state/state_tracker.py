@@ -9,7 +9,7 @@ import numpy as np
 from .game_state import GameState, BuildingState
 from vision.ocr_locator import OCRLocator
 from vision.template_matcher import TemplateMatcher
-from vision.quest_bar_detector import QuestBarDetector
+from vision.quest_bar_detector import QuestBarDetector, QuestBarInfo
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +37,7 @@ class StateTracker:
         self.ocr = ocr_locator
         self.template_matcher = template_matcher
         self.quest_bar_detector = QuestBarDetector(template_matcher, ocr_locator)
+        self.last_quest_bar_info: QuestBarInfo | None = None
         self._resource_keywords = resource_keywords or self.RESOURCE_KEYWORDS
         self._resource_order = resource_order or ["food", "wood", "stone", "gold"]
 
@@ -180,6 +181,7 @@ class StateTracker:
         """Detect quest bar and update game state fields."""
         try:
             info = self.quest_bar_detector.detect(screenshot)
+            self.last_quest_bar_info = info
             self.state.quest_bar_visible = info.visible
             self.state.quest_bar_has_red_badge = info.has_red_badge
             self.state.quest_bar_current_quest = info.current_quest_text

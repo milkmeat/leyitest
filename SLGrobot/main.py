@@ -329,20 +329,16 @@ class GameBot:
         return False
 
     def _try_claim_quest_reward(self) -> bool:
-        """Detect green check on quest bar and tap it to claim reward.
+        """Tap green check on quest bar to claim reward.
 
-        Takes a fresh screenshot, checks for green check, taps the green
-        check icon, then waits briefly for the reward animation.
+        Reuses the QuestBarInfo already detected by state_tracker.update()
+        in the current loop iteration, avoiding a redundant screenshot and
+        OCR pass.
 
         Returns True if reward was claimed.
         """
-        try:
-            screenshot = self.screenshot_mgr.capture()
-        except Exception:
-            return False
-
-        info = self.state_tracker.quest_bar_detector.detect(screenshot)
-        if not info.visible or not info.has_green_check:
+        info = self.state_tracker.last_quest_bar_info
+        if not info or not info.visible or not info.has_green_check:
             return False
 
         if info.green_check_pos is not None:
@@ -430,6 +426,7 @@ class GameBot:
             while max_loops == 0 or loop < max_loops:
                 loop += 1
                 self.game_logger.loop_count = loop
+                _loop_t0 = time.monotonic()
                 logger.info(f"=== Loop {loop} ===")
 
                 try:
@@ -470,6 +467,11 @@ class GameBot:
                                 consecutive_screenshot_failures = 0
                         time.sleep(config.LOOP_INTERVAL)
                         continue
+
+                    # 1b. Mark frame for OCR caching — all subsequent
+                    #     find_all_text(screenshot) calls in this iteration
+                    #     return cached results instead of re-running OCR.
+                    self.ocr.set_frame(screenshot)
 
                     # 2. Classify scene
                     scene = self.classifier.classify(screenshot)
@@ -896,6 +898,10 @@ class GameBot:
                         )
                         break
 
+                logger.debug(
+                    f"Loop {loop} finished in "
+                    f"{time.monotonic() - _loop_t0:.2f}s"
+                )
                 time.sleep(config.LOOP_INTERVAL)
 
         except KeyboardInterrupt:
