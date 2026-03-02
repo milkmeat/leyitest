@@ -1,6 +1,7 @@
 # config.py - Global Configuration
 
 import os
+import shutil
 
 
 def _find_nox_adb() -> str:
@@ -39,10 +40,35 @@ def _find_nox_adb() -> str:
     return r"D:\Program Files\Nox\bin\nox_adb.exe"
 
 
-# ADB - Nox emulator default port
+def _find_bluestacks_adb() -> str:
+    """Auto-detect HD-Adb.exe from common BlueStacks install locations."""
+    candidates = [
+        r"C:\Program Files\BlueStacks_nxt\HD-Adb.exe",
+        r"C:\Program Files (x86)\BlueStacks_nxt\HD-Adb.exe",
+        r"D:\Program Files\BlueStacks_nxt\HD-Adb.exe",
+    ]
+    for path in candidates:
+        if os.path.isfile(path):
+            return path
+    # Fallback: system PATH adb (BlueStacks often registers it)
+    system_adb = shutil.which("adb")
+    if system_adb:
+        return system_adb
+    return "adb"
+
+
+# Emulator presets — switch by changing ACTIVE_EMULATOR
+EMULATOR_PRESETS = {
+    "bluestacks": {"adb_path": _find_bluestacks_adb(), "port": 5555},
+    "nox":        {"adb_path": _find_nox_adb(),        "port": 62001},
+}
+ACTIVE_EMULATOR = "bluestacks"
+
+# ADB — resolved from active emulator preset
 ADB_HOST = "127.0.0.1"
-ADB_PORT = 62001
-NOX_ADB_PATH = _find_nox_adb()
+ADB_PORT = EMULATOR_PRESETS[ACTIVE_EMULATOR]["port"]
+ADB_PATH = EMULATOR_PRESETS[ACTIVE_EMULATOR]["adb_path"]
+NOX_ADB_PATH = ADB_PATH  # backward-compatible alias
 
 # Screenshot
 SCREENSHOT_DIR = "data/screenshots"

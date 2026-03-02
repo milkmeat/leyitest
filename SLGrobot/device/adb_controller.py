@@ -1,4 +1,4 @@
-"""ADB Controller - Low-level ADB operations for Nox emulator."""
+"""ADB Controller - Low-level ADB operations for Android emulators (BlueStacks, Nox)."""
 
 import subprocess
 import time

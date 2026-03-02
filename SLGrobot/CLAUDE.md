@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Summary
 
-SLGrobot is a Python AI agent that autonomously plays "Frozen Island Pro" (`leyi.frozenislandpro`), an SLG mobile game, via a Nox Android emulator on Windows. It uses ADB for device control, OpenCV for screen understanding, OCR for text extraction, and LLM APIs (Anthropic Claude or Zhipu GLM) for strategic planning.
+SLGrobot is a Python AI agent that autonomously plays "Frozen Island Pro" (`leyi.frozenislandpro`), an SLG mobile game, via an Android emulator (BlueStacks or Nox) on Windows. It uses ADB for device control, OpenCV for screen understanding, OCR for text extraction, and LLM APIs (Anthropic Claude or Zhipu GLM) for strategic planning.
 
 ## Commands
 
@@ -15,9 +15,10 @@ pip install -r requirements.txt
 
 ### Run
 ```bash
-python main.py              # Interactive CLI
+python main.py              # Interactive CLI (default: BlueStacks)
 python main.py --auto       # Autonomous loop (infinite)
 python main.py --auto --loops 50   # Autonomous loop with limit
+python main.py --emulator nox status  # Use Nox emulator
 python main.py tap 100,200         # One-shot command
 python main.py screenshot label    # One-shot screenshot
 python main.py scene               # Detect current scene
@@ -25,7 +26,7 @@ python main.py status              # Show connection/game state
 ```
 
 ### Tests
-Tests use raw `assert` statements (no pytest fixtures). Each file tests one development phase and requires a running Nox emulator with ADB connected:
+Tests use raw `assert` statements (no pytest fixtures). Each file tests one development phase and requires a running emulator with ADB connected:
 ```bash
 python test_phase1.py       # ADB + device layer
 python test_vision.py       # Template matching, OCR, grid overlay
@@ -108,7 +109,7 @@ Quest script MD 文件中图标引用可以只写文件名（如 `[[upgrade_arro
 
 ## Configuration
 
-- `config.py` — all global constants (ADB host/port, screen resolution, timing, thresholds, file paths)
+- `config.py` — all global constants (ADB host/port, screen resolution, timing, thresholds, file paths). Emulator presets (`EMULATOR_PRESETS`) allow switching between BlueStacks and Nox via `ACTIVE_EMULATOR` or `--emulator` CLI flag
 - `model_presets.py` — LLM provider presets. Switch provider by changing `ACTIVE_PRESET` (currently `"zhipu"`)
 - `data/navigation_paths.json` — predefined tap sequences for navigating between game screens (17 paths)
 - `games/<id>/templates/` — PNG template images organized by category (`buttons/`, `icons/`, `nav_bar/`, `scenes/`, `popups/`), loaded by `TemplateMatcher` via `game_profile.template_dir`
@@ -116,16 +117,19 @@ Quest script MD 文件中图标引用可以只写文件名（如 `[[upgrade_arro
 
 ## Platform Requirements
 
-- **Windows only** — Nox ADB path is hardcoded at `D:\Program Files\Nox\bin\nox_adb.exe` in `config.py`
+- **Windows only** — emulator ADB paths auto-detected in `config.py`
 - **Python 3.10+** — uses PEP 604 union types (`dict | None`) and PEP 585 generics (`tuple[int, int]`)
-- **Nox emulator** at 1080×1920 portrait resolution on ADB port 62001
+- **Emulator**: BlueStacks (default, port 5555) or Nox (port 62001) at 1080×1920 portrait resolution
 
-## ADB / Nox Emulator Notes
+## ADB / Emulator Notes
 
-本项目使用 Nox 模拟器自带的 ADB，**不是系统 PATH 中的 adb**。
+本项目支持蓝叠 (BlueStacks) 和夜神 (Nox) 模拟器，通过 `config.py` 的 `EMULATOR_PRESETS` 预设系统切换，**蓝叠为默认**。
 
-- **ADB 路径**: `D:\Program Files\Nox\bin\nox_adb.exe`，配置在 `config.py` 的 `NOX_ADB_PATH`
-- **设备地址**: `127.0.0.1:62001`，配置在 `config.py` 的 `ADB_HOST` / `ADB_PORT`
-- **ADBController 初始化必须传三个参数**: `ADBController(config.ADB_HOST, config.ADB_PORT, config.NOX_ADB_PATH)`
-- 直接用 `python -c` 写脚本访问模拟器时，必须用 `config.NOX_ADB_PATH`，否则会报 `ADB executable not found: adb`
+- **切换方式**: 修改 `config.py` 中的 `ACTIVE_EMULATOR`（`"bluestacks"` 或 `"nox"`），或使用 CLI 参数 `--emulator nox`
+- **蓝叠 ADB 路径**: 自动检测 `C:\Program Files\BlueStacks_nxt\HD-Adb.exe` 等位置，回退到系统 PATH 中的 `adb`
+- **夜神 ADB 路径**: 自动检测 `D:\Program Files\Nox\bin\nox_adb.exe` 等位置，回退到注册表查询
+- **统一配置变量**: `config.ADB_PATH`（当前生效的 ADB 路径）、`config.ADB_PORT`（当前端口）
+- **向后兼容**: `config.NOX_ADB_PATH` 保留为 `config.ADB_PATH` 的别名
+- **ADBController 初始化必须传三个参数**: `ADBController(config.ADB_HOST, config.ADB_PORT, config.ADB_PATH)`
+- 直接用 `python -c` 写脚本访问模拟器时，必须用 `config.ADB_PATH`，否则会报 `ADB executable not found: adb`
 - `main.py` 的 CLI 命令已经正确初始化 ADB，直接用 `python main.py <command>` 即可

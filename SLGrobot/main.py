@@ -105,7 +105,7 @@ class GameBot:
         self._template_dir = template_dir
 
         # Device layer
-        self.adb = ADBController(config.ADB_HOST, config.ADB_PORT, config.NOX_ADB_PATH)
+        self.adb = ADBController(config.ADB_HOST, config.ADB_PORT, config.ADB_PATH)
         self.input_actions = InputActions(self.adb)
         self.screenshot_mgr = ScreenshotManager(self.adb, config.SCREENSHOT_DIR)
 
@@ -418,6 +418,10 @@ class GameBot:
         consecutive_unknown_scenes = 0
         last_unknown_primary_pos: tuple[int, int] | None = None
         max_consecutive_errors = 5
+        # Finger exhaust: skip finger if same coords detected N times
+        _finger_last_pos: tuple[int, int] | None = None
+        _finger_same_count = 0
+        _FINGER_EXHAUST_LIMIT = 3
 
         print(f"Starting auto loop (max_loops={max_loops or 'infinite'})...")
         print("Press Ctrl+C to stop.\n")
@@ -504,15 +508,33 @@ class GameBot:
                         tip_x, tip_y = self.finger_detector.fingertip_pos(
                             finger.x, finger.y, flip
                         )
-                        logger.info(
-                            f"Tutorial finger detected at "
-                            f"({finger.x}, {finger.y}) {flip}, "
-                            f"tapping fingertip ({tip_x}, {tip_y})"
-                        )
-                        self.adb.tap(tip_x, tip_y)
-                        consecutive_unknown_scenes = 0
-                        time.sleep(0.8)
-                        continue
+                        # Exhaust check: if same position repeats, likely
+                        # a false positive — skip and let other handlers run.
+                        finger_pos = (tip_x, tip_y)
+                        if finger_pos == _finger_last_pos:
+                            _finger_same_count += 1
+                        else:
+                            _finger_last_pos = finger_pos
+                            _finger_same_count = 1
+                        if _finger_same_count > _FINGER_EXHAUST_LIMIT:
+                            logger.info(
+                                f"Finger exhausted at ({tip_x}, {tip_y}) "
+                                f"after {_finger_same_count} repeats, skipping"
+                            )
+                        else:
+                            logger.info(
+                                f"Tutorial finger detected at "
+                                f"({finger.x}, {finger.y}) {flip}, "
+                                f"tapping fingertip ({tip_x}, {tip_y})"
+                            )
+                            self.adb.tap(tip_x, tip_y)
+                            consecutive_unknown_scenes = 0
+                            time.sleep(0.8)
+                            continue
+                    else:
+                        # No finger detected — reset exhaust counter
+                        _finger_last_pos = None
+                        _finger_same_count = 0
 
                     # 2d. Update state on main_city (after finger check so
                     #     the expensive OCR doesn't delay finger detection).
@@ -1528,7 +1550,7 @@ def main():
         if arg.startswith("--"):
             flags.append(arg)
             # Consume value for --loops and --game
-            if arg in ("--loops", "--game") and i + 1 < len(sys.argv):
+            if arg in ("--loops", "--game", "--emulator") and i + 1 < len(sys.argv):
                 i += 1
                 flags.append(sys.argv[i])
         else:
@@ -1555,7 +1577,20 @@ def main():
         default=getattr(config, "ACTIVE_GAME", "frozenisland"),
         help="Game profile to load (default: %(default)s)"
     )
+    parser.add_argument(
+        "--emulator", type=str, default=None,
+        choices=list(config.EMULATOR_PRESETS.keys()),
+        help="Emulator to use (default: config.ACTIVE_EMULATOR)"
+    )
     args = parser.parse_args(flags)
+
+    # Override emulator config if --emulator flag is provided
+    if args.emulator:
+        preset = config.EMULATOR_PRESETS[args.emulator]
+        config.ADB_PORT = preset["port"]
+        config.ADB_PATH = preset["adb_path"]
+        config.NOX_ADB_PATH = config.ADB_PATH
+        config.ACTIVE_EMULATOR = args.emulator
 
     GameLogger(config.LOG_DIR)
 
