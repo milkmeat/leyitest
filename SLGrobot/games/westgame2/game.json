@@ -66,7 +66,7 @@
 
   "finger_ncc_threshold": 0.83,
 
-  "unknown_scene_extra_sleep": 1.0,
+  "unknown_scene_extra_sleep": 0.1,
 
   "city_layout": {
     "file": "city_layout.md",
