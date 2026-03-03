@@ -541,6 +541,10 @@ class GameBot:
                     #     in auto mode — scripts are CLI-only via `quest`).
                     finger, flip = self.finger_detector.detect(screenshot)
                     if finger is not None:
+                        # Finger detected — reset exhaust trackers
+                        self._auto_consecutive_unknown = 0
+                        self._auto_popup_last_primary_pos = None
+                        self._auto_last_unknown_primary_pos = None
                         # Finger detected — reset adaptive sleep
                         if _current_loop_sleep != _base_loop_sleep:
                             logger.info(
@@ -576,7 +580,6 @@ class GameBot:
                                     f"({tip2_x}, {tip2_y})"
                                 )
                                 self.adb.tap(tip2_x, tip2_y)
-                                self._auto_consecutive_unknown = 0
                                 time.sleep(0.8)
                                 continue
                             logger.info(
@@ -590,7 +593,6 @@ class GameBot:
                                 f"tapping fingertip ({tip_x}, {tip_y})"
                             )
                             self.adb.tap(tip_x, tip_y)
-                            self._auto_consecutive_unknown = 0
                             time.sleep(0.8)
                             continue
                     else:

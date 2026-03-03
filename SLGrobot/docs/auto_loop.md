@@ -18,20 +18,20 @@ python main.py --auto --loops 50   # 限制最多 50 轮
 | **2. 场景分类** | `classifier.classify(screenshot)` | 识别当前画面属于哪种场景（见下方场景列表） |
 | **2a. 卡死检测** | 连续 `STUCK_MAX_SAME_SCENE`(10) 次相同场景触发恢复 | 逐步升级：按返回 → 点击中心 → 重启游戏 |
 | **2c. 主城状态更新** | 在主城场景下提前提取任务栏信息 | 为后续手指检测和任务触发提供数据 |
-| **2d. 教程手指检测** | 检测画面中的"引导手指"图标 | **最高优先级**，发现就直接点击手指尖位置；若在主城任务栏上检测到手指，可快速启动 quest workflow 直接进入 EXECUTE_QUEST 阶段 |
+| **2d. 教程手指检测** | 检测画面中的"引导手指"图标 | **最高优先级**，发现就直接点击手指尖位置，同时重置所有 exhaust 计数器 |
 | **3. 退出对话** | `exit_dialog` → 点击"继续"按钮 (826, 843) | 暗背景容易被误判为其他场景，优先处理；点击后等待 60s |
 | **3b. 英雄列表/招募** | `hero` → 点返回；`hero_recruit` → 先点 primary button 再返回 | 防止卡在英雄界面 |
 | **3c. 英雄升级** | `hero_upgrade` → 有红字（资源不足）不点升级，直接返回 | 使用 `has_red_text_near_button()` 检测资源不足 |
-| **4. 弹窗处理** | `popup` 场景（quest workflow 未激活时）→ 先检查奖励按钮 → 关闭弹窗 | 跳过弹窗，不让弹窗阻塞流程 |
+| **4. 弹窗处理** | `popup` 场景 → 先检查奖励按钮 → primary button → 关闭弹窗 | 跳过弹窗，不让弹窗阻塞流程 |
 | **4b. 剧情对话** | `story_dialogue` → 尝试点"跳过" → 点三角 → 点屏幕中心 | 自动跳过剧情 |
 | **5. 加载画面** | `loading` → 检查是否有 primary button（防止误判）→ 等待 | 真正的加载画面不做操作，只等待 |
-| **5b. 任务工作流** | `quest_workflow` 激活中 → 执行工作流状态机 | 任务脚本驱动的多步操作（见下方状态机详述） |
-| **6. 未知场景** | 尝试 primary button → 3 次未知则按返回 → 尝试弹窗关闭 → LLM 分析 | 防止卡在未知界面 |
+| **5b. 远征编队** | `unknown` 场景下 OCR 检测"一键上阵" → 点击 → 点击"出战" | 自动编队出征 |
+| **6. 未知场景** | 尝试 back_arrow → primary button → popup filter → 3 次未知则点空白区域 | 逐级升级脱困 |
 | **7. 状态更新** | 非主城场景的 `state_tracker.update()` | 主城在步骤 2c 已更新 |
-| **7.5 任务栏触发** | 主城 + 任务栏可见 + `should_start()` = true → 启动 quest workflow | 自动识别并执行任务栏显示的当前任务 |
-| **8. 三层决策** | 核心逻辑，三选一（见下方详述） | |
+| **7.5 任务奖励领取** | 主城 + 任务栏绿色对勾 → 点击领取奖励 | 自动领取已完成任务的奖励 |
+| **7.6 已知弹窗横幅** | 匹配已知弹窗模板（如联盟招募）→ 关闭 | 每次迭代都检查 |
+| **8. AutoHandler 决策** | `auto_handler.get_actions()` 扫描当前画面 | 寻找可做的事（收资源、领奖励等） |
 | **9. 持久化** | 保存游戏状态到 `data/game_state.json` | 每次迭代结束时 |
-| **10. 日志** | 每 10 轮输出状态摘要，每 20 轮清理已完成任务 | |
 
 每次迭代最后 `sleep(LOOP_INTERVAL)` (2.0s) 后进入下一轮。
 
@@ -49,84 +49,13 @@ python main.py --auto --loops 50   # 限制最多 50 轮
 | 6 | `hero` / `hero_recruit` / `hero_upgrade` / `battle` | `scenes/` 目录全扫描匹配 |
 | 7 | `unknown` | 兜底 |
 
-## 三层决策（步骤 8）
+## AutoHandler（步骤 8）
 
-这是 auto loop 的核心，三选一：
-
-1. **有待办任务** → **规则引擎**（战术层）分解任务为具体操作并执行，响应时间 <500ms
-2. **无任务 + LLM 咨询时间到**（间隔 `LLM_CONSULT_INTERVAL` = 1800s）→ **LLM 生成战略计划**（战略层），生成的任务加入队列
-3. **无任务** → **auto_handler** 自动扫描当前画面寻找可做的事（机会主义行为，如收资源、领奖励）
-
-90% 的操作由本地规则引擎和 CV 完成，LLM 只是定期咨询的"顾问"。
-
-### 规则引擎支持的任务类型
-
-`collect_resources`, `upgrade_building`, `train_troops`, `claim_rewards`, `navigate_main_city`, `navigate_world_map`, `close_popup`, `check_mail`, `collect_daily`
-
-### AutoHandler 优先级
-
-当没有待办任务且 LLM 未到咨询时间时，`AutoHandler.get_actions()` 按以下顺序扫描：
+当所有场景特定处理器都未命中时，`AutoHandler.get_actions()` 按以下顺序扫描：
 
 1. **已知弹窗** — 匹配标识模板，点击对应关闭模板
 2. **奖励按钮** — 模板匹配 `buttons/claim` 等 + OCR 匹配"领取"等文字
 3. **加载画面** — 点击屏幕中心
-
-## Quest Workflow 状态机（步骤 5b / 7.5）
-
-当任务栏有可执行的任务时，系统会暂停 LLM 排的任务队列，优先执行游戏主线/支线任务。
-
-### 状态流转
-
-```
-IDLE → ENSURE_MAIN_CITY → READ_QUEST → CLICK_QUEST → EXECUTE_QUEST
-     → RETURN_TO_CITY → CHECK_COMPLETION → CLAIM_REWARD → VERIFY → IDLE
-```
-
-### 各阶段说明
-
-| 阶段 | 行为 |
-|------|------|
-| **ENSURE_MAIN_CITY** | 不在主城时尝试返回：OCR "城池"/"主城" → `buttons/back_arrow` → 点击空白区域；若在 popup 场景则跳至 EXECUTE_QUEST |
-| **READ_QUEST** | 检测任务栏文字，记录 `target_quest_name`；若已有绿色对勾则跳至 CLAIM_REWARD |
-| **CLICK_QUEST** | 点击任务栏文字区域中心，进入 EXECUTE_QUEST |
-| **EXECUTE_QUEST** | 核心执行阶段（见下方详述），最多 `max_execute_iterations`(40) 轮 |
-| **RETURN_TO_CITY** | 执行完毕或超时后返回主城 |
-| **CHECK_COMPLETION** | 检查任务栏是否有绿色对勾 |
-| **CLAIM_REWARD** | 点击任务栏领取奖励 |
-| **VERIFY** | 验证任务文字已变化（新任务出现），完成后回到 IDLE |
-
-### EXECUTE_QUEST 阶段详细逻辑
-
-EXECUTE_QUEST 是最复杂的阶段，按场景分支处理：
-
-**popup 场景** — 多阶段弹窗消除：
-1. OCR 匹配消除文字（"确定"、"领取"等）
-2. `close_x` 模板关闭
-3. 教程手指检测
-4. OCR 匹配动作按钮（"建造"、"升级"等）
-5. `find_primary_button()` 颜色检测
-6. 逐步升级：返回箭头 → 中心点击 → LLM 分析
-
-**story_dialogue** — 尝试"跳过"，然后点三角
-
-**main_city（无手指）** — 推进到 CHECK_COMPLETION
-
-**通用流程**：
-1. `_match_quest_rule()` 匹配 JSON quest 脚本执行
-2. OCR 匹配动作按钮（有**按钮疲劳机制**：同一按钮连续点击 2 次后标记为 exhausted，跳过）
-3. `find_primary_button()` 颜色检测（HSV，蓝/绿优先，金色次之）
-4. 所有按钮 exhausted → RETURN_TO_CITY
-5. 尝试 `close_x` 关闭全屏弹窗
-6. LLM 分析（如果配置了）
-7. 兜底：点击屏幕中心
-
-### 教程手指快速通道
-
-教程手指（tutorial finger）检测优先级高于一切。在主城检测到手指位于任务栏区域时，可跳过 ENSURE_MAIN_CITY / READ_QUEST / CLICK_QUEST，直接快速启动 quest workflow 进入 EXECUTE_QUEST。
-
-### Abort Cooldown
-
-如果任务被中止（超时、exhausted 等），`_ABORT_COOLDOWN = 180s`（3 分钟）内 `should_start()` 会阻止重启同一任务，防止反复失败。
 
 ## Primary Button 检测
 
@@ -166,14 +95,11 @@ EXECUTE_QUEST 是最复杂的阶段，按场景分支处理：
 | 常量 | 值 | 用途 |
 |------|---|------|
 | `LOOP_INTERVAL` | 2.0s | 迭代间隔 |
-| `LLM_CONSULT_INTERVAL` | 1800s | LLM 咨询频率 |
 | `STUCK_MAX_SAME_SCENE` | 10 | 触发卡死恢复的相同场景次数 |
 | `ADB_RECONNECT_RETRIES` | 3 | ADB 重连最大次数 |
 | `ACTION_MAX_RETRIES` | 3 | 单个 action 执行重试次数 |
 | `SCREEN_WIDTH / HEIGHT` | 1080 × 1920 | 模拟器分辨率要求 |
-| `max_execute_iterations` | 40 | EXECUTE_QUEST 阶段最大迭代数 |
-| `_ABORT_COOLDOWN` | 180s | 任务中止后冷却时间 |
-| `_ACTION_BUTTON_EXHAUST_THRESHOLD` | 2 | 按钮疲劳阈值（连续点击次数） |
+| `_ABORT_COOLDOWN` | 180s | quest script 中止后冷却时间 |
 
 ## 相关代码
 
@@ -181,9 +107,7 @@ EXECUTE_QUEST 是最复杂的阶段，按场景分支处理：
 - 场景分类：`scene/classifier.py` — `SceneClassifier.classify()`
 - 弹窗过滤：`scene/popup_filter.py` — `PopupFilter.handle()`
 - Primary Button：`scene/classifier.py` — `find_primary_button()` / `has_red_text_near_button()`
-- 规则引擎：`brain/rule_engine.py` — `RuleEngine.plan()`
-- LLM 规划：`brain/llm_planner.py` — `LLMPlanner.get_plan()`
 - 自动处理：`brain/auto_handler.py` — `AutoHandler.get_actions()`
-- 任务工作流：`brain/quest_workflow.py` — `QuestWorkflow.step()`
+- 任务脚本：`brain/quest_script.py` — `QuestScriptRunner`
 - 卡死恢复：`brain/stuck_recovery.py` — `StuckRecovery.check()` / `recover()`
 - 执行管线：`executor/` — `ActionValidator` → `ActionRunner` → `ResultChecker`
