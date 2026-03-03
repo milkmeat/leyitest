@@ -11,7 +11,7 @@ import logging
 import numpy as np
 
 from vision.template_matcher import TemplateMatcher
-from vision.element_detector import ElementDetector, Element
+from vision.element_detector import ElementDetector, Element, is_gray_button
 from state.game_state import GameState
 
 logger = logging.getLogger(__name__)
@@ -144,6 +144,12 @@ class AutoHandler:
         for text in self._claim_text_patterns:
             element = self.detector.locate(screenshot, text, methods=["ocr"])
             if element is not None:
+                if is_gray_button(screenshot, element):
+                    logger.info(
+                        f"Auto: claim text '{text}' is gray (disabled), "
+                        f"skipping"
+                    )
+                    continue
                 logger.info(f"Auto: claim text found '{text}'")
                 return {
                     "type": "tap",

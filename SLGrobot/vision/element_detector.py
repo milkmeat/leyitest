@@ -171,6 +171,47 @@ class ElementDetector:
         )
 
 
+def is_gray_button(screenshot: np.ndarray,
+                   element: Element,
+                   half_w: int = 80,
+                   half_h: int = 25,
+                   max_saturation: float = 45.0) -> bool:
+    """Check if the button region around *element* is gray (disabled).
+
+    Samples a rectangle centred on the element and computes the mean
+    HSV saturation.  Gray / disabled buttons have very low saturation
+    compared to active blue/green/gold buttons (S > 100).
+
+    Args:
+        screenshot: BGR numpy array.
+        element: The detected UI element (text hit, template hit, etc.).
+        half_w: Half-width of the sampling rectangle.
+        half_h: Half-height of the sampling rectangle.
+        max_saturation: If mean saturation is below this, the button is gray.
+
+    Returns:
+        True if the region looks gray (disabled).
+    """
+    h, w = screenshot.shape[:2]
+    y1 = max(0, element.y - half_h)
+    y2 = min(h, element.y + half_h)
+    x1 = max(0, element.x - half_w)
+    x2 = min(w, element.x + half_w)
+    region = screenshot[y1:y2, x1:x2]
+
+    if region.size == 0:
+        return False
+
+    hsv = cv2.cvtColor(region, cv2.COLOR_BGR2HSV)
+    mean_sat = float(hsv[:, :, 1].mean())
+
+    logger.debug(
+        f"Gray button check at ({element.x},{element.y}): "
+        f"mean_sat={mean_sat:.1f} (threshold={max_saturation})"
+    )
+    return mean_sat < max_saturation
+
+
 def has_red_text_near_button(screenshot: np.ndarray,
                             button: Element,
                             above_px: int = 120,

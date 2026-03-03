@@ -33,7 +33,7 @@ from vision.template_matcher import TemplateMatcher
 from vision.ocr_locator import OCRLocator
 from vision.grid_overlay import GridOverlay
 from vision.building_finder import BuildingFinder, parse_city_layout
-from vision.element_detector import ElementDetector, find_primary_button, find_purple_button, has_red_text_near_button
+from vision.element_detector import ElementDetector, find_primary_button, find_purple_button, has_red_text_near_button, is_gray_button
 from scene.classifier import SceneClassifier
 from scene.popup_filter import PopupFilter
 from state.game_state import GameState
