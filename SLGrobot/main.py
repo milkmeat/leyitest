@@ -425,7 +425,7 @@ class GameBot:
                             if self.game_profile else 0.7)
         _current_loop_sleep = _base_loop_sleep
         _last_scene: str | None = None
-        _MAX_LOOP_SLEEP = 25.0
+        _MAX_LOOP_SLEEP = 15.0
 
         print(f"Starting auto loop (max_loops={max_loops or 'infinite'})...")
         print("Press Ctrl+C to stop.\n")
