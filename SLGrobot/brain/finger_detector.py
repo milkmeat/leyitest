@@ -60,11 +60,13 @@ class FingerDetector:
     _FINGER_CONFIDENCE_THRESHOLD = 0.85
 
     # Stage-2 threshold (masked NCC — correlation on opaque pixels only).
-    # Quest-guide finger: NCC 0.98+.  Battle-scene finger (with glow
-    # overlay): NCC ~0.47–0.53.  False positives: ~0.20–0.40.
-    # Threshold 0.45 catches both contexts with ≥0.05 margin over
-    # false positives.
-    _FINGER_NCC_THRESHOLD = 0.45
+    # Quest-guide finger: NCC 0.98+.  False positives vary by game:
+    # westgame2 ~0.20–0.40, frozenisland up to ~0.65.
+    # Must match TemplateMatcher._MASKED_NCC_THRESHOLD (0.7) because
+    # _try_variant() bypasses the generic _match() pipeline that
+    # enforces that threshold.  Games needing a different value can
+    # override via game_profile.finger_ncc_threshold.
+    _FINGER_NCC_THRESHOLD = 0.7
 
     # Prescan parameters for quick rejection of no-finger frames.
     _PRESCAN_SCALE = 0.25
