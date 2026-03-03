@@ -868,11 +868,6 @@ class GameBot:
                         if not handled:
                             logger.info("Unknown scene: tapping blank area")
                             self.tap_blank_area()
-                            # Extra sleep after fallback tap — per-game config
-                            extra = (self.game_profile.unknown_scene_extra_sleep
-                                     if self.game_profile else 1.0)
-                            if extra > 0:
-                                time.sleep(extra)
 
                         time.sleep(config.LOOP_INTERVAL)
                         continue

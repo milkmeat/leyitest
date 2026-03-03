@@ -57,7 +57,5 @@
   "finger_ncc_threshold": 0.68,
 
   "grid_cols": 8,
-  "grid_rows": 6,
-
-  "unknown_scene_extra_sleep": 2.0
+  "grid_rows": 6
 }

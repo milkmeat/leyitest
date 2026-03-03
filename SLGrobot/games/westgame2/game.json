@@ -66,8 +66,6 @@
 
   "finger_ncc_threshold": 0.83,
 
-  "unknown_scene_extra_sleep": 0.1,
-
   "city_layout": {
     "file": "city_layout.md",
     "reference_building": "城镇中心",
