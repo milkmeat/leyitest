@@ -65,6 +65,9 @@ class GameProfile:
     # City layout for building finder
     city_layout: dict = field(default_factory=dict)
 
+    # Extra sleep (seconds) after unknown-scene fallback tap
+    unknown_scene_extra_sleep: float = 1.0
+
 
 def load_game_profile(game_id: str,
                       games_dir: str = "games") -> GameProfile:
@@ -134,6 +137,9 @@ def load_game_profile(game_id: str,
 
         # City layout
         city_layout=data.get("city_layout", {}),
+
+        # Unknown scene extra sleep
+        unknown_scene_extra_sleep=data.get("unknown_scene_extra_sleep", 1.0),
     )
 
     logger.info(f"Loaded game profile: {profile.display_name} ({game_id})")
