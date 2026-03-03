@@ -55,6 +55,63 @@ class TemplateMatcher:
     # false positives: NCC ≤ 0.5 (back_arrow) / ≤ 0.69 (tutorial_finger).
     _MASKED_NCC_THRESHOLD: float = 0.7
 
+    # Templates requiring red-pixel verification after NCC passes.
+    # close_x is a red X on transparent background — impostors either
+    # lack red entirely (red_x=0) or have red bleeding into the
+    # background region (red_bg>0.30).
+    RED_PIXEL_TEMPLATES: set[str] = {"buttons/close_x"}
+    _RED_OPAQUE_MIN: float = 0.15
+    _RED_BG_MAX: float = 0.30
+
+    @staticmethod
+    def compute_masked_ncc(template: np.ndarray, crop: np.ndarray,
+                           mask: np.ndarray) -> float:
+        """Normalized cross-correlation on masked (opaque) pixels only.
+
+        Args:
+            template: BGR template image.
+            crop: BGR screenshot crop (same size as template).
+            mask: 2-D boolean mask (True = opaque pixel to include).
+
+        Returns NCC score in [-1, 1], or 0.0 on degenerate input.
+        """
+        t = template[mask].astype(np.float32).flatten()
+        s = crop[mask].astype(np.float32).flatten()
+        t = t - t.mean()
+        s = s - s.mean()
+        denom = np.sqrt(np.dot(t, t) * np.dot(s, s))
+        return float(np.dot(t, s) / denom) if denom > 1e-10 else 0.0
+
+    @staticmethod
+    def verify_red_pixel(patch: np.ndarray, opaque_mask: np.ndarray | None,
+                         min_opaque: float = 0.15,
+                         max_bg: float = 0.30) -> bool:
+        """Check that a patch has red pixels in the opaque region but not background.
+
+        Uses HSV thresholding to detect red (hue 0-10 and 170-180).
+
+        Args:
+            patch: BGR image crop to verify.
+            opaque_mask: 2-D boolean mask (True = opaque template pixel).
+                         If None, checks whole patch with no bg constraint.
+            min_opaque: minimum fraction of opaque pixels that must be red.
+            max_bg: maximum fraction of background pixels that may be red.
+
+        Returns True if the patch passes the red-pixel filter.
+        """
+        hsv = cv2.cvtColor(patch, cv2.COLOR_BGR2HSV)
+        red = (cv2.inRange(hsv, (0, 80, 80), (10, 255, 255))
+               | cv2.inRange(hsv, (170, 80, 80), (180, 255, 255)))
+        if opaque_mask is not None:
+            r_op = float((red[opaque_mask] > 0).sum()) / opaque_mask.sum()
+            bg_mask = ~opaque_mask
+            bg_count = bg_mask.sum()
+            r_bg = float((red[bg_mask] > 0).sum()) / bg_count if bg_count > 0 else 0.0
+        else:
+            r_op = float((red > 0).sum()) / red.size
+            r_bg = 0.0
+        return r_op >= min_opaque and r_bg <= max_bg
+
     def __init__(self, template_dir: str = None, threshold: float = None) -> None:
         self.template_dir = template_dir or config.TEMPLATE_DIR
         self.threshold = threshold or config.TEMPLATE_MATCH_THRESHOLD
@@ -148,19 +205,23 @@ class TemplateMatcher:
                         crop = screenshot[y1:y1+th, x1:x1+tw]
                         if crop.shape[:2] != (th, tw):
                             continue
-                        t = template[opaque].astype(np.float32).flatten()
-                        s = crop[opaque].astype(np.float32).flatten()
-                        t = t - t.mean()
-                        s = s - s.mean()
-                        denom = np.sqrt(np.dot(t, t) * np.dot(s, s))
-                        ncc = float(np.dot(t, s) / denom) if denom > 1e-10 else 0.0
-                        if ncc >= self._MASKED_NCC_THRESHOLD:
-                            verified.append(m)
-                        else:
+                        ncc = self.compute_masked_ncc(template, crop, opaque)
+                        if ncc < self._MASKED_NCC_THRESHOLD:
                             logger.debug(
                                 f"PREFER_TOP_RIGHT: rejected {template_name} "
                                 f"at ({m.x}, {m.y}) ncc={ncc:.3f}"
                             )
+                            continue
+                        if template_name in self.RED_PIXEL_TEMPLATES:
+                            if not self.verify_red_pixel(
+                                    crop, opaque,
+                                    self._RED_OPAQUE_MIN, self._RED_BG_MAX):
+                                logger.debug(
+                                    f"PREFER_TOP_RIGHT: rejected {template_name} "
+                                    f"at ({m.x}, {m.y}) (red-pixel filter)"
+                                )
+                                continue
+                        verified.append(m)
                     if not verified:
                         return self._match(screenshot, template_name, template, mask)
                     matches = verified
@@ -336,12 +397,7 @@ class TemplateMatcher:
                 crop = screenshot[y1c:y1c + th, x1c:x1c + tw]
                 if crop.shape[:2] != (th, tw):
                     return None
-                t = template[opaque_mask].astype(np.float32).flatten()
-                s = crop[opaque_mask].astype(np.float32).flatten()
-                t = t - t.mean()
-                s = s - s.mean()
-                denom = np.sqrt(np.dot(t, t) * np.dot(s, s))
-                ncc = float(np.dot(t, s) / denom) if denom > 1e-10 else 0.0
+                ncc = self.compute_masked_ncc(template, crop, opaque_mask)
                 if ncc < self._MASKED_NCC_THRESHOLD:
                     logger.debug(
                         f"Template match rejected (CCORR={ccorr_val:.3f}, "
@@ -350,6 +406,17 @@ class TemplateMatcher:
                         f"({x1c + tw // 2}, {y1c + th // 2})"
                     )
                     return None
+                if name in self.RED_PIXEL_TEMPLATES:
+                    if not self.verify_red_pixel(
+                            crop, opaque_mask,
+                            self._RED_OPAQUE_MIN, self._RED_BG_MAX):
+                        logger.debug(
+                            f"Template match rejected (red-pixel filter, "
+                            f"CCORR={ccorr_val:.3f}, ncc={ncc:.3f}): "
+                            f"{name} at "
+                            f"({x1c + tw // 2}, {y1c + th // 2})"
+                        )
+                        return None
                 logger.debug(
                     f"Template match (masked NCC, opaque={opaque_ratio:.0%}): "
                     f"{name} CCORR={ccorr_val:.3f}, ncc={ncc:.3f} at "

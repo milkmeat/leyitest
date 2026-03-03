@@ -14,6 +14,7 @@ import cv2
 import numpy as np
 
 from vision.element_detector import Element, ElementDetector
+from vision.template_matcher import TemplateMatcher
 
 logger = logging.getLogger(__name__)
 
@@ -62,10 +63,8 @@ class FingerDetector:
     # Stage-2 threshold (masked NCC — correlation on opaque pixels only).
     # Quest-guide finger: NCC 0.98+.  False positives vary by game:
     # westgame2 ~0.20–0.40, frozenisland up to ~0.65.
-    # Must match TemplateMatcher._MASKED_NCC_THRESHOLD (0.7) because
-    # _try_variant() bypasses the generic _match() pipeline that
-    # enforces that threshold.  Games needing a different value can
-    # override via game_profile.finger_ncc_threshold.
+    # Default 0.7; games can override via game_profile.finger_ncc_threshold
+    # (e.g. frozenisland=0.68, westgame2=0.83).
     _FINGER_NCC_THRESHOLD = 0.7
 
     # Prescan parameters for quick rejection of no-finger frames.
@@ -127,14 +126,7 @@ class FingerDetector:
             return -1.0
 
         crop = screenshot[y1:y1 + th, x1:x1 + tw]
-        t = tpl[msk].astype(np.float32).flatten()
-        s = crop[msk].astype(np.float32).flatten()
-        t = t - t.mean()
-        s = s - s.mean()
-        denom = np.sqrt(np.dot(t, t) * np.dot(s, s))
-        if denom < 1e-10:
-            return 0.0
-        return float(np.dot(t, s) / denom)
+        return TemplateMatcher.compute_masked_ncc(tpl, crop, msk)
 
     def detect_old(self, screenshot: np.ndarray) -> tuple:
         """Original detect — kept for A/B comparison via CLI.

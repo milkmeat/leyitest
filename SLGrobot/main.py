@@ -1462,44 +1462,47 @@ class CLI:
         else:
             screenshot = self.bot.screenshot_mgr.capture()
 
+        from vision.template_matcher import TemplateMatcher as TM
+
         tm = self.bot.template_matcher
-        RED_OPAQUE_MIN = 0.15
-        RED_BG_MAX = 0.30
 
         # Show raw top-5 CCORR candidates with red-pixel ratios
         candidates = tm.match_one_multi(screenshot, "buttons/close_x",
                                         max_matches=5)
         entry = tm._cache.get("buttons/close_x")
-        opaque, transparent = None, None
+        opaque = None
         if entry is not None:
             _, mask = entry
             if mask is not None:
                 opaque = mask[:, :, 0] > 0
-                transparent = ~opaque
 
         best = None
         best_score = -1.0
         for i, m in enumerate(candidates):
             patch = screenshot[m.bbox[1]:m.bbox[3], m.bbox[0]:m.bbox[2]]
+            # Compute per-candidate red ratios for diagnostic display
             hsv = cv2.cvtColor(patch, cv2.COLOR_BGR2HSV)
-            red1 = cv2.inRange(hsv, (0, 80, 80), (10, 255, 255))
-            red2 = cv2.inRange(hsv, (170, 80, 80), (180, 255, 255))
-            red_px = red1 | red2
+            red_px = (cv2.inRange(hsv, (0, 80, 80), (10, 255, 255))
+                      | cv2.inRange(hsv, (170, 80, 80), (180, 255, 255)))
             if opaque is not None:
-                r_op = (red_px[opaque] > 0).sum() / opaque.sum()
-                r_bg = (red_px[transparent] > 0).sum() / transparent.sum()
+                r_op = float((red_px[opaque] > 0).sum()) / opaque.sum()
+                bg_mask = ~opaque
+                r_bg = float((red_px[bg_mask] > 0).sum()) / bg_mask.sum() if bg_mask.sum() > 0 else 0.0
             else:
-                r_op = (red_px > 0).sum() / red_px.size
+                r_op = float((red_px > 0).sum()) / red_px.size
                 r_bg = 0.0
+            passed = TM.verify_red_pixel(patch, opaque,
+                                         TM._RED_OPAQUE_MIN, TM._RED_BG_MAX)
             print(f"  #{i+1}: ccorr={m.confidence:.3f} "
-                  f"red_x={r_op:.3f} red_bg={r_bg:.3f} at ({m.x}, {m.y})")
-            if r_op >= RED_OPAQUE_MIN and r_bg <= RED_BG_MAX:
+                  f"red_x={r_op:.3f} red_bg={r_bg:.3f} at ({m.x}, {m.y})"
+                  f" {'PASS' if passed else 'FAIL'}")
+            if passed:
                 score = r_op - r_bg
                 if score > best_score:
                     best_score = score
                     best = m
-        print(f"  (need: red_x>={RED_OPAQUE_MIN}, "
-              f"red_bg<={RED_BG_MAX})")
+        print(f"  (need: red_x>={TM._RED_OPAQUE_MIN}, "
+              f"red_bg<={TM._RED_BG_MAX})")
 
         match = best
         if match is None:
