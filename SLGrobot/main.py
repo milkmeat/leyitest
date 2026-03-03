@@ -535,6 +535,13 @@ class GameBot:
                     #     in auto mode — scripts are CLI-only via `quest`).
                     finger, flip = self.finger_detector.detect(screenshot)
                     if finger is not None:
+                        # Finger detected — reset adaptive sleep
+                        if _current_loop_sleep != _base_loop_sleep:
+                            logger.info(
+                                f"Finger detected, loop_start_sleep reset "
+                                f"to {_base_loop_sleep}s"
+                            )
+                            _current_loop_sleep = _base_loop_sleep
                         tip_x, tip_y = self.finger_detector.fingertip_pos(
                             finger.x, finger.y, flip
                         )
