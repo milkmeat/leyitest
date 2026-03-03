@@ -130,6 +130,41 @@ class TemplateMatcher:
                 # COLOR_INVARIANT_TEMPLATES) when multi-match finds nothing.
                 template, mask = entry
                 return self._match(screenshot, template_name, template, mask)
+
+            # Verify multi-match candidates with masked NCC to reject false
+            # positives (e.g. finger icon or popup content matched as close_x).
+            # match_one_multi uses CCORR which is too permissive for masked
+            # templates; _match has two-stage verification but match_one_multi
+            # doesn't, so we add it here.
+            template, mask = entry
+            if mask is not None:
+                opaque = mask[:, :, 0] > 0
+                opaque_ratio = float(opaque.sum()) / (template.shape[0] * template.shape[1])
+                if opaque_ratio < 0.9:
+                    th, tw = template.shape[:2]
+                    verified = []
+                    for m in matches:
+                        x1, y1 = m.bbox[0], m.bbox[1]
+                        crop = screenshot[y1:y1+th, x1:x1+tw]
+                        if crop.shape[:2] != (th, tw):
+                            continue
+                        t = template[opaque].astype(np.float32).flatten()
+                        s = crop[opaque].astype(np.float32).flatten()
+                        t = t - t.mean()
+                        s = s - s.mean()
+                        denom = np.sqrt(np.dot(t, t) * np.dot(s, s))
+                        ncc = float(np.dot(t, s) / denom) if denom > 1e-10 else 0.0
+                        if ncc >= self._MASKED_NCC_THRESHOLD:
+                            verified.append(m)
+                        else:
+                            logger.debug(
+                                f"PREFER_TOP_RIGHT: rejected {template_name} "
+                                f"at ({m.x}, {m.y}) ncc={ncc:.3f}"
+                            )
+                    if not verified:
+                        return self._match(screenshot, template_name, template, mask)
+                    matches = verified
+
             if len(matches) == 1:
                 return matches[0]
             # Score: prefer small y (high on screen) and large x (right side).

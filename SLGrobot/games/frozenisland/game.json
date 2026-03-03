@@ -54,6 +54,8 @@
     "返回领地", "领取", "返回", "关闭", "确定", "确认"
   ],
 
+  "finger_ncc_threshold": 0.68,
+
   "grid_cols": 8,
   "grid_rows": 6
 }
