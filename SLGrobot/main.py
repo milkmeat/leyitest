@@ -420,6 +420,12 @@ class GameBot:
         _FINGER_EXHAUST_LIMIT = 3
         # Popup primary button exhaust: close popup if same button repeats
         _popup_last_primary_pos: tuple[int, int] | None = None
+        # Adaptive loop_start_sleep: doubles when stuck on same scene, max 25s
+        _base_loop_sleep = (self.game_profile.loop_start_sleep
+                            if self.game_profile else 0.7)
+        _current_loop_sleep = _base_loop_sleep
+        _last_scene: str | None = None
+        _MAX_LOOP_SLEEP = 25.0
 
         print(f"Starting auto loop (max_loops={max_loops or 'infinite'})...")
         print("Press Ctrl+C to stop.\n")
@@ -432,10 +438,8 @@ class GameBot:
                 logger.info(f"=== Loop {loop} ===")
 
                 try:
-                    # 0. Brief pause at start of each loop (per-game)
-                    _loop_sleep = (self.game_profile.loop_start_sleep
-                                   if self.game_profile else 0.7)
-                    time.sleep(_loop_sleep)
+                    # 0. Brief pause at start of each loop (adaptive)
+                    time.sleep(_current_loop_sleep)
 
                     # 0b. Check ADB connection
                     if not self.adb.is_connected():
@@ -483,6 +487,26 @@ class GameBot:
 
                     # 2a. Save loop screenshot (one per loop)
                     self.game_logger.save_loop_screenshot(screenshot, scene)
+
+                    # 2a-2. Adaptive loop sleep: double if stuck on same scene
+                    if scene == _last_scene:
+                        new_sleep = min(
+                            _current_loop_sleep * 2, _MAX_LOOP_SLEEP
+                        )
+                        if new_sleep != _current_loop_sleep:
+                            _current_loop_sleep = new_sleep
+                            logger.info(
+                                f"Same scene '{scene}', loop_start_sleep -> "
+                                f"{_current_loop_sleep:.1f}s"
+                            )
+                    else:
+                        if _current_loop_sleep != _base_loop_sleep:
+                            logger.info(
+                                f"Scene changed '{_last_scene}' -> '{scene}', "
+                                f"loop_start_sleep reset to {_base_loop_sleep}s"
+                            )
+                            _current_loop_sleep = _base_loop_sleep
+                    _last_scene = scene
 
                     # 2b. Stuck detection
                     scene_history.append(scene)
