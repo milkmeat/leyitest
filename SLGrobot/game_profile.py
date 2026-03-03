@@ -62,6 +62,9 @@ class GameProfile:
     # Quest scripts (multi-step patterns)
     quest_scripts: list[dict] = field(default_factory=list)
 
+    # Brief pause (seconds) at the start of each auto-loop iteration
+    loop_start_sleep: float = 0.7
+
     # City layout for building finder
     city_layout: dict = field(default_factory=dict)
 
@@ -131,6 +134,9 @@ def load_game_profile(game_id: str,
 
         # Quest scripts
         quest_scripts=data.get("quest_scripts", []),
+
+        # Loop start sleep
+        loop_start_sleep=data.get("loop_start_sleep", 0.7),
 
         # City layout
         city_layout=data.get("city_layout", {}),

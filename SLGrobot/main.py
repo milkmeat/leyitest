@@ -432,8 +432,10 @@ class GameBot:
                 logger.info(f"=== Loop {loop} ===")
 
                 try:
-                    # 0. Brief pause at start of each loop
-                    time.sleep(0.7)
+                    # 0. Brief pause at start of each loop (per-game)
+                    _loop_sleep = (self.game_profile.loop_start_sleep
+                                   if self.game_profile else 0.7)
+                    time.sleep(_loop_sleep)
 
                     # 0b. Check ADB connection
                     if not self.adb.is_connected():
