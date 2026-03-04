@@ -64,7 +64,8 @@ The auto loop is scene-first: each iteration takes a screenshot, classifies the 
 - **LLM is stateless** — game state is persisted in `data/game_state.json` and passed as context to each LLM call
 - **Scene-first dispatch** — every auto-loop iteration starts with scene classification before deciding what to do
 - **Validate-execute-confirm pipeline** — `ActionValidator` → `ActionRunner` (with retry) → `ResultChecker`
-- **禁止使用 Android 系统 BACK 键 (keycode=4)** — SLG 游戏的建筑面板和内嵌 UI 不响应系统 BACK 键，使用 BACK 会导致循环卡死。退出策略优先级：① 点击 `buttons/back_arrow` 模板 ② 点击空白区域 `(500, 100)` ③ 使用 `popup_filter` 关闭弹窗
+- **禁止使用 Android 系统 BACK 键 (keycode=4)** — SLG 游戏的建筑面板和内嵌 UI 不响应系统 BACK 键，使用 BACK 会导致循环卡死。退出策略优先级：① 点击 `buttons/back_arrow` 模板 ② 点击空���区域 `(500, 100)` ③ 使用 `popup_filter` 关闭弹窗
+- **坚决避免重复代码块** — 发现重复逻辑时必须通过提取公共函数/方法进行重构复用，而非复制粘贴。新增功能前先检查是否已有可复用的实现
 
 ### Action Dict Protocol
 
