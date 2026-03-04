@@ -366,12 +366,17 @@ def _pick_bottommost_button(mask: np.ndarray,
                             max_aspect: float,
                             edges: np.ndarray | None = None,
                             min_edge_density: float = 0.04,
+                            min_fill_ratio: float = 0.50,
                             ) -> Element | None:
     """Pick the bottommost button-shaped contour from a binary mask.
 
     When *edges* (Canny edge map) is provided, candidates whose bounding
     box has an edge-pixel density below *min_edge_density* are rejected.
     Real buttons have crisp borders; background gradients (e.g. sky) do not.
+
+    *min_fill_ratio* rejects contours whose area is too small relative to
+    their bounding box.  Real buttons are solid rectangles (fill ≥ 0.6);
+    scattered color patches (e.g. blue sea water) have low fill ratio.
     """
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL,
                                    cv2.CHAIN_APPROX_SIMPLE)
@@ -392,6 +397,15 @@ def _pick_bottommost_button(mask: np.ndarray,
 
         cy = y + h // 2
         if cy < y_min:
+            continue
+
+        # Reject sparse contours (e.g. scattered sea-water pixels)
+        fill = area / (w * h)
+        if fill < min_fill_ratio:
+            logger.debug(
+                f"Rejected contour at ({x+w//2}, {cy}): "
+                f"fill ratio {fill:.3f} < {min_fill_ratio}"
+            )
             continue
 
         # Reject regions that lack clear edges (gradient backgrounds)
