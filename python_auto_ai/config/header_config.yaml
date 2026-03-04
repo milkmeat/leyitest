@@ -1,0 +1,12 @@
+# 默认请求头配置
+# sid, uid, aid 为动态参数，使用时传入
+
+default_header:
+  did: "self-system"
+  ksid: 1
+  ava_id: 0
+  castle_lv: 25
+  battle_type: 0
+  battle_id: 0
+  chat_scene: ",kingdom_1"
+  invoker_name: "evans_test_debug"

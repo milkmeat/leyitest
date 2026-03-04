@@ -1,0 +1,12 @@
+environments:
+  dev:
+    name: "开发环境"
+    url: "http://dev-game-server.com/p1-lc-proxy"
+  test:
+    name: "测试环境"
+    url: "https://leyi-offline-game-alb.leyinetwork.com/p10-test-lc-proxy"
+  prod:
+    name: "生产环境"
+    url: "http://prod-game-server.com/p1-lc-proxy"
+
+current_env: test
