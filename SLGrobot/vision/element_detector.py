@@ -367,6 +367,7 @@ def _pick_bottommost_button(mask: np.ndarray,
                             edges: np.ndarray | None = None,
                             min_edge_density: float = 0.04,
                             min_fill_ratio: float = 0.50,
+                            max_width_ratio: float = 0.85,
                             ) -> Element | None:
     """Pick the bottommost button-shaped contour from a binary mask.
 
@@ -377,6 +378,10 @@ def _pick_bottommost_button(mask: np.ndarray,
     *min_fill_ratio* rejects contours whose area is too small relative to
     their bounding box.  Real buttons are solid rectangles (fill ≥ 0.6);
     scattered color patches (e.g. blue sea water) have low fill ratio.
+
+    *max_width_ratio* rejects contours wider than this fraction of the
+    screen width.  Real buttons never span the full screen; navigation
+    bars and toolbars do.
     """
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL,
                                    cv2.CHAIN_APPROX_SIMPLE)
@@ -397,6 +402,14 @@ def _pick_bottommost_button(mask: np.ndarray,
 
         cy = y + h // 2
         if cy < y_min:
+            continue
+
+        # Reject full-width bars (e.g. bottom navigation bar)
+        if sw > 0 and w / sw > max_width_ratio:
+            logger.debug(
+                f"Rejected contour at ({x+w//2}, {cy}): "
+                f"width ratio {w/sw:.3f} > {max_width_ratio}"
+            )
             continue
 
         # Reject sparse contours (e.g. scattered sea-water pixels)
