@@ -1,10 +1,13 @@
-"""Finger Detector - Tutorial finger detection with two-stage validation.
+"""Finger Detector - Tutorial finger detection with three-stage validation.
 
 Extracted from QuestWorkflow to be a standalone CV component.  Detects the
 animated tutorial finger icon in various orientations (normal, flipped,
 rotated) and scales using:
   Stage 1: TM_CCORR_NORMED with alpha mask (sensitive but may false-positive)
   Stage 2: Masked NCC on opaque pixels only (eliminates false positives)
+  Stage 3: Boundary contrast — compares mean BGR just inside vs. just outside
+           the template silhouette edge; rejects if the finger blends into a
+           same-colour background (low contrast = no visible outline)
 """
 
 import logging
@@ -24,7 +27,8 @@ class FingerDetector:
 
     The game shows the finger icon in various orientations to guide the player.
     This detector creates flipped/rotated template variants at init time,
-    then runs a two-stage filter (CCORR + NCC) for robust detection.
+    then runs a three-stage filter (CCORR + NCC + boundary contrast) for
+    robust detection.
     """
 
     # Offset from template center (40, 57) to fingertip (15, 100)
@@ -67,6 +71,14 @@ class FingerDetector:
     # (e.g. frozenisland=0.68, westgame2=0.83).
     _FINGER_NCC_THRESHOLD = 0.7
 
+    # Stage-3 threshold: minimum Euclidean distance between mean BGR of
+    # inner-boundary pixels (opaque side of edge) and outer-boundary pixels
+    # (transparent side of edge).  Real fingers have a visible outline
+    # (distance >> 20); false positives on same-colour backgrounds have
+    # distance < 20.  Games can override via game_profile.finger_boundary_threshold.
+    _FINGER_BOUNDARY_THRESHOLD = 20.0
+    _MIN_BOUNDARY_PIXELS = 10
+
     # Prescan parameters for quick rejection of no-finger frames.
     _PRESCAN_SCALE = 0.25
     _PRESCAN_THRESHOLD = 0.4
@@ -76,6 +88,8 @@ class FingerDetector:
         self.element_detector = element_detector
         if game_profile and game_profile.finger_ncc_threshold > 0:
             self._FINGER_NCC_THRESHOLD = game_profile.finger_ncc_threshold
+        if game_profile and game_profile.finger_boundary_threshold > 0:
+            self._FINGER_BOUNDARY_THRESHOLD = game_profile.finger_boundary_threshold
         # _all_variants: superset of _FINGER_VARIANTS including scaled entries.
         # Each entry: (cache_name, transform_unused, flip_type_key)
         self._all_variants: list[tuple[str, None, str]] = []
@@ -128,6 +142,64 @@ class FingerDetector:
         crop = screenshot[y1:y1 + th, x1:x1 + tw]
         return TemplateMatcher.compute_masked_ncc(tpl, crop, msk)
 
+    @staticmethod
+    def _compute_boundary_masks(
+        bool_mask: np.ndarray, min_pixels: int = 10,
+    ) -> tuple[np.ndarray, np.ndarray] | None:
+        """Compute inner and outer boundary masks from a boolean opacity mask.
+
+        Inner boundary: opaque pixels adjacent to transparent pixels
+                        (erode the mask, XOR with original).
+        Outer boundary: transparent pixels adjacent to opaque pixels
+                        (dilate the mask, XOR with original).
+
+        Returns (inner_bool, outer_bool) or None if either boundary has
+        fewer than *min_pixels* pixels.
+        """
+        mask_u8 = bool_mask.astype(np.uint8)
+        kernel = np.ones((3, 3), dtype=np.uint8)
+        eroded = cv2.erode(mask_u8, kernel, iterations=1)
+        dilated = cv2.dilate(mask_u8, kernel, iterations=1)
+        inner = (mask_u8 ^ eroded).astype(bool)
+        outer = (dilated ^ mask_u8).astype(bool)
+        if np.count_nonzero(inner) < min_pixels:
+            return None
+        if np.count_nonzero(outer) < min_pixels:
+            return None
+        return inner, outer
+
+    def verify_boundary_contrast(
+        self, screenshot: np.ndarray,
+        cx: int, cy: int, flip_type: str,
+    ) -> float:
+        """Stage-3 validation: boundary contrast between inner and outer edge.
+
+        Computes the Euclidean distance between the mean BGR of pixels just
+        inside the template silhouette edge and just outside it in the
+        screenshot.  A real finger has a visible outline (high contrast);
+        a false positive blending into same-colour background has low contrast.
+
+        Returns:
+            999.0 if boundary masks are unavailable (skip this stage),
+            -1.0 if the crop is out of bounds,
+            otherwise the Euclidean BGR distance.
+        """
+        boundary_entry = self._finger_boundary.get(flip_type)
+        if boundary_entry is None:
+            return 999.0  # skip validation if unavailable
+
+        inner_mask, outer_mask = boundary_entry
+        th, tw = inner_mask.shape[:2]
+        sh, sw = screenshot.shape[:2]
+        x1, y1 = cx - tw // 2, cy - th // 2
+        if x1 < 0 or y1 < 0 or x1 + tw > sw or y1 + th > sh:
+            return -1.0
+
+        crop = screenshot[y1:y1 + th, x1:x1 + tw]
+        inner_mean = crop[inner_mask].mean(axis=0)
+        outer_mean = crop[outer_mask].mean(axis=0)
+        return float(np.linalg.norm(inner_mean - outer_mean))
+
     def detect_old(self, screenshot: np.ndarray) -> tuple:
         """Original detect — kept for A/B comparison via CLI.
 
@@ -137,6 +209,8 @@ class FingerDetector:
         Stage 1: TM_CCORR_NORMED with mask (sensitive, may have false positives).
         Stage 2: Masked NCC on opaque pixels only (pattern-based,
                  eliminates false positives).
+        Stage 3: Boundary contrast — rejects if silhouette edge blends
+                 into same-colour background.
 
         Returns:
             (match, flip_type) where match is an Element or None,
@@ -167,9 +241,19 @@ class FingerDetector:
                 )
                 continue
 
+            # Stage-3: boundary contrast
+            bcon = self.verify_boundary_contrast(
+                screenshot, match.x, match.y, flip_type)
+            if bcon < self._FINGER_BOUNDARY_THRESHOLD:
+                logger.debug(
+                    f"Finger {flip_type} rejected (stage3): "
+                    f"boundary={bcon:.1f} at ({match.x}, {match.y})"
+                )
+                continue
+
             logger.debug(
                 f"Finger {flip_type} verified: conf={match.confidence:.3f}, "
-                f"ncc={ncc:.3f} at ({match.x}, {match.y})"
+                f"ncc={ncc:.3f}, boundary={bcon:.1f} at ({match.x}, {match.y})"
             )
             return match, flip_type
 
@@ -270,7 +354,7 @@ class FingerDetector:
                      idx: int,
                      exclude_positions: list[tuple[int, int]] | None = None,
                      ) -> tuple | None:
-        """Try matching a single variant by index with inline two-stage filter.
+        """Try matching a single variant by index with inline three-stage filter.
 
         Returns (Element, flip_type) on verified match, or None.
         """
@@ -310,7 +394,16 @@ class FingerDetector:
             )
             return None
 
-        # Stage 3: Exclusion check — skip if fingertip is near an
+        # Stage 3: Boundary contrast validation
+        bcon = self.verify_boundary_contrast(screenshot, cx, cy, flip_type)
+        if bcon < self._FINGER_BOUNDARY_THRESHOLD:
+            logger.debug(
+                f"Finger {flip_type} rejected (stage3): "
+                f"boundary={bcon:.1f} at ({cx}, {cy})"
+            )
+            return None
+
+        # Stage 4: Exclusion check — skip if fingertip is near an
         # exhausted position (likely a persistent false positive).
         if exclude_positions:
             tip = self.fingertip_pos(cx, cy, flip_type)
@@ -325,7 +418,7 @@ class FingerDetector:
 
         logger.debug(
             f"Finger {flip_type} verified: ccorr={ccorr_val:.3f}, "
-            f"ncc={ncc:.3f} at ({cx}, {cy})"
+            f"ncc={ncc:.3f}, boundary={bcon:.1f} at ({cx}, {cy})"
         )
         elem = Element(
             name=cache_name, source="template",
@@ -343,6 +436,7 @@ class FingerDetector:
         Scaled-down variants are also created for each orientation.
         """
         self._finger_ncc = {}
+        self._finger_boundary = {}
         self._all_variants = list(self._FINGER_VARIANTS)
         self._variant_scales = {}
         try:
@@ -368,6 +462,13 @@ class FingerDetector:
             self._finger_ncc = {
                 "normal": (tpl.copy(), base_bool_mask),
             }
+
+            # Boundary masks for stage-3 contrast check
+            self._finger_boundary = {}
+            base_boundary = self._compute_boundary_masks(
+                base_bool_mask, self._MIN_BOUNDARY_PIXELS)
+            if base_boundary is not None:
+                self._finger_boundary["normal"] = base_boundary
 
             for cache_name, transform, flip_type in self._FINGER_VARIANTS:
                 if transform is None:
@@ -404,6 +505,10 @@ class FingerDetector:
 
                 cache[cache_name] = (var_tpl, var_mask)
                 self._finger_ncc[flip_type] = (var_tpl.copy(), var_bool)
+                var_boundary = self._compute_boundary_masks(
+                    var_bool, self._MIN_BOUNDARY_PIXELS)
+                if var_boundary is not None:
+                    self._finger_boundary[flip_type] = var_boundary
 
             # --- Multi-scale variants ---
             # Create scaled-down copies of every orientation variant.
@@ -444,6 +549,10 @@ class FingerDetector:
                     s_flip = ori_flip + suffix
                     cache[s_cache_name] = (s_tpl, s_mask)
                     self._finger_ncc[s_flip] = (s_tpl.copy(), s_bool)
+                    s_boundary = self._compute_boundary_masks(
+                        s_bool, self._MIN_BOUNDARY_PIXELS)
+                    if s_boundary is not None:
+                        self._finger_boundary[s_flip] = s_boundary
                     self._all_variants.append((s_cache_name, None, s_flip))
                     self._variant_scales[s_flip] = (ori_flip, scale)
 
@@ -490,6 +599,7 @@ class FingerDetector:
             )
         except Exception:
             self._finger_ncc = {}
+            self._finger_boundary = {}
             self._all_variants = list(self._FINGER_VARIANTS)
             self._prescan_templates = []
             self._direct_variants = []

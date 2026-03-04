@@ -1543,12 +1543,16 @@ class CLI:
             )
             if raw is not None:
                 ncc = fd.verify_ncc(screenshot, raw.x, raw.y, flip_type)
+                bcon = fd.verify_boundary_contrast(
+                    screenshot, raw.x, raw.y, flip_type)
                 print(f"Raw {flip_type:7s}: ccorr={raw.confidence:.3f} "
-                      f"at ({raw.x}, {raw.y})  ncc={ncc:.3f}")
+                      f"at ({raw.x}, {raw.y})  ncc={ncc:.3f}  "
+                      f"boundary={bcon:.1f}")
             else:
                 print(f"Raw {flip_type:7s}: no match")
         print(f"  (threshold: ccorr>={fd._FINGER_CONFIDENCE_THRESHOLD}, "
-              f"ncc>={fd._FINGER_NCC_THRESHOLD})")
+              f"ncc>={fd._FINGER_NCC_THRESHOLD}, "
+              f"boundary>={fd._FINGER_BOUNDARY_THRESHOLD})")
 
         import time as _time
         t0 = _time.perf_counter()
@@ -1557,7 +1561,7 @@ class CLI:
         print(f"detect elapsed: {int(elapsed * 1000)}ms")
 
         if finger_match is None:
-            print("No finger detected (rejected by two-stage filter).")
+            print("No finger detected (rejected by three-stage filter).")
             return
 
         tip_x, tip_y = fd.fingertip_pos(
@@ -1597,12 +1601,16 @@ class CLI:
             )
             if raw is not None:
                 ncc = fd.verify_ncc(screenshot, raw.x, raw.y, flip_type)
+                bcon = fd.verify_boundary_contrast(
+                    screenshot, raw.x, raw.y, flip_type)
                 print(f"Raw {flip_type:7s}: ccorr={raw.confidence:.3f} "
-                      f"at ({raw.x}, {raw.y})  ncc={ncc:.3f}")
+                      f"at ({raw.x}, {raw.y})  ncc={ncc:.3f}  "
+                      f"boundary={bcon:.1f}")
             else:
                 print(f"Raw {flip_type:7s}: no match")
         print(f"  (threshold: ccorr>={fd._FINGER_CONFIDENCE_THRESHOLD}, "
-              f"ncc>={fd._FINGER_NCC_THRESHOLD})")
+              f"ncc>={fd._FINGER_NCC_THRESHOLD}, "
+              f"boundary>={fd._FINGER_BOUNDARY_THRESHOLD})")
 
         import time
         t0 = time.perf_counter()
@@ -1611,7 +1619,7 @@ class CLI:
         print(f"detect_old elapsed: {int(elapsed * 1000)}ms")
 
         if finger_match is None:
-            print("No finger detected (rejected by two-stage filter).")
+            print("No finger detected (rejected by three-stage filter).")
             return
 
         tip_x, tip_y = fd.fingertip_pos(

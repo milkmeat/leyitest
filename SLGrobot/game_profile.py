@@ -55,6 +55,8 @@ class GameProfile:
 
     # Finger detection — NCC threshold (0.0 = use class default)
     finger_ncc_threshold: float = 0.0
+    # Finger detection — boundary contrast threshold (0.0 = use class default)
+    finger_boundary_threshold: float = 0.0
 
     # OCR error corrections (common misrecognitions)
     ocr_corrections: dict[str, str] = field(default_factory=dict)
@@ -128,6 +130,7 @@ def load_game_profile(game_id: str,
 
         # Finger detection
         finger_ncc_threshold=data.get("finger_ncc_threshold", 0.0),
+        finger_boundary_threshold=data.get("finger_boundary_threshold", 0.0),
 
         # OCR corrections
         ocr_corrections=data.get("ocr_corrections", {}),
