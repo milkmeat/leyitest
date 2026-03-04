@@ -1652,6 +1652,9 @@ class CLI:
             if mask is not None:
                 opaque = mask[:, :, 0] > 0
 
+        # Pre-compute boundary masks for diagnostic display
+        bmasks = tm._get_boundary_masks("buttons/close_x")
+
         best = None
         best_score = -1.0
         for i, m in enumerate(candidates):
@@ -1667,10 +1670,18 @@ class CLI:
             else:
                 r_op = float((red_px > 0).sum()) / red_px.size
                 r_bg = 0.0
-            passed = TM.verify_red_pixel(patch, opaque,
-                                         TM._RED_OPAQUE_MIN, TM._RED_BG_MAX)
+            red_passed = TM.verify_red_pixel(patch, opaque,
+                                             TM._RED_OPAQUE_MIN, TM._RED_BG_MAX)
+            # Boundary contrast diagnostic
+            bcon = -1.0
+            if bmasks is not None:
+                bcon = TM.compute_boundary_contrast(
+                    patch, bmasks[0], bmasks[1])
+            bcon_passed = bcon >= TM._BOUNDARY_CONTRAST_THRESHOLD or bmasks is None
+            passed = red_passed and bcon_passed
             print(f"  #{i+1}: ccorr={m.confidence:.3f} "
-                  f"red_x={r_op:.3f} red_bg={r_bg:.3f} at ({m.x}, {m.y})"
+                  f"red_x={r_op:.3f} red_bg={r_bg:.3f} "
+                  f"boundary={bcon:.1f} at ({m.x}, {m.y})"
                   f" {'PASS' if passed else 'FAIL'}")
             if passed:
                 score = r_op - r_bg
@@ -1678,7 +1689,8 @@ class CLI:
                     best_score = score
                     best = m
         print(f"  (need: red_x>={TM._RED_OPAQUE_MIN}, "
-              f"red_bg<={TM._RED_BG_MAX})")
+              f"red_bg<={TM._RED_BG_MAX}, "
+              f"boundary>={TM._BOUNDARY_CONTRAST_THRESHOLD})")
 
         match = best
         if match is None:

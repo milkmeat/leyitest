@@ -142,32 +142,6 @@ class FingerDetector:
         crop = screenshot[y1:y1 + th, x1:x1 + tw]
         return TemplateMatcher.compute_masked_ncc(tpl, crop, msk)
 
-    @staticmethod
-    def _compute_boundary_masks(
-        bool_mask: np.ndarray, min_pixels: int = 10,
-    ) -> tuple[np.ndarray, np.ndarray] | None:
-        """Compute inner and outer boundary masks from a boolean opacity mask.
-
-        Inner boundary: opaque pixels adjacent to transparent pixels
-                        (erode the mask, XOR with original).
-        Outer boundary: transparent pixels adjacent to opaque pixels
-                        (dilate the mask, XOR with original).
-
-        Returns (inner_bool, outer_bool) or None if either boundary has
-        fewer than *min_pixels* pixels.
-        """
-        mask_u8 = bool_mask.astype(np.uint8)
-        kernel = np.ones((3, 3), dtype=np.uint8)
-        eroded = cv2.erode(mask_u8, kernel, iterations=1)
-        dilated = cv2.dilate(mask_u8, kernel, iterations=1)
-        inner = (mask_u8 ^ eroded).astype(bool)
-        outer = (dilated ^ mask_u8).astype(bool)
-        if np.count_nonzero(inner) < min_pixels:
-            return None
-        if np.count_nonzero(outer) < min_pixels:
-            return None
-        return inner, outer
-
     def verify_boundary_contrast(
         self, screenshot: np.ndarray,
         cx: int, cy: int, flip_type: str,
@@ -196,9 +170,8 @@ class FingerDetector:
             return -1.0
 
         crop = screenshot[y1:y1 + th, x1:x1 + tw]
-        inner_mean = crop[inner_mask].mean(axis=0)
-        outer_mean = crop[outer_mask].mean(axis=0)
-        return float(np.linalg.norm(inner_mean - outer_mean))
+        return TemplateMatcher.compute_boundary_contrast(
+            crop, inner_mask, outer_mask)
 
     def detect_old(self, screenshot: np.ndarray) -> tuple:
         """Original detect — kept for A/B comparison via CLI.
@@ -465,7 +438,7 @@ class FingerDetector:
 
             # Boundary masks for stage-3 contrast check
             self._finger_boundary = {}
-            base_boundary = self._compute_boundary_masks(
+            base_boundary = TemplateMatcher.compute_boundary_masks(
                 base_bool_mask, self._MIN_BOUNDARY_PIXELS)
             if base_boundary is not None:
                 self._finger_boundary["normal"] = base_boundary
@@ -505,7 +478,7 @@ class FingerDetector:
 
                 cache[cache_name] = (var_tpl, var_mask)
                 self._finger_ncc[flip_type] = (var_tpl.copy(), var_bool)
-                var_boundary = self._compute_boundary_masks(
+                var_boundary = TemplateMatcher.compute_boundary_masks(
                     var_bool, self._MIN_BOUNDARY_PIXELS)
                 if var_boundary is not None:
                     self._finger_boundary[flip_type] = var_boundary
@@ -549,7 +522,7 @@ class FingerDetector:
                     s_flip = ori_flip + suffix
                     cache[s_cache_name] = (s_tpl, s_mask)
                     self._finger_ncc[s_flip] = (s_tpl.copy(), s_bool)
-                    s_boundary = self._compute_boundary_masks(
+                    s_boundary = TemplateMatcher.compute_boundary_masks(
                         s_bool, self._MIN_BOUNDARY_PIXELS)
                     if s_boundary is not None:
                         self._finger_boundary[s_flip] = s_boundary

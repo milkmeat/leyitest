@@ -112,10 +112,61 @@ class TemplateMatcher:
             r_bg = 0.0
         return r_op >= min_opaque and r_bg <= max_bg
 
+    @staticmethod
+    def compute_boundary_masks(
+        bool_mask: np.ndarray, min_pixels: int = 10,
+    ) -> tuple[np.ndarray, np.ndarray] | None:
+        """Compute inner and outer boundary masks from a boolean opacity mask.
+
+        Inner boundary: opaque pixels adjacent to transparent pixels
+                        (erode the mask, XOR with original).
+        Outer boundary: transparent pixels adjacent to opaque pixels
+                        (dilate the mask, XOR with original).
+
+        Returns (inner_bool, outer_bool) or None if either boundary has
+        fewer than *min_pixels* pixels.
+        """
+        mask_u8 = bool_mask.astype(np.uint8)
+        kernel = np.ones((3, 3), dtype=np.uint8)
+        eroded = cv2.erode(mask_u8, kernel, iterations=1)
+        dilated = cv2.dilate(mask_u8, kernel, iterations=1)
+        inner = (mask_u8 ^ eroded).astype(bool)
+        outer = (dilated ^ mask_u8).astype(bool)
+        if np.count_nonzero(inner) < min_pixels:
+            return None
+        if np.count_nonzero(outer) < min_pixels:
+            return None
+        return inner, outer
+
+    @staticmethod
+    def compute_boundary_contrast(
+        crop: np.ndarray, inner_mask: np.ndarray, outer_mask: np.ndarray,
+    ) -> float:
+        """Euclidean distance between mean BGR of inner vs outer boundary pixels.
+
+        Args:
+            crop: BGR image crop (same spatial size as the masks).
+            inner_mask: 2-D boolean mask for inner boundary pixels.
+            outer_mask: 2-D boolean mask for outer boundary pixels.
+
+        Returns the Euclidean BGR distance (higher = more contrast).
+        """
+        inner_mean = crop[inner_mask].mean(axis=0)
+        outer_mean = crop[outer_mask].mean(axis=0)
+        return float(np.linalg.norm(inner_mean - outer_mean))
+
+    # Templates that require boundary contrast verification after other
+    # checks pass.  Rejects matches where the template silhouette blends
+    # into a same-colour background (low contrast at the edge).
+    BOUNDARY_CHECK_TEMPLATES: set[str] = {"buttons/close_x"}
+    _BOUNDARY_CONTRAST_THRESHOLD: float = 20.0
+    _BOUNDARY_MIN_PIXELS: int = 10
+
     def __init__(self, template_dir: str = None, threshold: float = None) -> None:
         self.template_dir = template_dir or config.TEMPLATE_DIR
         self.threshold = threshold or config.TEMPLATE_MATCH_THRESHOLD
         self._cache: dict[str, tuple[np.ndarray, np.ndarray | None]] = {}
+        self._boundary_cache: dict[str, tuple[np.ndarray, np.ndarray] | None] = {}
         self._load_templates()
 
     def _load_templates(self) -> None:
@@ -158,6 +209,7 @@ class TemplateMatcher:
     def reload(self) -> None:
         """Reload all templates from disk."""
         self._cache.clear()
+        self._boundary_cache.clear()
         self._load_templates()
 
     def count(self) -> int:
@@ -167,6 +219,30 @@ class TemplateMatcher:
     def get_template_names(self) -> list[str]:
         """Return list of all loaded template names."""
         return list(self._cache.keys())
+
+    def _get_boundary_masks(
+        self, name: str,
+    ) -> tuple[np.ndarray, np.ndarray] | None:
+        """Get cached boundary masks for a template, computing on first access.
+
+        Returns (inner_bool, outer_bool) or None if the template has no
+        suitable alpha mask or too few boundary pixels.
+        """
+        if name in self._boundary_cache:
+            return self._boundary_cache[name]
+        entry = self._cache.get(name)
+        if entry is None:
+            self._boundary_cache[name] = None
+            return None
+        _, mask = entry
+        if mask is None:
+            self._boundary_cache[name] = None
+            return None
+        bool_mask = mask[:, :, 0] > 0
+        result = self.compute_boundary_masks(
+            bool_mask, self._BOUNDARY_MIN_PIXELS)
+        self._boundary_cache[name] = result
+        return result
 
     def match_one(self, screenshot: np.ndarray, template_name: str) -> MatchResult | None:
         """Match a specific template against screenshot.
@@ -221,6 +297,17 @@ class TemplateMatcher:
                                     f"at ({m.x}, {m.y}) (red-pixel filter)"
                                 )
                                 continue
+                        if template_name in self.BOUNDARY_CHECK_TEMPLATES:
+                            bmasks = self._get_boundary_masks(template_name)
+                            if bmasks is not None:
+                                bcon = self.compute_boundary_contrast(
+                                    crop, bmasks[0], bmasks[1])
+                                if bcon < self._BOUNDARY_CONTRAST_THRESHOLD:
+                                    logger.debug(
+                                        f"PREFER_TOP_RIGHT: rejected {template_name} "
+                                        f"at ({m.x}, {m.y}) boundary={bcon:.1f}"
+                                    )
+                                    continue
                         verified.append(m)
                     if not verified:
                         return self._match(screenshot, template_name, template, mask)
@@ -417,6 +504,19 @@ class TemplateMatcher:
                             f"({x1c + tw // 2}, {y1c + th // 2})"
                         )
                         return None
+                if name in self.BOUNDARY_CHECK_TEMPLATES:
+                    bmasks = self._get_boundary_masks(name)
+                    if bmasks is not None:
+                        bcon = self.compute_boundary_contrast(
+                            crop, bmasks[0], bmasks[1])
+                        if bcon < self._BOUNDARY_CONTRAST_THRESHOLD:
+                            logger.debug(
+                                f"Template match rejected (boundary={bcon:.1f}, "
+                                f"CCORR={ccorr_val:.3f}, ncc={ncc:.3f}): "
+                                f"{name} at "
+                                f"({x1c + tw // 2}, {y1c + th // 2})"
+                            )
+                            return None
                 logger.debug(
                     f"Template match (masked NCC, opaque={opaque_ratio:.0%}): "
                     f"{name} CCORR={ccorr_val:.3f}, ncc={ncc:.3f} at "
