@@ -4,7 +4,7 @@ train(训练<兵种>)
 
 1. 提取<兵种>到变量
 2. 确认在主城界面
-3. 定位到 步兵营 并点击
+3. 定位到 步兵营 并点击2次  #click twice in case there is trained solider to collect
 4. 点击 训练步兵[[train_brawler.png]] 图标
 5. 点击最后一个 <兵种> 文字
 6. 点击最后一个 训练 文字
