@@ -1,50 +1,151 @@
-commands:
-  add_gem:
-    cmd: "op_self_set_gem"
-    default_param:
-      gem_num: 116666
-    description: "添加宝石"
+# WestGame AI 团战系统 — 命令字最小集合
+# 来源: gg后台接口协议.md，按需求规格说明书v2筛选
+# 原则: 只保留团战副本必须的命令字，只携带必要参数
 
+# ============================================================
+# 一、行动指令 (L0 执行层 → 游戏服务器)
+# ============================================================
+
+commands:
+
+  # --- 移城 ---
   move_city:
     cmd: "fixed_move_city_new"
     default_param:
       use_gem: 1
       item_id: 1
-      tar_pos: 0
-    description: "花费宝石移城"
+      tar_pos: 0             # int, 后台坐标格式
+    description: "定点移城（花费宝石），瞬间传送主城到目标坐标，同时秒回所有在外部队"
 
-  add_soldiers:
-    cmd: "op_add_soldiers"
-    default_param:
-      soldier_id: 204
-      soldier_num: 1000000
-    description: "添加士兵"
-
-  attack_city:
+  # --- 攻击玩家 ---
+  attack_player:
     cmd: "dispatch_troop"
     default_param:
-      target_type: 2
-      march_type: 2
-    description: "攻打玩家主城（不带英雄）"
+      march_type: 2           # 2=攻击
+      target_type: 2          # 2=城市
+      target_info: {}         # {"id": unique_id, "pos": "坐标"}
+      march_info: {}          # {"soldier":{"兵种id":数量}, "hero":{"main":id,"vice":id}}
+    description: "派城内部队攻击敌方玩家主城"
 
-  add_resource:
-    cmd: "op_self_add_clear_resource"
+  # --- 攻击建筑（占领据点） ---
+  attack_building:
+    cmd: "dispatch_troop"
     default_param:
-      op_type: 0
-    description: "添加各类资源（默认100w）"
+      march_type: 2           # 2=攻击
+      target_type: 13         # 13=城寨（待确认：团战据点的target_type）
+      target_info: {}         # {"id": unique_id, "pos": "坐标"}
+      march_info: {}          # {"soldier":{...}, "hero":{...}}
+    description: "派城内部队攻击据点/建筑以占领"
 
+  # --- 驻防/增援建筑 ---
+  reinforce_building:
+    cmd: "dispatch_troop"
+    default_param:
+      march_type: 11          # 11=增援
+      target_info: {}         # {"id": unique_id, "pos": "坐标"}
+      march_info: {}          # {"soldier":{...}, "hero":{...}}
+    description: "派城内部队增援/驻防联盟建筑（据点）"
+
+  # --- 侦察 ---
   scout_player:
     cmd: "dispatch_scout"
     default_param:
-      need_camp: 0
       scout_queue_id: 8001
-      tar_type: 5
-    description: "侦查玩家"
+      tar_type: 5             # 5=侦查城市
+      tar_pos: 0              # 目标坐标
+      need_camp: 0
+    description: "侦察目标玩家，即时返回兵力和兵种信息"
 
+  # --- 发起集结 ---
+  create_rally:
+    cmd: "create_rally_war"
+    default_param:
+      march_type: 13          # 13=rally_attack（集结攻击）
+      target_type: 0          # 目标类型（2=城市, 13=城寨，视目标而定）
+      target_info: {}         # {"id": unique_id}
+      march_info: {}          # 队长的部队信息
+      prepare_time: 300       # 集结准备时长，默认300秒(5分钟)
+    description: "队长发起集结，开始5分钟集结窗口期"
+
+  # --- 召回增援/集结 ---
+  recall_reinforce:
+    cmd: "recall_reinforce"
+    default_param:
+      unique_id: ""           # 要召回的集结/增援 unique_id
+    description: "召回已派出的增援或集结中的部队"
+
+  # --- 召回行军中的部队（回城） ---
+  recall_troop:
+    cmd: "change_troop"
+    default_param:
+      march_type: 5           # 5=回城
+      march_info: {}          # {"ids": [部队unique_id]}
+    description: "让行军中/驻扎中的部队返回主城"
+
+# ============================================================
+# 二、感知查询 (数据感知层 → 游戏服务器)
+# ============================================================
+
+  # --- 获取玩家全量数据 ---
+  get_all_player_data:
+    cmd: "game_server_login_get"
+    default_param:
+      all: 1                  # 1=全量数据
+    description: "获取game_server上该玩家的所有数据（坐标、部队、行军队列等）"
+
+  # --- 获取玩家地图坐标 ---
   get_player_pos:
     cmd: "login_get"
     default_param:
       all: 0
       list:
         - "svr_lord_info_new"
-    description: "获取玩家地图坐标"
+    description: "获取玩家的地图坐标等lord信息"
+
+  # --- 获取地图缩略信息 ---
+  get_map_overview:
+    cmd: "get_map_brief_obj"
+    default_param:
+      sid: 0                  # 服务器id
+    description: "获取地图缩略信息（建筑归属、玩家位置等概览数据）"
+
+  # --- 获取地图详细信息 ---
+  get_map_detail:
+    cmd: "game_svr_map_get"
+    default_param:
+      sid: 0                  # 服务器id
+      bid_list: []            # 需要查询的bid列表
+    description: "获取地图指定区块的详细信息"
+
+  # --- 查询战报 ---
+  get_battle_report:
+    cmd: "get_city_battle_report"
+    default_param:
+      id: ""                  # 报告id
+    description: "获取单次战斗的详细战报"
+
+# ============================================================
+# 三、GM 指令 (活动开始前的准备)
+# ============================================================
+
+  # --- 添加宝石 ---
+  add_gem:
+    cmd: "op_self_set_gem"
+    default_param:
+      gem_num: 116666
+    description: "GM指令：为账号添加宝石（活动前准备用）"
+
+  # --- 添加士兵 ---
+  add_soldiers:
+    cmd: "op_add_soldiers"
+    default_param:
+      soldier_id: 204
+      soldier_num: 1000000
+    description: "GM指令：为账号添加士兵（活动前准备用）"
+
+  # --- 添加资源 ---
+  add_resource:
+    cmd: "op_self_add_clear_resource"
+    default_param:
+      op_type: 0
+    description: "GM指令：为账号添加各类资源（活动前准备用）"
