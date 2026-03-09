@@ -67,6 +67,15 @@ commands:
       prepare_time: 300       # 集结准备时长，默认300秒(5分钟)
     description: "队长发起集结，开始5分钟集结窗口期"
 
+  # --- 加入集结 ---
+  join_rally:
+    cmd: "dispatch_troop"
+    default_param:
+      march_type: 13          # 13=rally_attack（集结攻击，与create_rally一致）
+      target_info: {}         # {"id": 集结的unique_id}
+      march_info: {}          # 队员的部队信息
+    description: "队员派部队加入已发起的集结"
+
   # --- 召回增援/集结 ---
   recall_reinforce:
     cmd: "recall_reinforce"
