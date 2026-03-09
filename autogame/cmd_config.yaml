@@ -1,0 +1,50 @@
+commands:
+  add_gem:
+    cmd: "op_self_set_gem"
+    default_param:
+      gem_num: 116666
+    description: "添加宝石"
+
+  move_city:
+    cmd: "fixed_move_city_new"
+    default_param:
+      use_gem: 1
+      item_id: 1
+      tar_pos: 0
+    description: "花费宝石移城"
+
+  add_soldiers:
+    cmd: "op_add_soldiers"
+    default_param:
+      soldier_id: 204
+      soldier_num: 1000000
+    description: "添加士兵"
+
+  attack_city:
+    cmd: "dispatch_troop"
+    default_param:
+      target_type: 2
+      march_type: 2
+    description: "攻打玩家主城（不带英雄）"
+
+  add_resource:
+    cmd: "op_self_add_clear_resource"
+    default_param:
+      op_type: 0
+    description: "添加各类资源（默认100w）"
+
+  scout_player:
+    cmd: "dispatch_scout"
+    default_param:
+      need_camp: 0
+      scout_queue_id: 8001
+      tar_type: 5
+    description: "侦查玩家"
+
+  get_player_pos:
+    cmd: "login_get"
+    default_param:
+      all: 0
+      list:
+        - "svr_lord_info_new"
+    description: "获取玩家地图坐标"
