@@ -1,0 +1,20 @@
+# Core
+pydantic>=2.0
+pyyaml>=6.0
+aiohttp>=3.9
+
+# LLM (provider TBD)
+# anthropic
+# openai
+
+# Mock Server
+fastapi>=0.110
+uvicorn>=0.27
+
+# Testing
+pytest>=8.0
+pytest-asyncio>=0.23
+
+# Utilities
+numpy>=1.26         # DBSCAN clustering for L2 view
+scikit-learn>=1.4   # DBSCAN implementation
