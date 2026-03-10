@@ -1,0 +1,17 @@
+# Mock Server 初始数据
+# 用于本地开发调试，模拟游戏服务器返回的玩家数据
+
+players:
+  20001946:
+    x: 123
+    y: 234
+    name: "TestPlayer1"
+    power: 5000000
+    alliance: "TST"
+
+  20001947:
+    x: 500
+    y: 600
+    name: "TestPlayer2"
+    power: 3000000
+    alliance: "TST"

@@ -8,6 +8,10 @@ environments:
     name: "测试环境"
     url: "https://leyi-offline-game-alb.leyinetwork.com/p10-test-lc-proxy"
 
+  mock:
+    name: "本地Mock"
+    url: "http://localhost:18888/mock"
+
 # 请求头默认值（每次请求会合并 uid/sid 等动态字段）
 default_header:
   did: "self-system"

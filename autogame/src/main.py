@@ -1,7 +1,8 @@
 """WestGame AI 全自动化团战系统 — 入口
 
 用法:
-  python src/main.py get_player_pos <uid>   查询玩家坐标
+  python src/main.py get_player_pos <uid>          连接test服务器
+  python src/main.py --mock get_player_pos <uid>   连接本地mock服务器
 """
 
 import os
@@ -13,11 +14,11 @@ if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
 
-def cmd_get_player_pos(uid_str: str):
+def cmd_get_player_pos(uid_str: str, env: str = None):
     from src.client import get_player_pos
 
     uid = int(uid_str)
-    pos = get_player_pos(uid)
+    pos = get_player_pos(uid, env=env)
     if pos:
         print(f"({pos[0]},{pos[1]})")
     else:
@@ -31,15 +32,23 @@ COMMANDS = {
 
 
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] not in COMMANDS:
+    args = sys.argv[1:]
+
+    # 解析 --mock 参数
+    env = None
+    if "--mock" in args:
+        env = "mock"
+        args.remove("--mock")
+
+    if len(args) < 1 or args[0] not in COMMANDS:
         print("用法:")
-        for name, (_, args, desc) in COMMANDS.items():
-            print(f"  python src/main.py {name} {args}  — {desc}")
+        for name, (_, a, desc) in COMMANDS.items():
+            print(f"  python src/main.py [--mock] {name} {a}  — {desc}")
         sys.exit(1)
 
-    cmd_name = sys.argv[1]
+    cmd_name = args[0]
     func, _, _ = COMMANDS[cmd_name]
-    func(*sys.argv[2:])
+    func(*args[1:], env=env)
 
 
 if __name__ == "__main__":

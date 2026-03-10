@@ -69,9 +69,9 @@ class GameClient:
         return resp.json()
 
 
-def get_player_pos(uid: int) -> Optional[tuple]:
+def get_player_pos(uid: int, env: str = None) -> Optional[tuple]:
     """查询玩家坐标，返回 (x, y) 或 None"""
-    client = GameClient()
+    client = GameClient(env=env)
     data = client.send_cmd("get_player_pos", uid)
 
     # 解析路径: res_data[0].push_list[0].data[] -> name='svr_lord_info_new'
