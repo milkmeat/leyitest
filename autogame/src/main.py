@@ -26,6 +26,17 @@ GM 命令:
   add_gem <uid> [amount]                        添加宝石
   add_soldiers <uid> [soldier_id] [num]         添加士兵
   add_resource <uid> [op_type]                  添加资源
+
+L0 执行器（AI 指令调试）:
+  l0 '{"action":"MOVE_CITY","uid":123,...}'     JSON 模式（模拟 L1 输出）
+  l0 MOVE_CITY <uid> <x> <y>                   移城
+  l0 ATTACK_TARGET <uid> <target_uid> <x> <y>  攻击玩家
+  l0 ATTACK_TARGET <uid> --building <id> <x> <y> 攻击建筑
+  l0 SCOUT <uid> <target_uid> <x> <y>          侦察
+  l0 GARRISON_BUILDING <uid> <building_id> <x> <y> 驻防建筑
+  l0 INITIATE_RALLY <uid> <target_id> <x> <y> [prepare_time] 发起集结
+  l0 JOIN_RALLY <uid> <rally_id>               加入集结
+  l0 RETREAT <uid> <troop_id...>               召回部队
 """
 
 import asyncio
@@ -371,6 +382,174 @@ async def cmd_add_resource(uid_str: str, *extra: str, env: str = None):
 
 
 # ---------------------------------------------------------------------------
+# L0 执行器命令
+# ---------------------------------------------------------------------------
+
+
+def _parse_l0_shorthand(args: list[str]):
+    """将简写模式参数解析为 AIInstruction 的 dict
+
+    简写格式:
+      MOVE_CITY <uid> <x> <y>
+      ATTACK_TARGET <uid> <target_uid> <x> <y>
+      ATTACK_TARGET <uid> --building <building_id> <x> <y>
+      SCOUT <uid> <target_uid> <x> <y>
+      GARRISON_BUILDING <uid> <building_id> <x> <y>
+      INITIATE_RALLY <uid> <target_id> <x> <y> [prepare_time]
+      JOIN_RALLY <uid> <rally_id>
+      RETREAT <uid> <troop_id...>
+    """
+    if len(args) < 2:
+        print("用法: l0 <ACTION> <uid> <args...>", file=sys.stderr)
+        sys.exit(1)
+
+    action = args[0].upper()
+    uid = int(args[1])
+    rest = args[2:]
+    data: dict = {"action": action, "uid": uid}
+
+    if action == "MOVE_CITY":
+        if len(rest) < 2:
+            print("用法: l0 MOVE_CITY <uid> <x> <y>", file=sys.stderr)
+            sys.exit(1)
+        data["target_x"] = int(rest[0])
+        data["target_y"] = int(rest[1])
+
+    elif action == "ATTACK_TARGET":
+        if rest and rest[0] == "--building":
+            # 攻击建筑模式
+            if len(rest) < 4:
+                print("用法: l0 ATTACK_TARGET <uid> --building <building_id> <x> <y>", file=sys.stderr)
+                sys.exit(1)
+            data["building_id"] = rest[1]
+            data["target_x"] = int(rest[2])
+            data["target_y"] = int(rest[3])
+        else:
+            # 攻击玩家模式
+            if len(rest) < 3:
+                print("用法: l0 ATTACK_TARGET <uid> <target_uid> <x> <y>", file=sys.stderr)
+                sys.exit(1)
+            data["target_uid"] = int(rest[0])
+            data["target_x"] = int(rest[1])
+            data["target_y"] = int(rest[2])
+
+    elif action == "SCOUT":
+        if len(rest) < 3:
+            print("用法: l0 SCOUT <uid> <target_uid> <x> <y>", file=sys.stderr)
+            sys.exit(1)
+        data["target_uid"] = int(rest[0])
+        data["target_x"] = int(rest[1])
+        data["target_y"] = int(rest[2])
+
+    elif action == "GARRISON_BUILDING":
+        if len(rest) < 3:
+            print("用法: l0 GARRISON_BUILDING <uid> <building_id> <x> <y>", file=sys.stderr)
+            sys.exit(1)
+        data["building_id"] = rest[0]
+        data["target_x"] = int(rest[1])
+        data["target_y"] = int(rest[2])
+
+    elif action == "INITIATE_RALLY":
+        if len(rest) < 3:
+            print("用法: l0 INITIATE_RALLY <uid> <target_id> <x> <y> [prepare_time]", file=sys.stderr)
+            sys.exit(1)
+        # target_id: 如果像整数则认为是 target_uid，否则是 building_id
+        target_id = rest[0]
+        try:
+            data["target_uid"] = int(target_id)
+        except ValueError:
+            data["building_id"] = target_id
+        data["target_x"] = int(rest[1])
+        data["target_y"] = int(rest[2])
+        if len(rest) > 3:
+            data["prepare_time"] = int(rest[3])
+
+    elif action == "JOIN_RALLY":
+        if len(rest) < 1:
+            print("用法: l0 JOIN_RALLY <uid> <rally_id>", file=sys.stderr)
+            sys.exit(1)
+        data["rally_id"] = rest[0]
+
+    elif action == "RETREAT":
+        if len(rest) < 1:
+            print("用法: l0 RETREAT <uid> <troop_id...>", file=sys.stderr)
+            sys.exit(1)
+        data["troop_ids"] = list(rest)
+
+    else:
+        print(f"未知 action: {action}", file=sys.stderr)
+        print("支持: MOVE_CITY, ATTACK_TARGET, SCOUT, GARRISON_BUILDING, "
+              "INITIATE_RALLY, JOIN_RALLY, RETREAT", file=sys.stderr)
+        sys.exit(1)
+
+    return data
+
+
+async def cmd_l0(*args: str, env: str = None):
+    """L0 执行器 — 支持 JSON 模式和简写模式"""
+    from src.executor.game_api import GameAPIClient
+    from src.executor.l0_executor import AIInstruction, L0Executor
+    from src.config.loader import load_all
+
+    if not args:
+        print("用法:", file=sys.stderr)
+        print("  JSON 模式:  l0 '{\"action\":\"MOVE_CITY\",\"uid\":123,...}'", file=sys.stderr)
+        print("  简写模式:  l0 MOVE_CITY <uid> <x> <y>", file=sys.stderr)
+        sys.exit(1)
+
+    # 判断是 JSON 模式还是简写模式
+    first = args[0].strip()
+    if first.startswith("{"):
+        # JSON 模式: 直接反序列化
+        try:
+            instr = AIInstruction.model_validate_json(first)
+        except Exception as e:
+            print(f"JSON 解析失败: {e}", file=sys.stderr)
+            sys.exit(1)
+    else:
+        # 简写模式: 解析位置参数
+        try:
+            data = _parse_l0_shorthand(list(args))
+        except (ValueError, IndexError) as e:
+            print(f"参数解析失败: {e}", file=sys.stderr)
+            sys.exit(1)
+        try:
+            instr = AIInstruction.model_validate(data)
+        except Exception as e:
+            print(f"指令构造失败: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    # 加载配置 + 创建执行器
+    config = load_all("config")
+    client = GameAPIClient(env=env)
+    executor = L0Executor(client, config)
+    try:
+        # 先打印解析后的指令（方便确认）
+        print(f"[L0] {instr.action.value} uid={instr.uid}", end="")
+        if instr.target_x or instr.target_y:
+            print(f" → ({instr.target_x},{instr.target_y})", end="")
+        if instr.target_uid:
+            print(f" target_uid={instr.target_uid}", end="")
+        if instr.building_id:
+            print(f" building={instr.building_id}", end="")
+        if instr.rally_id:
+            print(f" rally={instr.rally_id}", end="")
+        if instr.troop_ids:
+            print(f" troops={instr.troop_ids}", end="")
+        print()
+
+        result = await executor.execute(instr)
+        if result.success:
+            print(f"[OK] {result.message}")
+        else:
+            print(f"[FAIL] {result.error}", file=sys.stderr)
+        if result.server_response:
+            _print_json(result.server_response)
+    finally:
+        await client.close()
+
+
+# ---------------------------------------------------------------------------
 # 命令注册
 # ---------------------------------------------------------------------------
 
@@ -396,6 +575,8 @@ COMMANDS = {
     "add_gem":              (cmd_add_gem,               "<uid> [amount]",                     "GM: 添加宝石"),
     "add_soldiers":         (cmd_add_soldiers,          "<uid> [soldier_id] [num]",           "GM: 添加士兵"),
     "add_resource":         (cmd_add_resource,          "<uid> [op_type]",                    "GM: 添加资源"),
+    # L0 执行器
+    "l0":                   (cmd_l0,                    "<ACTION|JSON> <args...>",            "L0 执行器调试"),
 }
 
 
@@ -424,6 +605,11 @@ def main():
         for name in ["add_gem", "add_soldiers", "add_resource"]:
             _, a, desc = COMMANDS[name]
             print(f"  {name:25s} {a:40s} {desc}")
+        print("\nL0 执行器:")
+        _, a, desc = COMMANDS["l0"]
+        print(f"  {'l0':25s} {a:40s} {desc}")
+        print("  示例: l0 MOVE_CITY 20010413 500 500")
+        print("  示例: l0 '{\"action\":\"MOVE_CITY\",\"uid\":20010413,\"target_x\":500,\"target_y\":500}'")
         sys.exit(1)
 
     cmd_name = args[0]
