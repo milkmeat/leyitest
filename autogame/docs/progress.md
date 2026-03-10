@@ -24,12 +24,12 @@
 | **Pydantic 数据模型** | `src/models/*.py` | `f2a4aa5` | 5个模型文件，基于 test server 真实返回构建 |
 | 数据采集脚本 | `scripts/collect_samples.py` | `f2a4aa5` | 批量采集 test server 响应到 `docs/samples/` |
 | 服务端响应样本 | `docs/samples/*.json` | `f2a4aa5` | 14个 JSON 样本，覆盖主要查询命令 |
-| **配置 Schema** | `src/config/schemas.py` | *待提交* | 8个 Pydantic v2 模型 + 4层校验（UID唯一/队长∈成员/跨队不重复/交叉引用） |
-| **配置加载器** | `src/config/loader.py` | *待提交* | YAML 加载 + `load_all()` 一站式聚合 |
-| **账号配置** | `config/accounts.yaml` | *待提交* | 20账号 (UID 20010413-432) + 2备用 |
-| **小队配置** | `config/squads.yaml` | *待提交* | 4小队×5人 (Alpha/Bravo/Charlie/Delta) |
-| **活动规则** | `config/activity.yaml` | *待提交* | 2h副本、1000×1000地图、克制系数、积分规则 |
-| **系统参数** | `config/system.yaml` | *待提交* | 主循环60s、LLM超时30s、并发限制 |
+| **配置 Schema** | `src/config/schemas.py` | `218e752` | 8个 Pydantic v2 模型 + 4层校验（UID唯一/队长∈成员/跨队不重复/交叉引用） |
+| **配置加载器** | `src/config/loader.py` | `218e752` | YAML 加载 + `load_all()` 一站式聚合 |
+| **账号配置** | `config/accounts.yaml` | `218e752` | 20账号 (UID 20010413-432) + 2备用 |
+| **小队配置** | `config/squads.yaml` | `218e752` | 4小队×5人 (Alpha/Bravo/Charlie/Delta) |
+| **活动规则** | `config/activity.yaml` | `218e752` | 2h副本、1000×1000地图、克制系数、积分规则 |
+| **系统参数** | `config/system.yaml` | `218e752` | 主循环60s、LLM超时30s、并发限制 |
 
 ### 待完成
 
