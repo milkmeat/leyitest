@@ -22,7 +22,7 @@ def get_player_pos(uid):
     }
 
     client = GameClient(env="test")
-    response = client.send_cmd("get_player_pos", header, {})
+    response = client.send_cmd("get_player_pos", header, {"all": 0,"list": ["svr_lord_info_new"]})
 
     print(f"\nuid={uid} 完整响应JSON:")
     print(json.dumps(response.json_data, indent=2, ensure_ascii=False))
