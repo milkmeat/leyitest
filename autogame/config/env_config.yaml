@@ -1,0 +1,27 @@
+# 环境配置 — 服务器连接信息
+# 切换环境只需修改 current_env
+
+current_env: test
+
+environments:
+  test:
+    name: "测试环境"
+    url: "https://leyi-offline-game-alb.leyinetwork.com/p10-test-lc-proxy"
+
+# 请求头默认值（每次请求会合并 uid/sid 等动态字段）
+default_header:
+  did: "self-system"
+  sid: 1
+  aid: 0
+  ksid: 1
+  ava_id: 0
+  castle_lv: 25
+  battle_type: 0
+  battle_id: 0
+  chat_scene: ",kingdom_1"
+  invoker_name: "evans_test_debug"
+
+# 请求附加信息（固定不变）
+extra_info:
+  no_checkac: 1
+  op_cmd: 1
