@@ -60,23 +60,74 @@ def handle_login_get(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
     requested = param.get("list", [])
     data_items = []
 
-    if "svr_lord_info_new" in requested:
-        player = MOCK_DATA.get("players", {}).get(uid)
-        if player:
-            city_pos = encode_pos(player["x"], player["y"])
-            lord_data = {
-                "lord_info_data": {
-                    "lord_info": {
-                        "city_pos": str(city_pos),
-                        "name": player.get("name", ""),
-                        "power": player.get("power", 0),
-                    }
-                }
+    player = MOCK_DATA.get("players", {}).get(uid)
+
+    if "svr_lord_info_new" in requested and player:
+        city_pos = encode_pos(player["x"], player["y"])
+        lord_data = {
+            "lord_info_data": {
+                "cur_state": 0,
+                "lord_info": {
+                    "aid": player.get("alliance_id", 0),
+                    "city_level": player.get("city_level", 25),
+                    "avatar": 0,
+                    "uid": uid,
+                    "ksid": 1,
+                    "head_frame": 0,
+                    "skin_id": 0,
+                    "city_pos": str(city_pos),
+                    "uname": player.get("name", ""),
+                    "al_name": player.get("alliance", ""),
+                    "al_nick": "",
+                    "lord_level": player.get("lord_level", 60),
+                    "custom_avatar": "",
+                },
             }
-            data_items.append({
-                "name": "svr_lord_info_new",
-                "data": json.dumps(lord_data),
-            })
+        }
+        data_items.append({
+            "name": "svr_lord_info_new",
+            "data": json.dumps(lord_data),
+        })
+
+    if "svr_player" in requested and player:
+        city_pos = encode_pos(player["x"], player["y"])
+        player_data = {
+            "uid": uid,
+            "cid": city_pos,
+            "cname": player.get("name", ""),
+            "level": player.get("lord_level", 60),
+            "vip_level": player.get("vip_level", 1),
+            "al_id": player.get("alliance_id", 0),
+            "al_name": player.get("alliance", ""),
+            "status": 0,
+            "dead": 0,
+            "force": str(player.get("power", 0)),
+        }
+        data_items.append({
+            "name": "svr_player",
+            "data": json.dumps(player_data),
+        })
+
+    if "svr_soldier" in requested and player:
+        soldiers = player.get("soldiers", [{"id": 204, "value": 100000}])
+        data_items.append({
+            "name": "svr_soldier",
+            "data": json.dumps({"list": soldiers}),
+        })
+
+    if "svr_hero_list" in requested and player:
+        heroes = player.get("heroes", [{"id": 21, "lv": 60, "state": 0, "skill_lv": [1, 1, 1]}])
+        data_items.append({
+            "name": "svr_hero_list",
+            "data": json.dumps({"heros": heroes}),
+        })
+
+    if "svr_buff" in requested and player:
+        buffs = player.get("buffs", [])
+        data_items.append({
+            "name": "svr_buff",
+            "data": json.dumps({"buff_item": buffs}),
+        })
 
     # 构造与真实服务器一致的嵌套响应格式
     return {

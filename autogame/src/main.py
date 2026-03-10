@@ -31,8 +31,22 @@ async def cmd_get_player_pos(uid_str: str, env: str = None):
         await client.close()
 
 
+async def cmd_get_player_info(uid_str: str, env: str = None):
+    import json as _json
+    from src.executor.game_api import GameAPIClient
+
+    client = GameAPIClient(env=env)
+    try:
+        uid = int(uid_str)
+        info = await client.get_player_info(uid)
+        print(_json.dumps(info, indent=2, ensure_ascii=False))
+    finally:
+        await client.close()
+
+
 COMMANDS = {
     "get_player_pos": (cmd_get_player_pos, "<uid>", "查询玩家坐标"),
+    "get_player_info": (cmd_get_player_info, "<uid>", "查询玩家完整信息"),
 }
 
 

@@ -111,6 +111,19 @@ commands:
         - "svr_lord_info_new"
     description: "获取玩家的地图坐标等lord信息"
 
+  # --- 获取玩家完整信息 ---
+  get_player_info:
+    cmd: "login_get"
+    default_param:
+      all: 0
+      list:
+        - "svr_lord_info_new"
+        - "svr_player"
+        - "svr_soldier"
+        - "svr_hero_list"
+        - "svr_buff"
+    description: "获取玩家完整信息（坐标、基础属性、士兵、英雄、buff）"
+
   # --- 获取地图缩略信息 ---
   get_map_overview:
     cmd: "get_map_brief_obj"

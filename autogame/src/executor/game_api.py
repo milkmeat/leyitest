@@ -276,6 +276,76 @@ class GameAPIClient:
         """攻击建筑"""
         return await self.send_cmd("attack_building", uid, target_info=target_info, march_info=march_info)
 
+    async def get_player_info(self, uid: int) -> Dict[str, Any]:
+        """获取玩家完整信息，返回结构化 dict
+
+        一次 login_get 请求同时拉取 5 个数据模块，解析后返回:
+        {
+            "uid": int,
+            "name": str,
+            "pos": (x, y),
+            "city_level": int,
+            "lord_level": int,
+            "level": int,              # 领主等级 (svr_player)
+            "vip_level": int,
+            "alliance_id": int,
+            "alliance_name": str,
+            "status": int,             # 0=正常
+            "dead": int,               # 0=存活
+            "soldiers": [{"id": int, "value": int}, ...],
+            "heroes": [{"id": int, "lv": int, "state": int, "skill_lv": [...], ...}, ...],
+            "buffs": [{"id": int, "buff_num": int}, ...],
+        }
+        注: 战力(power)在 game_server 的 svr_user_objs.cityInfo.force 中，需通过
+            game_server_login_get 单独获取。
+        """
+        data = await self.send_cmd("get_player_info", uid)
+        result: Dict[str, Any] = {"uid": uid}
+
+        try:
+            items = data["res_data"][0]["push_list"][0]["data"]
+        except (KeyError, IndexError, TypeError):
+            logger.warning("get_player_info 响应结构异常 uid=%s", uid)
+            return result
+
+        for item in items:
+            name = item.get("name")
+            raw = item.get("data", "")
+            if not raw:
+                continue
+            try:
+                parsed = json.loads(raw)
+            except (json.JSONDecodeError, TypeError):
+                continue
+
+            if name == "svr_lord_info_new":
+                lord = parsed.get("lord_info_data", {}).get("lord_info", {})
+                city_pos_raw = lord.get("city_pos")
+                if city_pos_raw:
+                    result["pos"] = decode_pos(int(city_pos_raw))
+                result["name"] = lord.get("uname", "")
+                result["city_level"] = lord.get("city_level", 0)
+                result["lord_level"] = lord.get("lord_level", 0)
+                result["alliance_id"] = lord.get("aid", 0)
+
+            elif name == "svr_player":
+                result["vip_level"] = parsed.get("vip_level", 0)
+                result["alliance_name"] = parsed.get("al_name", "")
+                result["status"] = parsed.get("status", 0)
+                result["dead"] = parsed.get("dead", 0)
+                result["level"] = parsed.get("level", 0)
+
+            elif name == "svr_soldier":
+                result["soldiers"] = parsed.get("list", [])
+
+            elif name == "svr_hero_list":
+                result["heroes"] = parsed.get("heros", [])
+
+            elif name == "svr_buff":
+                result["buffs"] = parsed.get("buff_item", [])
+
+        return result
+
     async def get_player_pos(self, uid: int) -> Optional[Tuple[int, int]]:
         """获取玩家地图坐标，返回 (x, y) 或 None
 
