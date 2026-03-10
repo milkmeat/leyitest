@@ -1,0 +1,119 @@
+{
+  "res_header": {
+    "ret_code": 0,
+    "cost_time_us": 0,
+    "ret_time_s": 1773136729,
+    "err_msg": ""
+  },
+  "request": {
+    "header": {
+      "did": "self-system",
+      "sid": 1,
+      "aid": 0,
+      "ksid": 1,
+      "ava_id": 0,
+      "castle_lv": 25,
+      "battle_type": 0,
+      "battle_id": 0,
+      "chat_scene": ",kingdom_1",
+      "invoker_name": "evans_test_debug",
+      "uid": 20001946
+    },
+    "request": {
+      "cmd": "game_server_login_get",
+      "param": {
+        "all": 1
+      }
+    },
+    "extra_info": {
+      "no_checkac": 1,
+      "op_cmd": 1
+    }
+  },
+  "res_data": [
+    {
+      "push_list": [
+        {
+          "data": [
+            {
+              "data": "{\"rallyMode\":\"1\",\"btime\":\"0\",\"etime\":\"0\",\"refreshTime\":\"0\",\"onlineSwitch\":0}",
+              "name": "svr_auto_user_rally_info"
+            },
+            {
+              "data": "{\"items\":[{\"lv\":\"29\",\"time\":\"1773619200\"},{\"lv\":\"30\",\"time\":\"1775001600\"}],\"barbarianCityOpenLv\":0,\"dataConnectTime\":\"0\",\"holyBuildingOpenTime\":[{\"lv\":\"1\",\"time\":\"1764634020\"},{\"lv\":\"2\",\"time\":\"1764634260\"},{\"lv\":\"3\",\"time\":\"1764634800\"},{\"lv\":\"4\",\"time\":\"1764635340\"}],\"arenaOpenTime\":\"0\",\"skeletonForceCitadelOpenAll\":1}",
+              "name": "svr_barbarian_open_time"
+            },
+            {
+              "data": "{\"sid\":1,\"group\":1,\"seq\":\"0\"}",
+              "name": "svr_conn15"
+            },
+            {
+              "data": "{\"items\":[{\"areaId\":1,\"clearTime\":\"1765155958\"},{\"areaId\":2,\"clearTime\":\"1765155958\"}]}",
+              "name": "svr_fog_area_clear_time"
+            },
+            {
+              "data": "{\"btime\":\"0\",\"etime\":\"0\",\"score\":\"0\"}",
+              "name": "svr_hurry_up_gs_info"
+            },
+            {
+              "data": "{}",
+              "name": "svr_item_gen_obj_result"
+            },
+            {
+              "data": "{\"taxRate\":0,\"allKingInfo\":[{\"no\":1,\"uid\":\"20000104\",\"alNick\":\"XENA\",\"uname\":\"p10-test-20000104\",\"avatar\":0,\"headFrame\":0,\"time\":\"1767715524\",\"ksid\":\"1\",\"customAvatar\":\"\",\"super\":0},{\"no\":2,\"uid\":\"20000104\",\"alNick\":\"XENA\",\"uname\":\"p10-test-20000104\",\"avatar\":0,\"headFrame\":0,\"time\":\"1767778190\",\"ksid\":\"1\",\"customAvatar\":\"\",\"super\":0},{\"no\":3,\"uid\":\"20000601\",\"alNick\":\"DUUD\",\"uname\":\"玛卡巴卡\",\"avatar\":0,\"headFrame\":49,\"time\":\"1769096095\",\"ksid\":\"1\",\"customAvatar\":\"7494caa5-f06a-11f0-9e0e-4a74c80d850c.jpg\",\"super\":0},{\"no\":4,\"uid\":\"20000601\",\"alNick\":\"DUUD\",\"uname\":\"玛卡巴卡\",\"avatar\":0,\"headFrame\":49,\"time\":\"1769240168\",\"ksid\":\"1\",\"customAvatar\":\"7494caa5-f06a-11f0-9e0e-4a74c80d850c.jpg\",\"super\":0},{\"no\":5,\"uid\":\"20000744\",\"alNick\":\"ZINN\",\"uname\":\"p10-test-20000744\",\"avatar\":0,\"headFrame\":81,\"time\":\"1769591034\",\"ksid\":\"1\",\"customAvatar\":\"30c8f46e-f745-11f0-9e03-4a74c80d850c.jpg\",\"super\":0},{\"no\":6,\"uid\":\"20000744\",\"alNick\":\"ZINN\",\"uname\":\"p10-test-20000744\",\"avatar\":0,\"headFrame\":81,\"time\":\"1769761591\",\"ksid\":\"1\",\"customAvatar\":\"30c8f46e-f745-11f0-9e03-4a74c80d850c.jpg\",\"super\":0},{\"no\":7,\"uid\":\"20000601\",\"alNick\":\"DUUD\",\"uname\":\"玛卡巴卡\",\"avatar\":0,\"headFrame\":49,\"time\":\"1769768421\",\"ksid\":\"1\",\"customAvatar\":\"7494caa5-f06a-11f0-9e0e-4a74c80d850c.jpg\",\"super\":0},{\"no\":8,\"uid\":\"20000744\",\"alNick\":\"ZINN\",\"uname\":\"p10-test-20000744\",\"avatar\":0,\"headFrame\":81,\"time\":\"1770088501\",\"ksid\":\"1\",\"customAvatar\":\"30c8f46e-f745-11f0-9e03-4a74c80d850c.jpg\",\"super\":0},{\"no\":9,\"uid\":\"20000601\",\"alNick\":\"DUUD\",\"uname\":\"MMMMMMMMMMMMMMM\",\"avatar\":0,\"headFrame\":49,\"time\":\"1770108113\",\"ksid\":\"1\",\"customAvatar\":\"7494caa5-f06a-11f0-9e0e-4a74c80d850c.jpg\",\"super\":0},{\"no\":10,\"uid\":\"20000744\",\"alNick\":\"ZINN\",\"uname\":\"p10-test-20000744\",\"avatar\":0,\"headFrame\":81,\"time\":\"1770149690\",\"ksid\":\"1\",\"customAvatar\":\"30c8f46e-f745-11f0-9e03-4a74c80d850c.jpg\",\"super\":0},{\"no\":11,\"uid\":\"20000601\",\"alNick\":\"DUUD\",\"uname\":\"MMMMMMMMMMMMMMM\",\"avatar\":0,\"headFrame\":49,\"time\":\"1770209014\",\"ksid\":\"1\",\"customAvatar\":\"7494caa5-f06a-11f0-9e0e-4a74c80d850c.jpg\",\"super\":0},{\"no\":12,\"uid\":\"20000744\",\"alNick\":\"ZINN\",\"uname\":\"p10-test-20000744\",\"avatar\":0,\"headFrame\":81,\"time\":\"1770309469\",\"ksid\":\"1\",\"customAvatar\":\"30c8f46e-f745-11f0-9e03-4a74c80d850c.jpg\",\"super\":0},{\"no\":13,\"uid\":\"20000744\",\"alNick\":\"ZINN\",\"uname\":\"p10-test-20000744\",\"avatar\":0,\"headFrame\":81,\"time\":\"1770373702\",\"ksid\":\"1\",\"customAvatar\":\"30c8f46e-f745-11f0-9e03-4a74c80d850c.jpg\",\"super\":0},{\"no\":14,\"uid\":\"20002714\",\"alNick\":\"WWWX\",\"uname\":\"Xavier20002714\",\"avatar\":0,\"headFrame\":49,\"time\":\"1770373941\",\"ksid\":\"1\",\"customAvatar\":\"266a1d52-0345-11f1-bfe7-92055017e036.jpg\",\"super\":0},{\"no\":15,\"uid\":\"20001022\",\"alNick\":\"OCE2\",\"uname\":\"20001022\",\"avatar\":0,\"headFrame\":93,\"time\":\"1772261623\",\"ksid\":\"1\",\"customAvatar\":\"\",\"super\":0}],\"sid\":1,\"kvkWinner\":0,\"rulingPower\":\"1720\",\"throneBattleAid\":\"20000069\",\"kvkLoser\":0,\"earlyKickTimeMs\":\"1772260630000\",\"openMoveTimeMs\":\"1772260930000\"}",
+              "name": "svr_kingdom_info"
+            },
+            {
+              "data": "{\"beginTime\":\"0\",\"closeTime\":\"0\"}",
+              "name": "svr_kingdom_title_time"
+            },
+            {
+              "data": "{\"version\":\"1772608072\"}",
+              "name": "svr_map_version"
+            },
+            {
+              "data": "{\"mercenaryInitiateRallyTimes\":0,\"mercenaryJoinRallyTimes\":0,\"invalidTime\":\"0\"}",
+              "name": "svr_mercenary_glory_rally_info"
+            },
+            {
+              "data": "{\"bossIsExist\":0,\"lastRefreshTime\":\"0\",\"bossKey\":0,\"eventId\":\"\"}",
+              "name": "svr_personal_boss_data"
+            },
+            {
+              "data": "{\"defeatedBarbarianMaxLv\":0,\"transportResourceLimit\":[{}],\"rallyNumRefreshTime\":\"0\"}",
+              "name": "svr_player_gs_info"
+            },
+            {
+              "data": "{}",
+              "name": "svr_player_table_meal_info"
+            },
+            {
+              "data": "{\"skill\":[{\"id\":1,\"num\":1},{\"id\":2,\"num\":1},{\"id\":3,\"num\":1},{\"id\":4,\"num\":1},{\"id\":5,\"num\":1}]}",
+              "name": "svr_protect_material_gs_info"
+            },
+            {
+              "data": "{\"searchAges\":[{\"age\":[\"1\"],\"etime\":\"9223372036854775807\"}]}",
+              "name": "svr_search_info"
+            },
+            {
+              "data": "{}",
+              "name": "svr_user_fortress_move_record"
+            },
+            {
+              "data": "{\"objs\":[{\"uniqueId\":\"71_1772608074877129_1\",\"objBasic\":{\"type\":71,\"id\":\"1772608074877129\",\"pos\":\"12500023600\",\"sid\":1,\"key\":410001,\"seq\":\"15260815089886\",\"dir\":\"6\",\"curMs\":\"1773136729038\",\"ksid\":\"1\",\"initCreateTimeUs\":\"1773115504079280\"},\"marchBasic\":{\"btime\":\"0\",\"etime\":\"0\",\"status\":2,\"move\":{\"speed\":140},\"marchType\":0},\"barbarionInfo\":{\"troop\":[{\"id\":10001,\"num\":2},{\"id\":10101,\"num\":2},{\"id\":10201,\"num\":2}],\"level\":1,\"disappearTime\":\"1773169504\",\"fightStatus\":0,\"moveStatus\":0,\"age\":\"0\",\"lord\":{\"lordSkinId\":10001,\"lordLevel\":1,\"lordState\":0}},\"fightBasic\":{\"isFight\":0,\"besiegeCount\":0,\"originTroopNum\":6,\"rallyFighting\":0},\"intelInfo\":{\"intelType\":2,\"taskId\":3051,\"intelStatus\":0,\"disappearTime\":\"1773169504\",\"belongUid\":\"20001946\",\"rewardKey\":-1}},{\"uniqueId\":\"2_20001946_1\",\"objBasic\":{\"type\":2,\"id\":\"20001946\",\"pos\":\"12300023400\",\"sid\":1,\"key\":0,\"seq\":\"15260815089887\",\"uid\":\"20001946\",\"aid\":\"0\",\"curMs\":\"1773136729038\",\"ksid\":\"1\",\"initCreateTimeUs\":\"1772608072969320\"},\"cityInfo\":{\"uname\":\"Boss_BWPLM\",\"level\":7,\"skin\":0,\"force\":\"10087455\",\"killForce\":\"0\",\"avatar\":0,\"peaceTimeEtime\":\"0\",\"wallBurningEtime\":\"0\",\"scoutCampLv\":0,\"alName\":\"\",\"alNick\":\"\",\"headFrame\":0,\"namePlate\":0,\"kingdomTitle\":0,\"smoking\":0,\"killNum\":\"0\",\"kvkSvrMoveCityEtime\":\"0\",\"vipLevel\":\"1\",\"moveCityFlag\":0,\"hasArrest\":0,\"selfTitle\":0,\"customAvatar\":\"\",\"reinforceSize\":5,\"reinforcedNum\":1,\"wallInfo\":{\"durability\":1,\"fireCpuTime\":\"0\",\"fireEtime\":\"0\",\"changeTime\":\"0\",\"maxDurability\":1,\"fireBDurability\":0,\"fireEDurability\":0},\"updtTime\":\"1773136620\",\"mainTroopUniqueId\":\"108_1772608072809832_1\",\"islandHelpTimes\":\"-1\",\"islandNextCanHelpTime\":\"0\",\"islandNextHelpRefreshTime\":\"0\"},\"fightBasic\":{\"isFight\":0,\"besiegeCount\":0,\"originTroopNum\":0,\"rallyFighting\":0},\"reinforceInfo\":{\"reinforceCapacity\":\"0\",\"reinforceNum\":\"0\"}}]}",
+              "name": "svr_user_objs"
+            },
+            {
+              "data": "{}",
+              "name": "svr_warning_list"
+            }
+          ],
+          "main": 0,
+          "push_type": 1,
+          "target_keys": "20001946"
+        }
+      ],
+      "push_result": 0
+    }
+  ]
+}

@@ -1,5 +1,85 @@
 """敌方玩家数据模型
 
-Enemy: 包含 uid, city_pos, troops（可见的兵种/兵力/状态/位置）
-注意：无法获取英雄等级、技能、科技等级
+数据来源:
+  - svr_map_brief_objs.briefList 中 type=2 对象 → 城市坐标、联盟
+  - svr_user_objs 中 type=2 对象 → 战力(force)、城墙、增援信息
+  - get_player_info(对敌方uid) → 兵种/英雄（需侦察或直接查询）
+
+注意: 无战争迷雾，可实时获取所有敌方位置和基础信息，
+但英雄等级/技能/科技等级需要侦察才能确认。
 """
+
+from __future__ import annotations
+
+from typing import Optional
+
+from pydantic import BaseModel, Field
+
+from src.models.account import Soldier, Troop
+from src.utils.coords import decode_pos
+
+
+class Enemy(BaseModel):
+    """敌方玩家"""
+    uid: int
+    name: str = ""
+    city_pos: tuple[int, int] = (0, 0)
+    city_level: int = 0
+    power: int = 0                         # cityInfo.force
+    alliance_id: int = 0
+    alliance_name: str = ""
+    alliance_nick: str = ""
+
+    # --- 可见信息（地图概览即可获得） ---
+    fight_flag: int = 0                    # 是否正在战斗
+
+    # --- 侦察/查询后填充 ---
+    soldiers: list[Soldier] = Field(default_factory=list)
+    troops: list[Troop] = Field(default_factory=list)    # 在外行军部队
+
+    @property
+    def is_fighting(self) -> bool:
+        return self.fight_flag != 0
+
+    @classmethod
+    def from_brief_obj(cls, obj: dict) -> Enemy:
+        """从 svr_map_brief_objs.briefList 中 type=2 城市对象构建
+
+        Args:
+            obj: {"uniqueId": "2_uid_1", "objBasic": {type:2, pos, uid, aid, ...}}
+        """
+        basic = obj.get("objBasic", {})
+        raw_pos = basic.get("pos")
+        pos = decode_pos(int(raw_pos)) if raw_pos else (0, 0)
+        uid = int(basic.get("uid", 0))
+
+        return cls(
+            uid=uid,
+            city_pos=pos,
+            alliance_id=int(basic.get("aid", 0)),
+            fight_flag=basic.get("fightFlag", 0),
+        )
+
+    @classmethod
+    def from_user_obj(cls, obj: dict) -> Enemy:
+        """从 svr_user_objs 中 type=2 对象构建（更详细）
+
+        Args:
+            obj: svr_user_objs.objs 中 type=2 的完整对象, 包含 cityInfo
+        """
+        basic = obj.get("objBasic", {})
+        ci = obj.get("cityInfo", {})
+        raw_pos = basic.get("pos")
+        pos = decode_pos(int(raw_pos)) if raw_pos else (0, 0)
+
+        return cls(
+            uid=int(basic.get("uid", basic.get("id", 0))),
+            name=ci.get("uname", ""),
+            city_pos=pos,
+            city_level=ci.get("level", 0),
+            power=int(ci.get("force", 0)),
+            alliance_id=int(basic.get("aid", 0)),
+            alliance_name=ci.get("alName", ""),
+            alliance_nick=ci.get("alNick", ""),
+            fight_flag=obj.get("fightBasic", {}).get("isFight", 0),
+        )

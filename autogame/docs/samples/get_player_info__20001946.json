@@ -1,0 +1,72 @@
+{
+  "res_header": {
+    "ret_code": 0,
+    "cost_time_us": 0,
+    "ret_time_s": 1773136727,
+    "err_msg": ""
+  },
+  "request": {
+    "header": {
+      "did": "self-system",
+      "sid": 1,
+      "aid": 0,
+      "ksid": 1,
+      "ava_id": 0,
+      "castle_lv": 25,
+      "battle_type": 0,
+      "battle_id": 0,
+      "chat_scene": ",kingdom_1",
+      "invoker_name": "evans_test_debug",
+      "uid": 20001946
+    },
+    "request": {
+      "cmd": "login_get",
+      "param": {
+        "all": 0,
+        "list": [
+          "svr_lord_info_new",
+          "svr_player",
+          "svr_soldier",
+          "svr_hero_list",
+          "svr_buff"
+        ]
+      }
+    },
+    "extra_info": {
+      "no_checkac": 1,
+      "op_cmd": 1
+    }
+  },
+  "res_data": [
+    {
+      "push_list": [
+        {
+          "data": [
+            {
+              "data": "{\"list\":[{\"id\":101,\"value\":0},{\"id\":201,\"value\":0},{\"id\":204,\"value\":2000000},{\"id\":1,\"value\":19}]}",
+              "name": "svr_soldier"
+            },
+            {
+              "data": "{\"lord_info_data\":{\"cur_state\":0,\"suicide_etime\":0,\"arrester_lord_info\":{\"uid\":0},\"state_etime\":0,\"lord_info\":{\"aid\":0,\"city_level\":7,\"avatar\":0,\"uid\":20001946,\"ksid\":1,\"head_frame\":0,\"skin_id\":0,\"city_pos\":12300023400,\"uname\":\"Boss_BWPLM\",\"al_name\":\"\",\"al_nick\":\"\",\"lord_level\":1,\"custom_avatar\":\"\"},\"suicide_btime\":0,\"state_btime\":0}}",
+              "name": "svr_lord_info_new"
+            },
+            {
+              "data": "{\"buff_item\":[{\"id\":666,\"buff_num\":2000},{\"id\":526,\"buff_num\":303},{\"id\":527,\"buff_num\":303},{\"id\":401,\"buff_num\":1},{\"id\":395,\"buff_num\":7},{\"id\":530,\"buff_num\":303},{\"id\":827,\"buff_num\":20},{\"id\":479,\"buff_num\":1000},{\"id\":1082,\"buff_num\":6},{\"id\":478,\"buff_num\":1000},{\"id\":44,\"buff_num\":1},{\"id\":522,\"buff_num\":303},{\"id\":48,\"buff_num\":1000},{\"id\":84,\"buff_num\":87427},{\"id\":477,\"buff_num\":1000},{\"id\":872,\"buff_num\":5},{\"id\":975,\"buff_num\":30000},{\"id\":130,\"buff_num\":4000},{\"id\":520,\"buff_num\":303},{\"id\":1011,\"buff_num\":20000},{\"id\":408,\"buff_num\":10},{\"id\":70,\"buff_num\":100000},{\"id\":480,\"buff_num\":1000},{\"id\":525,\"buff_num\":303},{\"id\":325,\"buff_num\":5},{\"id\":871,\"buff_num\":1000},{\"id\":344,\"buff_num\":1},{\"id\":75,\"buff_num\":922337203685477},{\"id\":607,\"buff_num\":1},{\"id\":521,\"buff_num\":303},{\"id\":873,\"buff_num\":100},{\"id\":410,\"buff_num\":1},{\"id\":610,\"buff_num\":1},{\"id\":73,\"buff_num\":922337203685477},{\"id\":1070,\"buff_num\":50},{\"id\":923,\"buff_num\":12},{\"id\":394,\"buff_num\":1},{\"id\":354,\"buff_num\":30},{\"id\":76,\"buff_num\":922337203685477},{\"id\":519,\"buff_num\":303},{\"id\":74,\"buff_num\":922337203685477},{\"id\":542,\"buff_num\":7200},{\"id\":1050,\"buff_num\":57500},{\"id\":756,\"buff_num\":1000000},{\"id\":351,\"buff_num\":60},{\"id\":887,\"buff_num\":3},{\"id\":543,\"buff_num\":12},{\"id\":602,\"buff_num\":8},{\"id\":1577,\"buff_num\":26},{\"id\":352,\"buff_num\":40},{\"id\":396,\"buff_num\":3500},{\"id\":296,\"buff_num\":5},{\"id\":611,\"buff_num\":1},{\"id\":1220,\"buff_num\":100000},{\"id\":936,\"buff_num\":110000},{\"id\":581,\"buff_num\":2},{\"id\":935,\"buff_num\":1500},{\"id\":524,\"buff_num\":303},{\"id\":353,\"buff_num\":40},{\"id\":664,\"buff_num\":1},{\"id\":92,\"buff_num\":6},{\"id\":345,\"buff_num\":1},{\"id\":72,\"buff_num\":2000},{\"id\":528,\"buff_num\":303},{\"id\":545,\"buff_num\":1},{\"id\":983,\"buff_num\":20000},{\"id\":580,\"buff_num\":999},{\"id\":928,\"buff_num\":20},{\"id\":523,\"buff_num\":303},{\"id\":269,\"buff_num\":3},{\"id\":551,\"buff_num\":1},{\"id\":548,\"buff_num\":2},{\"id\":529,\"buff_num\":303}]}",
+              "name": "svr_buff"
+            },
+            {
+              "data": "{\"status\":0,\"cid\":12300023400,\"avatar\":0,\"cname\":\"Boss_BWPLM\",\"last_al_id\":0,\"dead\":0,\"kingdom_title_info\":{},\"today_contribution_next_refresh_time\":1773187200,\"uin\":\"Boss_BWPLM\",\"custom_avatar\":\"\",\"anti_harass\":{},\"sid\":1,\"uid\":20001946,\"al_req_id\":0,\"has_change_player_name\":0,\"al_nick\":\"\",\"report_num_last_reset_time\":0,\"al_req_id_list\":{},\"level\":1,\"is_skvk_emperor\":0,\"equip_grid\":8,\"city_skin_put_on_id\":0,\"al_pos\":0,\"building_recommend_version\":0,\"building_new_version\":0,\"iap_trigger_new_version\":1,\"vip_new_version\":1,\"report_num\":0,\"exp\":0,\"vip_level\":1,\"al_title\":0,\"age\":0,\"invite_policy\":0,\"head_frame\":0,\"has_change_flag\":0,\"today_contribution\":0,\"lord_name\":\"Garret\",\"ksid\":1,\"al_id\":0,\"al_name\":\"\",\"al_join_t\":0}",
+              "name": "svr_player"
+            },
+            {
+              "data": "{\"heros\":[{\"stage\":0,\"exp\":0,\"train_slot_id\":0,\"real_lv\":7,\"slg_skill_lv\":[1,0],\"last_reset_time\":0,\"id\":21,\"is_performed\":0,\"skill_lv\":[1,0,0],\"lv\":7,\"exclusive_equip_lv\":0,\"state\":0,\"story_reward_get_record\":{},\"equips\":{}},{\"stage\":0,\"exp\":0,\"train_slot_id\":0,\"real_lv\":1,\"slg_skill_lv\":[1,0,0],\"last_reset_time\":0,\"id\":2,\"is_performed\":0,\"skill_lv\":[1,0,0],\"lv\":1,\"exclusive_equip_lv\":0,\"state\":0,\"story_reward_get_record\":{},\"equips\":{}},{\"stage\":0,\"exp\":0,\"train_slot_id\":0,\"real_lv\":1,\"slg_skill_lv\":[1,0],\"last_reset_time\":0,\"id\":415,\"is_performed\":0,\"skill_lv\":[1,0,0],\"lv\":1,\"exclusive_equip_lv\":0,\"state\":0,\"story_reward_get_record\":{},\"equips\":{}}]}",
+              "name": "svr_hero_list"
+            }
+          ],
+          "main": 1
+        }
+      ],
+      "push_result": 0
+    }
+  ]
+}

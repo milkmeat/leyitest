@@ -1,0 +1,52 @@
+{
+  "res_header": {
+    "ret_code": 0,
+    "cost_time_us": 0,
+    "ret_time_s": 1773136728,
+    "err_msg": ""
+  },
+  "request": {
+    "header": {
+      "did": "self-system",
+      "sid": 1,
+      "aid": 0,
+      "ksid": 1,
+      "ava_id": 0,
+      "castle_lv": 25,
+      "battle_type": 0,
+      "battle_id": 0,
+      "chat_scene": ",kingdom_1",
+      "invoker_name": "evans_test_debug",
+      "uid": 20001946
+    },
+    "request": {
+      "cmd": "login_get",
+      "param": {
+        "all": 0,
+        "list": [
+          "svr_player"
+        ]
+      }
+    },
+    "extra_info": {
+      "no_checkac": 1,
+      "op_cmd": 1
+    }
+  },
+  "res_data": [
+    {
+      "push_list": [
+        {
+          "data": [
+            {
+              "data": "{\"status\":0,\"cid\":12300023400,\"avatar\":0,\"cname\":\"Boss_BWPLM\",\"last_al_id\":0,\"dead\":0,\"kingdom_title_info\":{},\"today_contribution_next_refresh_time\":1773187200,\"uin\":\"Boss_BWPLM\",\"custom_avatar\":\"\",\"anti_harass\":{},\"sid\":1,\"uid\":20001946,\"al_req_id\":0,\"has_change_player_name\":0,\"al_nick\":\"\",\"report_num_last_reset_time\":0,\"al_req_id_list\":{},\"level\":1,\"is_skvk_emperor\":0,\"equip_grid\":8,\"city_skin_put_on_id\":0,\"al_pos\":0,\"building_recommend_version\":0,\"building_new_version\":0,\"iap_trigger_new_version\":1,\"vip_new_version\":1,\"report_num\":0,\"exp\":0,\"vip_level\":1,\"al_title\":0,\"age\":0,\"invite_policy\":0,\"head_frame\":0,\"has_change_flag\":0,\"today_contribution\":0,\"lord_name\":\"Garret\",\"ksid\":1,\"al_id\":0,\"al_name\":\"\",\"al_join_t\":0}",
+              "name": "svr_player"
+            }
+          ],
+          "main": 1
+        }
+      ],
+      "push_result": 0
+    }
+  ]
+}

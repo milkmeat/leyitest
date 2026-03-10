@@ -1,0 +1,52 @@
+{
+  "res_header": {
+    "ret_code": 0,
+    "cost_time_us": 0,
+    "ret_time_s": 1773136728,
+    "err_msg": ""
+  },
+  "request": {
+    "header": {
+      "did": "self-system",
+      "sid": 1,
+      "aid": 0,
+      "ksid": 1,
+      "ava_id": 0,
+      "castle_lv": 25,
+      "battle_type": 0,
+      "battle_id": 0,
+      "chat_scene": ",kingdom_1",
+      "invoker_name": "evans_test_debug",
+      "uid": 20001946
+    },
+    "request": {
+      "cmd": "login_get",
+      "param": {
+        "all": 0,
+        "list": [
+          "svr_soldier"
+        ]
+      }
+    },
+    "extra_info": {
+      "no_checkac": 1,
+      "op_cmd": 1
+    }
+  },
+  "res_data": [
+    {
+      "push_list": [
+        {
+          "data": [
+            {
+              "data": "{\"list\":[{\"id\":101,\"value\":0},{\"id\":201,\"value\":0},{\"id\":204,\"value\":2000000},{\"id\":1,\"value\":19}]}",
+              "name": "svr_soldier"
+            }
+          ],
+          "main": 1
+        }
+      ],
+      "push_result": 0
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "res_header": {
+    "ret_code": 0,
+    "cost_time_us": 0,
+    "ret_time_s": 1773136728,
+    "err_msg": ""
+  },
+  "request": {
+    "header": {
+      "did": "self-system",
+      "sid": 1,
+      "aid": 0,
+      "ksid": 1,
+      "ava_id": 0,
+      "castle_lv": 25,
+      "battle_type": 0,
+      "battle_id": 0,
+      "chat_scene": ",kingdom_1",
+      "invoker_name": "evans_test_debug",
+      "uid": 20001946
+    },
+    "request": {
+      "cmd": "login_get",
+      "param": {
+        "all": 0,
+        "list": [
+          "svr_hero_list"
+        ]
+      }
+    },
+    "extra_info": {
+      "no_checkac": 1,
+      "op_cmd": 1
+    }
+  },
+  "res_data": [
+    {
+      "push_list": [
+        {
+          "data": [
+            {
+              "data": "{\"heros\":[{\"stage\":0,\"exp\":0,\"train_slot_id\":0,\"real_lv\":7,\"slg_skill_lv\":[1,0],\"last_reset_time\":0,\"id\":21,\"is_performed\":0,\"skill_lv\":[1,0,0],\"lv\":7,\"exclusive_equip_lv\":0,\"state\":0,\"story_reward_get_record\":{},\"equips\":{}},{\"stage\":0,\"exp\":0,\"train_slot_id\":0,\"real_lv\":1,\"slg_skill_lv\":[1,0,0],\"last_reset_time\":0,\"id\":2,\"is_performed\":0,\"skill_lv\":[1,0,0],\"lv\":1,\"exclusive_equip_lv\":0,\"state\":0,\"story_reward_get_record\":{},\"equips\":{}},{\"stage\":0,\"exp\":0,\"train_slot_id\":0,\"real_lv\":1,\"slg_skill_lv\":[1,0],\"last_reset_time\":0,\"id\":415,\"is_performed\":0,\"skill_lv\":[1,0,0],\"lv\":1,\"exclusive_equip_lv\":0,\"state\":0,\"story_reward_get_record\":{},\"equips\":{}}]}",
+              "name": "svr_hero_list"
+            }
+          ],
+          "main": 1
+        }
+      ],
+      "push_result": 0
+    }
+  ]
+}
