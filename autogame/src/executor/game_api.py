@@ -1,7 +1,9 @@
-"""游戏服务器 HTTP 客户端
+"""游戏服务器 HTTP 客户端（统一异步客户端）
 
 从 cmd_config.yaml 动态加载命令字定义，自动生成对应方法。
 - 异步 HTTP 客户端，基于 aiohttp
+- GET 协议: GET {base_url}?{json_body}
+- 环境驱动: 从 env_config.yaml 加载服务器地址
 - 每个命令字自动注册为方法，参数从 YAML default_param 获取默认值
 - 支持链式调用 + execute 批量发送
 - 坐标编码: pos = x * 100_000_000 + y * 100
@@ -10,24 +12,34 @@
 from __future__ import annotations
 
 import copy
+import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import aiohttp
 import yaml
 
-from src.utils.coords import encode_pos, decode_pos  # noqa: F401
+from src.utils.coords import encode_pos, decode_pos
 
 logger = logging.getLogger(__name__)
+
+_CONFIG_DIR = Path(__file__).resolve().parent.parent
 
 
 def _load_cmd_config() -> Dict[str, Any]:
     """加载 cmd_config.yaml 并返回 commands 字典"""
-    config_path = Path(__file__).resolve().parent.parent / "config" / "cmd_config.yaml"
+    config_path = _CONFIG_DIR / "config" / "cmd_config.yaml"
     with open(config_path, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
     return data.get("commands", {})
+
+
+def _load_env_config() -> Dict[str, Any]:
+    """加载 env_config.yaml"""
+    config_path = _CONFIG_DIR.parent / "config" / "env_config.yaml"
+    with open(config_path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
 
 
 # 模块级别加载一次
@@ -38,18 +50,26 @@ class GameAPIClient:
     """异步游戏 API 客户端
 
     从 cmd_config.yaml 读取命令字定义，为每个命令提供：
-    - send_<cmd_name>(): 立即发送单条命令
-    - queue_<cmd_name>(): 加入待发送队列（链式调用）
+    - send_cmd(): 立即发送单条命令
+    - queue_cmd(): 加入待发送队列（链式调用）
     - execute(): 批量发送队列中所有命令
+
+    使用 GET 协议与游戏后台通信，格式: GET {base_url}?{json_body}
     """
 
-    def __init__(self, base_url: str, session: Optional[aiohttp.ClientSession] = None):
+    def __init__(self, env: Optional[str] = None, session: Optional[aiohttp.ClientSession] = None):
         """
         Args:
-            base_url: 游戏服务器地址，如 "http://127.0.0.1:8080"
+            env: 环境名（"test", "mock" 等），为 None 时使用 env_config.yaml 的 current_env
             session: 可复用的 aiohttp session，为 None 时按需创建
         """
-        self.base_url = base_url.rstrip("/")
+        self._env_config = _load_env_config()
+        env = env or self._env_config["current_env"]
+        env_info = self._env_config["environments"][env]
+        self.base_url = env_info["url"]
+        self.default_header = dict(self._env_config["default_header"])
+        self.extra_info = dict(self._env_config["extra_info"])
+
         self._external_session = session
         self._session: Optional[aiohttp.ClientSession] = session
         self._queue: List[Dict[str, Any]] = []
@@ -74,7 +94,10 @@ class GameAPIClient:
     # ------------------------------------------------------------------
 
     async def _send(self, uid: int, cmd: str, param: Dict[str, Any]) -> Dict[str, Any]:
-        """发送单条命令到游戏服务器
+        """发送单条命令到游戏服务器（GET 协议）
+
+        协议格式: GET {base_url}?{json_body}
+        json_body: {"header": {...}, "request": {"cmd": "xxx", "param": {...}}, "extra_info": {...}}
 
         Args:
             uid: 玩家 UID
@@ -82,18 +105,23 @@ class GameAPIClient:
             param: 命令参数
 
         Returns:
-            服务器响应 dict，格式 {"code": 0, "msg": "ok", "data": {...}}
+            服务器响应 dict
         """
         session = await self._ensure_session()
-        payload = {
-            "uid": str(uid),
-            "cmd": cmd,
-            "params": param,
+        header = dict(self.default_header)
+        header["uid"] = uid
+
+        body = {
+            "header": header,
+            "request": {"cmd": cmd, "param": param},
+            "extra_info": self.extra_info,
         }
-        url = f"{self.base_url}/api/game"
-        async with session.post(url, json=payload) as resp:
+
+        url = f"{self.base_url}?{json.dumps(body, separators=(',', ':'), ensure_ascii=False)}"
+        async with session.get(url, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+            resp.raise_for_status()
             result = await resp.json()
-            logger.debug("cmd=%s uid=%s code=%s", cmd, uid, result.get("code"))
+            logger.debug("cmd=%s uid=%s resp_keys=%s", cmd, uid, list(result.keys()))
             return result
 
     # ------------------------------------------------------------------
@@ -248,9 +276,24 @@ class GameAPIClient:
         """攻击建筑"""
         return await self.send_cmd("attack_building", uid, target_info=target_info, march_info=march_info)
 
-    async def get_player_pos(self, uid: int) -> Dict[str, Any]:
-        """获取玩家地图坐标"""
-        return await self.send_cmd("get_player_pos", uid)
+    async def get_player_pos(self, uid: int) -> Optional[Tuple[int, int]]:
+        """获取玩家地图坐标，返回 (x, y) 或 None
+
+        解析路径: res_data[0].push_list[0].data[] -> name='svr_lord_info_new'
+                 -> data (JSON str) -> lord_info_data.lord_info.city_pos
+        """
+        data = await self.send_cmd("get_player_pos", uid)
+        try:
+            res_data = data.get("res_data", [])
+            push_list = res_data[0]["push_list"]
+            for item in push_list[0]["data"]:
+                if item.get("name") == "svr_lord_info_new":
+                    parsed = json.loads(item["data"])
+                    city_pos = int(parsed["lord_info_data"]["lord_info"]["city_pos"])
+                    return decode_pos(city_pos)
+        except (KeyError, IndexError, TypeError, ValueError) as e:
+            logger.warning("解析坐标失败 uid=%s: %s", uid, e)
+        return None
 
     async def get_all_player_data(self, uid: int) -> Dict[str, Any]:
         """获取玩家全量数据"""

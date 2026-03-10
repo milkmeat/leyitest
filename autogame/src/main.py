@@ -5,6 +5,7 @@
   python src/main.py --mock get_player_pos <uid>   连接本地mock服务器
 """
 
+import asyncio
 import os
 import sys
 
@@ -14,16 +15,20 @@ if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
 
-def cmd_get_player_pos(uid_str: str, env: str = None):
-    from src.client import get_player_pos
+async def cmd_get_player_pos(uid_str: str, env: str = None):
+    from src.executor.game_api import GameAPIClient
 
-    uid = int(uid_str)
-    pos = get_player_pos(uid, env=env)
-    if pos:
-        print(f"({pos[0]},{pos[1]})")
-    else:
-        print(f"无法获取 uid={uid} 的坐标", file=sys.stderr)
-        sys.exit(1)
+    client = GameAPIClient(env=env)
+    try:
+        uid = int(uid_str)
+        pos = await client.get_player_pos(uid)
+        if pos:
+            print(f"({pos[0]},{pos[1]})")
+        else:
+            print(f"无法获取 uid={uid} 的坐标", file=sys.stderr)
+            sys.exit(1)
+    finally:
+        await client.close()
 
 
 COMMANDS = {
@@ -48,7 +53,7 @@ def main():
 
     cmd_name = args[0]
     func, _, _ = COMMANDS[cmd_name]
-    func(*args[1:], env=env)
+    asyncio.run(func(*args[1:], env=env))
 
 
 if __name__ == "__main__":
