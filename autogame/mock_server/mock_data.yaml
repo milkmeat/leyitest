@@ -8,6 +8,21 @@ players:
     name: "TestPlayer1"
     power: 5000000
     alliance: "TST"
+    alliance_id: 100
+    city_level: 25
+    lord_level: 60
+    vip_level: 5
+    gem: 116666
+    soldiers:
+      - {id: 101, value: 50000}   # infantry
+      - {id: 201, value: 30000}   # cavalry
+      - {id: 204, value: 100000}  # archer
+    heroes:
+      - {id: 21, lv: 60, state: 0, skill_lv: [5, 5, 5]}
+      - {id: 35, lv: 50, state: 0, skill_lv: [3, 3, 3]}
+    buffs: []
+    troops: []              # 在外行军的部队 (动态)
+    reinforcements: []      # 驻防/增援中的部队 (动态)
 
   20001947:
     x: 500
@@ -15,3 +30,45 @@ players:
     name: "TestPlayer2"
     power: 3000000
     alliance: "TST"
+    alliance_id: 100
+    city_level: 20
+    lord_level: 45
+    vip_level: 3
+    gem: 50000
+    soldiers:
+      - {id: 101, value: 30000}
+      - {id: 201, value: 20000}
+      - {id: 204, value: 60000}
+    heroes:
+      - {id: 21, lv: 45, state: 0, skill_lv: [3, 3, 3]}
+    buffs: []
+    troops: []
+    reinforcements: []
+
+# 地图建筑/据点
+buildings:
+  "13_1001_1":
+    type: 13
+    id: 1001
+    x: 300
+    y: 300
+    name: "据点Alpha"
+    owner_uid: 0
+    owner_alliance: ""
+    garrison: []
+
+  "13_1002_1":
+    type: 13
+    id: 1002
+    x: 700
+    y: 700
+    name: "据点Beta"
+    owner_uid: 20001946
+    owner_alliance: "TST"
+    garrison: []
+
+# 活跃集结
+rallies: {}
+
+# 战报
+battle_reports: {}
