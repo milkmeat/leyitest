@@ -1,0 +1,48 @@
+# 账号配置 — 20 个 NPC 账号 + 2 个备用
+# 运行时详细信息（战力、兵种、英雄等）从服务器同步获取，此处只存最小标识
+
+accounts:
+  - uid: 20010413
+    name: "acc_01"
+  - uid: 20010414
+    name: "acc_02"
+  - uid: 20010415
+    name: "acc_03"
+  - uid: 20010416
+    name: "acc_04"
+  - uid: 20010417
+    name: "acc_05"
+  - uid: 20010418
+    name: "acc_06"
+  - uid: 20010419
+    name: "acc_07"
+  - uid: 20010420
+    name: "acc_08"
+  - uid: 20010421
+    name: "acc_09"
+  - uid: 20010422
+    name: "acc_10"
+  - uid: 20010423
+    name: "acc_11"
+  - uid: 20010424
+    name: "acc_12"
+  - uid: 20010425
+    name: "acc_13"
+  - uid: 20010426
+    name: "acc_14"
+  - uid: 20010427
+    name: "acc_15"
+  - uid: 20010428
+    name: "acc_16"
+  - uid: 20010429
+    name: "acc_17"
+  - uid: 20010430
+    name: "acc_18"
+  - uid: 20010431
+    name: "acc_19"
+  - uid: 20010432
+    name: "acc_20"
+
+reserves:
+  - uid: 20010366
+  - uid: 20010373

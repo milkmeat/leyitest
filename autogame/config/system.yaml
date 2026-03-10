@@ -1,0 +1,18 @@
+# 系统参数 — 主循环 & LLM & 网络
+
+loop:
+  interval_seconds: 60          # 主循环间隔
+  sync_timeout: 5               # Phase 1 数据同步超时 (秒)
+
+llm:
+  timeout_seconds: 30           # 单次 LLM 调用超时
+  max_retries: 1                # LLM 调用失败重试次数 (0=不重试)
+  model: ""                     # 模型名 (待定)
+
+concurrency:
+  max_api_concurrent: 20        # 游戏 API 最大并发请求数
+  max_llm_concurrent: 10        # LLM 最大并发调用数
+
+logging:
+  level: "INFO"                 # 日志级别: DEBUG / INFO / WARNING / ERROR
+  dir: "logs"                   # 日志目录

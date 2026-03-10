@@ -1,0 +1,26 @@
+# 活动规则 — 团战副本参数
+# 基于需求文档，待实战调整
+
+duration_seconds: 7200          # 副本总时长: 2小时
+
+map:
+  width: 1000                   # 地图宽 (格)
+  height: 1000                  # 地图高 (格)
+
+march:
+  speed: 2                      # 行军速度: 2秒/格
+  max_distance: 999             # 最大行军距离 (格)
+
+rally:
+  window_seconds: 300           # 集结等待窗口: 5分钟
+  max_members: 15               # 单次集结最大参与人数
+
+combat:
+  counter_bonus: 1.3            # 克制加成系数
+  counter_penalty: 0.7          # 被克制惩罚系数
+  # 克制关系: archer > infantry > cavalry > archer
+
+scoring:
+  kill_point: 1                 # 每击杀1兵力=1分 (待确认)
+  building_capture_point: 100   # 占领据点积分 (待确认)
+  building_hold_point_per_min: 10  # 据点持有每分钟积分 (待确认)
