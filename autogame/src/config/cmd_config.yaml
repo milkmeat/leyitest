@@ -102,16 +102,7 @@ commands:
       all: 1                  # 1=全量数据
     description: "获取game_server上该玩家的所有数据（坐标、部队、行军队列等）"
 
-  # --- 获取玩家地图坐标 ---
-  get_player_pos:
-    cmd: "login_get"
-    default_param:
-      all: 0
-      list:
-        - "svr_lord_info_new"
-    description: "获取玩家的地图坐标等lord信息"
-
-  # --- 获取玩家完整信息 ---
+  # --- 获取玩家信息 ---
   get_player_info:
     cmd: "login_get"
     default_param:

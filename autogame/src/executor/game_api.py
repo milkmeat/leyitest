@@ -276,30 +276,32 @@ class GameAPIClient:
         """攻击建筑"""
         return await self.send_cmd("attack_building", uid, target_info=target_info, march_info=march_info)
 
-    async def get_player_info(self, uid: int) -> Dict[str, Any]:
-        """获取玩家完整信息，返回结构化 dict
+    async def get_player_info(
+        self, uid: int, modules: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """获取玩家信息，返回结构化 dict
 
-        一次 login_get 请求同时拉取 5 个数据模块，解析后返回:
-        {
-            "uid": int,
-            "name": str,
-            "pos": (x, y),
-            "city_level": int,
-            "lord_level": int,
-            "level": int,              # 领主等级 (svr_player)
-            "vip_level": int,
-            "alliance_id": int,
-            "alliance_name": str,
-            "status": int,             # 0=正常
-            "dead": int,               # 0=存活
-            "soldiers": [{"id": int, "value": int}, ...],
-            "heroes": [{"id": int, "lv": int, "state": int, "skill_lv": [...], ...}, ...],
-            "buffs": [{"id": int, "buff_num": int}, ...],
-        }
-        注: 战力(power)在 game_server 的 svr_user_objs.cityInfo.force 中，需通过
-            game_server_login_get 单独获取。
+        Args:
+            uid: 玩家 UID
+            modules: 要请求的数据模块列表，如 ["svr_lord_info_new"]。
+                     为 None 时使用 cmd_config.yaml 中定义的全部模块。
+                     可选模块: svr_lord_info_new, svr_player, svr_soldier,
+                              svr_hero_list, svr_buff
+
+        返回字段取决于请求的模块:
+            svr_lord_info_new → pos, name, city_level, lord_level, alliance_id
+            svr_player        → vip_level, alliance_name, status, dead, level
+            svr_soldier       → soldiers
+            svr_hero_list     → heroes
+            svr_buff          → buffs
+
+        注: 战力(power)在 game_server 的 svr_user_objs.cityInfo.force 中，
+            需通过 game_server_login_get 单独获取。
         """
-        data = await self.send_cmd("get_player_info", uid)
+        overrides = {}
+        if modules is not None:
+            overrides["list"] = modules
+        data = await self.send_cmd("get_player_info", uid, **overrides)
         result: Dict[str, Any] = {"uid": uid}
 
         try:
@@ -349,21 +351,10 @@ class GameAPIClient:
     async def get_player_pos(self, uid: int) -> Optional[Tuple[int, int]]:
         """获取玩家地图坐标，返回 (x, y) 或 None
 
-        解析路径: res_data[0].push_list[0].data[] -> name='svr_lord_info_new'
-                 -> data (JSON str) -> lord_info_data.lord_info.city_pos
+        内部调用 get_player_info 仅请求 svr_lord_info_new 以减少数据传输。
         """
-        data = await self.send_cmd("get_player_pos", uid)
-        try:
-            res_data = data.get("res_data", [])
-            push_list = res_data[0]["push_list"]
-            for item in push_list[0]["data"]:
-                if item.get("name") == "svr_lord_info_new":
-                    parsed = json.loads(item["data"])
-                    city_pos = int(parsed["lord_info_data"]["lord_info"]["city_pos"])
-                    return decode_pos(city_pos)
-        except (KeyError, IndexError, TypeError, ValueError) as e:
-            logger.warning("解析坐标失败 uid=%s: %s", uid, e)
-        return None
+        info = await self.get_player_info(uid, modules=["svr_lord_info_new"])
+        return info.get("pos")
 
     async def get_all_player_data(self, uid: int) -> Dict[str, Any]:
         """获取玩家全量数据"""
