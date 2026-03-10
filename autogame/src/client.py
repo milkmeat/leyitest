@@ -14,6 +14,8 @@ from typing import Any, Dict, Optional
 import requests
 import yaml
 
+from src.utils.coords import decode_pos
+
 
 def _load_env_config() -> Dict[str, Any]:
     config_path = Path(__file__).resolve().parent.parent / "config" / "env_config.yaml"
@@ -83,9 +85,7 @@ def get_player_pos(uid: int, env: str = None) -> Optional[tuple]:
             if item.get("name") == "svr_lord_info_new":
                 parsed = json.loads(item["data"])
                 city_pos = int(parsed["lord_info_data"]["lord_info"]["city_pos"])
-                x = city_pos // 100_000_000
-                y = (city_pos % 100_000_000) // 100
-                return (x, y)
+                return decode_pos(city_pos)
     except (KeyError, IndexError, TypeError, ValueError) as e:
         print(f"解析坐标失败: {e}")
     return None

@@ -12,27 +12,28 @@ json_body 格式:
 """
 
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any, Dict
 from urllib.parse import unquote
 
+# 确保项目根目录在 sys.path 中
+_project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
 import yaml
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+
+from src.utils.coords import encode_pos
 
 # ---------------------------------------------------------------------------
 # 数据加载
 # ---------------------------------------------------------------------------
 
 MOCK_DATA_PATH = Path(__file__).resolve().parent / "mock_data.yaml"
-
-POS_X_FACTOR = 100_000_000
-POS_Y_FACTOR = 100
-
-
-def encode_pos(x: int, y: int) -> int:
-    return x * POS_X_FACTOR + y * POS_Y_FACTOR
 
 
 def load_mock_data() -> Dict[str, Any]:

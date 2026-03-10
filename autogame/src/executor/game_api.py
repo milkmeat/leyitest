@@ -17,23 +17,9 @@ from typing import Any, Dict, List, Optional
 import aiohttp
 import yaml
 
+from src.utils.coords import encode_pos, decode_pos  # noqa: F401
+
 logger = logging.getLogger(__name__)
-
-# 坐标编码/解码
-POS_X_FACTOR = 100_000_000
-POS_Y_FACTOR = 100
-
-
-def encode_pos(x: int, y: int) -> int:
-    """坐标 (x, y) → 后台 pos 整数"""
-    return x * POS_X_FACTOR + y * POS_Y_FACTOR
-
-
-def decode_pos(pos: int) -> tuple[int, int]:
-    """后台 pos 整数 → (x, y)"""
-    x = pos // POS_X_FACTOR
-    y = (pos % POS_X_FACTOR) // POS_Y_FACTOR
-    return x, y
 
 
 def _load_cmd_config() -> Dict[str, Any]:
