@@ -24,6 +24,27 @@ players:
     troops: []              # 在外行军的部队 (动态)
     reinforcements: []      # 驻防/增援中的部队 (动态)
 
+  20010366:
+    x: 350
+    y: 450
+    name: "TestAccount_L0"
+    power: 4000000
+    alliance: "TST"
+    alliance_id: 100
+    city_level: 25
+    lord_level: 60
+    vip_level: 4
+    gem: 50000
+    soldiers:
+      - {id: 101, value: 40000}   # infantry
+      - {id: 201, value: 25000}   # cavalry
+      - {id: 204, value: 80000}   # archer
+    heroes:
+      - {id: 21, lv: 55, state: 0, skill_lv: [4, 4, 4]}
+    buffs: []
+    troops: []
+    reinforcements: []
+
   20001947:
     x: 500
     y: 600

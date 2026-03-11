@@ -143,6 +143,9 @@ def handle_login_get(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
         buffs = player.get("buffs", [])
         data_items.append(_data_item("svr_buff", {"buff_item": buffs}))
 
+    if "svr_gem_stat" in requested and player:
+        data_items.append(_data_item("svr_gem_stat", {"gem": player.get("gem", 0)}))
+
     return _ok_response(data_items)
 
 
@@ -449,7 +452,7 @@ def handle_op_self_set_gem(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
     player["gem"] = gem_num
 
     data_items = [_data_item("svr_gem_stat", {"gem": gem_num})]
-    print(f"  [mock] add_gem uid={uid}: {old_gem} → {gem_num}")
+    print(f"  [mock] add_gem uid={uid}: {old_gem} → {gem_num} (SET)")
     return _ok_response(data_items)
 
 
@@ -468,13 +471,13 @@ def handle_op_add_soldiers(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
         if s["id"] == soldier_id:
             old_val = s["value"]
             s["value"] += soldier_num
-            print(f"  [mock] add_soldiers uid={uid}: id={soldier_id} {old_val} → {s['value']}")
+            print(f"  [mock] add_soldiers uid={uid}: id={soldier_id} {old_val} + {soldier_num} = {s['value']} (ADD)")
             found = True
             break
     if not found:
         soldiers.append({"id": soldier_id, "value": soldier_num})
         player["soldiers"] = soldiers
-        print(f"  [mock] add_soldiers uid={uid}: id={soldier_id} 0 → {soldier_num} (new)")
+        print(f"  [mock] add_soldiers uid={uid}: id={soldier_id} 0 + {soldier_num} = {soldier_num} (new)")
 
     data_items = [
         _data_item("svr_soldier", {"list": player["soldiers"]}),

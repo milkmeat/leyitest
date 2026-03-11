@@ -22,6 +22,10 @@
   recall_troop <uid> <troop_id...>              召回行军部队
   recall_reinforce <uid> <unique_id>            召回增援/集结
 
+查询命令(简化输出):
+  get_gem <uid>                                 查询宝石数量（纯数字）
+  get_soldiers <uid> <soldier_id>               查询指定兵种数量（纯数字）
+
 GM 命令:
   add_gem <uid> [amount]                        添加宝石
   add_soldiers <uid> [soldier_id] [num]         添加士兵
@@ -311,6 +315,49 @@ async def cmd_recall_reinforce(uid_str: str, unique_id: str, env: str = None):
 
 
 # ---------------------------------------------------------------------------
+# 简化输出查询（供脚本解析）
+# ---------------------------------------------------------------------------
+
+
+async def cmd_get_gem(uid_str: str, env: str = None):
+    """查询宝石数量，输出纯数字"""
+    from src.executor.game_api import GameAPIClient
+    client = GameAPIClient(env=env)
+    try:
+        uid = int(uid_str)
+        resp = await client.send_cmd("get_player_info", uid, list=["svr_gem_stat"])
+        try:
+            items = resp["res_data"][0]["push_list"][0]["data"]
+            for item in items:
+                if item.get("name") == "svr_gem_stat":
+                    gem_data = _json.loads(item["data"])
+                    print(gem_data.get("gem", 0))
+                    return
+        except (KeyError, IndexError, TypeError):
+            pass
+        print(0)
+    finally:
+        await client.close()
+
+
+async def cmd_get_soldiers(uid_str: str, soldier_id_str: str, env: str = None):
+    """查询指定兵种数量，输出纯数字"""
+    from src.executor.game_api import GameAPIClient
+    client = GameAPIClient(env=env)
+    try:
+        uid = int(uid_str)
+        soldier_id = int(soldier_id_str)
+        info = await client.get_player_info(uid, modules=["svr_soldier"])
+        for s in info.get("soldiers", []):
+            if s.get("id") == soldier_id:
+                print(s.get("value", 0))
+                return
+        print(0)
+    finally:
+        await client.close()
+
+
+# ---------------------------------------------------------------------------
 # GM 命令
 # ---------------------------------------------------------------------------
 
@@ -571,6 +618,9 @@ COMMANDS = {
     "join_rally":           (cmd_join_rally,            "<uid> <rally_id>",                   "加入集结"),
     "recall_troop":         (cmd_recall_troop,          "<uid> <troop_id...>",                "召回行军部队"),
     "recall_reinforce":     (cmd_recall_reinforce,      "<uid> <unique_id>",                  "召回增援/集结"),
+    # 简化查询
+    "get_gem":              (cmd_get_gem,               "<uid>",                              "查询宝石数量(纯数字)"),
+    "get_soldiers":         (cmd_get_soldiers,          "<uid> <soldier_id>",                 "查询兵种数量(纯数字)"),
     # GM
     "add_gem":              (cmd_add_gem,               "<uid> [amount]",                     "GM: 添加宝石"),
     "add_soldiers":         (cmd_add_soldiers,          "<uid> [soldier_id] [num]",           "GM: 添加士兵"),
@@ -599,6 +649,10 @@ def main():
         print("\n行动命令:")
         for name in ["move_city", "attack_player", "attack_building", "reinforce_building",
                       "scout_player", "create_rally", "join_rally", "recall_troop", "recall_reinforce"]:
+            _, a, desc = COMMANDS[name]
+            print(f"  {name:25s} {a:40s} {desc}")
+        print("\n简化查询命令:")
+        for name in ["get_gem", "get_soldiers"]:
             _, a, desc = COMMANDS[name]
             print(f"  {name:25s} {a:40s} {desc}")
         print("\nGM 命令:")
