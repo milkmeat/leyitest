@@ -31,6 +31,11 @@ GM 命令:
   add_soldiers <uid> [soldier_id] [num]         添加士兵
   add_resource <uid> [op_type]                  添加资源
 
+数据同步:
+  sync                                          同步所有账号+地图（摘要输出）
+  sync --json                                   同步并输出完整 JSON
+  sync <uid>                                    仅同步单个账号（调试用）
+
 L0 执行器（AI 指令调试）:
   l0 '{"action":"MOVE_CITY","uid":123,...}'     JSON 模式（模拟 L1 输出）
   l0 MOVE_CITY <uid> <x> <y>                   移城
@@ -444,6 +449,89 @@ async def cmd_add_resource(uid_str: str, *extra: str, env: str = None):
 
 
 # ---------------------------------------------------------------------------
+# 数据同步命令
+# ---------------------------------------------------------------------------
+
+
+async def cmd_sync(*args: str, env: str = None):
+    """数据同步 — 并发获取所有账号 + 地图数据"""
+    from src.executor.game_api import GameAPIClient
+    from src.config.loader import load_all
+    from src.perception.data_sync import DataSyncer
+
+    config = load_all("config")
+    client = GameAPIClient(env=env)
+    syncer = DataSyncer(client, config)
+
+    try:
+        # 判断模式: sync --json / sync <uid> / sync
+        json_mode = "--json" in args
+        remaining = [a for a in args if a != "--json"]
+
+        if remaining:
+            # 单账号模式
+            uid = int(remaining[0])
+            result = await syncer.sync_single_account(uid)
+            from src.perception.data_sync import SyncError
+            if isinstance(result, SyncError):
+                print(f"[FAIL] 同步失败 uid={uid}: {result.message}", file=sys.stderr)
+                sys.exit(1)
+            elif json_mode:
+                _print_json(result.model_dump(mode="json"))
+            else:
+                print(f"同步完成 uid={uid}")
+                print(f"  名称: {result.name}")
+                print(f"  坐标: ({result.city_pos[0]},{result.city_pos[1]})")
+                print(f"  联盟: {result.alliance_name} (id={result.alliance_id})")
+                print(f"  兵种: {len(result.soldiers)} 种, 总兵力 {sum(s.value for s in result.soldiers)}")
+                print(f"  英雄: {len(result.heroes)} 个")
+                print(f"  小队: {result.group_id}")
+            return
+
+        # 全量同步
+        snapshot = await syncer.sync(loop_id=0)
+
+        if json_mode:
+            _print_json(snapshot.model_dump(mode="json"))
+        else:
+            # 摘要输出
+            print(f"同步完成 (耗时 {snapshot.sync_time}s)")
+            print(f"  账号: {len(snapshot.accounts)} 个")
+            print(f"  建筑: {len(snapshot.buildings)} 个")
+            print(f"  敌方: {len(snapshot.enemies)} 个")
+            print(f"  错误: {len(snapshot.errors)} 个")
+
+            # 前几个账号详情
+            if snapshot.accounts:
+                print("\n  账号列表 (前5):")
+                for i, (uid, acct) in enumerate(snapshot.accounts.items()):
+                    if i >= 5:
+                        print(f"    ... 还有 {len(snapshot.accounts) - 5} 个")
+                        break
+                    total_soldiers = sum(s.value for s in acct.soldiers)
+                    print(f"    uid={uid} {acct.name} ({acct.city_pos[0]},{acct.city_pos[1]}) "
+                          f"兵力={total_soldiers} 小队={acct.group_id}")
+
+            if snapshot.buildings:
+                print(f"\n  建筑列表:")
+                for b in snapshot.buildings:
+                    side = "中立" if b.alliance_id == 0 else f"联盟{b.alliance_id}"
+                    print(f"    {b.unique_id} type={b.obj_type} ({b.pos[0]},{b.pos[1]}) {side}")
+
+            if snapshot.enemies:
+                print(f"\n  敌方列表:")
+                for e in snapshot.enemies:
+                    print(f"    uid={e.uid} ({e.city_pos[0]},{e.city_pos[1]}) 联盟={e.alliance_id}")
+
+            if snapshot.errors:
+                print(f"\n  错误详情:")
+                for err in snapshot.errors:
+                    print(f"    uid={err.uid} [{err.step}] {err.message}")
+    finally:
+        await client.close()
+
+
+# ---------------------------------------------------------------------------
 # L0 执行器命令
 # ---------------------------------------------------------------------------
 
@@ -640,6 +728,8 @@ COMMANDS = {
     "add_gem":              (cmd_add_gem,               "<uid> [amount]",                     "GM: 添加宝石"),
     "add_soldiers":         (cmd_add_soldiers,          "<uid> [soldier_id] [num]",           "GM: 添加士兵"),
     "add_resource":         (cmd_add_resource,          "<uid> [op_type]",                    "GM: 添加资源"),
+    # 数据同步
+    "sync":                 (cmd_sync,                  "[--json] [uid]",                     "数据同步(全量/单账号)"),
     # L0 执行器
     "l0":                   (cmd_l0,                    "<ACTION|JSON> <args...>",            "L0 执行器调试"),
 }
@@ -674,6 +764,12 @@ def main():
         for name in ["add_gem", "add_soldiers", "add_resource"]:
             _, a, desc = COMMANDS[name]
             print(f"  {name:25s} {a:40s} {desc}")
+        print("\n数据同步:")
+        _, a, desc = COMMANDS["sync"]
+        print(f"  {'sync':25s} {a:40s} {desc}")
+        print("  示例: sync                  # 全量同步摘要")
+        print("  示例: sync --json           # 全量同步 JSON 输出")
+        print("  示例: sync 20010366         # 单账号同步")
         print("\nL0 执行器:")
         _, a, desc = COMMANDS["l0"]
         print(f"  {'l0':25s} {a:40s} {desc}")

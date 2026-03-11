@@ -228,3 +228,68 @@ class Account(BaseModel):
                 )
 
         return cls(**data)
+
+    @classmethod
+    def from_sync_info(cls, info: dict, group_id: int = 0) -> Account:
+        """从 GameAPIClient.get_player_info() 返回的扁平 dict 构建 Account
+
+        get_player_info 返回的结构:
+            {uid, pos, name, city_level, lord_level, alliance_id,
+             vip_level, alliance_name, status, dead, level,
+             soldiers: [{id, value}], heroes: [{id, lv, ...}], buffs: [{id, buff_num}]}
+
+        相比 from_server_modules，此方法更简洁，适用于批量同步场景。
+        """
+        data: dict = {
+            "uid": info["uid"],
+            "group_id": group_id,
+        }
+
+        if "pos" in info:
+            data["city_pos"] = info["pos"]
+        if "name" in info:
+            data["name"] = info["name"]
+        if "city_level" in info:
+            data["city_level"] = info["city_level"]
+        if "lord_level" in info:
+            data["lord_level"] = info["lord_level"]
+        if "alliance_id" in info:
+            data["alliance_id"] = info["alliance_id"]
+        if "alliance_name" in info:
+            data["alliance_name"] = info["alliance_name"]
+        if "vip_level" in info:
+            data["vip_level"] = info["vip_level"]
+        if "status" in info:
+            data["status"] = info["status"]
+        if "dead" in info:
+            data["dead"] = info["dead"]
+
+        if "soldiers" in info:
+            data["soldiers"] = [
+                Soldier(id=s["id"], value=s["value"])
+                for s in info["soldiers"]
+            ]
+
+        if "heroes" in info:
+            data["heroes"] = [
+                Hero(
+                    id=h["id"],
+                    lv=h.get("lv", 0),
+                    real_lv=h.get("real_lv", 0),
+                    state=h.get("state", 0),
+                    skill_lv=h.get("skill_lv", []),
+                    slg_skill_lv=h.get("slg_skill_lv", []),
+                    stage=h.get("stage", 0),
+                    exp=h.get("exp", 0),
+                    exclusive_equip_lv=h.get("exclusive_equip_lv", 0),
+                )
+                for h in info["heroes"]
+            ]
+
+        if "buffs" in info:
+            data["buffs"] = [
+                Buff(id=b["id"], buff_num=b["buff_num"])
+                for b in info["buffs"]
+            ]
+
+        return cls(**data)

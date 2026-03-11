@@ -377,33 +377,47 @@ def handle_change_troop(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_get_map_brief_obj(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
-    """处理地图缩略信息查询"""
+    """处理地图缩略信息查询
+
+    输出格式与真实服务器一致:
+      data item name = "svr_map_brief_objs"
+      data = {"briefList": [{uniqueId, objBasic: {type, pos, uid, aid, ...}}, ...]}
+    """
     buildings = MOCK_DATA.get("buildings", {})
     players = MOCK_DATA.get("players", {})
 
-    objs = []
-    # 添加玩家城市
+    brief_list = []
+    # 添加玩家城市 (type=2)
     for pid, pdata in players.items():
         pos = encode_pos(pdata["x"], pdata["y"])
-        objs.append({
+        brief_list.append({
             "uniqueId": f"2_{pid}_1",
-            "type": 2,
-            "pos": str(pos),
-            "name": pdata.get("name", ""),
-            "alliance": pdata.get("alliance", ""),
+            "objBasic": {
+                "type": 2,
+                "pos": str(pos),
+                "uid": str(pid),
+                "aid": str(pdata.get("alliance_id", 0)),
+                "sid": 1,
+            },
         })
     # 添加建筑
     for bid, bdata in buildings.items():
         pos = encode_pos(bdata["x"], bdata["y"])
-        objs.append({
+        brief_list.append({
             "uniqueId": bid,
-            "type": bdata.get("type", 13),
-            "pos": str(pos),
-            "name": bdata.get("name", ""),
-            "owner_uid": bdata.get("owner_uid", 0),
+            "objBasic": {
+                "type": bdata.get("type", 27),
+                "pos": str(pos),
+                "key": bdata.get("id", 0),
+                "aid": str(bdata.get("alliance_id", 0)),
+                "alName": bdata.get("owner_alliance", ""),
+                "sid": 1,
+                "status": bdata.get("status", 0),
+                "fightFlag": bdata.get("fight_flag", 0),
+            },
         })
 
-    data_items = [_data_item("svr_map_brief", {"objs": objs})]
+    data_items = [_data_item("svr_map_brief_objs", {"briefList": brief_list})]
     return _ok_response(data_items)
 
 

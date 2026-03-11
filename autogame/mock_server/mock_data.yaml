@@ -87,25 +87,70 @@ players:
     troops: []
     reinforcements: []
 
-# 地图建筑/据点
+  # 敌方玩家（不同 alliance_id，用于验证敌我区分）
+  30001001:
+    x: 200
+    y: 800
+    name: "EnemyPlayer1"
+    power: 4500000
+    alliance: "ENM"
+    alliance_id: 200
+    city_level: 25
+    lord_level: 58
+    vip_level: 5
+    gem: 80000
+    soldiers:
+      - {id: 101, value: 45000}
+      - {id: 201, value: 30000}
+      - {id: 204, value: 90000}
+    heroes:
+      - {id: 21, lv: 58, state: 0, skill_lv: [5, 5, 5]}
+    buffs: []
+    troops: []
+    reinforcements: []
+
+  30001002:
+    x: 800
+    y: 200
+    name: "EnemyPlayer2"
+    power: 3800000
+    alliance: "ENM"
+    alliance_id: 200
+    city_level: 23
+    lord_level: 55
+    vip_level: 4
+    gem: 60000
+    soldiers:
+      - {id: 101, value: 38000}
+      - {id: 201, value: 25000}
+      - {id: 204, value: 75000}
+    heroes:
+      - {id: 21, lv: 55, state: 0, skill_lv: [4, 4, 4]}
+    buffs: []
+    troops: []
+    reinforcements: []
+
+# 地图建筑/据点 (type=27 为 MapObjectType.NODE)
 buildings:
-  "13_1001_1":
-    type: 13
+  "27_1001_1":
+    type: 27
     id: 1001
     x: 300
     y: 300
     name: "据点Alpha"
     owner_uid: 0
+    alliance_id: 0
     owner_alliance: ""
     garrison: []
 
-  "13_1002_1":
-    type: 13
+  "27_1002_1":
+    type: 27
     id: 1002
     x: 700
     y: 700
     name: "据点Beta"
     owner_uid: 20001946
+    alliance_id: 100
     owner_alliance: "TST"
     garrison: []
 
