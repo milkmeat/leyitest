@@ -26,6 +26,14 @@ from src.executor.game_api import GameAPIClient
 from src.executor.l0_executor import L0Executor
 from src.perception.data_sync import DataSyncer
 
+# 条件导入 — llm_client 可选
+try:
+    from src.ai.llm_client import LLMClient
+    from src.ai.l1_leader import L1Coordinator
+except ImportError:
+    LLMClient = None  # type: ignore[misc,assignment]
+    L1Coordinator = None  # type: ignore[misc,assignment]
+
 
 @dataclass
 class LoopStats:
@@ -49,7 +57,7 @@ class LoopStats:
 class AIController:
     """主循环控制器 — 串联 Sync → L2 → L1 → Action → Sleep"""
 
-    def __init__(self, config: AppConfig, client: GameAPIClient):
+    def __init__(self, config: AppConfig, client: GameAPIClient, llm_client=None):
         self.config = config
         self.client = client
         self.syncer = DataSyncer(client, config)
@@ -57,6 +65,11 @@ class AIController:
         self.interval = config.system.loop.interval_seconds
         self.log_dir = config.system.logging.dir
         self._stop = False
+
+        # L1 协调器（可选 — 传入 llm_client 时启用 AI 决策）
+        self.l1_coordinator = None
+        if llm_client is not None and L1Coordinator is not None:
+            self.l1_coordinator = L1Coordinator(config, llm_client)
 
     async def run(self, max_rounds: int = 0):
         """启动主循环
@@ -154,16 +167,19 @@ class AIController:
         stats.l2_time = round(time.monotonic() - t0, 2)
         print(f"[L2]     stub — 跳过 ({stats.l2_time:.2f}s)")
 
-        # ── Phase 3: L1 (stub) ──
+        # ── Phase 3: L1 ──
         t0 = time.monotonic()
         instructions: list[Any] = []
         try:
-            # TODO: 接入 L1Leader (10 个并行)
-            instructions = []
+            if self.l1_coordinator and snapshot:
+                instructions = await self.l1_coordinator.decide_all(snapshot, l2_orders={})
         except Exception as e:
             stats.phase_errors.append(f"l1: {e}")
         stats.l1_time = round(time.monotonic() - t0, 2)
-        print(f"[L1]     stub — 跳过 ({stats.l1_time:.2f}s)")
+        if self.l1_coordinator:
+            print(f"[L1]     {len(instructions)} 条指令 ({stats.l1_time:.2f}s)")
+        else:
+            print(f"[L1]     跳过 (无 LLM) ({stats.l1_time:.2f}s)")
 
         # ── Phase 4: Action ──
         t0 = time.monotonic()

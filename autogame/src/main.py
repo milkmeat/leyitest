@@ -56,6 +56,7 @@ L0 执行器（AI 指令调试）:
 
 import asyncio
 import json as _json
+import logging
 import os
 import sys
 
@@ -455,6 +456,165 @@ async def cmd_add_resource(uid_str: str, *extra: str, env: str = None):
 
 
 # ---------------------------------------------------------------------------
+# L1 决策命令
+# ---------------------------------------------------------------------------
+
+
+async def cmd_l1_decide(*args: str, env: str = None):
+    """单小队 L1 决策调试"""
+    from src.executor.game_api import GameAPIClient
+    from src.config.loader import load_all
+    from src.perception.data_sync import DataSyncer
+    from src.ai.llm_client import LLMClient
+    from src.ai.l1_leader import L1Leader
+
+    remaining = [a for a in args if a not in ("--json", "--dry-run")]
+    json_mode = "--json" in args
+    dry_run = "--dry-run" in args
+
+    if not remaining:
+        print("用法: l1_decide <squad_id> [--dry-run] [--json]", file=sys.stderr)
+        sys.exit(1)
+
+    squad_id = int(remaining[0])
+    config = load_all("config")
+
+    # 查找小队
+    squad = None
+    for sq in config.squads.squads:
+        if sq.squad_id == squad_id:
+            squad = sq
+            break
+    if squad is None:
+        print(f"[FAIL] 未找到 squad_id={squad_id}", file=sys.stderr)
+        available = [sq.squad_id for sq in config.squads.squads]
+        print(f"  可用: {available}", file=sys.stderr)
+        sys.exit(1)
+
+    # 创建 LLM 客户端
+    try:
+        llm = LLMClient(config.system.llm, dry_run=dry_run)
+    except (ValueError, ImportError) as e:
+        print(f"[FAIL] LLM 初始化失败: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    client = GameAPIClient(env=env)
+    syncer = DataSyncer(client, config)
+    try:
+        # 同步数据
+        snapshot = await syncer.sync(loop_id=0)
+        print(f"同步完成: {len(snapshot.accounts)} 账号, "
+              f"{len(snapshot.enemies)} 敌方, {len(snapshot.buildings)} 建筑")
+
+        # L1 决策
+        leader = L1Leader(config, llm, squad)
+        instructions = await leader.decide(snapshot)
+
+        print(f"\n小队 {squad_id} ({squad.name}) 生成 {len(instructions)} 条指令:")
+
+        if json_mode:
+            _print_json([i.model_dump(mode="json") for i in instructions])
+        else:
+            for i, instr in enumerate(instructions):
+                print(f"  [{i+1}] {instr.action.value} uid={instr.uid}", end="")
+                if instr.target_x or instr.target_y:
+                    print(f" → ({instr.target_x},{instr.target_y})", end="")
+                if instr.target_uid:
+                    print(f" target={instr.target_uid}", end="")
+                if instr.building_id:
+                    print(f" building={instr.building_id}", end="")
+                if instr.reason:
+                    print(f" ({instr.reason})", end="")
+                print()
+    finally:
+        await llm.close()
+        await client.close()
+
+
+# ---------------------------------------------------------------------------
+# L1 视图命令
+# ---------------------------------------------------------------------------
+
+
+async def cmd_l1_view(*args: str, env: str = None):
+    """构建并显示 L1 小队局部视图"""
+    from src.executor.game_api import GameAPIClient
+    from src.config.loader import load_all
+    from src.perception.data_sync import DataSyncer
+    from src.perception.l1_view import L1ViewBuilder
+
+    remaining = [a for a in args if a not in ("--json",)]
+    json_mode = "--json" in args
+
+    if not remaining:
+        print("用法: l1_view <squad_id> [--json]", file=sys.stderr)
+        sys.exit(1)
+
+    squad_id = int(remaining[0])
+    config = load_all("config")
+
+    # 查找小队
+    squad = None
+    for sq in config.squads.squads:
+        if sq.squad_id == squad_id:
+            squad = sq
+            break
+    if squad is None:
+        print(f"[FAIL] 未找到 squad_id={squad_id}", file=sys.stderr)
+        available = [sq.squad_id for sq in config.squads.squads]
+        print(f"  可用: {available}", file=sys.stderr)
+        sys.exit(1)
+
+    client = GameAPIClient(env=env)
+    syncer = DataSyncer(client, config)
+    try:
+        snapshot = await syncer.sync(loop_id=0)
+        builder = L1ViewBuilder(config)
+        view = builder.build(snapshot, squad)
+
+        if json_mode:
+            _print_json(view.model_dump(mode="json"))
+        else:
+            text = builder.format_text(view)
+            print(text)
+    finally:
+        await client.close()
+
+
+# ---------------------------------------------------------------------------
+# LLM 命令
+# ---------------------------------------------------------------------------
+
+
+async def cmd_llm_test(*args: str, env: str = None):
+    """测试 LLM 连通性"""
+    from src.config.loader import load_all
+    from src.ai.llm_client import LLMClient
+
+    config = load_all("config")
+    dry_run = "--dry-run" in args
+
+    try:
+        client = LLMClient(config.system.llm, dry_run=dry_run)
+    except (ValueError, ImportError) as e:
+        print(f"[FAIL] LLM 初始化失败: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        result = await client.chat_json(
+            system_prompt="你是一个测试助手。请用 JSON 格式回答。",
+            user_prompt='回答 {"status": "ok", "message": "连接成功"}',
+        )
+        print(f"[OK] LLM 响应:")
+        _print_json(result)
+    except Exception as e:
+        print(f"[FAIL] LLM 调用失败: {e}", file=sys.stderr)
+        sys.exit(1)
+    finally:
+        await client.close()
+
+
+# ---------------------------------------------------------------------------
 # 主循环命令
 # ---------------------------------------------------------------------------
 
@@ -469,12 +629,15 @@ async def cmd_run(*args: str, env: str = None):
 
     # 解析参数
     max_rounds = 0
+    dry_run = "--dry-run" in args
     remaining = list(args)
     i = 0
     while i < len(remaining):
         arg = remaining[i]
         if arg == "--once":
             max_rounds = 1
+        elif arg == "--dry-run":
+            pass  # 已处理
         elif arg == "--rounds" and i + 1 < len(remaining):
             max_rounds = int(remaining[i + 1])
             i += 1
@@ -483,11 +646,27 @@ async def cmd_run(*args: str, env: str = None):
             i += 1
         i += 1
 
+    # 创建 LLM 客户端（可选）
+    llm_client = None
+    if dry_run or config.system.llm.model:
+        try:
+            from src.ai.llm_client import LLMClient
+            llm_client = LLMClient(config.system.llm, dry_run=dry_run)
+        except (ValueError, ImportError) as e:
+            if dry_run:
+                # dry_run 时也可能因为 import 失败，但实际上不需要 API key
+                from src.ai.llm_client import LLMClient
+                llm_client = LLMClient(config.system.llm, dry_run=True)
+            else:
+                print(f"[warn] LLM 未启用: {e}", file=sys.stderr)
+
     client = GameAPIClient(env=env)
-    controller = AIController(config, client)
+    controller = AIController(config, client, llm_client=llm_client)
     try:
         await controller.run(max_rounds=max_rounds)
     finally:
+        if llm_client:
+            await llm_client.close()
         await client.close()
 
 
@@ -747,6 +926,11 @@ async def cmd_l0(*args: str, env: str = None):
 # ---------------------------------------------------------------------------
 
 COMMANDS = {
+    # L1
+    "l1_view":              (cmd_l1_view,               "<squad_id> [--json]",                    "L1 小队局部视图"),
+    "l1_decide":            (cmd_l1_decide,             "<squad_id> [--dry-run] [--json]",        "L1 单小队决策调试"),
+    # LLM
+    "llm_test":             (cmd_llm_test,              "[--dry-run]",                            "测试 LLM 连通性"),
     # 主循环
     "run":                  (cmd_run,                   "[--rounds N] [--once] [--loop.interval_seconds N]", "启动 AI 主循环"),
     # 查询
@@ -788,6 +972,23 @@ def main():
     if "--mock" in args:
         env = "mock"
         args.remove("--mock")
+
+    # 解析 --verbose / -v 参数，控制日志级别
+    log_level = logging.WARNING  # 默认只显示警告
+    if "--verbose" in args or "-v" in args:
+        log_level = logging.INFO
+        if "--verbose" in args:
+            args.remove("--verbose")
+        if "-v" in args:
+            args.remove("-v")
+    if "--debug" in args:
+        log_level = logging.DEBUG
+        args.remove("--debug")
+    logging.basicConfig(
+        level=log_level,
+        format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+        datefmt="%H:%M:%S",
+    )
 
     if len(args) < 1 or args[0] not in COMMANDS:
         print("用法: python src/main.py [--mock] <command> <args...>\n")

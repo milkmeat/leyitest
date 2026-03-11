@@ -5,9 +5,11 @@ loop:
   sync_timeout: 5               # Phase 1 数据同步超时 (秒)
 
 llm:
-  timeout_seconds: 30           # 单次 LLM 调用超时
+  timeout_seconds: 60           # 单次 LLM 调用超时
   max_retries: 1                # LLM 调用失败重试次数 (0=不重试)
-  model: ""                     # 模型名 (待定)
+  model: "glm-4.7"              # 智谱 GLM-4.7
+  base_url: "https://api.z.ai/api/coding/paas/v4"
+  api_key: "6bf14117ee8944db8da1f9e459932ca3.woLcpLDjyW64Yp6O"
 
 concurrency:
   max_api_concurrent: 20        # 游戏 API 最大并发请求数

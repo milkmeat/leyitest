@@ -143,6 +143,8 @@ class LLMConfig(BaseModel):
     timeout_seconds: int = 30
     max_retries: int = 1
     model: str = ""
+    base_url: str = "https://open.bigmodel.cn/api/paas/v4"
+    api_key: str = ""  # 空串时从 ZHIPU_API_KEY 环境变量读取
 
 
 class ConcurrencyConfig(BaseModel):
