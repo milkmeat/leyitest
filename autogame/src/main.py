@@ -3,6 +3,12 @@
 用法:
   python src/main.py [--mock] <command> <args...>
 
+主循环:
+  run                                           启动 AI 主循环（无限）
+  run --rounds 3                                跑 3 轮退出
+  run --once                                    等价 --rounds 1
+  run --loop.interval_seconds 0                 覆盖循环间隔（测试用）
+
 查询命令:
   get_player_pos <uid>                          查询玩家坐标
   get_player_info <uid>                         查询玩家完整信息
@@ -449,6 +455,43 @@ async def cmd_add_resource(uid_str: str, *extra: str, env: str = None):
 
 
 # ---------------------------------------------------------------------------
+# 主循环命令
+# ---------------------------------------------------------------------------
+
+
+async def cmd_run(*args: str, env: str = None):
+    """启动 AI 主循环"""
+    from src.executor.game_api import GameAPIClient
+    from src.config.loader import load_all
+    from src.controller.loop import AIController
+
+    config = load_all("config")
+
+    # 解析参数
+    max_rounds = 0
+    remaining = list(args)
+    i = 0
+    while i < len(remaining):
+        arg = remaining[i]
+        if arg == "--once":
+            max_rounds = 1
+        elif arg == "--rounds" and i + 1 < len(remaining):
+            max_rounds = int(remaining[i + 1])
+            i += 1
+        elif arg.startswith("--loop.interval_seconds") and i + 1 < len(remaining):
+            config.system.loop.interval_seconds = int(remaining[i + 1])
+            i += 1
+        i += 1
+
+    client = GameAPIClient(env=env)
+    controller = AIController(config, client)
+    try:
+        await controller.run(max_rounds=max_rounds)
+    finally:
+        await client.close()
+
+
+# ---------------------------------------------------------------------------
 # 数据同步命令
 # ---------------------------------------------------------------------------
 
@@ -704,6 +747,8 @@ async def cmd_l0(*args: str, env: str = None):
 # ---------------------------------------------------------------------------
 
 COMMANDS = {
+    # 主循环
+    "run":                  (cmd_run,                   "[--rounds N] [--once] [--loop.interval_seconds N]", "启动 AI 主循环"),
     # 查询
     "get_player_pos":       (cmd_get_player_pos,       "<uid>",                              "查询玩家坐标"),
     "get_player_info":      (cmd_get_player_info,      "<uid>",                              "查询玩家完整信息"),
@@ -746,7 +791,11 @@ def main():
 
     if len(args) < 1 or args[0] not in COMMANDS:
         print("用法: python src/main.py [--mock] <command> <args...>\n")
-        print("查询命令:")
+        print("主循环:")
+        _, a, desc = COMMANDS["run"]
+        print(f"  {'run':25s} {a:40s} {desc}")
+        print("  示例: run --once --loop.interval_seconds 0")
+        print("\n查询命令:")
         for name in ["get_player_pos", "get_player_info", "get_all_player_data",
                       "get_map_overview", "get_map_detail", "get_battle_report"]:
             _, a, desc = COMMANDS[name]
