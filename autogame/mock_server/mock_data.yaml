@@ -45,6 +45,27 @@ players:
     troops: []
     reinforcements: []
 
+  20010373:
+    x: 600
+    y: 400
+    name: "TestAccount_B"
+    power: 3500000
+    alliance: "TST"
+    alliance_id: 100
+    city_level: 25
+    lord_level: 58
+    vip_level: 4
+    gem: 50000
+    soldiers:
+      - {id: 101, value: 35000}   # infantry
+      - {id: 201, value: 22000}   # cavalry
+      - {id: 204, value: 70000}   # archer
+    heroes:
+      - {id: 21, lv: 50, state: 0, skill_lv: [4, 4, 4]}
+    buffs: []
+    troops: []
+    reinforcements: []
+
   20001947:
     x: 500
     y: 600

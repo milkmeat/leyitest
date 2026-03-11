@@ -13,7 +13,7 @@
 
 行动命令:
   move_city <uid> <x> <y>                       移城到指定坐标
-  attack_player <uid> <target_uid> <x> <y>      攻击玩家
+  attack_player <uid> <target_uid> <x> <y> [soldier_id count]  攻击玩家
   attack_building <uid> <building_id> <x> <y>   攻击建筑
   reinforce_building <uid> <building_id> <x> <y> 驻防建筑
   scout_player <uid> <target_uid> <x> <y>       侦察玩家
@@ -182,14 +182,29 @@ async def cmd_move_city(uid_str: str, x_str: str, y_str: str, env: str = None):
         await client.close()
 
 
-async def cmd_attack_player(uid_str: str, target_uid_str: str, x_str: str, y_str: str, env: str = None):
+async def cmd_attack_player(uid_str: str, target_uid_str: str, x_str: str, y_str: str, *extra: str, env: str = None):
     from src.executor.game_api import GameAPIClient
     client = GameAPIClient(env=env)
     try:
         uid = int(uid_str)
         target_uid = int(target_uid_str)
         x, y = int(x_str), int(y_str)
-        resp = await client.attack_player(uid, target_uid, x, y)
+        # 可选参数: soldier_id count (指定出征兵种和数量)
+        march_info = None
+        if len(extra) >= 2:
+            soldier_id = extra[0]
+            soldier_count = int(extra[1])
+            march_info = {
+                "hero": {"vice": {}},
+                "over_defend": False,
+                "leader": 1,
+                "soldier_total_num": soldier_count,
+                "heros": {},
+                "queue_id": 6001,
+                "soldier": {soldier_id: soldier_count},
+                "carry_lord": 1,
+            }
+        resp = await client.attack_player(uid, target_uid, x, y, march_info=march_info)
         code = _print_ret_code(resp)
         if code == 0:
             print(f"部队已出发攻击 uid={target_uid} @ ({x},{y})")
@@ -610,7 +625,7 @@ COMMANDS = {
     "get_battle_report":    (cmd_get_battle_report,     "<uid> <report_id>",                  "查询战报"),
     # 行动
     "move_city":            (cmd_move_city,             "<uid> <x> <y>",                      "移城到指定坐标"),
-    "attack_player":        (cmd_attack_player,         "<uid> <target_uid> <x> <y>",         "攻击玩家"),
+    "attack_player":        (cmd_attack_player,         "<uid> <target_uid> <x> <y> [soldier_id count]", "攻击玩家"),
     "attack_building":      (cmd_attack_building,       "<uid> <building_id> <x> <y>",        "攻击建筑"),
     "reinforce_building":   (cmd_reinforce_building,    "<uid> <building_id> <x> <y>",        "驻防建筑"),
     "scout_player":         (cmd_scout_player,          "<uid> <target_uid> <x> <y>",         "侦察玩家"),
