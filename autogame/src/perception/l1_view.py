@@ -45,7 +45,7 @@ class MemberView(BaseModel):
     power: int = 0
     total_soldiers: int = 0
     troops: list[TroopView] = Field(default_factory=list)
-    idle_troop_count: int = 0    # 空闲部队数
+    dispatch_slots: int = 0      # 可用出征槽位（最多2）
 
 
 class NearbyEnemy(BaseModel):
@@ -176,7 +176,7 @@ class L1ViewBuilder:
                 f"- uid={m.uid} {m.name} "
                 f"城({m.city_pos[0]},{m.city_pos[1]}) "
                 f"战力={m.power} 兵力={m.total_soldiers} "
-                f"空闲部队={m.idle_troop_count}"
+                f"出征槽位={m.dispatch_slots}"
             )
             for t in m.troops:
                 lines.append(
@@ -236,9 +236,9 @@ class L1ViewBuilder:
             )
             troops.append(tv)
 
-        # 账号有 3 个部队槽位，在外部队之外的都算空闲
+        # 账号最多向城外派出 2 支部队，在外部队之外的都算空闲槽位
         busy_count = len([t for t in acct.troops if t.state != TroopState.IDLE])
-        idle_count = max(0, 3 - busy_count)
+        idle_count = max(0, 2 - busy_count)
 
         total_soldiers = sum(s.value for s in acct.soldiers)
 
@@ -249,7 +249,7 @@ class L1ViewBuilder:
             power=acct.power,
             total_soldiers=total_soldiers,
             troops=troops,
-            idle_troop_count=idle_count,
+            dispatch_slots=idle_count,
         )
 
     def _build_nearby_enemies(
