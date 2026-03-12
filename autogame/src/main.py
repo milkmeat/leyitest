@@ -294,8 +294,8 @@ async def cmd_scout_player(uid_str: str, target_uid_str: str, x_str: str, y_str:
 
 
 async def cmd_create_rally(uid_str: str, target_uid_str: str, x_str: str, y_str: str, *extra: str, env: str = None):
+    import time as _time
     from src.executor.game_api import GameAPIClient
-    from src.utils.coords import encode_pos
     client = GameAPIClient(env=env)
     try:
         uid = int(uid_str)
@@ -308,17 +308,24 @@ async def cmd_create_rally(uid_str: str, target_uid_str: str, x_str: str, y_str:
             soldier_id = extra[0]
             soldier_count = int(extra[1])
             march_info = {
+                "hero": {"vice": []},
+                "over_defend": False,
+                "leader": 1,
+                "soldier_total_num": soldier_count,
+                "heros": {},
+                "queue_id": 6001,
                 "soldier": {soldier_id: soldier_count},
-                "hero": {},
+                "carry_lord": 1,
             }
             if len(extra) >= 3:
                 prepare_time = int(extra[2])
         elif len(extra) == 1:
             prepare_time = int(extra[0])
-        pos = str(encode_pos(x, y))
         target_id = f"2_{target_uid}_1"
-        target_info = {"id": target_id, "pos": pos}
-        resp = await client.create_rally(uid, target_info, march_info, prepare_time)
+        target_info = {"id": target_id}
+        timestamp = str(int(_time.time() * 1_000_000))
+        resp = await client.create_rally(uid, target_info, march_info, prepare_time,
+                                         timestamp=timestamp)
         code = _print_ret_code(resp)
         if code == 0:
             print(f"集结已发起 target_uid={target_uid} @ ({x},{y}) 准备时间={prepare_time}s")
@@ -327,25 +334,35 @@ async def cmd_create_rally(uid_str: str, target_uid_str: str, x_str: str, y_str:
         await client.close()
 
 
-async def cmd_join_rally(uid_str: str, rally_id: str, *extra: str, env: str = None):
+async def cmd_join_rally(uid_str: str, rally_id: str, rally_x_str: str, rally_y_str: str, *extra: str, env: str = None):
+    """加入集结: join_rally <uid> <rally_id> <rally_x> <rally_y> [soldier_id count]"""
     from src.executor.game_api import GameAPIClient
+    from src.utils.coords import encode_pos
     client = GameAPIClient(env=env)
     try:
         uid = int(uid_str)
-        target_info = {"id": rally_id}
+        rally_x, rally_y = int(rally_x_str), int(rally_y_str)
+        rally_pos = encode_pos(rally_x, rally_y)
+        target_info = {"id": rally_id, "pos": rally_pos}
         # 可选参数: soldier_id count
         march_info = {}
         if len(extra) >= 2:
             soldier_id = extra[0]
             soldier_count = int(extra[1])
             march_info = {
+                "hero": {"vice": []},
+                "over_defend": False,
+                "leader": 0,
+                "soldier_total_num": soldier_count,
+                "heros": {},
+                "queue_id": 6001,
                 "soldier": {soldier_id: soldier_count},
-                "hero": {},
+                "carry_lord": 1,
             }
         resp = await client.join_rally(uid, target_info, march_info)
         code = _print_ret_code(resp)
         if code == 0:
-            print(f"已加入集结 {rally_id}")
+            print(f"已加入集结 {rally_id} @ ({rally_x},{rally_y})")
         _print_json(resp)
     finally:
         await client.close()

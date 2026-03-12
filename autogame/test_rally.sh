@@ -13,13 +13,13 @@ set -uo pipefail
 cd "$(dirname "$0")"
 
 # ── 配置 ────────────────────────────────────────────────
-UID_A1=20010413   # 队长
-UID_A2=20010414
-UID_A3=20010415
-UID_A4=20010416
-UID_A5=20010417
+UID_A1=20010643   # 队长 (acc_01, Squad1 Alpha leader)
+UID_A2=20010644   # acc_02
+UID_A3=20010645   # acc_03
+UID_A4=20010646   # acc_04
+UID_A5=20010647   # acc_05
 UID_A_ALL=($UID_A1 $UID_A2 $UID_A3 $UID_A4 $UID_A5)
-UID_B=20010373
+UID_B=20010668    # enemy_01 (PhoenixRise2026)
 
 CMD="python src/main.py"
 ENV_FLAG=""
@@ -178,11 +178,11 @@ B_MOVE_OK=false
 B_TARGET_X=0
 B_TARGET_Y=0
 for attempt in 1 2 3 4 5; do
-    B_TARGET_X=$(rand_range 100 700)
-    B_TARGET_Y=$(rand_range 100 700)
-    echo "  尝试 #$attempt: l0 MOVE_CITY $UID_B $B_TARGET_X $B_TARGET_Y"
-    B_MOVE_OUTPUT=$(cli_verbose l0 MOVE_CITY $UID_B $B_TARGET_X $B_TARGET_Y)
-    if echo "$B_MOVE_OUTPUT" | grep -q "\[OK\]"; then
+    B_TARGET_X=$(rand_range 100 1100)
+    B_TARGET_Y=$(rand_range 100 1100)
+    echo "  尝试 #$attempt: move_city $UID_B $B_TARGET_X $B_TARGET_Y"
+    B_MOVE_OUTPUT=$(cli_verbose move_city $UID_B $B_TARGET_X $B_TARGET_Y)
+    if echo "$B_MOVE_OUTPUT" | grep -q "移城成功\|\[OK\]"; then
         B_MOVE_OK=true
         echo "  成功!"
         break
@@ -257,13 +257,13 @@ for uid in "${UID_A_ALL[@]}"; do
         ((offset_idx++))
 
         # 边界检查
-        if [ $A_TARGET_X -lt 1 ] || [ $A_TARGET_X -gt 998 ] || [ $A_TARGET_Y -lt 1 ] || [ $A_TARGET_Y -gt 998 ]; then
+        if [ $A_TARGET_X -lt 1 ] || [ $A_TARGET_X -gt 1198 ] || [ $A_TARGET_Y -lt 1 ] || [ $A_TARGET_Y -gt 1198 ]; then
             continue
         fi
 
-        echo "  尝试: l0 MOVE_CITY $uid $A_TARGET_X $A_TARGET_Y (偏移=$dx,$dy)"
-        A_MOVE_OUTPUT=$(cli_verbose l0 MOVE_CITY $uid $A_TARGET_X $A_TARGET_Y)
-        if echo "$A_MOVE_OUTPUT" | grep -q "\[OK\]"; then
+        echo "  尝试: move_city $uid $A_TARGET_X $A_TARGET_Y (偏移=$dx,$dy)"
+        A_MOVE_OUTPUT=$(cli_verbose move_city $uid $A_TARGET_X $A_TARGET_Y)
+        if echo "$A_MOVE_OUTPUT" | grep -q "移城成功\|\[OK\]"; then
             A_MOVE_OK=true
             echo "  成功!"
             break
@@ -309,21 +309,52 @@ RALLY_OUTPUT=$(cli_verbose create_rally $UID_A1 $UID_B $B_ACTUAL_X $B_ACTUAL_Y $
 echo "  输出: $(echo "$RALLY_OUTPUT" | head -5)"
 check_success "A1 发起集结命令执行" "$RALLY_OUTPUT"
 
-# 从 JSON 输出中提取 rally_id (可能在转义的 JSON 字符串中)
+# 从 JSON 输出中提取 rally_id 和 rally 坐标
+# 方式1: mock server 直接在 response 中返回 rally_id
 RALLY_ID=$(echo "$RALLY_OUTPUT" | grep -oP '"rally_id"\s*:\s*"\K[^"]+' | head -1)
 if [ -z "$RALLY_ID" ]; then
-    # 转义格式: \"rally_id\": \"rally_xxx\"
-    RALLY_ID=$(echo "$RALLY_OUTPUT" | grep -oP '\\?"rally_id\\?"\s*:\s*\\?"(\K[^"\\]+)' | head -1)
-fi
-if [ -z "$RALLY_ID" ]; then
-    # 最宽松匹配: rally_UID_TIMESTAMP 模式
     RALLY_ID=$(echo "$RALLY_OUTPUT" | grep -oP 'rally_\d+_\d+' | head -1)
+fi
+# 方式2: test server — 从 svr_user_objs_inc 中提取 type=107 的 uniqueId 和 pos
+if [ -z "$RALLY_ID" ]; then
+    # 107_xxx_1 格式的 uniqueId 就是 rally_id
+    RALLY_ID=$(echo "$RALLY_OUTPUT" | grep -oP '"uniqueId":"107_[0-9]+_1"' | head -1 | grep -oP '107_[0-9]+_1')
+    if [ -n "$RALLY_ID" ]; then
+        echo "  从响应 svr_user_objs_inc 中找到 rally_id: $RALLY_ID"
+    fi
+fi
+# 方式3: fallback — 查询玩家 march 数据
+if [ -z "$RALLY_ID" ]; then
+    echo "  response 中无 rally_id，从玩家数据查询..."
+    PLAYER_DATA=$(cli get_all_player_data $UID_A1)
+    RALLY_ID=$(echo "$PLAYER_DATA" | grep -B5 '"marchType": 13' | grep -oP '"uniqueId": "\K[^"]+' | head -1)
+    if [ -n "$RALLY_ID" ]; then
+        echo "  从玩家 march 数据中找到 rally_id: $RALLY_ID"
+    fi
+fi
+
+# 提取 rally 坐标 (从 type=107 对象的 pos 字段，格式如 "50700050100")
+RALLY_POS_RAW=$(echo "$RALLY_OUTPUT" | grep -oP '"type":107[^}]*"pos":"?\K[0-9]+' | head -1)
+if [ -z "$RALLY_POS_RAW" ]; then
+    # fallback: 从 initTarPos 或 target.pos 中提取
+    RALLY_POS_RAW=$(echo "$RALLY_OUTPUT" | grep -oP '"initTarPos":"?\K[0-9]+' | head -1)
+fi
+if [ -n "$RALLY_POS_RAW" ]; then
+    # 解码坐标: pos = x * 100_000_000 + y * 100 → x = pos / 100_000_000, y = (pos % 100_000_000) / 100
+    RALLY_X=$((RALLY_POS_RAW / 100000000))
+    RALLY_Y=$(( (RALLY_POS_RAW % 100000000) / 100 ))
+    echo "  rally 坐标: ($RALLY_X,$RALLY_Y) (raw=$RALLY_POS_RAW)"
+else
+    # 如果无法提取坐标，用 B 的坐标作为近似值
+    RALLY_X=$B_ACTUAL_X
+    RALLY_Y=$B_ACTUAL_Y
+    echo "  无法提取 rally 坐标，使用 B 的坐标作为近似: ($RALLY_X,$RALLY_Y)"
 fi
 
 if [ -n "$RALLY_ID" ]; then
-    printf "  [\033[32mPASS\033[0m] 获取 rally_id: %s\n" "$RALLY_ID"
+    printf "  [\033[32mPASS\033[0m] 获取 rally_id: %s @ (%s,%s)\n" "$RALLY_ID" "$RALLY_X" "$RALLY_Y"
     ((PASS++))
-    RESULTS+=("PASS|获取 rally_id|$RALLY_ID")
+    RESULTS+=("PASS|获取 rally_id|$RALLY_ID @ ($RALLY_X,$RALLY_Y)")
 else
     printf "  [\033[31mFAIL\033[0m] 未能从响应中提取 rally_id\n"
     ((FAIL++))
@@ -347,8 +378,8 @@ if [ -z "$RALLY_ID" ]; then
     done
 else
     for uid in $UID_A2 $UID_A3 $UID_A4 $UID_A5; do
-        echo "  执行: join_rally $uid $RALLY_ID $SOLDIER_ID $RALLY_SOLDIER_COUNT"
-        JOIN_OUTPUT=$(cli_verbose join_rally $uid $RALLY_ID $SOLDIER_ID $RALLY_SOLDIER_COUNT)
+        echo "  执行: join_rally $uid $RALLY_ID $RALLY_X $RALLY_Y $SOLDIER_ID $RALLY_SOLDIER_COUNT"
+        JOIN_OUTPUT=$(cli_verbose join_rally $uid $RALLY_ID $RALLY_X $RALLY_Y $SOLDIER_ID $RALLY_SOLDIER_COUNT)
         echo "  输出: $(echo "$JOIN_OUTPUT" | head -3)"
         check_success "uid=$uid 加入集结" "$JOIN_OUTPUT"
     done

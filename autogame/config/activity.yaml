@@ -4,8 +4,8 @@
 duration_seconds: 7200          # 副本总时长: 2小时
 
 map:
-  width: 1000                   # 地图宽 (格)
-  height: 1000                  # 地图高 (格)
+  width: 1200                   # 地图宽 (格)
+  height: 1200                  # 地图高 (格)
 
 march:
   speed: 2                      # 行军速度: 2秒/格

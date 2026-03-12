@@ -16,7 +16,7 @@ environments:
 default_header:
   did: "self-system"
   sid: 1
-  aid: 0
+  aid: 20000118              # 联盟 TestSquad2026
   ksid: 1
   ava_id: 0
   castle_lv: 25
