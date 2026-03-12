@@ -80,6 +80,26 @@ def _get_player(uid: int) -> Dict[str, Any] | None:
     return MOCK_DATA.get("players", {}).get(uid)
 
 
+def _get_or_create_player(uid: int) -> Dict[str, Any]:
+    """获取玩家，不存在时自动创建（用于 GM 命令）"""
+    player = _get_player(uid)
+    if player is None:
+        import random
+        player = {
+            "name": f"player_{uid}",
+            "x": random.randint(100, 900),
+            "y": random.randint(100, 900),
+            "gem": 0,
+            "soldiers": [],
+            "troops": [],
+            "alliance_id": 0,
+            "city_level": 25,
+        }
+        MOCK_DATA.setdefault("players", {})[uid] = player
+        print(f"  [mock] auto-created player uid={uid} at ({player['x']},{player['y']})")
+    return player
+
+
 # ---------------------------------------------------------------------------
 # 命令处理器
 # ---------------------------------------------------------------------------
@@ -457,9 +477,7 @@ def handle_get_city_battle_report(uid: int, param: Dict[str, Any]) -> Dict[str, 
 
 def handle_op_self_set_gem(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
     """处理 GM 添加宝石"""
-    player = _get_player(uid)
-    if not player:
-        return _error_response(30001, f"player {uid} not found")
+    player = _get_or_create_player(uid)
 
     gem_num = param.get("gem_num", 116666)
     old_gem = player.get("gem", 0)
@@ -472,9 +490,7 @@ def handle_op_self_set_gem(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
 
 def handle_op_add_soldiers(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
     """处理 GM 添加士兵"""
-    player = _get_player(uid)
-    if not player:
-        return _error_response(30001, f"player {uid} not found")
+    player = _get_or_create_player(uid)
 
     soldier_id = param.get("soldier_id", 204)
     soldier_num = param.get("soldier_num", 1000000)
@@ -502,9 +518,7 @@ def handle_op_add_soldiers(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
 
 def handle_op_self_add_clear_resource(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
     """处理 GM 添加资源"""
-    player = _get_player(uid)
-    if not player:
-        return _error_response(30001, f"player {uid} not found")
+    player = _get_or_create_player(uid)
 
     op_type = param.get("op_type", 0)
     print(f"  [mock] add_resource uid={uid} op_type={op_type}")

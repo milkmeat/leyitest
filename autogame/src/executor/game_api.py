@@ -241,10 +241,12 @@ class GameAPIClient:
     async def create_rally(
         self, uid: int, target_info: Dict[str, Any],
         march_info: Dict[str, Any], prepare_time: int = 300,
+        target_type: int = 2,
     ) -> Dict[str, Any]:
         """发起集结"""
         return await self.send_cmd(
             "create_rally", uid,
+            target_type=target_type,
             target_info=target_info,
             march_info=march_info,
             prepare_time=prepare_time,

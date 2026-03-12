@@ -61,10 +61,12 @@ commands:
     cmd: "create_rally_war"
     default_param:
       march_type: 13          # 13=rally_attack（集结攻击）
-      target_type: 0          # 目标类型（2=城市, 13=城寨，视目标而定）
+      target_type: 2          # 目标类型（2=城市, 13=城寨，视目标而定）
       target_info: {}         # {"id": unique_id}
       march_info: {}          # 队长的部队信息
       prepare_time: 300       # 集结准备时长，默认300秒(5分钟)
+      recommand_troop: []     # 推荐兵种类型
+      timestamp: 0            # 用于发送联盟邀请(us)
     description: "队长发起集结，开始5分钟集结窗口期"
 
   # --- 加入集结 ---

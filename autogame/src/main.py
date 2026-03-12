@@ -293,30 +293,55 @@ async def cmd_scout_player(uid_str: str, target_uid_str: str, x_str: str, y_str:
         await client.close()
 
 
-async def cmd_create_rally(uid_str: str, target_id: str, *extra: str, env: str = None):
+async def cmd_create_rally(uid_str: str, target_uid_str: str, x_str: str, y_str: str, *extra: str, env: str = None):
     from src.executor.game_api import GameAPIClient
+    from src.utils.coords import encode_pos
     client = GameAPIClient(env=env)
     try:
         uid = int(uid_str)
-        prepare_time = int(extra[0]) if extra else 300
-        target_info = {"id": target_id}
+        target_uid = int(target_uid_str)
+        x, y = int(x_str), int(y_str)
+        # 可选参数: soldier_id count [prepare_time]
         march_info = {}
+        prepare_time = 300
+        if len(extra) >= 2:
+            soldier_id = extra[0]
+            soldier_count = int(extra[1])
+            march_info = {
+                "soldier": {soldier_id: soldier_count},
+                "hero": {},
+            }
+            if len(extra) >= 3:
+                prepare_time = int(extra[2])
+        elif len(extra) == 1:
+            prepare_time = int(extra[0])
+        pos = str(encode_pos(x, y))
+        target_id = f"2_{target_uid}_1"
+        target_info = {"id": target_id, "pos": pos}
         resp = await client.create_rally(uid, target_info, march_info, prepare_time)
         code = _print_ret_code(resp)
         if code == 0:
-            print(f"集结已发起 target={target_id} 准备时间={prepare_time}s")
+            print(f"集结已发起 target_uid={target_uid} @ ({x},{y}) 准备时间={prepare_time}s")
         _print_json(resp)
     finally:
         await client.close()
 
 
-async def cmd_join_rally(uid_str: str, rally_id: str, env: str = None):
+async def cmd_join_rally(uid_str: str, rally_id: str, *extra: str, env: str = None):
     from src.executor.game_api import GameAPIClient
     client = GameAPIClient(env=env)
     try:
         uid = int(uid_str)
         target_info = {"id": rally_id}
+        # 可选参数: soldier_id count
         march_info = {}
+        if len(extra) >= 2:
+            soldier_id = extra[0]
+            soldier_count = int(extra[1])
+            march_info = {
+                "soldier": {soldier_id: soldier_count},
+                "hero": {},
+            }
         resp = await client.join_rally(uid, target_info, march_info)
         code = _print_ret_code(resp)
         if code == 0:
@@ -971,8 +996,8 @@ COMMANDS = {
     "attack_building":      (cmd_attack_building,       "<uid> <building_id> <x> <y>",        "攻击建筑"),
     "reinforce_building":   (cmd_reinforce_building,    "<uid> <building_id> <x> <y>",        "驻防建筑"),
     "scout_player":         (cmd_scout_player,          "<uid> <target_uid> <x> <y>",         "侦察玩家"),
-    "create_rally":         (cmd_create_rally,          "<uid> <target_id> [prepare_time]",   "发起集结"),
-    "join_rally":           (cmd_join_rally,            "<uid> <rally_id>",                   "加入集结"),
+    "create_rally":         (cmd_create_rally,          "<uid> <target_uid> <x> <y> [soldier_id count] [prepare_time]", "发起集结"),
+    "join_rally":           (cmd_join_rally,            "<uid> <rally_id> [soldier_id count]", "加入集结"),
     "recall_troop":         (cmd_recall_troop,          "<uid> <troop_id...>",                "召回行军部队"),
     "recall_reinforce":     (cmd_recall_reinforce,      "<uid> <unique_id>",                  "召回增援/集结"),
     # 简化查询
