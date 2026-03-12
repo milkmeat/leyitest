@@ -30,14 +30,32 @@ class ReserveEntry(BaseModel):
     uid: int
 
 
+class AllianceInfo(BaseModel):
+    """联盟元信息"""
+    aid: int
+    name: str = ""
+
+
+class AlliancesConfig(BaseModel):
+    """联盟配置 — 我方 + 对手方"""
+    ours: AllianceInfo
+    enemy: AllianceInfo
+
+
 class AccountsConfig(BaseModel):
     """accounts.yaml 顶层"""
     accounts: list[AccountEntry]
+    enemies: list[AccountEntry] = Field(default_factory=list)
     reserves: list[ReserveEntry] = Field(default_factory=list)
+    alliances: AlliancesConfig | None = None
 
     @model_validator(mode="after")
     def check_unique_uids(self) -> AccountsConfig:
-        all_uids = [a.uid for a in self.accounts] + [r.uid for r in self.reserves]
+        all_uids = (
+            [a.uid for a in self.accounts]
+            + [e.uid for e in self.enemies]
+            + [r.uid for r in self.reserves]
+        )
         if len(all_uids) != len(set(all_uids)):
             seen: set[int] = set()
             dupes = [u for u in all_uids if u in seen or seen.add(u)]  # type: ignore[func-returns-value]
@@ -45,12 +63,16 @@ class AccountsConfig(BaseModel):
         return self
 
     def all_uids(self) -> set[int]:
-        """返回所有账号 UID（含备用）"""
+        """返回所有我方账号 UID（含备用，不含 enemies）"""
         return {a.uid for a in self.accounts} | {r.uid for r in self.reserves}
 
     def active_uids(self) -> list[int]:
         """返回活跃账号 UID 列表（不含备用）"""
         return [a.uid for a in self.accounts]
+
+    def enemy_uids(self) -> list[int]:
+        """返回对手方 UID 列表"""
+        return [e.uid for e in self.enemies]
 
 
 # ------------------------------------------------------------------
