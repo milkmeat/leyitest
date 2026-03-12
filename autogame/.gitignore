@@ -97,6 +97,9 @@ logs/
 mock_logs/
 *.log
 
+# LLM 密钥配置 (包含 API key，不提交)
+config/llm_secret.yaml
+
 # IDE
 .vscode/
 .idea/

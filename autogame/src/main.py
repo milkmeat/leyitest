@@ -66,6 +66,22 @@ if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
 
+def _check_llm_config(config) -> bool:
+    """检查 LLM 配置是否可用，缺失时打印友好提示
+
+    Returns:
+        True 如果 LLM 已配置，False 如果缺失
+    """
+    llm = config.system.llm
+    if llm.api_key and llm.model:
+        return True
+
+    from src.config.loader import _LLM_SECRET_TEMPLATE
+    print("[info] LLM 配置缺失 — config/llm_secret.yaml 未找到或不完整")
+    print(_LLM_SECRET_TEMPLATE)
+    return False
+
+
 def _print_json(data):
     """格式化打印 JSON"""
     print(_json.dumps(data, indent=2, ensure_ascii=False))
@@ -492,6 +508,9 @@ async def cmd_l1_decide(*args: str, env: str = None):
         sys.exit(1)
 
     # 创建 LLM 客户端
+    if not dry_run and not _check_llm_config(config):
+        sys.exit(1)
+
     try:
         llm = LLMClient(config.system.llm, dry_run=dry_run)
     except (ValueError, ImportError) as e:
@@ -594,6 +613,9 @@ async def cmd_llm_test(*args: str, env: str = None):
     config = load_all("config")
     dry_run = "--dry-run" in args
 
+    if not dry_run and not _check_llm_config(config):
+        sys.exit(1)
+
     try:
         client = LLMClient(config.system.llm, dry_run=dry_run)
     except (ValueError, ImportError) as e:
@@ -648,17 +670,20 @@ async def cmd_run(*args: str, env: str = None):
 
     # 创建 LLM 客户端（可选）
     llm_client = None
-    if dry_run or config.system.llm.model:
+    if dry_run:
         try:
             from src.ai.llm_client import LLMClient
-            llm_client = LLMClient(config.system.llm, dry_run=dry_run)
+            llm_client = LLMClient(config.system.llm, dry_run=True)
+        except ImportError as e:
+            print(f"[warn] LLM 未启用: {e}", file=sys.stderr)
+    elif _check_llm_config(config):
+        try:
+            from src.ai.llm_client import LLMClient
+            llm_client = LLMClient(config.system.llm)
         except (ValueError, ImportError) as e:
-            if dry_run:
-                # dry_run 时也可能因为 import 失败，但实际上不需要 API key
-                from src.ai.llm_client import LLMClient
-                llm_client = LLMClient(config.system.llm, dry_run=True)
-            else:
-                print(f"[warn] LLM 未启用: {e}", file=sys.stderr)
+            print(f"[warn] LLM 未启用: {e}", file=sys.stderr)
+    else:
+        print("[info] L1/L2 AI 决策将被跳过，主循环仅执行 Sync 阶段")
 
     client = GameAPIClient(env=env)
     controller = AIController(config, client, llm_client=llm_client)

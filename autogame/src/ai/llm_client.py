@@ -53,11 +53,14 @@ class LLMClient:
         self._client = None
 
         if not dry_run:
-            api_key = config.api_key or os.environ.get("ZHIPU_API_KEY", "")
+            api_key = (
+                config.api_key
+                or os.environ.get("ZHIPU_API_KEY", "")
+            )
             if not api_key:
                 raise ValueError(
-                    "LLM API key 未配置: 请设置 config.llm.api_key "
-                    "或环境变量 ZHIPU_API_KEY"
+                    "LLM API key 未配置: 请创建 config/llm_secret.yaml "
+                    "或设置环境变量 ZHIPU_API_KEY"
                 )
             try:
                 from openai import AsyncOpenAI

@@ -63,6 +63,31 @@ def load_system(path: str | Path) -> SystemConfig:
     return SystemConfig(**load_yaml(path))
 
 
+def load_llm_secret(config_dir: str | Path = "config") -> dict | None:
+    """加载 llm_secret.yaml（可选）
+
+    Returns:
+        包含 model/base_url/api_key 的 dict，文件不存在时返回 None
+    """
+    p = Path(config_dir) / "llm_secret.yaml"
+    if not p.exists():
+        return None
+    return load_yaml(p)
+
+
+_LLM_SECRET_TEMPLATE = """
+  请创建 config/llm_secret.yaml，内容如下:
+
+  ┌─────────────────────────────────────────────┐
+  │ model: "glm-4.7"                            │
+  │ base_url: "https://open.bigmodel.cn/..."    │
+  │ api_key: "your-api-key-here"                │
+  └─────────────────────────────────────────────┘
+
+  或复制模板: cp config/llm_secret.yaml.example config/llm_secret.yaml
+""".rstrip()
+
+
 def load_all(config_dir: str | Path = "config") -> AppConfig:
     """一次加载全部配置并做交叉校验
 
@@ -77,9 +102,18 @@ def load_all(config_dir: str | Path = "config") -> AppConfig:
         pydantic.ValidationError: 配置校验失败（格式/交叉引用）
     """
     d = Path(config_dir)
+    system = load_system(d / "system.yaml")
+
+    # 合并 llm_secret.yaml 到 system.llm（可选）
+    llm_secret = load_llm_secret(d)
+    if llm_secret:
+        for key in ("model", "base_url", "api_key"):
+            if key in llm_secret:
+                setattr(system.llm, key, llm_secret[key])
+
     return AppConfig(
         accounts=load_accounts(d / "accounts.yaml"),
         squads=load_squads(d / "squads.yaml"),
         activity=load_activity(d / "activity.yaml"),
-        system=load_system(d / "system.yaml"),
+        system=system,
     )
