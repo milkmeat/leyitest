@@ -37,6 +37,8 @@ class ActionType(str, Enum):
     INITIATE_RALLY = "INITIATE_RALLY"
     JOIN_RALLY = "JOIN_RALLY"
     RETREAT = "RETREAT"
+    RALLY_DISMISS = "RALLY_DISMISS"
+    RECALL_REINFORCE = "RECALL_REINFORCE"
 
 
 class AIInstruction(BaseModel):
@@ -53,6 +55,7 @@ class AIInstruction(BaseModel):
     rally_id: str = ""                 # 集结 ID（JOIN_RALLY）
     troop_ids: list[str] = []          # 部队 ID 列表（RETREAT）
     prepare_time: int = 300            # 集结准备时间秒（INITIATE_RALLY）
+    reinforce_id: str = ""             # 增援部队 unique_id（RECALL_REINFORCE 用）
     reason: str = ""                   # L1 决策理由（日志用）
 
 
@@ -130,6 +133,14 @@ class L0Executor:
         elif instr.action == ActionType.RETREAT:
             if not instr.troop_ids:
                 return False, "RETREAT 需要 troop_ids 非空"
+
+        elif instr.action == ActionType.RALLY_DISMISS:
+            if not instr.rally_id:
+                return False, "RALLY_DISMISS 需要 rally_id 非空"
+
+        elif instr.action == ActionType.RECALL_REINFORCE:
+            if not instr.reinforce_id:
+                return False, "RECALL_REINFORCE 需要 reinforce_id 非空"
 
         return True, ""
 
@@ -237,6 +248,12 @@ class L0Executor:
         elif action == ActionType.RETREAT:
             return await self.client.recall_troop(instr.uid, instr.troop_ids)
 
+        elif action == ActionType.RALLY_DISMISS:
+            return await self.client.rally_dismiss(instr.uid, instr.rally_id)
+
+        elif action == ActionType.RECALL_REINFORCE:
+            return await self.client.recall_reinforce(instr.uid, instr.reinforce_id)
+
         else:
             raise ValueError(f"未知 action: {action}")
 
@@ -261,4 +278,8 @@ class L0Executor:
             return f"加入集结 {instr.rally_id}"
         elif a == ActionType.RETREAT:
             return f"召回部队 {instr.troop_ids}"
+        elif a == ActionType.RALLY_DISMISS:
+            return f"解散集结 {instr.rally_id}"
+        elif a == ActionType.RECALL_REINFORCE:
+            return f"撤回增援 {instr.reinforce_id}"
         return ""
