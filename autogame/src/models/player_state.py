@@ -1,4 +1,4 @@
-"""账号与部队数据模型
+"""玩家状态与部队数据模型
 
 数据来源（test server 实际返回）:
   - svr_lord_info_new  → 基础信息（uid, 坐标, 名字, 等级, 联盟）
@@ -89,8 +89,8 @@ class WallInfo(BaseModel):
 # 主模型
 # ------------------------------------------------------------------
 
-class Account(BaseModel):
-    """我方账号完整数据
+class PlayerState(BaseModel):
+    """我方玩家完整运行时状态
 
     聚合自多个 svr_* 模块，由感知层（data_sync）负责填充。
     """
@@ -148,8 +148,8 @@ class Account(BaseModel):
         hero_list: Optional[dict] = None,
         buff: Optional[dict] = None,
         city_obj: Optional[dict] = None,
-    ) -> Account:
-        """从各 svr_* 模块的已解析 dict 构建 Account
+    ) -> PlayerState:
+        """从各 svr_* 模块的已解析 dict 构建 PlayerState
 
         Args:
             uid: 玩家 UID
@@ -230,8 +230,8 @@ class Account(BaseModel):
         return cls(**data)
 
     @classmethod
-    def from_sync_info(cls, info: dict, group_id: int = 0) -> Account:
-        """从 GameAPIClient.get_player_info() 返回的扁平 dict 构建 Account
+    def from_sync_info(cls, info: dict, group_id: int = 0) -> PlayerState:
+        """从 GameAPIClient.get_player_info() 返回的扁平 dict 构建 PlayerState
 
         get_player_info 返回的结构:
             {uid, pos, name, city_level, lord_level, alliance_id,

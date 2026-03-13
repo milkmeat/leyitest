@@ -18,7 +18,7 @@ import math
 from pydantic import BaseModel, Field
 
 from src.config.schemas import AppConfig, SquadEntry
-from src.models.account import Account, TroopState
+from src.models.player_state import PlayerState, TroopState
 from src.models.building import Building
 from src.models.enemy import Enemy
 from src.perception.data_sync import SyncSnapshot
@@ -221,8 +221,8 @@ class L1ViewBuilder:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _build_member_view(acct: Account) -> MemberView:
-        """从 Account 构建成员摘要"""
+    def _build_member_view(acct: PlayerState) -> MemberView:
+        """从 PlayerState 构建成员摘要"""
         troops = []
 
         for t in acct.troops:

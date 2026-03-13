@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field
 
 from src.config.schemas import AppConfig
 from src.executor.game_api import GameAPIClient
-from src.models.account import Account
+from src.models.player_state import PlayerState
 from src.models.building import Building
 from src.models.enemy import Enemy
 
@@ -47,7 +47,7 @@ class SyncError(BaseModel):
 
 class SyncSnapshot(BaseModel):
     """一轮同步的完整快照 — 主循环下游的唯一输入"""
-    accounts: dict[int, Account] = Field(default_factory=dict)   # uid → Account
+    accounts: dict[int, PlayerState] = Field(default_factory=dict)   # uid → PlayerState
     buildings: list[Building] = Field(default_factory=list)
     enemies: list[Enemy] = Field(default_factory=list)
     errors: list[SyncError] = Field(default_factory=list)
@@ -134,13 +134,13 @@ class DataSyncer:
             loop_id=loop_id,
         )
 
-    async def _sync_all_accounts(self) -> Tuple[dict[int, Account], list[SyncError]]:
+    async def _sync_all_accounts(self) -> Tuple[dict[int, PlayerState], list[SyncError]]:
         """并发同步所有活跃账号"""
         uids = self.config.accounts.active_uids()
         tasks = [self._sync_account(uid) for uid in uids]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        accounts: dict[int, Account] = {}
+        accounts: dict[int, PlayerState] = {}
         errors: list[SyncError] = []
 
         for uid, result in zip(uids, results):
@@ -149,20 +149,20 @@ class DataSyncer:
                 errors.append(SyncError(uid=uid, step="account", message=str(result)))
             elif isinstance(result, SyncError):
                 errors.append(result)
-            elif isinstance(result, Account):
+            elif isinstance(result, PlayerState):
                 accounts[uid] = result
             else:
                 errors.append(SyncError(uid=uid, step="account", message=f"unexpected result: {type(result)}"))
 
         return accounts, errors
 
-    async def _sync_account(self, uid: int) -> Account | SyncError:
+    async def _sync_account(self, uid: int) -> PlayerState | SyncError:
         """同步单个账号（受 semaphore 限流）"""
         async with self._semaphore:
             try:
                 info = await self.client.get_player_info(uid)
                 group_id = self._uid_to_squad.get(uid, 0)
-                return Account.from_sync_info(info, group_id=group_id)
+                return PlayerState.from_sync_info(info, group_id=group_id)
             except Exception as e:
                 return SyncError(uid=uid, step="account", message=str(e))
 
@@ -236,11 +236,11 @@ class DataSyncer:
 
         return buildings, enemies
 
-    async def sync_single_account(self, uid: int) -> Account | SyncError:
+    async def sync_single_account(self, uid: int) -> PlayerState | SyncError:
         """同步单个账号（调试用，不受 semaphore 限制）"""
         try:
             info = await self.client.get_player_info(uid)
             group_id = self._uid_to_squad.get(uid, 0)
-            return Account.from_sync_info(info, group_id=group_id)
+            return PlayerState.from_sync_info(info, group_id=group_id)
         except Exception as e:
             return SyncError(uid=uid, step="account", message=str(e))

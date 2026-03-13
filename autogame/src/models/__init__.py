@@ -1,7 +1,7 @@
 """数据模型层 — 所有 Pydantic v2 模型的统一导出"""
 
-from src.models.account import (
-    Account,
+from src.models.player_state import (
+    PlayerState,
     Buff,
     Hero,
     Soldier,
@@ -15,8 +15,8 @@ from src.models.rally import Rally, RallyParticipant, RallyState
 from src.models.score import Score
 
 __all__ = [
-    # account
-    "Account",
+    # player_state
+    "PlayerState",
     "Buff",
     "Hero",
     "Soldier",

@@ -15,7 +15,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from src.models.account import Soldier, Troop
+from src.models.player_state import Soldier, Troop
 from src.utils.coords import decode_pos
 
 
