@@ -88,10 +88,12 @@ def _print_json(data):
 
 
 def _print_ret_code(resp):
-    """打印响应中的 ret_code，若非 0 则输出警告"""
+    """打印响应中的 ret_code，成功输出 [OK]，失败输出 [warn]"""
     code = resp.get("res_header", {}).get("ret_code", -1)
     msg = resp.get("res_header", {}).get("err_msg", "")
-    if code != 0:
+    if code == 0:
+        print("[OK]")
+    else:
         print(f"[warn] ret_code={code} {msg}", file=sys.stderr)
     return code
 
@@ -385,7 +387,23 @@ async def cmd_recall_troop(uid_str: str, *troop_ids: str, env: str = None):
         await client.close()
 
 
+async def cmd_rally_dismiss(uid_str: str, unique_id: str, env: str = None):
+    """解散集结: rally_dismiss <uid> <rally_unique_id>  (107_xxx_1)"""
+    from src.executor.game_api import GameAPIClient
+    client = GameAPIClient(env=env)
+    try:
+        uid = int(uid_str)
+        resp = await client.rally_dismiss(uid, unique_id)
+        code = _print_ret_code(resp)
+        if code == 0:
+            print(f"已解散集结 {unique_id}")
+        _print_json(resp)
+    finally:
+        await client.close()
+
+
 async def cmd_recall_reinforce(uid_str: str, unique_id: str, env: str = None):
+    """撤回增援部队: recall_reinforce <uid> <troop_unique_id>  (101_xxx_1)"""
     from src.executor.game_api import GameAPIClient
     client = GameAPIClient(env=env)
     try:
@@ -393,7 +411,7 @@ async def cmd_recall_reinforce(uid_str: str, unique_id: str, env: str = None):
         resp = await client.recall_reinforce(uid, unique_id)
         code = _print_ret_code(resp)
         if code == 0:
-            print(f"已召回增援 {unique_id}")
+            print(f"已撤回增援 {unique_id}")
         _print_json(resp)
     finally:
         await client.close()
@@ -1014,9 +1032,10 @@ COMMANDS = {
     "reinforce_building":   (cmd_reinforce_building,    "<uid> <building_id> <x> <y>",        "驻防建筑"),
     "scout_player":         (cmd_scout_player,          "<uid> <target_uid> <x> <y>",         "侦察玩家"),
     "create_rally":         (cmd_create_rally,          "<uid> <target_uid> <x> <y> [soldier_id count] [prepare_time]", "发起集结"),
-    "join_rally":           (cmd_join_rally,            "<uid> <rally_id> [soldier_id count]", "加入集结"),
+    "join_rally":           (cmd_join_rally,            "<uid> <rally_id> <rally_x> <rally_y> [soldier_id count]", "加入集结"),
+    "rally_dismiss":        (cmd_rally_dismiss,         "<uid> <rally_unique_id>",            "解散集结 (107_xxx_1)"),
     "recall_troop":         (cmd_recall_troop,          "<uid> <troop_id...>",                "召回行军部队"),
-    "recall_reinforce":     (cmd_recall_reinforce,      "<uid> <unique_id>",                  "召回增援/集结"),
+    "recall_reinforce":     (cmd_recall_reinforce,      "<uid> <troop_unique_id>",            "撤回增援部队 (101_xxx_1)"),
     # 简化查询
     "get_gem":              (cmd_get_gem,               "<uid>",                              "查询宝石数量(纯数字)"),
     "get_soldiers":         (cmd_get_soldiers,          "<uid> <soldier_id>",                 "查询兵种数量(纯数字)"),
@@ -1070,7 +1089,8 @@ def main():
             print(f"  {name:25s} {a:40s} {desc}")
         print("\n行动命令:")
         for name in ["move_city", "attack_player", "attack_building", "reinforce_building",
-                      "scout_player", "create_rally", "join_rally", "recall_troop", "recall_reinforce"]:
+                      "scout_player", "create_rally", "join_rally", "rally_dismiss",
+                      "recall_troop", "recall_reinforce"]:
             _, a, desc = COMMANDS[name]
             print(f"  {name:25s} {a:40s} {desc}")
         print("\n简化查询命令:")

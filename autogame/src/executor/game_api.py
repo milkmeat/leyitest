@@ -265,8 +265,12 @@ class GameAPIClient:
         """召回行军中的部队"""
         return await self.send_cmd("recall_troop", uid, march_info={"ids": troop_ids})
 
+    async def rally_dismiss(self, uid: int, unique_id: str) -> Dict[str, Any]:
+        """队长解散整个集结 (unique_id 格式: 107_xxx_1)"""
+        return await self.send_cmd("rally_dismiss", uid, unique_id=unique_id)
+
     async def recall_reinforce(self, uid: int, unique_id: str) -> Dict[str, Any]:
-        """召回增援/集结部队"""
+        """撤回本人在集结中的部队 (unique_id 格式: 101_xxx_1)"""
         return await self.send_cmd("recall_reinforce", uid, unique_id=unique_id)
 
     async def reinforce_building(

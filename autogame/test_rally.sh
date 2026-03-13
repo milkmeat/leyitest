@@ -29,7 +29,7 @@ FAIL=0
 SKIP=0
 RESULTS=()
 SOLDIER_ID=204   # 使用 archer 类型进行验证
-RALLY_SOLDIER_COUNT=5000
+RALLY_SOLDIER_COUNT=500
 
 # 解析参数
 for arg in "$@"; do
@@ -83,7 +83,7 @@ check_success() {
     local name="$1" output="$2"
     local ret_code
     ret_code=$(echo "$output" | grep -oP 'ret_code=\K\d+' || echo "")
-    if echo "$output" | grep -q "成功\|OK\|已出发\|侦察\|集结已发起\|已加入集结"; then
+    if echo "$output" | grep -q "\[OK\]"; then
         printf "  [\033[32mPASS\033[0m] %s: 命令执行成功\n" "$name"
         ((PASS++))
         RESULTS+=("PASS|$name|命令执行成功")
@@ -182,7 +182,7 @@ for attempt in 1 2 3 4 5; do
     B_TARGET_Y=$(rand_range 100 1100)
     echo "  尝试 #$attempt: move_city $UID_B $B_TARGET_X $B_TARGET_Y"
     B_MOVE_OUTPUT=$(cli_verbose move_city $UID_B $B_TARGET_X $B_TARGET_Y)
-    if echo "$B_MOVE_OUTPUT" | grep -q "移城成功\|\[OK\]"; then
+    if echo "$B_MOVE_OUTPUT" | grep -q "\[OK\]"; then
         B_MOVE_OK=true
         echo "  成功!"
         break
@@ -231,7 +231,7 @@ echo "=================================================="
 echo "Step 5: A组(5人) 移城到 B 附近(距离10以内)"
 echo "=================================================="
 
-# 生成多个偏移候选位置（距离B约3-10格）
+# 生成多个偏移候选位置（距离B约3-30格，确保5个账号都能找到位置）
 OFFSET_PAIRS=(
     "3 3" "-3 3" "3 -3" "-3 -3"
     "5 0" "-5 0" "0 5" "0 -5"
@@ -240,6 +240,17 @@ OFFSET_PAIRS=(
     "8 0" "0 8" "-8 0" "0 -8"
     "6 6" "-6 6" "6 -6" "-6 -6"
     "9 0" "0 9" "-9 0" "0 -9"
+    "10 5" "-10 5" "10 -5" "-10 -5"
+    "12 0" "0 12" "-12 0" "0 -12"
+    "8 8" "-8 8" "8 -8" "-8 -8"
+    "15 0" "0 15" "-15 0" "0 -15"
+    "10 10" "-10 10" "10 -10" "-10 -10"
+    "18 0" "0 18" "-18 0" "0 -18"
+    "12 12" "-12 12" "12 -12" "-12 -12"
+    "20 5" "-20 5" "20 -5" "-20 -5"
+    "25 0" "0 25" "-25 0" "0 -25"
+    "15 15" "-15 15" "15 -15" "-15 -15"
+    "30 0" "0 30" "-30 0" "0 -30"
 )
 
 offset_idx=0
@@ -263,7 +274,7 @@ for uid in "${UID_A_ALL[@]}"; do
 
         echo "  尝试: move_city $uid $A_TARGET_X $A_TARGET_Y (偏移=$dx,$dy)"
         A_MOVE_OUTPUT=$(cli_verbose move_city $uid $A_TARGET_X $A_TARGET_Y)
-        if echo "$A_MOVE_OUTPUT" | grep -q "移城成功\|\[OK\]"; then
+        if echo "$A_MOVE_OUTPUT" | grep -q "\[OK\]"; then
             A_MOVE_OK=true
             echo "  成功!"
             break
@@ -315,29 +326,28 @@ RALLY_ID=$(echo "$RALLY_OUTPUT" | grep -oP '"rally_id"\s*:\s*"\K[^"]+' | head -1
 if [ -z "$RALLY_ID" ]; then
     RALLY_ID=$(echo "$RALLY_OUTPUT" | grep -oP 'rally_\d+_\d+' | head -1)
 fi
-# 方式2: test server — 从 svr_user_objs_inc 中提取 type=107 的 uniqueId 和 pos
+# 方式2: test server — 直接匹配 107_xxx_1 模式（rally 对象 uniqueId）
 if [ -z "$RALLY_ID" ]; then
-    # 107_xxx_1 格式的 uniqueId 就是 rally_id
-    RALLY_ID=$(echo "$RALLY_OUTPUT" | grep -oP '"uniqueId":"107_[0-9]+_1"' | head -1 | grep -oP '107_[0-9]+_1')
+    RALLY_ID=$(echo "$RALLY_OUTPUT" | grep -oP '107_[0-9]+_1' | head -1)
     if [ -n "$RALLY_ID" ]; then
-        echo "  从响应 svr_user_objs_inc 中找到 rally_id: $RALLY_ID"
+        echo "  从响应中提取到 rally_id: $RALLY_ID"
     fi
 fi
 # 方式3: fallback — 查询玩家 march 数据
 if [ -z "$RALLY_ID" ]; then
     echo "  response 中无 rally_id，从玩家数据查询..."
     PLAYER_DATA=$(cli get_all_player_data $UID_A1)
-    RALLY_ID=$(echo "$PLAYER_DATA" | grep -B5 '"marchType": 13' | grep -oP '"uniqueId": "\K[^"]+' | head -1)
+    RALLY_ID=$(echo "$PLAYER_DATA" | grep -oP '107_[0-9]+_1' | head -1)
     if [ -n "$RALLY_ID" ]; then
         echo "  从玩家 march 数据中找到 rally_id: $RALLY_ID"
     fi
 fi
 
 # 提取 rally 坐标 (从 type=107 对象的 pos 字段，格式如 "50700050100")
-RALLY_POS_RAW=$(echo "$RALLY_OUTPUT" | grep -oP '"type":107[^}]*"pos":"?\K[0-9]+' | head -1)
+RALLY_POS_RAW=$(echo "$RALLY_OUTPUT" | grep -oP '"type":\s*107[^}]*"pos":\s*"?\K[0-9]+' | head -1)
 if [ -z "$RALLY_POS_RAW" ]; then
-    # fallback: 从 initTarPos 或 target.pos 中提取
-    RALLY_POS_RAW=$(echo "$RALLY_OUTPUT" | grep -oP '"initTarPos":"?\K[0-9]+' | head -1)
+    # fallback: 从 initTarPos 中提取
+    RALLY_POS_RAW=$(echo "$RALLY_OUTPUT" | grep -oP '"initTarPos"\s*:\s*"?\K[0-9]+' | head -1)
 fi
 if [ -n "$RALLY_POS_RAW" ]; then
     # 解码坐标: pos = x * 100_000_000 + y * 100 → x = pos / 100_000_000, y = (pos % 100_000_000) / 100

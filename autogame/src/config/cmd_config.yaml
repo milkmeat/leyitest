@@ -80,12 +80,19 @@ commands:
       march_info: {}          # 队员的部队信息
     description: "队员派部队加入已发起的集结"
 
-  # --- 召回增援/集结 ---
+  # --- 解散集结 (队长操作) ---
+  rally_dismiss:
+    cmd: "rally_dismiss"
+    default_param:
+      unique_id: ""           # rally 的 unique_id (107_xxx_1)
+    description: "队长解散整个集结"
+
+  # --- 召回增援部队 (队员操作) ---
   recall_reinforce:
     cmd: "recall_reinforce"
     default_param:
-      unique_id: ""           # 要召回的集结/增援 unique_id
-    description: "召回已派出的增援或集结中的部队"
+      unique_id: ""           # 本人部队的 unique_id (101_xxx_1)
+    description: "撤回本人在集结/增援中的部队"
 
   # --- 召回行军中的部队（回城） ---
   recall_troop:
