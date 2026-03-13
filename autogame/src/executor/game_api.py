@@ -141,25 +141,35 @@ class GameAPIClient:
         param.update(overrides)
         return param
 
-    async def send_cmd(self, cmd_name: str, uid: int, **overrides) -> Dict[str, Any]:
+    async def send_cmd(self, cmd_name: str, uid: int,
+                       param_overrides: Optional[Dict[str, Any]] = None,
+                       **overrides) -> Dict[str, Any]:
         """立即发送一条命令
 
         Args:
             cmd_name: 命令名（cmd_config.yaml 中的 key，如 "move_city"）
-            uid: 玩家 UID
-            **overrides: 覆盖 default_param 中的参数
+            uid: 玩家 UID（header 中的调用者身份）
+            param_overrides: 协议参数覆盖（dict 形式），用于协议字段名与
+                             Python 关键字冲突的场景（如字段名也叫 "uid"）
+            **overrides: 覆盖 default_param 中的参数（便捷写法）
 
         Returns:
             服务器响应 dict
         """
         info = self.get_cmd_info(cmd_name)
-        param = self.build_param(cmd_name, **overrides)
+        all_overrides = dict(param_overrides or {})
+        all_overrides.update(overrides)
+        param = self.build_param(cmd_name, **all_overrides)
         return await self._send(uid, info["cmd"], param)
 
-    def queue_cmd(self, cmd_name: str, uid: int, **overrides) -> "GameAPIClient":
+    def queue_cmd(self, cmd_name: str, uid: int,
+                  param_overrides: Optional[Dict[str, Any]] = None,
+                  **overrides) -> "GameAPIClient":
         """将命令加入队列，返回 self 支持链式调用"""
         info = self.get_cmd_info(cmd_name)
-        param = self.build_param(cmd_name, **overrides)
+        all_overrides = dict(param_overrides or {})
+        all_overrides.update(overrides)
+        param = self.build_param(cmd_name, **all_overrides)
         self._queue.append({
             "cmd_name": cmd_name,
             "cmd": info["cmd"],

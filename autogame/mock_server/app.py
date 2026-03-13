@@ -528,25 +528,274 @@ def handle_op_self_add_clear_resource(uid: int, param: Dict[str, Any]) -> Dict[s
     return _ok_response(data_items)
 
 
+def handle_op_copy_player(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
+    """处理 GM 复制账号数据"""
+    src_uid = param.get("src_uid", 0)
+    tar_uid = param.get("tar_uid", 0)
+    src_sid = param.get("src_sid", 0)
+    tar_sid = param.get("tar_sid", 0)
+    ignores = param.get("ignores", [])
+
+    src_player = _get_player(src_uid)
+    if not src_player:
+        return _error_response(30001, f"source player {src_uid} not found")
+
+    # 深拷贝源玩家数据到目标
+    tar_player = deepcopy(src_player)
+    tar_player["name"] = f"copy_{tar_uid}"
+    MOCK_DATA.setdefault("players", {})[tar_uid] = tar_player
+
+    data_items = [_data_item("svr_copy_result", {
+        "src_uid": src_uid, "tar_uid": tar_uid, "status": "ok",
+    })]
+    print(f"  [mock] copy_player src={src_uid}(sid={src_sid}) → tar={tar_uid}(sid={tar_sid}) ignores={ignores}")
+    return _ok_response(data_items)
+
+
+def handle_player_name_change(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
+    """处理改昵称"""
+    player = _get_or_create_player(uid)
+    new_name = param.get("name", "")
+    old_name = player.get("name", "")
+    player["name"] = new_name
+
+    data_items = [_data_item("svr_name_change", {"name": new_name, "status": "ok"})]
+    print(f"  [mock] change_name uid={uid}: '{old_name}' → '{new_name}'")
+    return _ok_response(data_items)
+
+
+def handle_al_create(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
+    """处理创建联盟"""
+    name = param.get("name", "")
+    nick = param.get("nick", "")
+    alliance_id = int(time.time()) % 100000 + 10000
+
+    alliance = {
+        "aid": alliance_id,
+        "name": name,
+        "nick": nick,
+        "leader_uid": uid,
+        "members": [uid],
+        "desc": param.get("desc", ""),
+    }
+    MOCK_DATA.setdefault("alliances", {})[alliance_id] = alliance
+
+    # 更新玩家的联盟信息
+    player = _get_or_create_player(uid)
+    player["alliance_id"] = alliance_id
+    player["alliance"] = name
+
+    data_items = [_data_item("svr_alliance_create", {
+        "aid": alliance_id, "name": name, "nick": nick,
+    })]
+    print(f"  [mock] create_alliance uid={uid} aid={alliance_id} name='{name}' nick='{nick}'")
+    return _ok_response(data_items)
+
+
+def handle_al_request_join(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
+    """处理加入联盟"""
+    target_aid = param.get("target_aid", 0)
+
+    alliances = MOCK_DATA.get("alliances", {})
+    alliance = alliances.get(target_aid)
+
+    player = _get_or_create_player(uid)
+    # 模拟自动通过
+    player["alliance_id"] = target_aid
+    if alliance:
+        alliance.setdefault("members", []).append(uid)
+        player["alliance"] = alliance.get("name", "")
+
+    data_items = [_data_item("svr_alliance_join", {
+        "aid": target_aid, "status": "joined",
+    })]
+    print(f"  [mock] join_alliance uid={uid} target_aid={target_aid}")
+    return _ok_response(data_items)
+
+
+def handle_get_self_al_member(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
+    """处理获取联盟成员列表"""
+    player = _get_player(uid)
+    aid = player.get("alliance_id", 0) if player else 0
+
+    members = []
+    alliances = MOCK_DATA.get("alliances", {})
+    alliance = alliances.get(aid)
+    if alliance:
+        for member_uid in alliance.get("members", []):
+            m_player = _get_player(member_uid)
+            members.append({
+                "uid": member_uid,
+                "name": m_player.get("name", "") if m_player else f"player_{member_uid}",
+                "level": m_player.get("lord_level", 1) if m_player else 1,
+            })
+    else:
+        # 没有联盟数据时，返回同 alliance_id 的所有玩家
+        for pid, pdata in MOCK_DATA.get("players", {}).items():
+            if pdata.get("alliance_id") == aid and aid != 0:
+                members.append({
+                    "uid": pid,
+                    "name": pdata.get("name", ""),
+                    "level": pdata.get("lord_level", 1),
+                })
+
+    data_items = [_data_item("svr_al_members", {"list": members, "count": len(members)})]
+    print(f"  [mock] get_al_members uid={uid} aid={aid} count={len(members)}")
+    return _ok_response(data_items)
+
+
+def handle_al_leave(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
+    """处理离开联盟"""
+    player = _get_or_create_player(uid)
+    old_aid = player.get("alliance_id", 0)
+    player["alliance_id"] = 0
+    player["alliance"] = ""
+
+    # 从联盟成员列表中移除
+    alliances = MOCK_DATA.get("alliances", {})
+    alliance = alliances.get(old_aid)
+    if alliance:
+        members = alliance.get("members", [])
+        if uid in members:
+            members.remove(uid)
+
+    data_items = [_data_item("svr_al_leave", {"aid": old_aid, "status": "left"})]
+    print(f"  [mock] al_leave uid={uid} old_aid={old_aid}")
+    return _ok_response(data_items)
+
+
+def handle_al_help_all(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
+    """处理一键帮助盟友"""
+    data_items = [_data_item("svr_al_help", {"helped_count": 0, "status": "ok"})]
+    print(f"  [mock] al_help_all uid={uid}")
+    return _ok_response(data_items)
+
+
+def handle_rally_dismiss(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
+    """处理队长解散集结"""
+    unique_id = param.get("unique_id", "")
+    rallies = MOCK_DATA.get("rallies", {})
+
+    # 尝试通过 unique_id 找到集结
+    found = False
+    for rally_id, rally in list(rallies.items()):
+        if rally.get("creator_uid") == uid or rally_id == unique_id:
+            del rallies[rally_id]
+            found = True
+            print(f"  [mock] rally_dismiss uid={uid} rally_id={rally_id}")
+            break
+
+    if not found:
+        print(f"  [mock] rally_dismiss uid={uid} unique_id={unique_id} (not found, ignored)")
+
+    data_items = [_data_item("svr_rally_dismiss", {"unique_id": unique_id, "status": "dismissed"})]
+    return _ok_response(data_items)
+
+
+def handle_op_create_lvl_battle(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
+    """处理创建 AVA 临时战场"""
+    battle_id = param.get("1v1_id", str(int(time.time())))
+    event_id = param.get("event_id", "123456")
+    camp = param.get("camp", [])
+
+    battle = {
+        "lvl_id": battle_id,
+        "event_id": event_id,
+        "camp": camp,
+        "create_time": int(time.time()),
+        "status": "created",
+        "players": {},
+    }
+    # 从 camp 配置中预填充玩家
+    for c in camp:
+        camp_id = c.get("al_flag", 0)
+        for member_uid in c.get("uid_list", []):
+            battle["players"][member_uid] = {"camp_id": camp_id, "entered": False}
+
+    MOCK_DATA.setdefault("ava_battles", {})[battle_id] = battle
+
+    data_items = [_data_item("svr_lvl_battle_create", {
+        "lvl_id": battle_id, "event_id": event_id, "status": "created",
+    })]
+    print(f"  [mock] create_ava_battle uid={uid} lvl_id={battle_id} camps={len(camp)}")
+    return _ok_response(data_items)
+
+
+def handle_op_lvl_set_player(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
+    """处理添加玩家到 AVA 战场"""
+    lvl_id = param.get("lvl_id", "")
+    target_uid = param.get("uid", 0)
+    camp_id = param.get("camp_id", 1)
+
+    battles = MOCK_DATA.get("ava_battles", {})
+    battle = battles.get(lvl_id)
+    if not battle:
+        return _error_response(30001, f"battle {lvl_id} not found")
+
+    battle["players"][target_uid] = {"camp_id": camp_id, "entered": False}
+
+    data_items = [_data_item("svr_lvl_set_player", {
+        "lvl_id": lvl_id, "uid": target_uid, "camp_id": camp_id,
+    })]
+    print(f"  [mock] ava_add_player lvl_id={lvl_id} uid={target_uid} camp={camp_id}")
+    return _ok_response(data_items)
+
+
+def handle_op_enter_lvl_battle(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
+    """处理进入 AVA 战场"""
+    lvl_id = param.get("lvl_id", "")
+
+    battles = MOCK_DATA.get("ava_battles", {})
+    battle = battles.get(lvl_id)
+    if not battle:
+        return _error_response(30001, f"battle {lvl_id} not found")
+
+    player_info = battle["players"].get(uid)
+    if player_info:
+        player_info["entered"] = True
+
+    data_items = [_data_item("svr_lvl_enter", {
+        "lvl_id": lvl_id, "uid": uid, "status": "entered",
+    })]
+    print(f"  [mock] ava_enter_battle uid={uid} lvl_id={lvl_id}")
+    return _ok_response(data_items)
+
+
 # ---------------------------------------------------------------------------
 # 命令路由表
 # ---------------------------------------------------------------------------
 
 CMD_HANDLERS = {
+    # 感知查询
     "login_get": handle_login_get,
     "game_server_login_get": handle_game_server_login_get,
+    "get_map_brief_obj": handle_get_map_brief_obj,
+    "game_svr_map_get": handle_game_svr_map_get,
+    "get_city_battle_report": handle_get_city_battle_report,
+    "get_self_al_member": handle_get_self_al_member,
+    # 行动指令
     "fixed_move_city_new": handle_fixed_move_city_new,
     "dispatch_troop": handle_dispatch_troop,
     "dispatch_scout": handle_dispatch_scout,
     "create_rally_war": handle_create_rally_war,
+    "rally_dismiss": handle_rally_dismiss,
     "recall_reinforce": handle_recall_reinforce,
     "change_troop": handle_change_troop,
-    "get_map_brief_obj": handle_get_map_brief_obj,
-    "game_svr_map_get": handle_game_svr_map_get,
-    "get_city_battle_report": handle_get_city_battle_report,
+    # GM 指令
     "op_self_set_gem": handle_op_self_set_gem,
     "op_add_soldiers": handle_op_add_soldiers,
     "op_self_add_clear_resource": handle_op_self_add_clear_resource,
+    "op_copy_player": handle_op_copy_player,
+    "player_name_change": handle_player_name_change,
+    # 联盟操作
+    "al_create": handle_al_create,
+    "al_request_join": handle_al_request_join,
+    "al_leave": handle_al_leave,
+    "al_help_all": handle_al_help_all,
+    # AVA 战场
+    "op_create_lvl_battle": handle_op_create_lvl_battle,
+    "op_lvl_set_player": handle_op_lvl_set_player,
+    "op_enter_lvl_battle": handle_op_enter_lvl_battle,
 }
 
 

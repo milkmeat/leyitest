@@ -1,0 +1,1422 @@
+description: login_get 命令可选 list 参数值。传入 section name 列表可按需获取对应数据模块。
+cmd: login_get
+param_example:
+  all: 0
+  list:
+  - svr_player
+  - svr_lord_info_new
+  - svr_soldier
+total_sections: 252
+sections:
+  svr_person_guide:
+    size_bytes: 220
+    top_keys:
+    - guide_id
+  svr_shop_buy_restriction:
+    size_bytes: 16
+    top_keys:
+    - type_info
+  svr_building_new:
+    size_bytes: 1776
+    top_keys:
+    - items
+  svr_intel_collection_info:
+    size_bytes: 12
+    top_keys:
+    - items
+  svr_player_goal_event:
+    size_bytes: 17
+    top_keys:
+    - event_list
+  svr_arena_lineup_attack:
+    size_bytes: 24
+    top_keys:
+    - attack
+    - max_tn
+  svr_payback_event:
+    size_bytes: 15
+    top_keys:
+    - has_event
+  svr_hero_travel_present:
+    size_bytes: 224
+    top_keys:
+    - heros
+    - unclaimed_reward
+    - cur_hurdle_id
+    - cur_mileage
+    - accu_reward
+    - sprint
+    - buffs_sclected
+    - enemy_lineup
+  svr_resource_workers_info:
+    size_bytes: 93
+    top_keys:
+    - working_workers
+    - reward_num
+    - left_num
+    - idle_num
+    - claimed_building_id_list
+  svr_troop_skin:
+    size_bytes: 67
+    top_keys:
+    - cur_skin
+    - skins
+  svr_foreman_pool_list:
+    size_bytes: 116
+    top_keys:
+    - card_pools
+  svr_iap_scene_info:
+    size_bytes: 77
+    top_keys:
+    - treasure_trigger_times
+    - card_pool_scene_items
+    - hero_scene_items
+  svr_player_alliance_duel_info:
+    size_bytes: 66
+    top_keys:
+    - origin_pos
+    - passive_move_city_flag
+    - svr_move_city_flag
+  svr_worker:
+    size_bytes: 16
+    top_keys:
+    - work_list
+  svr_shoot_gallary:
+    size_bytes: 447
+    top_keys:
+    - bullet
+    - next_free_shoot
+    - mode
+    - process
+    - lucky_bag
+    - first_shoot_reward
+    - curr_shoot_count
+    - reward_list
+  svr_player_troop_preset:
+    size_bytes: 108
+    top_keys:
+    - preset_list
+  svr_new_player_bp_event:
+    size_bytes: 13
+    top_keys:
+    - events
+  svr_rain_event:
+    size_bytes: 35
+    top_keys:
+    - btime
+    - etime
+    - castle_lv
+  svr_pet_treasure:
+    size_bytes: 270
+    top_keys:
+    - refresh_time
+    - treasure_list
+    - hunt_times
+  svr_ghost_town_player_info:
+    size_bytes: 32
+    top_keys:
+    - max_difficulty
+    - team_id
+  svr_expedition_all_data:
+    size_bytes: 68
+    top_keys:
+    - last_energy_time
+    - clear_menu
+    - start_energy
+    - cur_menu
+  svr_lvl_soldier_treatment:
+    size_bytes: 12
+    top_keys:
+    - items
+  svr_muck_extra:
+    size_bytes: 32
+    top_keys:
+    - muck_ids
+    - muck_extras
+  svr_player_skill_preset:
+    size_bytes: 211
+    top_keys:
+    - preset_list
+    - tree_point
+    - cur_preset_id
+  svr_hurt_dragon_soul:
+    size_bytes: 26
+    top_keys:
+    - active_lv
+    - items
+  svr_battle_score_shop:
+    size_bytes: 815
+    top_keys:
+    - left_refresh_times
+    - week_scores
+    - goods
+    - week_battle_score
+    - battle_score
+    - score_next_reset_time
+    - version
+    - next_refresh_time
+  svr_expedition_inner_data:
+    size_bytes: 2
+    top_keys: []
+  svr_client_show_flag:
+    size_bytes: 136
+    top_keys:
+    - out_ava_battle_wait_time
+    - building_seq
+    - permanent_buff_id
+    - equip_full_send_mail
+    - move_city_prepare_time
+    - is_online
+  svr_player_battlefield_info:
+    size_bytes: 150
+    top_keys:
+    - end_time
+    - next_free_item_recover_time
+    - battle_id
+    - battlefield_kick_flag
+    - close_time
+    - enter_time
+    - battle_type
+    - extra_info
+  svr_hero_pool_list:
+    size_bytes: 547
+    top_keys:
+    - card_pools
+  svr_player_backpack_equip_material:
+    size_bytes: 12
+    top_keys:
+    - items
+  svr_player_var_inc:
+    size_bytes: 1157
+    top_keys:
+    - title_apply_etime
+    - is_clear_all_fog_by_event
+    - force_flag
+    - occupy_report_id
+    - client_action_seq
+    - res_time
+    - force_empty_fields
+    - train_hero_force
+  svr_furniture_list:
+    size_bytes: 1461
+    top_keys:
+    - list
+  svr_name_plate:
+    size_bytes: 50
+    top_keys:
+    - is_using
+    - name_plates
+    - name_plate_id
+  svr_equip_slots:
+    size_bytes: 22
+    top_keys:
+    - equip_slot_info
+  svr_blacklist:
+    size_bytes: 17
+    top_keys:
+    - blacklists
+  svr_explore_interactive_list:
+    size_bytes: 31
+    top_keys:
+    - explore_interactive_list
+  svr_scout_record_time:
+    size_bytes: 10
+    top_keys:
+    - time
+  svr_island_shop:
+    size_bytes: 34
+    top_keys:
+    - next_refresh_time
+    - goods
+  svr_donate_crit_sequence:
+    size_bytes: 144
+    top_keys:
+    - crit_sequence
+    - crit_sequence_start
+  svr_login:
+    size_bytes: 304
+    top_keys:
+    - utime
+    - ctime
+    - last_lg_time
+    - csid
+    - con_login_days
+    - bind_reward
+    - is_dead
+    - device
+  svr_player_stat:
+    size_bytes: 1514
+    top_keys:
+    - barbarian_kill_num
+    - res_trans
+    - resource_collect_total
+    - war
+    - dragon
+    - building
+    - soldier
+    - resource_transport_total
+  svr_buff_detail:
+    size_bytes: 4728
+    top_keys:
+    - buff_detail_list
+  svr_lord_image:
+    size_bytes: 17
+    top_keys:
+    - lord_image
+  svr_head_frame:
+    size_bytes: 45
+    top_keys:
+    - new_item
+    - head_frames
+    - is_using
+  svr_p3_worker_quest:
+    size_bytes: 201
+    top_keys:
+    - worker_quest_list
+  svr_execute_history_new:
+    size_bytes: 42
+    top_keys:
+    - be_execute_items
+    - execute_items
+  svr_ghost_town_window:
+    size_bytes: 2
+    top_keys: []
+  svr_avatar_list:
+    size_bytes: 187
+    top_keys:
+    - avatar
+    - cur_skin_item_id
+    - new_item
+  svr_reward_collection_box:
+    size_bytes: 60
+    top_keys:
+    - hand_reward_num
+    - auto_reward_num
+    - reward_list
+  svr_player_ava_info:
+    size_bytes: 81
+    top_keys:
+    - ava_id
+    - ava_etime
+    - enter_ava_time
+    - ava_kick_flag
+    - has_enter_ava
+  svr_furnace_produce_list_new:
+    size_bytes: 2
+    top_keys: []
+  svr_iap_appcharge_open:
+    size_bytes: 13
+    top_keys:
+    - is_open
+  svr_rob_info:
+    size_bytes: 56
+    top_keys:
+    - refresh_time
+    - rob_times
+    - criminals
+  svr_city_skin:
+    size_bytes: 56
+    top_keys:
+    - alltime
+    - etime
+    - city_skin_id
+    - is_using
+  svr_sleep_info:
+    size_bytes: 56
+    top_keys:
+    - sleep_count
+    - command_time
+    - res_change
+  svr_pet_al_box_player_info:
+    size_bytes: 53
+    top_keys:
+    - next_refresh_time
+    - box_list
+    - award_times
+  svr_expedition_soldier:
+    size_bytes: 99
+    top_keys:
+    - list
+  svr_player_inc:
+    size_bytes: 829
+    top_keys:
+    - al_id
+    - is_skvk_emperor
+    - cid
+    - report_num_last_reset_time
+    - al_nick
+    - equip_grid
+    - al_title
+    - avatar
+  svr_artifact:
+    size_bytes: 20
+    top_keys:
+    - artifact_list
+  svr_tk_area:
+    size_bytes: 73
+    top_keys:
+    - process_point
+    - claim_area_id
+    - cur_area_id
+    - recover_area_id
+  svr_defense_war:
+    size_bytes: 275
+    top_keys:
+    - p3_worker_defense_list
+    - defense_hero
+    - defense_building
+    - clear_ids
+    - defense_chest
+  svr_tryout_hero_list:
+    size_bytes: 12
+    top_keys:
+    - heros
+  svr_expedition:
+    size_bytes: 27
+    top_keys:
+    - is_receive
+    - items
+  svr_backpack_discount_coupon:
+    size_bytes: 20
+    top_keys:
+    - common_coupon
+  svr_bookmark_list:
+    size_bytes: 11
+    top_keys:
+    - list
+  svr_soldier_train_list:
+    size_bytes: 11
+    top_keys:
+    - list
+  svr_pet_list:
+    size_bytes: 15
+    top_keys:
+    - pet_list
+  svr_can_claim_obstacle:
+    size_bytes: 28
+    top_keys:
+    - can_claim_obstacle_id
+  svr_hero_back_shop:
+    size_bytes: 60
+    top_keys:
+    - expire_time
+    - list
+    - start_time
+  svr_church_faith:
+    size_bytes: 143
+    top_keys:
+    - last_total
+    - last_refresh_time
+    - dead_speedup
+    - wounded_speedup
+    - faith_speedup
+    - last_capacity
+    - next_free_dead_soldier_time
+  svr_prison_info_new:
+    size_bytes: 23
+    top_keys:
+    - prison_info_data
+  svr_birthday_card_info:
+    size_bytes: 16
+    top_keys:
+    - item_info
+  svr_player_equip_preset:
+    size_bytes: 18
+    top_keys:
+    - preset_list
+  svr_radar_chapter:
+    size_bytes: 24
+    top_keys:
+    - claimed_sample_id
+  svr_hero_resource:
+    size_bytes: 235
+    top_keys:
+    - exps
+    - coins
+    - hero_chests
+  svr_in_list_soldier:
+    size_bytes: 11
+    top_keys:
+    - list
+  svr_player_kvk_info:
+    size_bytes: 66
+    top_keys:
+    - origin_pos
+    - passive_move_city_flag
+    - svr_move_city_flag
+  svr_island_base:
+    size_bytes: 149
+    top_keys:
+    - island_unban_time
+    - island_banned_times
+    - be_like_times
+    - be_help_times
+    - login_dates
+    - like_times
+    - sign_in_reward
+    - unlock_time
+  svr_satisfaction_inquiry:
+    size_bytes: 67
+    top_keys:
+    - fintime
+    - plt
+    - type
+    - bgtime
+    - status
+    - is_rating
+  svr_auto_hunting:
+    size_bytes: 55
+    top_keys:
+    - auto_queues
+    - wound_limit
+    - lv
+    - items
+  svr_al_invited:
+    size_bytes: 19
+    top_keys:
+    - invited_info
+  svr_area_ice:
+    size_bytes: 21
+    top_keys:
+    - recover_area_id
+  svr_offline_defence_compensation:
+    size_bytes: 33
+    top_keys:
+    - has_reward
+    - reward_list
+  svr_daily_sign:
+    size_bytes: 91
+    top_keys:
+    - last_sign_year
+    - signed_days_list
+    - last_sign_month
+    - claimed_sign_total_list
+  svr_first_recharge_event:
+    size_bytes: 84
+    top_keys:
+    - state
+    - first_status
+    - has_event
+    - claim_second
+    - second_time
+  svr_buff_detail_inc:
+    size_bytes: 1177
+    top_keys:
+    - buff_detail_list
+  svr_explore_info:
+    size_bytes: 133
+    top_keys:
+    - explore_records
+    - explore_interactive_list
+    - progress_point
+    - explore_id
+    - finished_list
+    - status
+    - reward_list
+  svr_special_quest:
+    size_bytes: 2
+    top_keys: []
+  svr_emo_data:
+    size_bytes: 122
+    top_keys:
+    - emo_id_list
+  svr_soldier_cost_breaks:
+    size_bytes: 9
+    top_keys:
+    - num
+  svr_radar_gift_info:
+    size_bytes: 79
+    top_keys:
+    - pos
+    - quality
+    - scene_id
+    - id
+    - turn
+    - line_id
+    - trigger_flag
+  svr_boss_trap_show_info:
+    size_bytes: 11520
+    top_keys:
+    - event_data
+    - conf_btime
+  svr_hang_up_production:
+    size_bytes: 74
+    top_keys:
+    - hang_up_lv
+    - last_collect_timestamp
+    - first_reward_flag
+  svr_camp_soldier_count:
+    size_bytes: 15
+    top_keys:
+    - num
+  svr_mystery_shop:
+    size_bytes: 27
+    top_keys:
+    - iap_goods
+    - goods
+  svr_foreman_list:
+    size_bytes: 14
+    top_keys:
+    - foremen
+  svr_shop_chest:
+    size_bytes: 50
+    top_keys:
+    - next_refresh_time
+    - collect_times
+  svr_raid_common:
+    size_bytes: 13
+    top_keys:
+    - raid_id
+  svr_resource_cost:
+    size_bytes: 37
+    top_keys:
+    - last_settle_time
+    - cost_list
+  svr_soldier_force:
+    size_bytes: 18
+    top_keys:
+    - force
+  svr_radar_info:
+    size_bytes: 136
+    top_keys:
+    - strength_lv
+    - radar_lv
+    - finished_intel_num
+    - have_not_intel_time
+    - intel_infos
+  svr_castle_lv_up_iap:
+    size_bytes: 15
+    top_keys:
+    - has_event
+  svr_tip_window_list:
+    size_bytes: 12
+    top_keys:
+    - items
+  svr_gem_stat:
+    size_bytes: 297
+    top_keys:
+    - gem
+    - token_next_fresh_time
+    - iap_promote_num
+    - total_pay
+    - last_pay_time
+    - iap_white_paid_limit
+    - total_buy
+    - token_stage_1
+  svr_compute_res:
+    size_bytes: 83
+    top_keys:
+    - building_research_finish_flag
+    - new_action_id
+  svr_robot_worker:
+    size_bytes: 106
+    top_keys:
+    - etime
+    - btime
+    - pos
+    - quality
+    - unlock
+    - work_info
+    - time_info
+    - status
+  svr_hero_equip:
+    size_bytes: 13
+    top_keys:
+    - equips
+  svr_price_recharge_iap_event:
+    size_bytes: 15
+    top_keys:
+    - has_event
+  svr_backpack_item:
+    size_bytes: 960
+    top_keys:
+    - items
+  svr_city_npc:
+    size_bytes: 11
+    top_keys:
+    - list
+  svr_interactive_list:
+    size_bytes: 23
+    top_keys:
+    - interactive_list
+  svr_cycle_free_operate:
+    size_bytes: 123
+    top_keys:
+    - items
+  svr_cycle_event:
+    size_bytes: 27
+    top_keys:
+    - event_list
+    - first
+  svr_honor_dungeon:
+    size_bytes: 577
+    top_keys:
+    - end_time
+    - battlefield
+    - next_refresh_time
+    - start_time
+  svr_function_open_schedule:
+    size_bytes: 192
+    top_keys:
+    - function_open_list
+    - hero_open_list
+    - function_list
+  svr_new_player_quest:
+    size_bytes: 183
+    top_keys:
+    - claim_new_player_vip_reward_list
+    - claim_bp_vip_reward_list
+    - claim_bp_common_reward_list
+    - expire_flag
+    - quest_list
+    - day
+    - claim_new_player_common_reward_list
+  svr_achievement:
+    size_bytes: 1077
+    top_keys:
+    - data_list
+    - show_achievement
+    - category_list
+  svr_soldier_wounded:
+    size_bytes: 68
+    top_keys:
+    - free_die_list
+    - list
+    - die_list
+  svr_battlefield_soldier_treatment:
+    size_bytes: 12
+    top_keys:
+    - items
+  svr_fort_user_info:
+    size_bytes: 34
+    top_keys:
+    - score
+    - claimed_reward_id
+  svr_tame_pet:
+    size_bytes: 68
+    top_keys:
+    - refresh_time
+    - times
+    - pet_id
+    - stage
+    - value
+  svr_queue_info:
+    size_bytes: 19
+    top_keys:
+    - cycle_events
+  svr_research:
+    size_bytes: 30
+    top_keys:
+    - list
+    - research_done
+  svr_player_energy:
+    size_bytes: 327
+    top_keys:
+    - action_energy_daily_used
+    - energy_next_refresh_time
+    - action_energy
+    - barbarian_action_energy_utime
+    - action_energy_utime
+    - barbarian_action_energy
+    - energy_cur_reward_index
+    - action_energy_buy_times
+  svr_main_quest_list:
+    size_bytes: 51
+    top_keys:
+    - list
+  svr_quick_speech_setting:
+    size_bytes: 136
+    top_keys:
+    - list
+  svr_vip_shop:
+    size_bytes: 43
+    top_keys:
+    - next_refresh_time
+    - goods
+  svr_custom_avatar:
+    size_bytes: 32
+    top_keys:
+    - upload_time
+    - upload_id
+  svr_new_castle_lv_up_iap:
+    size_bytes: 15
+    top_keys:
+    - has_event
+  svr_reward_rally_box:
+    size_bytes: 34
+    top_keys:
+    - box_list
+    - claim_progress
+  svr_island_quest:
+    size_bytes: 167
+    top_keys:
+    - quest_list
+  svr_city_wall:
+    size_bytes: 320
+    top_keys:
+    - fire_e_durability
+    - durability
+    - fire_fix_durability
+    - user_heros
+    - fire_b_durability
+    - fire_etime
+    - fire_btime
+    - carry_lord
+  svr_queue:
+    size_bytes: 13
+    top_keys:
+    - queues
+  svr_player:
+    size_bytes: 754
+    top_keys:
+    - al_id
+    - is_skvk_emperor
+    - cid
+    - report_num_last_reset_time
+    - al_nick
+    - equip_grid
+    - al_title
+    - avatar
+  svr_player_backpack_crystal:
+    size_bytes: 12
+    top_keys:
+    - items
+  svr_hero_collections:
+    size_bytes: 122
+    top_keys:
+    - heros
+  svr_player_skill:
+    size_bytes: 101
+    top_keys:
+    - skill_trees
+  svr_soldier:
+    size_bytes: 99
+    top_keys:
+    - list
+  svr_foreman_data:
+    size_bytes: 68
+    top_keys:
+    - last_bless_index
+    - claimed_ids
+    - wait_foremen
+    - items
+  svr_decorative_building:
+    size_bytes: 11
+    top_keys:
+    - list
+  svr_main_quest:
+    size_bytes: 40
+    top_keys:
+    - cur_progress
+    - status
+    - id
+  svr_login_compute:
+    size_bytes: 34
+    top_keys:
+    - rating_gem
+    - rating_switch
+  svr_new_expedition_shop:
+    size_bytes: 34
+    top_keys:
+    - next_refresh_time
+    - goods
+  svr_token_building:
+    size_bytes: 21
+    top_keys:
+    - token_building
+  svr_defense_war_cycle_event:
+    size_bytes: 347
+    top_keys:
+    - event_list
+    - first
+    - next_flag
+    - finish_ids
+    - is_rechallenge
+  svr_city_raid:
+    size_bytes: 12
+    top_keys:
+    - items
+  svr_lord_equip:
+    size_bytes: 20
+    top_keys:
+    - player_equips
+  svr_quick_emo_setting:
+    size_bytes: 54
+    top_keys:
+    - list
+  svr_recommend_recharge:
+    size_bytes: 11
+    top_keys:
+    - item
+  svr_buff:
+    size_bytes: 1911
+    top_keys:
+    - buff_item
+  svr_worker_leave_tips:
+    size_bytes: 18
+    top_keys:
+    - worker_list
+  svr_achievement_inc:
+    size_bytes: 57
+    top_keys:
+    - data_list
+    - show_achievement
+    - category_list
+  svr_op_common_data:
+    size_bytes: 12
+    top_keys:
+    - ebuff
+  svr_hero_list:
+    size_bytes: 661
+    top_keys:
+    - heros
+  svr_arena_lineup_defense:
+    size_bytes: 25
+    top_keys:
+    - max_tn
+    - defense
+  svr_player_evip:
+    size_bytes: 122
+    top_keys:
+    - evip_flag
+    - evip
+  svr_training_camp:
+    size_bytes: 45
+    top_keys:
+    - slot_info
+    - instructor_list
+  svr_increase_queue_capacity:
+    size_bytes: 11
+    top_keys:
+    - list
+  svr_self_title:
+    size_bytes: 32
+    top_keys:
+    - title_list
+    - show_title
+  svr_bank:
+    size_bytes: 28
+    top_keys:
+    - btime
+    - slot
+    - num
+  svr_al_pet_skill_self:
+    size_bytes: 22
+    top_keys:
+    - al_skill_detail
+  svr_worker_satis:
+    size_bytes: 55
+    top_keys:
+    - pre_satis
+    - max_satis
+    - satis
+  svr_ava_soldier_treatment:
+    size_bytes: 12
+    top_keys:
+    - items
+  svr_dispatch_task_inc:
+    size_bytes: 109
+    top_keys:
+    - refresh_time
+    - help_times
+    - queue_info
+    - difficulty_lv
+    - rob_times
+    - dispatch_task
+  svr_city_collect_new:
+    size_bytes: 28
+    top_keys:
+    - city_collect_building
+  svr_holy_user_info:
+    size_bytes: 182
+    top_keys:
+    - key
+    - attack_count
+    - next_refresh_time
+    - reward_alliance_list
+    - reward_personal_list
+    - alliance_invalid_flag
+    - next_attack_refresh_time
+    - goal
+  svr_rpg_dungeon:
+    size_bytes: 68
+    top_keys:
+    - ab_test_group
+    - stage
+    - hang_up_time
+    - first_reward_flag
+  svr_train_hero:
+    size_bytes: 88
+    top_keys:
+    - list
+  svr_soldier_treatment_list:
+    size_bytes: 11
+    top_keys:
+    - list
+  svr_al_action_list:
+    size_bytes: 12
+    top_keys:
+    - items
+  svr_new_battle_ready_event:
+    size_bytes: 13
+    top_keys:
+    - events
+  svr_donate_info:
+    size_bytes: 78
+    top_keys:
+    - next_recovery_time
+    - gold_donate_num
+    - own_num
+    - crit_at
+  svr_daily_quest:
+    size_bytes: 2916
+    top_keys:
+    - refresh_time
+    - box_quest_data
+    - daily_quest_stage
+    - active_point
+    - quest_list
+    - claim_active_reward_list
+  svr_cycle_free_item:
+    size_bytes: 347
+    top_keys:
+    - items
+  svr_island_login_data:
+    size_bytes: 55
+    top_keys:
+    - help_other_times
+    - help_refresh_time
+    - items
+  svr_area_new:
+    size_bytes: 151
+    top_keys:
+    - fog_clear
+    - mist_group
+    - area_id
+    - clear_times
+    - cleared_grid_pos_list
+    - finished_area_mist_list
+    - area_mist_id
+    - is_recovered
+  svr_chapter_quest:
+    size_bytes: 529
+    top_keys:
+    - chapter_index
+    - passed_chapter_index
+    - chapter_quest
+    - flag
+    - chapter_etime
+  svr_multiple_target_recharge:
+    size_bytes: 15
+    top_keys:
+    - has_event
+  svr_lord_info_new:
+    size_bytes: 353
+    top_keys:
+    - lord_info_data
+  svr_new_player_signin:
+    size_bytes: 54
+    top_keys:
+    - quests
+    - unlock_time
+    - login_dates
+  svr_hero_travel:
+    size_bytes: 79
+    top_keys:
+    - best_history_mileage
+    - passed_hurdle
+    - last_begin_time
+    - facility
+  svr_worker_mail:
+    size_bytes: 1846
+    top_keys:
+    - mail_list
+  svr_functional_building:
+    size_bytes: 11
+    top_keys:
+    - list
+  svr_water_cycle_event:
+    size_bytes: 27
+    top_keys:
+    - event_list
+    - first
+  svr_daily_quest_inc:
+    size_bytes: 221
+    top_keys:
+    - refresh_time
+    - box_quest_data
+    - daily_quest_stage
+    - active_point
+    - quest_list
+    - claim_active_reward_list
+  svr_flood_coming:
+    size_bytes: 83
+    top_keys:
+    - begin_time
+    - muck_ids
+    - castle_lv
+    - coming_flag
+    - index
+    - end_time
+  svr_map_exploring:
+    size_bytes: 130
+    top_keys:
+    - map_info
+    - enter_time
+    - cur_map
+    - cur_area
+    - clear_time
+  svr_arena_times_info:
+    size_bytes: 193
+    top_keys:
+    - purchase_times
+    - updt_time
+    - next_refresh_time
+    - claimed_targets
+    - rewards_times
+    - season_info
+    - challenge_times
+  svr_dungeon_passed:
+    size_bytes: 162
+    top_keys:
+    - ab_test_group
+    - last_finish_dungeon
+    - rely_ab_test_group
+  svr_player_backpack_equip:
+    size_bytes: 12
+    top_keys:
+    - items
+  svr_worker_uprising:
+    size_bytes: 23
+    top_keys:
+    - end_time
+  svr_token_shop:
+    size_bytes: 11983
+    top_keys:
+    - tokens
+  svr_queue_buff:
+    size_bytes: 22
+    top_keys:
+    - queue_buff_item
+  svr_p3_worker_coming:
+    size_bytes: 524
+    top_keys:
+    - auto_coming_workers
+    - coming_workers
+    - first_flag
+    - cur_special
+    - coming_workers_in
+  svr_p3_worker_schedule:
+    size_bytes: 70
+    top_keys:
+    - schedule_change_time
+    - schedule_time
+    - worker_eat
+  svr_camp_soldier_list:
+    size_bytes: 166
+    top_keys:
+    - wounded_troops
+    - nomral_troops
+    - reserve_troops
+  svr_radar_time_reward:
+    size_bytes: 44
+    top_keys:
+    - reward_list
+    - refresh_time
+  svr_castle_reward:
+    size_bytes: 16
+    top_keys:
+    - lv
+    - age
+  svr_item_consequence_open_num:
+    size_bytes: 12
+    top_keys:
+    - items
+  svr_reset_equip_records:
+    size_bytes: 30
+    top_keys:
+    - records
+    - sp_records
+  svr_pet_quest:
+    size_bytes: 64
+    top_keys:
+    - expire_flag
+    - quest_list
+    - day
+    - claim_reward_list
+  svr_dynamic_sub_game:
+    size_bytes: 24791
+    top_keys:
+    - community_event_portal_switch_control
+    - sub_game_merit_shop_new
+    - sub_game_player_invite
+    - sub_game_pid_get_v2
+    - sub_game_event_tab_sort
+  svr_area:
+    size_bytes: 58
+    top_keys:
+    - claimed_sand_id
+    - cur_area_id
+    - recover_area_id
+  svr_energy_prize_recharge:
+    size_bytes: 11
+    top_keys:
+    - item
+  svr_soldier_revive_list:
+    size_bytes: 11
+    top_keys:
+    - list
+  svr_player_func:
+    size_bytes: 934
+    top_keys:
+    - loyalty
+    - power
+    - ignites
+    - auto_set_worker_switch
+    - vip_flag
+    - today_storage_rss_num
+    - iap_gift_anonymous
+    - next_move_time_in_legion_war
+  svr_cycle_cost_stat:
+    size_bytes: 103
+    top_keys:
+    - max_pay
+    - newest_pay_time
+    - next_refresh_time
+    - items
+  svr_refresh_info:
+    size_bytes: 79
+    top_keys:
+    - global_broadcast
+    - pvp_move_refresh
+  svr_self_al_help_apply_list:
+    size_bytes: 12
+    top_keys:
+    - items
+  svr_red_envelopes:
+    size_bytes: 12
+    top_keys:
+    - items
+  svr_side_quest:
+    size_bytes: 342
+    top_keys:
+    - side_quest
+  svr_event_info:
+    size_bytes: 264
+    top_keys:
+    - event_info
+  svr_p3_worker:
+    size_bytes: 984
+    top_keys:
+    - worker_list
+  svr_al_shop:
+    size_bytes: 938
+    top_keys:
+    - shops
+  svr_token_chest:
+    size_bytes: 26
+    top_keys:
+    - updt_time
+    - items
+  svr_iap_card:
+    size_bytes: 53
+    top_keys:
+    - reward
+    - left_collect_count
+    - unlock_count
+  svr_temporary_storage_reward:
+    size_bytes: 18
+    top_keys:
+    - record_list
+  svr_charge_protector:
+    size_bytes: 217
+    top_keys:
+    - items
+  svr_city_skin_new:
+    size_bytes: 67
+    top_keys:
+    - cur_skin
+    - skins
+  svr_radar_instance:
+    size_bytes: 615
+    top_keys:
+    - intel_instances
+  svr_bounty_quest:
+    size_bytes: 55
+    top_keys:
+    - claim_stage
+    - etime
+    - bounty_quest
+    - star
+  svr_queue_buff_detail:
+    size_bytes: 29
+    top_keys:
+    - queue_buff_detail_list
+  svr_conn7:
+    size_bytes: 19
+    top_keys:
+    - seq
+    - group
+  svr_furnace_info_new:
+    size_bytes: 43
+    top_keys:
+    - furnace_lv
+    - unlock_barbarion_list
+  svr_expedition_shop:
+    size_bytes: 205
+    top_keys:
+    - fixed_rewards
+    - exclusive_rewards
+    - unfixed_rewards
+    - stage
+    - version
+    - unfixed_refresh_num
+    - fixed_next_refresh_time
+    - coin
+  svr_wood_connect:
+    size_bytes: 18
+    top_keys:
+    - wood_info
+  svr_client_record:
+    size_bytes: 25
+    top_keys:
+    - list
+  svr_dispatch_task:
+    size_bytes: 168
+    top_keys:
+    - difficulty_lv
+    - help_times
+    - queue_info
+    - refresh_time
+    - rob_times
+    - common_next_refresh_time
+    - special_next_refresh_time
+    - dispatch_task
+  svr_collectible_resource:
+    size_bytes: 12
+    top_keys:
+    - items
+  svr_p3_worker_finish_quest:
+    size_bytes: 12
+    top_keys:
+    - types
+  svr_resource_production:
+    size_bytes: 159
+    top_keys:
+    - money_consume_speed
+    - product_speed
+    - last_update_time
+  svr_soldier_revive_free:
+    size_bytes: 80
+    top_keys:
+    - next_refresh_time
+    - token_week_limit
+    - get_token_this_week
+  svr_player_var:
+    size_bytes: 1100
+    top_keys:
+    - title_apply_etime
+    - is_clear_all_fog_by_event
+    - force_flag
+    - occupy_report_id
+    - client_action_seq
+    - res_time
+    - train_hero_force
+    - is_dragon_soul_auto_store
+  svr_seq_list:
+    size_bytes: 106
+    top_keys:
+    - city_soldier_train_upgrade_seq
+    - soldier_list_seq
+    - city_soldier_treat_seq
+    - token_produce_seq
+  svr_buff_inc:
+    size_bytes: 1911
+    top_keys:
+    - buff_item
+  svr_time_buff:
+    size_bytes: 236
+    top_keys:
+    - svr_buff_item
+    - rune_buff_item
+    - kvk_kill_buff_list
+    - iap_buff_item
+    - next_free_peace_time
+    - kingdom_buff_item
+    - dragon_buff_item
+    - hurt_dragon_buff_item
+  svr_backpack_hero_piece_new:
+    size_bytes: 100
+    top_keys:
+    - flag
+    - items
+  svr_truck_info:
+    size_bytes: 312
+    top_keys:
+    - refresh_time
+    - times
+    - infos
+  svr_backpack_limit_time_item:
+    size_bytes: 12
+    top_keys:
+    - items
+  svr_gold_prize_gunshot_info:
+    size_bytes: 11
+    top_keys:
+    - item
+  svr_pet_extra:
+    size_bytes: 26
+    top_keys:
+    - exps
+    - stage_item
+  svr_exchange_coin:
+    size_bytes: 11
+    top_keys:
+    - list
+  svr_lord_skin_new:
+    size_bytes: 67
+    top_keys:
+    - cur_skin
+    - skins
+  svr_backpack_hero_poster:
+    size_bytes: 21
+    top_keys:
+    - flag
+    - items
+  svr_worker_help:
+    size_bytes: 663
+    top_keys:
+    - help_list
+  svr_trap_soldier_wounded:
+    size_bytes: 11
+    top_keys:
+    - list
+  svr_solo_recharge_event:
+    size_bytes: 15
+    top_keys:
+    - has_event
+  svr_box_award_info:
+    size_bytes: 55
+    top_keys:
+    - next_refresh_time
+    - award_list
+    - award_times
+  svr_player_lvl_info:
+    size_bytes: 137
+    top_keys:
+    - enter_lvl_time
+    - lvl_id
+    - lvl_kick_flag
+    - passive_move_time
+    - has_enter_lvl
+    - move_cool_time
+    - lvl_etime
+    - move_times
+  svr_backpack_hero_exclusive_equip:
+    size_bytes: 12
+    top_keys:
+    - items
+  svr_car_records:
+    size_bytes: 18
+    top_keys:
+    - car_records

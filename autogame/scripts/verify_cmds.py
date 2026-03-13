@@ -55,12 +55,35 @@ async def verify_all(uid: int):
         "add_gem": {},
         "add_soldiers": {},
         "add_resource": {},
+        "rally_dismiss": {"unique_id": "107_test_1"},
+        "attack_city": {
+            "target_info": {"id": f"2_{uid}_1", "pos": str(encode_pos(500, 500))},
+        },
+        "get_player_pos": {},
+        "get_al_members": {},
+        "copy_player": {
+            "src_uid": uid, "src_sid": 1, "tar_uid": uid, "tar_sid": 1,
+        },
+        "change_name": {"name": f"test_{uid}"},
+        "create_alliance": {"name": "TestAlliance", "nick": "TST"},
+        "join_alliance": {"target_aid": 1},
+        "al_leave": {},
+        "al_help_all": {},
+        "create_ava_battle": {"1v1_id": "test_battle_1"},
+        "ava_add_player": {"lvl_id": "test_battle_1", "uid": uid, "camp_id": 1},
+        "ava_enter_battle": {"lvl_id": "test_battle_1"},
     }
+
+    # 协议字段名与 send_cmd 的 uid 参数冲突的命令，需要走 param_overrides
+    uid_conflict_cmds = {"ava_add_player"}
 
     for cmd_name in CMD_CONFIG:
         overrides = test_overrides.get(cmd_name, {})
         try:
-            resp = await client.send_cmd(cmd_name, uid, **overrides)
+            if cmd_name in uid_conflict_cmds:
+                resp = await client.send_cmd(cmd_name, uid, param_overrides=overrides)
+            else:
+                resp = await client.send_cmd(cmd_name, uid, **overrides)
             code = resp.get("code", "N/A")
             msg = resp.get("msg", "")
             # 检查是否有 res_data（查询类命令的正常响应）
