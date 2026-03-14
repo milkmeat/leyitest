@@ -70,6 +70,9 @@ class GameProfile:
     # City layout for building finder
     city_layout: dict = field(default_factory=dict)
 
+    # YAML scripts directory (v2 script runner)
+    scripts_dir: str = ""
+
 
 def load_game_profile(game_id: str,
                       games_dir: str = "games") -> GameProfile:
@@ -143,6 +146,9 @@ def load_game_profile(game_id: str,
 
         # City layout
         city_layout=data.get("city_layout", {}),
+
+        # Scripts directory
+        scripts_dir=os.path.join(game_dir, "scripts"),
     )
 
     logger.info(f"Loaded game profile: {profile.display_name} ({game_id})")

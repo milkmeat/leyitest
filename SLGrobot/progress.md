@@ -45,7 +45,7 @@
   - `pyyaml` 已添加到 `requirements.txt`
   - `vision/__init__.py` 已更新导出
 
-- [ ] **1.6 单元测试**
+- [ ] ~~**1.6 单元测试**~~ (skipped)
   - 用已有截图 PNG 测试各子检测器
   - 测试 DOM 完整输出格式
   - 测试 YAML 序列化/反序列化
@@ -316,8 +316,8 @@
 
 | Phase | Status | Started | Completed |
 |-------|--------|---------|-----------|
-| Phase 1: DOM Builder | In progress | 2026-03-14 | — |
-| Phase 2: Script Runner | Not started | — | — |
+| Phase 1: DOM Builder | Done (1.6 skipped) | 2026-03-14 | 2026-03-14 |
+| Phase 2: Script Runner | In progress | 2026-03-15 | — |
 | Phase 3: Auto Handler | Not started | — | — |
 | Phase 4: Game Config | Not started | — | — |
 | Phase 5: Cleanup | Not started | — | — |

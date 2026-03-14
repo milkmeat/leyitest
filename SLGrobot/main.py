@@ -42,6 +42,7 @@ from state.persistence import StatePersistence
 from brain.auto_handler import AutoHandler
 from brain.stuck_recovery import StuckRecovery
 from brain.finger_detector import FingerDetector
+from brain.script_runner import ScriptRunner, load_script, list_scripts, ScriptAbortError
 from vision.screen_dom import ScreenDOMBuilder
 from executor.action_validator import ActionValidator
 from executor.action_runner import ActionRunner
@@ -60,6 +61,8 @@ Commands:
   state                         Show current game state
   scene                         Classify current scene
   dom [--save]                   Build Screen DOM (YAML) of current screen
+  run <name> [--dry]             Execute a YAML script (v2 DOM-aware runner)
+  scripts                        List available YAML scripts
   quest <name or text>           Execute a quest script (bilingual: name or text)
   quest_rules                   List all quest scripts (name + pattern)
   quest_test <name or text>     Dry-run a quest script (show steps)
@@ -1264,6 +1267,81 @@ class CLI:
             with open(yaml_path, "w", encoding="utf-8") as f:
                 f.write(yaml_str)
             print(f"# Saved: {img_path}, {yaml_path}")
+
+    def cmd_run(self, args: list[str]) -> None:
+        """Execute a YAML script (v2 DOM-aware runner)."""
+        if not args:
+            print("Usage: run <name> [--dry]")
+            return
+
+        name = args[0]
+        dry_run = "--dry" in args
+
+        # Resolve script path
+        scripts_dir = ""
+        if self.bot.game_profile:
+            scripts_dir = self.bot.game_profile.scripts_dir
+
+        if not scripts_dir or not os.path.isdir(scripts_dir):
+            print(f"Scripts directory not found: {scripts_dir}")
+            return
+
+        script_path = os.path.join(scripts_dir, f"{name}.yaml")
+        if not os.path.isfile(script_path):
+            available = list_scripts(scripts_dir)
+            print(f"Script not found: {name}")
+            if available:
+                print(f"Available: {', '.join(available)}")
+            return
+
+        try:
+            script = load_script(script_path)
+        except ValueError as e:
+            print(f"Invalid script: {e}")
+            return
+
+        desc = script.get("description", "")
+        print(f"Script: {script['name']}")
+        if desc:
+            print(f"  {desc}")
+        print(f"  Steps: {len(script['steps'])}")
+        if dry_run:
+            print("  Mode: dry-run")
+        print()
+
+        runner = ScriptRunner(
+            self.bot.adb,
+            self.bot.dom_builder,
+            self.bot.screenshot_mgr.capture,
+        )
+        ok = runner.run(script, dry_run=dry_run)
+        print(f"\nResult: {'OK' if ok else 'ABORTED'}")
+
+    def cmd_scripts(self, args: list[str]) -> None:
+        """List available YAML scripts."""
+        scripts_dir = ""
+        if self.bot.game_profile:
+            scripts_dir = self.bot.game_profile.scripts_dir
+
+        if not scripts_dir or not os.path.isdir(scripts_dir):
+            print(f"No scripts directory: {scripts_dir}")
+            return
+
+        names = list_scripts(scripts_dir)
+        if not names:
+            print("No scripts found.")
+            return
+
+        print(f"Scripts in {scripts_dir}:")
+        for name in names:
+            path = os.path.join(scripts_dir, f"{name}.yaml")
+            try:
+                script = load_script(path)
+                desc = script.get("description", "")
+                steps = len(script.get("steps", []))
+                print(f"  {name:<30s} {steps} steps  {desc}")
+            except (ValueError, Exception) as e:
+                print(f"  {name:<30s} (error: {e})")
 
     def cmd_auto_test(self, args: list[str]) -> None:
         """Simulate one auto-loop iteration on a static screenshot."""
