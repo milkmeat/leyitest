@@ -1919,14 +1919,35 @@ def main():
 
     GameLogger(config.LOG_DIR)
 
-    # Load game profile
+    # Detect game from emulator's foreground app if --game not explicitly provided
+    game_explicit = "--game" in sys.argv
     games_dir = getattr(config, "GAMES_DIR", "games")
+    game_id = args.game
+
+    if not game_explicit:
+        # Build reverse lookup: package -> game_id
+        pkg_to_game = {pkg: gid for gid, pkg in config.GAME_PACKAGES.items()}
+        # Connect ADB early to detect foreground app
+        from device.adb_controller import ADBController
+        _adb = ADBController(config.ADB_HOST, config.ADB_PORT, config.ADB_PATH)
+        if _adb.connect():
+            fg_pkg = _adb.get_foreground_package()
+            if fg_pkg:
+                if fg_pkg in pkg_to_game:
+                    game_id = pkg_to_game[fg_pkg]
+                    print(f"Detected game: {game_id} (package: {fg_pkg})")
+                else:
+                    print(f"Unknown game package: {fg_pkg}")
+                    print(f"Supported: {', '.join(f'{gid} ({pkg})' for gid, pkg in config.GAME_PACKAGES.items())}")
+                    sys.exit(1)
+
+    # Load game profile
     game_profile = None
     try:
-        game_profile = load_game_profile(args.game, games_dir)
+        game_profile = load_game_profile(game_id, games_dir)
         print(f"Game: {game_profile.display_name}")
     except FileNotFoundError:
-        print(f"Warning: game profile '{args.game}' not found, using defaults")
+        print(f"Warning: game profile '{game_id}' not found, using defaults")
 
     bot = GameBot(game_profile=game_profile)
 
