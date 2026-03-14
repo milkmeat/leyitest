@@ -62,6 +62,20 @@
 8. ~~单次 DOM 生成耗时 < 3 秒~~ → 实测 3.8-4.3s（OCR 1.5s + finger 3s + template 1.2s 并行后的瓶颈），可接受
 9. `--save` 模式下文件正确保存到 `data/dom_history/`
 
+### 性能优化记录
+
+优化前 13.2s → 优化后 3.8-4.3s
+
+| 优化项 | 做法 | 效果 |
+|--------|------|------|
+| 并行执行 | OCR / 模板匹配 / finger 三线程并行（ThreadPoolExecutor），底层 C 库释放 GIL | 串行 5.7s → 并行 ~3.5s（取最长路径） |
+| 模板 0.5x 缩放 + ROI 精化 | 在 540×960 小图上匹配全部模板，命中后仅对命中位置周围小区域做全分辨率二次匹配；缩放模板缓存在 `_scaled_cache` 中 | 模板匹配 5.2s → 1.2s |
+| 排除 finger 模板变体 | FingerDetector 注入的 16 个 finger 变体（翻转/旋转/多尺度）从模板匹配中排除，由专门的 FingerDetector 处理 | 避免 16 个高误报候选的���分辨率验证 |
+
+**未做的优化（可未来考虑）：**
+- Finger detection 可选化（很多场景没有 finger，跳过可省 3s）
+- OCR 是 RapidOCR 底层调用，无法进一步压缩
+
 ---
 
 ## Phase 2: Script Runner + CLI
