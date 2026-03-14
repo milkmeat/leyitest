@@ -387,8 +387,11 @@ async def cmd_recall_troop(uid_str: str, *troop_ids: str, env: str = None):
         await client.close()
 
 
-async def cmd_rally_dismiss(uid_str: str, unique_id: str, env: str = None):
+async def cmd_rally_dismiss(uid_str: str, unique_id: str = "", env: str = None):
     """解散集结: rally_dismiss <uid> <rally_unique_id>  (107_xxx_1)"""
+    if not unique_id or not unique_id.strip():
+        print("[error] unique_id 不能为空，用法: rally_dismiss <uid> <rally_unique_id>  (例: 107_xxx_1)")
+        return
     from src.executor.game_api import GameAPIClient
     client = GameAPIClient(env=env)
     try:
