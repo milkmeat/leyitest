@@ -44,7 +44,6 @@ from brain.stuck_recovery import StuckRecovery
 from brain.finger_detector import FingerDetector
 from executor.action_validator import ActionValidator
 from executor.action_runner import ActionRunner
-from executor.result_checker import ResultChecker
 from utils.logger import GameLogger
 
 logger = logging.getLogger(__name__)
@@ -175,10 +174,6 @@ class GameBot:
             self.grid, self.screenshot_mgr,
             building_finder=self.building_finder,
         )
-        self.checker = ResultChecker(
-            self.screenshot_mgr, self.classifier, self.detector
-        )
-
         # Hardening layer (Phase 5)
         self.stuck_recovery = StuckRecovery(
             adb=self.adb, game_package=game_package,
@@ -1887,7 +1882,6 @@ def main():
         preset = config.EMULATOR_PRESETS[args.emulator]
         config.ADB_PORT = preset["port"]
         config.ADB_PATH = preset["adb_path"]
-        config.NOX_ADB_PATH = config.ADB_PATH
         config.ACTIVE_EMULATOR = args.emulator
 
     GameLogger(config.LOG_DIR)

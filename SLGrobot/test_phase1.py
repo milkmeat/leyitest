@@ -20,7 +20,7 @@ def test_adb_connection():
     print("Test 1: ADB Connection")
     print("=" * 50)
 
-    adb = ADBController(config.ADB_HOST, config.ADB_PORT, config.NOX_ADB_PATH)
+    adb = ADBController(config.ADB_HOST, config.ADB_PORT, config.ADB_PATH)
     success = adb.connect()
     print(f"  Connect result: {success}")
     assert success, "Failed to connect to emulator"
@@ -142,7 +142,7 @@ def test_image_utils(image):
 def main():
     print("SLGrobot Phase 1 - Test Suite")
     print(f"Target: {config.ADB_HOST}:{config.ADB_PORT}")
-    print(f"ADB path: {config.NOX_ADB_PATH}")
+    print(f"ADB path: {config.ADB_PATH}")
 
     try:
         adb = test_adb_connection()

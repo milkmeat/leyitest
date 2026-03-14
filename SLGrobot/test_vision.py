@@ -207,7 +207,7 @@ def main():
     try:
         # Connect and capture screenshot
         print("\nConnecting to emulator...")
-        adb = ADBController(config.ADB_HOST, config.ADB_PORT, config.NOX_ADB_PATH)
+        adb = ADBController(config.ADB_HOST, config.ADB_PORT, config.ADB_PATH)
         if not adb.connect():
             print("Failed to connect to emulator!")
             sys.exit(1)

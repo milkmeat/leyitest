@@ -68,7 +68,6 @@ ACTIVE_EMULATOR = "bluestacks"
 ADB_HOST = "127.0.0.1"
 ADB_PORT = EMULATOR_PRESETS[ACTIVE_EMULATOR]["port"]
 ADB_PATH = EMULATOR_PRESETS[ACTIVE_EMULATOR]["adb_path"]
-NOX_ADB_PATH = ADB_PATH  # backward-compatible alias
 
 # Screenshot
 SCREENSHOT_DIR = "data/screenshots"
@@ -94,7 +93,7 @@ NAV_PATHS_FILE = "data/navigation_paths.json"
 
 # Multi-game support
 GAMES_DIR = "games"
-ACTIVE_GAME = "frozenisland"
+ACTIVE_GAME = "westgame2"
 GAME_PACKAGES = {
     "frozenisland": "leyi.frozenislandpro",
     "westgame2": "leyi.cowboyclash3",

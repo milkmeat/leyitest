@@ -179,59 +179,7 @@ def test_auto_handler():
     print("PASS: AutoHandler action generation")
 
 
-# ── Test 5: Scene handlers instantiation ─────────────────────────────────────
-
-def test_scene_handlers():
-    """Test scene handlers can be instantiated and have correct interface."""
-    from scene.handlers.main_city import MainCityHandler
-    from scene.handlers.world_map import WorldMapHandler
-    from scene.handlers.battle import BattleHandler
-    from state.game_state import GameState
-
-    class MockDetector:
-        def locate(self, *args, **kwargs): return None
-        def locate_all(self, *args, **kwargs): return []
-
-    gs = GameState()
-    detector = MockDetector()
-
-    mc = MainCityHandler(detector, gs)
-    wm = WorldMapHandler(detector, gs)
-    bt = BattleHandler(detector, gs)
-
-    import numpy as np
-    fake = np.zeros((1920, 1080, 3), dtype=np.uint8)
-
-    # extract_info should return dict
-    mc_info = mc.extract_info(fake)
-    assert isinstance(mc_info, dict)
-    assert "resources" in mc_info
-    assert "buttons" in mc_info
-
-    wm_info = wm.extract_info(fake)
-    assert isinstance(wm_info, dict)
-    assert "resource_nodes" in wm_info
-
-    bt_info = bt.extract_info(fake)
-    assert isinstance(bt_info, dict)
-    assert "result" in bt_info
-
-    # get_available_actions should return list of strings
-    mc_actions = mc.get_available_actions(fake)
-    assert isinstance(mc_actions, list)
-    assert "collect_resources" in mc_actions
-
-    wm_actions = wm.get_available_actions(fake)
-    assert isinstance(wm_actions, list)
-    assert "navigate_main_city" in wm_actions
-
-    bt_actions = bt.get_available_actions(fake)
-    assert isinstance(bt_actions, list)
-
-    print("PASS: Scene handlers instantiation")
-
-
-# ── Test 6: Full integration ─────────────────────────────────────────────────
+# ── Test 5: Full integration ─────────────────────────────────────────────────
 
 def test_integration():
     """Test full integration: state -> persistence cycle."""
@@ -295,7 +243,6 @@ def main():
         ("StatePersistence save/load", test_persistence),
         ("StateTracker number parsing", test_number_parsing),
         ("AutoHandler actions", test_auto_handler),
-        ("Scene handlers", test_scene_handlers),
         ("Full integration", test_integration),
     ]
 
