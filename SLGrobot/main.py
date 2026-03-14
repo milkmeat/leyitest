@@ -42,6 +42,7 @@ from state.persistence import StatePersistence
 from brain.auto_handler import AutoHandler
 from brain.stuck_recovery import StuckRecovery
 from brain.finger_detector import FingerDetector
+from vision.screen_dom import ScreenDOMBuilder
 from executor.action_validator import ActionValidator
 from executor.action_runner import ActionRunner
 from utils.logger import GameLogger
@@ -58,6 +59,7 @@ Commands:
   status                        Show connection and game state
   state                         Show current game state
   scene                         Classify current scene
+  dom [--save]                   Build Screen DOM (YAML) of current screen
   quest <name or text>           Execute a quest script (bilingual: name or text)
   quest_rules                   List all quest scripts (name + pattern)
   quest_test <name or text>     Dry-run a quest script (show steps)
@@ -182,6 +184,12 @@ class GameBot:
 
         # Finger detector (extracted from old QuestWorkflow)
         self.finger_detector = FingerDetector(self.detector, game_profile)
+
+        # Screen DOM builder (v2 unified vision pipeline)
+        self.dom_builder = ScreenDOMBuilder(
+            self.ocr, self.template_matcher, self.finger_detector,
+            game_profile=game_profile,
+        )
 
         # Quest scripts for synchronous execution
         self._quest_scripts = (
@@ -1231,6 +1239,31 @@ class CLI:
         for s, score in sorted(scores.items(), key=lambda x: -x[1]):
             if score > 0:
                 print(f"  {s}: {score:.3f}")
+
+    def cmd_dom(self, args: list[str]) -> None:
+        """Capture screenshot and output YAML DOM of all interactive elements."""
+        import os
+        import time as _time
+
+        screenshot = self.bot.screenshot_mgr.capture()
+        t0 = _time.perf_counter()
+        dom = self.bot.dom_builder.build(screenshot)
+        elapsed = _time.perf_counter() - t0
+        yaml_str = self.bot.dom_builder.to_yaml(dom)
+        print(yaml_str)
+        print(f"# DOM build time: {elapsed:.2f}s")
+
+        if "--save" in args:
+            save_dir = os.path.join("data", "dom_history")
+            os.makedirs(save_dir, exist_ok=True)
+            ts = _time.strftime("%Y%m%d_%H%M%S")
+            img_path = os.path.join(save_dir, f"{ts}.png")
+            yaml_path = os.path.join(save_dir, f"{ts}.yaml")
+            import cv2 as _cv2
+            _cv2.imwrite(img_path, screenshot)
+            with open(yaml_path, "w", encoding="utf-8") as f:
+                f.write(yaml_str)
+            print(f"# Saved: {img_path}, {yaml_path}")
 
     def cmd_auto_test(self, args: list[str]) -> None:
         """Simulate one auto-loop iteration on a static screenshot."""

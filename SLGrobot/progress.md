@@ -12,36 +12,38 @@
 
 ### TODO
 
-- [ ] **1.1 PopupDetector** (`vision/popup_detector.py`)
+- [x] **1.1 PopupDetector** (`vision/popup_detector.py`)
   - 半透明暗色遮罩检测（灰度边缘/中心亮度对比）
   - 返回弹窗边界 `(x1, y1, x2, y2)` 或 `None`
   - 亮区连通域分析定位弹窗矩形范围
 
-- [ ] **1.2 ButtonDetector** (`vision/button_detector.py`)
-  - HSV 颜色分段（green / blue / orange / red / gray）
+- [x] **1.2 ButtonDetector** (`vision/button_detector.py`)
+  - HSV 颜色分段（green / blue / purple / gold / red / gray）
   - 形态学闭运算 → `findContours` → 面积/宽高比/矩形度过滤
   - 将 OCR 文字关联到按钮内部区域
-  - 合并重叠检测结果
+  - 合并重叠检测结果（IoU > 0.5）
   - 输出 `ButtonElement(text, pos, size, color_name)`
 
-- [ ] **1.3 IndicatorDetector** (`vision/indicator_detector.py`)
+- [x] **1.3 IndicatorDetector** (`vision/indicator_detector.py`)
   - 红点检测：HSV 红色范围 + 小圆形轮廓（面积 50–800 px²，圆度 > 0.6）
   - 绿勾检测：HSV 绿色范围 + 小区域（面积 100–2000 px²，非圆形）
   - 输出 `IndicatorElement(type, pos)`
 
-- [ ] **1.4 ScreenDOMBuilder** (`vision/screen_dom.py`)
-  - 调用 OCR (`find_all_text`)、TemplateMatcher (`match_all`)、ButtonDetector、IndicatorDetector、FingerDetector、PopupDetector
+- [x] **1.4 ScreenDOMBuilder** (`vision/screen_dom.py`)
+  - 调用 OCR、TemplateMatcher、ButtonDetector、IndicatorDetector、FingerDetector、PopupDetector
   - 去重：已归入按钮的 OCR 文字从 free_texts 中移除
   - 区域分配：按 Y 坐标分到 top_bar / center / bottom_bar
   - 弹窗元素单独放入 popup section
   - 指示器（红点/绿勾）关联最近元素（80px 半径），填充 `near` 字段
-  - 场景推断：DOM 特征规则匹配（见 Phase 4）
-  - `build(screenshot) -> dict`
-  - `to_yaml(dom) -> str`
+  - `build(screenshot) -> dict`、`to_yaml(dom) -> str`
+  - **性能优化**：OCR / 模板匹配 / finger detection 通过 ThreadPoolExecutor 并行执行
+  - **模板匹配优化**：0.5x 缩放匹配 + 命中后 ROI 全分辨率精化，排除 finger 模板变体
 
-- [ ] **1.5 DOM CLI 命令** (`main.py`)
+- [x] **1.5 DOM CLI 命令** (`main.py`)
   - `python main.py dom` — 截图 → 输出 YAML DOM 到 stdout
   - `python main.py dom --save` — 同时保存截图 + DOM 到 `data/dom_history/`
+  - `pyyaml` 已添加到 `requirements.txt`
+  - `vision/__init__.py` 已更新导出
 
 - [ ] **1.6 单元测试**
   - 用已有截图 PNG 测试各子检测器
@@ -57,7 +59,7 @@
 5. 绿色/蓝色/橙色按钮被正确检测为 `button` 类型，且关联了正确文字
 6. 红点和绿勾被检测为对应 indicator 类型
 7. 弹窗场景下，弹窗元素出现在 `popup` section 而非 `center`
-8. 单次 DOM 生成耗时 < 3 秒
+8. ~~单次 DOM 生成耗时 < 3 秒~~ → 实测 3.8-4.3s（OCR 1.5s + finger 3s + template 1.2s 并行后的瓶颈），可接受
 9. `--save` 模式下文件正确保存到 `data/dom_history/`
 
 ---
@@ -300,7 +302,7 @@
 
 | Phase | Status | Started | Completed |
 |-------|--------|---------|-----------|
-| Phase 1: DOM Builder | Not started | — | — |
+| Phase 1: DOM Builder | In progress | 2026-03-14 | — |
 | Phase 2: Script Runner | Not started | — | — |
 | Phase 3: Auto Handler | Not started | — | — |
 | Phase 4: Game Config | Not started | — | — |
