@@ -23,6 +23,15 @@
 4. 距离意识：优先攻击近距离目标，避免长途行军
 5. 英雄意识：Rally队长和Solo都需要最强英雄，同一账号不能同时担任这两个角色
 
+# 攻击方式选择规则（必须遵守）
+根据目标类型决定攻击方式：
+1. **敌方玩家主城** → 必须 Rally 集结攻击（INITIATE_RALLY + JOIN_RALLY），禁止 solo 单打
+2. **中立建筑**（归属=中立） → 所有队员各自 solo 攻击（ATTACK_TARGET），不需要集结
+3. **敌方占领的建筑**（归属=敌对联盟） → 必须 Rally 集结攻击，禁止 solo 单打
+
+Rally 操作流程：同一批指令中，队长（1人）先 INITIATE_RALLY，其余队员紧跟 JOIN_RALLY（rally_id 留空，系统会自动回填）。
+队长的英雄被占用，不能再 solo；队员加入集结后仍可用英雄 solo 其他目标。
+
 # 思考步骤
 1. 解析L2战略意图（若有）
 2. 评估每个成员的部队状态（空闲/行军中/战斗中）和英雄占用情况
@@ -30,7 +39,7 @@
 4. 根据部队派遣规则，为每个账号分配任务（注意英雄互斥）
 5. 校验坐标（0-999范围内）
 
-# 可用动作 (7种)
+# 可用动作 (9种)
 
 ## MOVE_CITY — 移城
 瞬移城市到指定坐标，全军立即召回。最强战术机动。
@@ -56,11 +65,20 @@
 
 ## JOIN_RALLY — 加入集结
 加入已有的集结。
-必填: uid, rally_id
+必填: uid
+可选: rally_id（同批次 INITIATE_RALLY 后可留空，系统自动回填）
 
 ## RETREAT — 撤退
 召回指定部队。
 必填: uid, troop_ids (列表)
+
+## RALLY_DISMISS — 解散集结
+队长取消/解散已发起的集结。
+必填: uid, rally_id
+
+## RECALL_REINFORCE — 撤回增援
+撤回在集结或建筑驻防中的本方部队。
+必填: uid, reinforce_id
 
 # 输出格式
 严格输出 JSON，格式如下:
@@ -90,13 +108,14 @@
 
 # 字段说明
 每条 instruction 的字段:
-- action: 必填, 上述7种之一
+- action: 必填, 上述9种之一
 - uid: 必填, 执行账号的UID（必须是你管理的成员）
 - target_x, target_y: 目标坐标 (0-999)
 - target_uid: 目标玩家UID（ATTACK_TARGET攻击玩家/SCOUT/INITIATE_RALLY时）
 - building_id: 建筑ID（ATTACK_TARGET攻击建筑/GARRISON_BUILDING/INITIATE_RALLY时）
 - rally_id: 集结ID（JOIN_RALLY时）
 - troop_ids: 部队ID列表（RETREAT时）
+- reinforce_id: 增援部队unique_id（RECALL_REINFORCE时）
 - prepare_time: 集结准备秒数（INITIATE_RALLY时，默认300）
 - reason: 决策理由（日志用）
 

@@ -12,14 +12,16 @@
 
 from __future__ import annotations
 
+import json as _json
 import logging
 from enum import Enum
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
 
 from src.executor.game_api import GameAPIClient
 from src.config.schemas import AppConfig
+from src.models.player_state import PlayerState
 from src.utils.coords import encode_pos
 
 logger = logging.getLogger(__name__)
@@ -37,6 +39,8 @@ class ActionType(str, Enum):
     INITIATE_RALLY = "INITIATE_RALLY"
     JOIN_RALLY = "JOIN_RALLY"
     RETREAT = "RETREAT"
+    RALLY_DISMISS = "RALLY_DISMISS"
+    RECALL_REINFORCE = "RECALL_REINFORCE"
 
 
 class AIInstruction(BaseModel):
@@ -53,6 +57,7 @@ class AIInstruction(BaseModel):
     rally_id: str = ""                 # 集结 ID（JOIN_RALLY）
     troop_ids: list[str] = []          # 部队 ID 列表（RETREAT）
     prepare_time: int = 300            # 集结准备时间秒（INITIATE_RALLY）
+    reinforce_id: str = ""             # 增援部队 unique_id（RECALL_REINFORCE 用）
     reason: str = ""                   # L1 决策理由（日志用）
 
 
@@ -131,10 +136,23 @@ class L0Executor:
             if not instr.troop_ids:
                 return False, "RETREAT 需要 troop_ids 非空"
 
+        elif instr.action == ActionType.RALLY_DISMISS:
+            if not instr.rally_id:
+                return False, "RALLY_DISMISS 需要 rally_id 非空"
+
+        elif instr.action == ActionType.RECALL_REINFORCE:
+            if not instr.reinforce_id:
+                return False, "RECALL_REINFORCE 需要 reinforce_id 非空"
+
         return True, ""
 
-    async def execute(self, instr: AIInstruction) -> ExecutionResult:
-        """校验 → 翻译 → 调用 game_api → 返回结果"""
+    async def execute(self, instr: AIInstruction, rally_pos: str = "") -> ExecutionResult:
+        """校验 → 翻译 → 调用 game_api → 返回结果
+
+        Args:
+            instr: AI 指令
+            rally_pos: 集结对象的编码坐标（JOIN_RALLY 用，同循环回填）
+        """
         # 1. 校验
         ok, err_msg = self.validate(instr)
         if not ok:
@@ -145,7 +163,7 @@ class L0Executor:
 
         # 2. 执行
         try:
-            resp = await self._dispatch(instr)
+            resp = await self._dispatch(instr, rally_pos=rally_pos)
             # 判断服务器返回码
             ret_code = resp.get("res_header", {}).get("ret_code", -1)
             if ret_code == 0:
@@ -169,37 +187,82 @@ class L0Executor:
                 error=str(e),
             )
 
-    async def execute_batch(self, instructions: list[AIInstruction]) -> list[ExecutionResult]:
-        """顺序执行一批指令（不并发，避免同一账号竞态）"""
+    async def execute_batch(
+        self,
+        instructions: list[AIInstruction],
+        accounts: Optional[dict[int, PlayerState]] = None,
+    ) -> list[ExecutionResult]:
+        """顺序执行一批指令（不并发，避免同一账号竞态）
+
+        支持：
+        - 自动构建 march_info（从 accounts 获取兵力/英雄数据）
+        - 同循环 Rally：INITIATE_RALLY 成功后自动提取 rally_id，
+          回填到后续 rally_id 为空的 JOIN_RALLY 指令
+        """
+        self._accounts = accounts or {}
         results = []
+        # 最近一次成功的 rally 信息（同循环回填用）
+        last_rally_id: str = ""
+        last_rally_pos: str = ""
+
         for instr in instructions:
-            result = await self.execute(instr)
+            # 自动回填 rally_id 和坐标
+            if (instr.action == ActionType.JOIN_RALLY
+                    and not instr.rally_id and last_rally_id):
+                instr = instr.model_copy(update={"rally_id": last_rally_id})
+                logger.info("自动回填 rally_id=%s → uid=%d", last_rally_id, instr.uid)
+
+            result = await self.execute(instr, rally_pos=last_rally_pos)
             results.append(result)
+
+            # 从 INITIATE_RALLY 响应中提取 rally_id 和 pos
+            if (result.success and instr.action == ActionType.INITIATE_RALLY):
+                rid, rpos = self._extract_rally_info(result.server_response)
+                if rid:
+                    last_rally_id = rid
+                    last_rally_pos = rpos
+                    logger.info("提取 rally_id=%s pos=%s from INITIATE_RALLY uid=%d", rid, rpos, instr.uid)
+
         return results
+
+    @staticmethod
+    def _extract_rally_id(resp: Dict[str, Any]) -> str:
+        """从 create_rally_war 响应中提取 rally_id"""
+        try:
+            for item in resp["res_data"][0]["push_list"][0]["data"]:
+                if "svr_rally_info" in item.get("name", ""):
+                    import json as _json
+                    data = item.get("data", "")
+                    if isinstance(data, str):
+                        data = _json.loads(data)
+                    return data.get("rally_id", "")
+        except (KeyError, IndexError, TypeError):
+            pass
+        return ""
 
     # ------------------------------------------------------------------
     # 内部方法
     # ------------------------------------------------------------------
 
-    async def _dispatch(self, instr: AIInstruction) -> Dict[str, Any]:
+    async def _dispatch(self, instr: AIInstruction, rally_pos: str = "") -> Dict[str, Any]:
         """根据 action 类型分发到对应的 game_api 方法"""
         action = instr.action
+        march = self._build_march_info(instr.uid, needs_hero=(action != ActionType.JOIN_RALLY))
 
         if action == ActionType.MOVE_CITY:
             return await self.client.move_city(instr.uid, instr.target_x, instr.target_y)
 
         elif action == ActionType.ATTACK_TARGET:
             if instr.building_id:
-                # 攻击建筑
                 target_info = {
                     "id": instr.building_id,
                     "pos": str(encode_pos(instr.target_x, instr.target_y)),
                 }
-                return await self.client.attack_building(instr.uid, target_info, {})
+                return await self.client.attack_building(instr.uid, target_info, march)
             else:
-                # 攻击玩家
                 return await self.client.attack_player(
                     instr.uid, instr.target_uid, instr.target_x, instr.target_y,
+                    march_info=march,
                 )
 
         elif action == ActionType.SCOUT:
@@ -212,10 +275,9 @@ class L0Executor:
                 "id": instr.building_id,
                 "pos": str(encode_pos(instr.target_x, instr.target_y)),
             }
-            return await self.client.reinforce_building(instr.uid, target_info, {})
+            return await self.client.reinforce_building(instr.uid, target_info, march)
 
         elif action == ActionType.INITIATE_RALLY:
-            # 集结目标: 优先用 building_id，否则用 target_uid
             if instr.building_id:
                 target_info = {
                     "id": instr.building_id,
@@ -227,15 +289,23 @@ class L0Executor:
                     "pos": str(encode_pos(instr.target_x, instr.target_y)),
                 }
             return await self.client.create_rally(
-                instr.uid, target_info, {}, instr.prepare_time,
+                instr.uid, target_info, march, instr.prepare_time,
             )
 
         elif action == ActionType.JOIN_RALLY:
-            target_info = {"id": instr.rally_id}
-            return await self.client.join_rally(instr.uid, target_info, {})
+            target_info: Dict[str, Any] = {"id": instr.rally_id}
+            if rally_pos:
+                target_info["pos"] = rally_pos
+            return await self.client.join_rally(instr.uid, target_info, march)
 
         elif action == ActionType.RETREAT:
             return await self.client.recall_troop(instr.uid, instr.troop_ids)
+
+        elif action == ActionType.RALLY_DISMISS:
+            return await self.client.rally_dismiss(instr.uid, instr.rally_id)
+
+        elif action == ActionType.RECALL_REINFORCE:
+            return await self.client.recall_reinforce(instr.uid, instr.reinforce_id)
 
         else:
             raise ValueError(f"未知 action: {action}")
@@ -261,4 +331,91 @@ class L0Executor:
             return f"加入集结 {instr.rally_id}"
         elif a == ActionType.RETREAT:
             return f"召回部队 {instr.troop_ids}"
+        elif a == ActionType.RALLY_DISMISS:
+            return f"解散集结 {instr.rally_id}"
+        elif a == ActionType.RECALL_REINFORCE:
+            return f"撤回增援 {instr.reinforce_id}"
         return ""
+
+    # 默认出征兵力上限（每支部队，测试服实测 5000 可用，10000 被拒）
+    DEFAULT_MARCH_SIZE = 5000
+
+    def _build_march_info(self, uid: int, needs_hero: bool = True) -> Dict[str, Any]:
+        """根据账号数据自动构建完整 march_info
+
+        服务器要求的完整格式:
+            hero, carry_lord, leader, soldier_total_num, heros, queue_id, soldier
+
+        缺少任何字段都会返回 ret_code=30114。
+
+        Args:
+            uid: 执行账号 UID
+            needs_hero: 是否需要英雄（JOIN_RALLY 队员不需要 leader）
+        """
+        acct = getattr(self, "_accounts", {}).get(uid)
+        if not acct:
+            return {}
+
+        # 兵种：选数量最多的，限制出征兵力
+        soldier_id = "204"  # 默认弓兵
+        soldier_count = self.DEFAULT_MARCH_SIZE
+        if acct.soldiers:
+            best = max(acct.soldiers, key=lambda s: s.value)
+            if best.value > 0:
+                soldier_id = str(best.id)
+                soldier_count = min(best.value, self.DEFAULT_MARCH_SIZE)
+
+        # 英雄：选等级最高的空闲英雄（无英雄数据时用默认 id=21）
+        hero_id = 21  # 默认英雄，服务器不校验拥有关系
+        if needs_hero and acct.heroes:
+            idle = [h for h in acct.heroes if h.state == 0]
+            if idle:
+                hero_id = max(idle, key=lambda h: h.lv).id
+
+        return {
+            "hero": {"main": hero_id, "vice": []},
+            "carry_lord": 1,
+            "leader": 1 if needs_hero else 0,
+            "soldier_total_num": soldier_count,
+            "heros": {},
+            "queue_id": 6001,
+            "soldier": {soldier_id: soldier_count},
+            "over_defend": False,
+        }
+
+    @staticmethod
+    def _extract_rally_info(resp: Dict[str, Any]) -> tuple[str, str]:
+        """从 create_rally_war 响应中提取 rally uniqueId 和 pos
+
+        Returns:
+            (rally_id, rally_pos_encoded) — 失败时返回 ("", "")
+
+        真实服务器返回 svr_user_objs_inc（type=107 集结对象，含 uniqueId 和 pos）。
+        Mock 服务器返回 svr_rally_info（含 rally_id）。
+        """
+        try:
+            for res in resp.get("res_data", []):
+                for push in res.get("push_list", []):
+                    for item in push.get("data", []):
+                        name = item.get("name", "")
+                        raw = item.get("data", "")
+                        data = _json.loads(raw) if isinstance(raw, str) else raw
+
+                        # Mock: svr_rally_info.rally_id
+                        if "svr_rally_info" in name:
+                            rid = data.get("rally_id", "")
+                            if rid:
+                                return rid, ""
+
+                        # 真实: svr_user_objs_inc → type=107 集结对象
+                        if "svr_user_objs_inc" in name:
+                            for obj in data.get("objs", []):
+                                basic = obj.get("objBasic", {})
+                                if basic.get("type") == 107:
+                                    return (
+                                        obj.get("uniqueId", ""),
+                                        str(basic.get("pos", "")),
+                                    )
+        except (KeyError, IndexError, TypeError, _json.JSONDecodeError):
+            pass
+        return "", ""

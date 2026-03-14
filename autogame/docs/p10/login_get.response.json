@@ -1,0 +1,1055 @@
+{
+  "res_header": {
+    "ret_code": 0,
+    "cost_time_us": 0,
+    "ret_time_s": 1773369904,
+    "err_msg": ""
+  },
+  "request": {
+    "header": {
+      "did": "self-system",
+      "sid": 1,
+      "aid": 20000118,
+      "ksid": 1,
+      "ava_id": 0,
+      "castle_lv": 25,
+      "battle_type": 0,
+      "battle_id": 0,
+      "chat_scene": ",kingdom_1",
+      "invoker_name": "evans_test_debug",
+      "uid": 20001946
+    },
+    "request": {
+      "cmd": "login_get",
+      "param": {
+        "all": 0,
+        "list": []
+      }
+    },
+    "extra_info": {
+      "no_checkac": 1,
+      "op_cmd": 1
+    }
+  },
+  "res_data": [
+    {
+      "push_list": [
+        {
+          "data": [
+            {
+              "data": "{\"guide_id\":[605,1601,1602,1610,1611,1612,1613,1614,1615,1617,1619,1622,1623,1624,2523,321,661,682,2206,2207,3314,3315,2512,2911,4002,4370,4372,4373,4374,4377,4378,4379,3045,3046,3047,3050,1516,4502,4511,4515,4516,4517]}",
+              "name": "svr_person_guide"
+            },
+            {
+              "data": "{\"type_info\":{}}",
+              "name": "svr_shop_buy_restriction"
+            },
+            {
+              "data": "{\"items\":[{\"lv\":1,\"svr_id\":1,\"type\":106,\"pos\":811058,\"gift_flag\":0,\"status\":0,\"foreman_time\":0},{\"lv\":7,\"svr_id\":2,\"type\":0,\"pos\":10091009,\"queue_id\":1,\"gift_flag\":0,\"status\":0,\"foreman_time\":0},{\"lv\":3,\"svr_id\":3,\"type\":41,\"pos\":10261004,\"queue_id\":1,\"gift_flag\":0,\"status\":0,\"foreman_time\":0},{\"lv\":3,\"svr_id\":4,\"type\":34,\"pos\":10191027,\"queue_id\":1,\"gift_flag\":0,\"status\":0,\"foreman_time\":0},{\"lv\":6,\"svr_id\":5,\"type\":15,\"pos\":10170020,\"queue_id\":1,\"gift_flag\":0,\"status\":0,\"foreman_time\":0},{\"lv\":2,\"svr_id\":6,\"type\":42,\"pos\":10401004,\"queue_id\":1,\"gift_flag\":0,\"status\":0,\"foreman_time\":0},{\"lv\":4,\"svr_id\":7,\"type\":16,\"pos\":180002,\"queue_id\":1,\"gift_flag\":0,\"status\":0,\"foreman_time\":0},{\"lv\":2,\"svr_id\":8,\"type\":111,\"pos\":641028,\"queue_id\":1,\"gift_flag\":0,\"status\":0,\"foreman_time\":0},{\"lv\":3,\"svr_id\":9,\"type\":17,\"pos\":110028,\"queue_id\":1,\"gift_flag\":0,\"status\":0,\"foreman_time\":0},{\"lv\":1,\"show\":true,\"svr_id\":10,\"type\":62,\"pos\":91018,\"gift_flag\":0,\"status\":0,\"foreman_time\":0},{\"lv\":1,\"svr_id\":11,\"type\":112,\"pos\":490023,\"queue_id\":1,\"gift_flag\":0,\"status\":0,\"foreman_time\":0},{\"lv\":1,\"svr_id\":12,\"type\":35,\"pos\":121040,\"queue_id\":1,\"gift_flag\":0,\"status\":0,\"foreman_time\":0},{\"lv\":1,\"svr_id\":13,\"type\":94,\"pos\":731059,\"gift_flag\":0,\"status\":0,\"foreman_time\":0},{\"lv\":1,\"svr_id\":14,\"type\":78,\"pos\":10271079,\"queue_id\":1,\"gift_flag\":0,\"status\":0,\"foreman_time\":0},{\"lv\":3,\"svr_id\":15,\"type\":43,\"pos\":10381016,\"queue_id\":1,\"gift_flag\":0,\"status\":0,\"foreman_time\":0},{\"lv\":1,\"svr_id\":16,\"type\":92,\"pos\":10051048,\"queue_id\":1,\"gift_flag\":0,\"status\":0,\"foreman_time\":0},{\"lv\":1,\"svr_id\":18,\"type\":6001,\"pos\":101077,\"queue_id\":1,\"gift_flag\":0,\"status\":0,\"foreman_time\":0},{\"lv\":5,\"svr_id\":17,\"type\":18,\"pos\":451008,\"queue_id\":1,\"gift_flag\":0,\"status\":0,\"foreman_time\":0}]}",
+              "name": "svr_building_new"
+            },
+            {
+              "data": "{\"items\":{}}",
+              "name": "svr_intel_collection_info"
+            },
+            {
+              "data": "{\"event_list\":{}}",
+              "name": "svr_player_goal_event"
+            },
+            {
+              "data": "{\"attack\":{},\"max_tn\":1}",
+              "name": "svr_arena_lineup_attack"
+            },
+            {
+              "data": "{\"has_event\":0}",
+              "name": "svr_payback_event"
+            },
+            {
+              "data": "{\"heros\":{},\"unclaimed_reward\":{},\"cur_hurdle_id\":0,\"cur_mileage\":0,\"accu_reward\":{},\"sprint\":{\"used_times\":0,\"times_limit\":1},\"buffs_sclected\":{},\"enemy_lineup\":{},\"heal\":{\"used_times\":0,\"times_limit\":1},\"hospital_hero\":{}}",
+              "name": "svr_hero_travel_present"
+            },
+            {
+              "data": "{\"working_workers\":{},\"reward_num\":0,\"left_num\":0,\"idle_num\":0,\"claimed_building_id_list\":{}}",
+              "name": "svr_resource_workers_info"
+            },
+            {
+              "data": "{\"cur_skin\":0,\"skins\":[{\"effective_time\":0,\"skin_id\":0,\"etime\":0}]}",
+              "name": "svr_troop_skin"
+            },
+            {
+              "data": "{\"card_pools\":[{\"total_times\":0,\"period_id\":10,\"pool_id\":10,\"has_first\":0,\"type\":4,\"last_refresh_time\":1769472000}]}",
+              "name": "svr_foreman_pool_list"
+            },
+            {
+              "data": "{\"treasure_trigger_times\":0,\"card_pool_scene_items\":{},\"hero_scene_items\":{}}",
+              "name": "svr_iap_scene_info"
+            },
+            {
+              "data": "{\"origin_pos\":0,\"passive_move_city_flag\":0,\"svr_move_city_flag\":0}",
+              "name": "svr_player_alliance_duel_info"
+            },
+            {
+              "data": "{\"work_list\":{}}",
+              "name": "svr_worker"
+            },
+            {
+              "data": "{\"bullet\":9000,\"next_free_shoot\":1769506589,\"mode\":0,\"process\":10000,\"lucky_bag\":{},\"first_shoot_reward\":0,\"curr_shoot_count\":0,\"reward_list\":[{\"reward\":[{\"a\":[25,51,1]}]},{\"reward\":[{\"a\":[0,5031,1]}]},{\"reward\":[{\"a\":[0,3494,1]}]},{\"reward\":[{\"a\":[84,3,1]}]},{\"reward\":[{\"a\":[0,3645,1]}]},{\"reward\":[{\"a\":[0,3581,1]}]},{\"reward\":[{\"a\":[84,3,1]}]},{\"reward\":[{\"a\":[0,3792,1]}]},{\"reward\":[{\"a\":[0,3614,1]}]},{\"reward\":[{\"a\":[0,5009,1]}]}],\"seq\":1}",
+              "name": "svr_shoot_gallary"
+            },
+            {
+              "data": "{\"preset_list\":[{\"hero_list\":{},\"has_lord\":0,\"soldier_list\":{},\"preset_id\":1,\"preset_name\":\"\",\"version\":0}]}",
+              "name": "svr_player_troop_preset"
+            },
+            {
+              "data": "{\"events\":{}}",
+              "name": "svr_new_player_bp_event"
+            },
+            {
+              "data": "{\"btime\":0,\"etime\":0,\"castle_lv\":0}",
+              "name": "svr_rain_event"
+            },
+            {
+              "data": "{\"refresh_time\":1773446400,\"treasure_list\":[{\"pos\":2,\"etime\":0,\"pet_id\":0,\"id\":1,\"btime\":0,\"svr_id\":2,\"status\":0},{\"pos\":1,\"etime\":0,\"pet_id\":0,\"id\":1,\"btime\":0,\"svr_id\":1,\"status\":0},{\"pos\":3,\"etime\":0,\"pet_id\":0,\"id\":0,\"btime\":0,\"svr_id\":3,\"status\":0}],\"hunt_times\":0}",
+              "name": "svr_pet_treasure"
+            },
+            {
+              "data": "{\"max_difficulty\":0,\"team_id\":0}",
+              "name": "svr_ghost_town_player_info"
+            },
+            {
+              "data": "{\"last_energy_time\":0,\"clear_menu\":{},\"start_energy\":0,\"cur_menu\":0}",
+              "name": "svr_expedition_all_data"
+            },
+            {
+              "data": "{\"items\":{}}",
+              "name": "svr_lvl_soldier_treatment"
+            },
+            {
+              "data": "{\"muck_ids\":{},\"muck_extras\":{}}",
+              "name": "svr_muck_extra"
+            },
+            {
+              "data": "{\"preset_list\":[{\"preset_id\":1,\"preset_name\":\"\",\"skill_trees\":[{\"skills\":{},\"tree_id\":2},{\"skills\":{},\"tree_id\":1}]}],\"tree_point\":[{\"skill_point\":0,\"tree_id\":2},{\"skill_point\":0,\"tree_id\":1}],\"cur_preset_id\":1}",
+              "name": "svr_player_skill_preset"
+            },
+            {
+              "data": "{\"active_lv\":0,\"items\":{}}",
+              "name": "svr_hurt_dragon_soul"
+            },
+            {
+              "data": "{\"left_refresh_times\":0,\"week_scores\":{\"ava_rank_score\":0,\"siege_rank_score\":0,\"accu_prosperity\":0,\"real_barbarion_score\":0,\"barbarion_score\":0,\"prosperity_score\":0,\"collect_score\":0,\"rally_score\":0,\"attack_wall_score\":0,\"battlefield_score\":0,\"kill_score\":0,\"kvk_rank_score\":0},\"goods\":[{\"buy_num\":0,\"goods_id\":9},{\"buy_num\":0,\"goods_id\":8},{\"buy_num\":0,\"goods_id\":7},{\"buy_num\":0,\"goods_id\":6},{\"buy_num\":0,\"goods_id\":11},{\"buy_num\":0,\"goods_id\":4},{\"buy_num\":0,\"goods_id\":3},{\"buy_num\":0,\"goods_id\":2},{\"buy_num\":0,\"goods_id\":1},{\"buy_num\":0,\"goods_id\":0},{\"buy_num\":0,\"goods_id\":5},{\"buy_num\":0,\"goods_id\":12},{\"buy_num\":0,\"goods_id\":10},{\"buy_num\":0,\"goods_id\":13},{\"buy_num\":0,\"goods_id\":14}],\"week_battle_score\":0,\"battle_score\":0,\"score_next_reset_time\":1773619200,\"version\":3,\"next_refresh_time\":1774224000}",
+              "name": "svr_battle_score_shop"
+            },
+            {
+              "data": "{}",
+              "name": "svr_expedition_inner_data"
+            },
+            {
+              "data": "{\"out_ava_battle_wait_time\":0,\"building_seq\":18,\"permanent_buff_id\":0,\"equip_full_send_mail\":0,\"move_city_prepare_time\":0,\"is_online\":0}",
+              "name": "svr_client_show_flag"
+            },
+            {
+              "data": "{\"end_time\":0,\"next_free_item_recover_time\":0,\"battle_id\":0,\"battlefield_kick_flag\":0,\"close_time\":0,\"enter_time\":0,\"battle_type\":0,\"extra_info\":\"{}\"}",
+              "name": "svr_player_battlefield_info"
+            },
+            {
+              "data": "{\"card_pools\":[{\"today_times\":0,\"last_free_time\":0,\"total_times\":0,\"period_id\":6,\"pool_id\":6,\"has_first\":0,\"type\":1,\"last_refresh_time\":1769472000},{\"camp_list\":[{\"guarantees_time\":300000,\"camp_id\":-1}],\"has_first\":1,\"last_refresh_time\":1769472000,\"today_times\":0,\"total_times\":1,\"pool_id\":20,\"last_free_time\":1769653181,\"period_id\":20,\"type\":0},{\"camp_list\":[{\"guarantees_time\":299998,\"camp_id\":-1}],\"has_first\":0,\"last_refresh_time\":1769472000,\"today_times\":0,\"total_times\":2,\"pool_id\":104,\"last_free_time\":1769653637,\"period_id\":104,\"type\":6}]}",
+              "name": "svr_hero_pool_list"
+            },
+            {
+              "data": "{\"items\":{}}",
+              "name": "svr_player_backpack_equip_material"
+            },
+            {
+              "data": "{\"title_apply_etime\":{},\"is_clear_all_fog_by_event\":0,\"force_flag\":0,\"occupy_report_id\":0,\"client_action_seq\":0,\"res_time\":1769506589,\"force_empty_fields\":[\"claimed_pre_down_reward\",\"boss_trap_claimed_target\"],\"train_hero_force\":0,\"is_dragon_soul_auto_store\":0,\"move_city_troop_cancel_last_timestamp\":0,\"pre_register_reward_state\":0,\"change_building_mode_times\":0,\"force\":87427,\"been_unlock_hurt_dragon_building\":0,\"claimed_pre_down_reward\":{},\"p3_worker_init_time\":1769503621000,\"luoha_join_num\":0,\"can_claim_boss_trap_timestamp\":0,\"treasure_flag\":0,\"next_free_troop_speed_refresh_time\":1773619200,\"next_free_move_city_refresh_time\":1773446400,\"resource\":{\"num\":[1018719,997109,1018719,1018719,999999]},\"boss_trap_hurt_record\":{\"end_time\":0,\"aid\":0},\"birthday\":0,\"updt_time\":1773200357,\"hero_summon_score\":1150,\"safe_resource\":{\"num\":[131604,75834,79455,127549,0]},\"has_atk_trap\":0,\"is_use_free_second_building_queue\":1,\"worker_dead\":3,\"title_on_etime\":0,\"hide_from_ally_flag\":0,\"title_apply_reason\":{},\"in_territory\":0,\"boss_trap_top_damage\":0,\"boss_trap_claimed_target\":{},\"unlock_material_produce\":0,\"gs_force\":10000028,\"change_building_refresh_time\":0}",
+              "name": "svr_player_var_inc"
+            },
+            {
+              "data": "{\"list\":[{\"building_id\":3,\"lv\":4,\"type\":4101,\"id\":1},{\"building_id\":4,\"lv\":4,\"type\":3401,\"id\":2},{\"building_id\":4,\"lv\":4,\"type\":3404,\"id\":3},{\"building_id\":4,\"lv\":4,\"type\":3405,\"id\":4},{\"building_id\":5,\"lv\":10,\"type\":1501,\"id\":5},{\"building_id\":3,\"lv\":4,\"type\":4103,\"id\":6},{\"building_id\":3,\"lv\":4,\"type\":4102,\"id\":7},{\"building_id\":3,\"lv\":4,\"type\":4104,\"id\":8},{\"building_id\":3,\"lv\":4,\"type\":4105,\"id\":9},{\"building_id\":6,\"lv\":2,\"type\":4201,\"id\":10},{\"building_id\":6,\"lv\":2,\"type\":4203,\"id\":11},{\"building_id\":6,\"lv\":1,\"type\":4202,\"id\":12},{\"building_id\":7,\"lv\":6,\"type\":1601,\"id\":13},{\"building_id\":9,\"lv\":4,\"type\":1701,\"id\":14},{\"building_id\":9,\"lv\":4,\"type\":1702,\"id\":15},{\"building_id\":4,\"lv\":4,\"type\":3409,\"id\":16},{\"building_id\":12,\"lv\":1,\"type\":3501,\"id\":17},{\"building_id\":12,\"lv\":1,\"type\":3502,\"id\":18},{\"building_id\":12,\"lv\":1,\"type\":3503,\"id\":19},{\"building_id\":15,\"lv\":4,\"type\":4301,\"id\":20},{\"building_id\":15,\"lv\":4,\"type\":4303,\"id\":21},{\"building_id\":15,\"lv\":4,\"type\":4302,\"id\":22},{\"building_id\":15,\"lv\":4,\"type\":4304,\"id\":23},{\"building_id\":15,\"lv\":4,\"type\":4305,\"id\":24},{\"building_id\":7,\"lv\":6,\"type\":1602,\"id\":25},{\"building_id\":17,\"lv\":10,\"type\":1801,\"id\":26},{\"building_id\":17,\"lv\":10,\"type\":1802,\"id\":27},{\"building_id\":17,\"lv\":10,\"type\":1803,\"id\":28},{\"building_id\":17,\"lv\":10,\"type\":1807,\"id\":29},{\"building_id\":17,\"lv\":2,\"type\":1808,\"id\":30},{\"building_id\":5,\"lv\":10,\"type\":1502,\"id\":31},{\"building_id\":5,\"lv\":10,\"type\":1503,\"id\":32}]}",
+              "name": "svr_furniture_list"
+            },
+            {
+              "data": "{\"is_using\":0,\"name_plates\":{},\"name_plate_id\":{}}",
+              "name": "svr_name_plate"
+            },
+            {
+              "data": "{\"equip_slot_info\":{}}",
+              "name": "svr_equip_slots"
+            },
+            {
+              "data": "{\"blacklists\":{}}",
+              "name": "svr_blacklist"
+            },
+            {
+              "data": "{\"explore_interactive_list\":{}}",
+              "name": "svr_explore_interactive_list"
+            },
+            {
+              "data": "{\"time\":0}",
+              "name": "svr_scout_record_time"
+            },
+            {
+              "data": "{\"next_refresh_time\":0,\"goods\":{}}",
+              "name": "svr_island_shop"
+            },
+            {
+              "data": "{\"crit_sequence\":[1,2,1,1,2,1,2,1,1,2,1,1,2,1,2,1,2,15,1,1,1,1,1,2,1,1,5,2,1,1,2,1,1,2,1,1,2,1,1,1,1,2,1,2,1,1,1,5,1,1],\"crit_sequence_start\":0}",
+              "name": "svr_donate_crit_sequence"
+            },
+            {
+              "data": "{\"utime\":1773195762366728,\"ctime\":1769502509,\"last_lg_time\":1773195762,\"csid\":1,\"con_login_days\":2,\"bind_reward\":0,\"is_dead\":0,\"device\":\"a7708ec5-c266-4860-84f8-43359bb64126\",\"idfa\":\"a7708ec5-c266-4860-84f8-43359bb64126\",\"computeInfo\":{\"today_vip_point\":0,\"tommorrow_vip_point\":0},\"npc\":0,\"uid\":20001946}",
+              "name": "svr_login"
+            },
+            {
+              "data": "{\"barbarian_kill_num\":0,\"res_trans\":{\"num\":[0,0,0,0,0]},\"resource_collect_total\":0,\"war\":{\"scoutNumNew\":0,\"myCityDestroyedNum\":0,\"destroyCityNum\":0,\"killMonsterNum\":0,\"hosTroopNum\":0,\"damageTroopNum\":0,\"myTroopDamagedNum\":0,\"atkFail\":0,\"dfnWin\":0,\"myFortDamagedNum\":0,\"warDeadSoldier\":0,\"atkWin\":0,\"warWin\":1,\"damageFortNum\":0,\"killNum\":[0,0,0,0,0,0,0,0,0,0],\"forceKilled\":0,\"warFail\":0,\"hurtEnemyTroopNum\":0,\"scoutNum\":0,\"dfnFail\":0},\"dragon\":{\"captureDragonNum\":0,\"escapeDragonNum\":0,\"myDragonExecutedNum\":0,\"myDragonEscapedNum\":0,\"myDragonCapturedNum\":0,\"executeDragonNum\":0},\"building\":[{\"type\":41,\"max_lv\":3},{\"type\":17,\"max_lv\":3},{\"type\":35,\"max_lv\":1},{\"type\":92,\"max_lv\":1},{\"type\":16,\"max_lv\":4},{\"type\":78,\"max_lv\":1},{\"type\":62,\"max_lv\":1},{\"type\":111,\"max_lv\":2},{\"type\":34,\"max_lv\":3},{\"type\":94,\"max_lv\":1},{\"type\":6001,\"max_lv\":1},{\"type\":15,\"max_lv\":6},{\"type\":0,\"max_lv\":7},{\"type\":18,\"max_lv\":5},{\"type\":112,\"max_lv\":1},{\"type\":106,\"max_lv\":1},{\"type\":43,\"max_lv\":3},{\"type\":42,\"max_lv\":2}],\"soldier\":{},\"resource_transport_total\":0,\"train_total_num\":0,\"al_help_num\":0,\"computeInfo\":{\"fail_num\":0,\"troop_damage_rate\":10000,\"ai_help_support_unread_num\":0,\"win_num\":0,\"win_rate\":0,\"send_al_help_num\":0},\"treasure_draw_num\":0,\"force\":{\"pet\":0,\"maxForceHistory\":10087455,\"dragon\":0,\"soldier\":10000028,\"fort\":0,\"equip\":0,\"lord\":0,\"building\":36887,\"treasure\":0,\"card\":0,\"trap_force\":0,\"hero\":50540,\"hero_eforce\":0,\"foreman\":0,\"research\":0,\"troop\":0},\"res_col\":{\"num\":[0,0,0,0,0]},\"solider_capacity\":0}",
+              "name": "svr_player_stat"
+            },
+            {
+              "data": "{\"buff_detail_list\":[{\"buff_id\":406,\"buff_detail\":{}},{\"buff_id\":424,\"buff_detail\":{}},{\"buff_id\":1039,\"buff_detail\":{}},{\"buff_id\":398,\"buff_detail\":{}},{\"buff_id\":414,\"buff_detail\":{}},{\"buff_id\":404,\"buff_detail\":{}},{\"buff_id\":1038,\"buff_detail\":{}},{\"buff_id\":426,\"buff_detail\":{}},{\"buff_id\":544,\"buff_detail\":{}},{\"buff_id\":416,\"buff_detail\":{}},{\"buff_id\":438,\"buff_detail\":{}},{\"buff_id\":401,\"buff_detail\":[{\"type\":11,\"num\":1}]},{\"buff_id\":428,\"buff_detail\":{}},{\"buff_id\":476,\"buff_detail\":{}},{\"buff_id\":394,\"buff_detail\":[{\"type\":11,\"num\":1}]},{\"buff_id\":418,\"buff_detail\":{}},{\"buff_id\":184,\"buff_detail\":{}},{\"buff_id\":1086,\"buff_detail\":{}},{\"buff_id\":608,\"buff_detail\":{}},{\"buff_id\":411,\"buff_detail\":{}},{\"buff_id\":584,\"buff_detail\":{}},{\"buff_id\":5,\"buff_detail\":{}},{\"buff_id\":4,\"buff_detail\":{}},{\"buff_id\":3,\"buff_detail\":{}},{\"buff_id\":678,\"buff_detail\":{}},{\"buff_id\":478,\"buff_detail\":[{\"type\":0,\"num\":1000}]},{\"buff_id\":1,\"buff_detail\":{}},{\"buff_id\":1081,\"buff_detail\":{}},{\"buff_id\":448,\"buff_detail\":{}},{\"buff_id\":481,\"buff_detail\":{}},{\"buff_id\":1568,\"buff_detail\":{}},{\"buff_id\":1570,\"buff_detail\":{}},{\"buff_id\":421,\"buff_detail\":{}},{\"buff_id\":46,\"buff_detail\":{}},{\"buff_id\":36,\"buff_detail\":{}},{\"buff_id\":16,\"buff_detail\":{}},{\"buff_id\":76,\"buff_detail\":[{\"type\":11,\"num\":922337203685477}]},{\"buff_id\":391,\"buff_detail\":{}},{\"buff_id\":35,\"buff_detail\":{}},{\"buff_id\":15,\"buff_detail\":{}},{\"buff_id\":75,\"buff_detail\":[{\"type\":11,\"num\":922337203685477}]},{\"buff_id\":44,\"buff_detail\":[{\"type\":11,\"num\":1}]},{\"buff_id\":14,\"buff_detail\":{}},{\"buff_id\":431,\"buff_detail\":{}},{\"buff_id\":931,\"buff_detail\":{}},{\"buff_id\":53,\"buff_detail\":{}},{\"buff_id\":13,\"buff_detail\":{}},{\"buff_id\":73,\"buff_detail\":[{\"type\":11,\"num\":922337203685477}]},{\"buff_id\":434,\"buff_detail\":{}},{\"buff_id\":59,\"buff_detail\":{}},{\"buff_id\":1278,\"buff_detail\":{}},{\"buff_id\":48,\"buff_detail\":[{\"type\":0,\"num\":1000}]},{\"buff_id\":1097,\"buff_detail\":{}},{\"buff_id\":17,\"buff_detail\":{}},{\"buff_id\":77,\"buff_detail\":{}},{\"buff_id\":1012,\"buff_detail\":{}},{\"buff_id\":1567,\"buff_detail\":{}},{\"buff_id\":425,\"buff_detail\":{}},{\"buff_id\":41,\"buff_detail\":{}},{\"buff_id\":51,\"buff_detail\":{}},{\"buff_id\":987,\"buff_detail\":{}},{\"buff_id\":187,\"buff_detail\":{}},{\"buff_id\":415,\"buff_detail\":{}},{\"buff_id\":820,\"buff_detail\":{}},{\"buff_id\":50,\"buff_detail\":{}},{\"buff_id\":413,\"buff_detail\":{}},{\"buff_id\":935,\"buff_detail\":[{\"type\":11,\"num\":1500}]},{\"buff_id\":570,\"buff_detail\":{}},{\"buff_id\":679,\"buff_detail\":{}},{\"buff_id\":395,\"buff_detail\":[{\"type\":11,\"num\":7}]},{\"buff_id\":437,\"buff_detail\":{}},{\"buff_id\":1037,\"buff_detail\":{}},{\"buff_id\":427,\"buff_detail\":{}},{\"buff_id\":480,\"buff_detail\":[{\"type\":0,\"num\":1000}]},{\"buff_id\":1096,\"buff_detail\":{}},{\"buff_id\":477,\"buff_detail\":[{\"type\":0,\"num\":1000}]},{\"buff_id\":977,\"buff_detail\":{}},{\"buff_id\":183,\"buff_detail\":{}},{\"buff_id\":475,\"buff_detail\":{}},{\"buff_id\":399,\"buff_detail\":{}},{\"buff_id\":397,\"buff_detail\":{}},{\"buff_id\":1094,\"buff_detail\":{}},{\"buff_id\":410,\"buff_detail\":[{\"type\":0,\"num\":1}]},{\"buff_id\":110,\"buff_detail\":{}},{\"buff_id\":400,\"buff_detail\":{}},{\"buff_id\":1089,\"buff_detail\":{}},{\"buff_id\":61,\"buff_detail\":{}},{\"buff_id\":407,\"buff_detail\":{}},{\"buff_id\":1093,\"buff_detail\":{}},{\"buff_id\":1095,\"buff_detail\":{}},{\"buff_id\":1092,\"buff_detail\":{}},{\"buff_id\":1566,\"buff_detail\":{}},{\"buff_id\":412,\"buff_detail\":{}},{\"buff_id\":422,\"buff_detail\":{}},{\"buff_id\":430,\"buff_detail\":{}},{\"buff_id\":423,\"buff_detail\":{}},{\"buff_id\":130,\"buff_detail\":[{\"type\":0,\"num\":4000}]},{\"buff_id\":417,\"buff_detail\":{}},{\"buff_id\":420,\"buff_detail\":{}},{\"buff_id\":60,\"buff_detail\":{}},{\"buff_id\":1082,\"buff_detail\":[{\"type\":11,\"num\":6}]},{\"buff_id\":335,\"buff_detail\":{}},{\"buff_id\":435,\"buff_detail\":{}},{\"buff_id\":439,\"buff_detail\":{}},{\"buff_id\":1088,\"buff_detail\":{}},{\"buff_id\":409,\"buff_detail\":{}},{\"buff_id\":479,\"buff_detail\":[{\"type\":0,\"num\":1000}]},{\"buff_id\":405,\"buff_detail\":{}},{\"buff_id\":1087,\"buff_detail\":{}},{\"buff_id\":429,\"buff_detail\":{}},{\"buff_id\":403,\"buff_detail\":{}},{\"buff_id\":419,\"buff_detail\":{}},{\"buff_id\":433,\"buff_detail\":{}},{\"buff_id\":565,\"buff_detail\":{}},{\"buff_id\":408,\"buff_detail\":[{\"type\":0,\"num\":10}]},{\"buff_id\":9,\"buff_detail\":{}},{\"buff_id\":8,\"buff_detail\":{}},{\"buff_id\":455,\"buff_detail\":{}},{\"buff_id\":2,\"buff_detail\":{}},{\"buff_id\":402,\"buff_detail\":{}},{\"buff_id\":74,\"buff_detail\":[{\"type\":11,\"num\":922337203685477}]},{\"buff_id\":42,\"buff_detail\":{}},{\"buff_id\":92,\"buff_detail\":[{\"type\":0,\"num\":6}]},{\"buff_id\":72,\"buff_detail\":[{\"type\":0,\"num\":2000}]},{\"buff_id\":62,\"buff_detail\":{}},{\"buff_id\":12,\"buff_detail\":{}},{\"buff_id\":49,\"buff_detail\":{}},{\"buff_id\":1040,\"buff_detail\":{}},{\"buff_id\":545,\"buff_detail\":[{\"type\":0,\"num\":1}]}]}",
+              "name": "svr_buff_detail"
+            },
+            {
+              "data": "{\"lord_image\":{}}",
+              "name": "svr_lord_image"
+            },
+            {
+              "data": "{\"new_item\":{},\"head_frames\":{},\"is_using\":0}",
+              "name": "svr_head_frame"
+            },
+            {
+              "data": "{\"worker_quest_list\":[{\"task_id\":1,\"worker_id\":4,\"type\":5,\"status\":0},{\"reward_index\":1,\"doc_id\":\"24\",\"task_id\":2,\"worker_id\":3,\"type\":22,\"status\":0},{\"task_id\":3,\"worker_id\":12,\"type\":16,\"status\":0}]}",
+              "name": "svr_p3_worker_quest"
+            },
+            {
+              "data": "{\"be_execute_items\":{},\"execute_items\":{}}",
+              "name": "svr_execute_history_new"
+            },
+            {
+              "data": "{}",
+              "name": "svr_ghost_town_window"
+            },
+            {
+              "data": "{\"avatar\":[{\"btime\":1769652176,\"item_id\":11164,\"id\":2100},{\"btime\":1773115185,\"item_id\":11193,\"id\":200},{\"btime\":1769653181,\"item_id\":11236,\"id\":4150}],\"cur_skin_item_id\":0,\"new_item\":{}}",
+              "name": "svr_avatar_list"
+            },
+            {
+              "data": "{\"hand_reward_num\":{},\"auto_reward_num\":{},\"reward_list\":{}}",
+              "name": "svr_reward_collection_box"
+            },
+            {
+              "data": "{\"ava_id\":0,\"ava_etime\":0,\"enter_ava_time\":0,\"ava_kick_flag\":0,\"has_enter_ava\":0}",
+              "name": "svr_player_ava_info"
+            },
+            {
+              "data": "{}",
+              "name": "svr_furnace_produce_list_new"
+            },
+            {
+              "data": "{\"is_open\":0}",
+              "name": "svr_iap_appcharge_open"
+            },
+            {
+              "data": "{\"refresh_time\":1773446400,\"rob_times\":0,\"criminals\":{}}",
+              "name": "svr_rob_info"
+            },
+            {
+              "data": "{\"alltime\":-1,\"etime\":-1,\"city_skin_id\":{},\"is_using\":0}",
+              "name": "svr_city_skin"
+            },
+            {
+              "data": "{\"sleep_count\":262667,\"command_time\":{},\"res_change\":-1}",
+              "name": "svr_sleep_info"
+            },
+            {
+              "data": "{\"next_refresh_time\":0,\"box_list\":{},\"award_times\":0}",
+              "name": "svr_pet_al_box_player_info"
+            },
+            {
+              "data": "{\"list\":[{\"value\":0,\"id\":201},{\"value\":0,\"id\":101},{\"value\":2000000,\"id\":204},{\"value\":19,\"id\":1}]}",
+              "name": "svr_expedition_soldier"
+            },
+            {
+              "data": "{\"al_id\":20000103,\"is_skvk_emperor\":0,\"cid\":107800025700,\"report_num_last_reset_time\":0,\"al_nick\":\"BJK\",\"equip_grid\":8,\"al_title\":0,\"avatar\":0,\"vip_level\":1,\"invite_policy\":0,\"city_skin_put_on_id\":0,\"force_empty_fields\":[\"kingdom_title_info\",\"anti_harass\",\"al_req_id_list\"],\"vip_new_version\":1,\"head_frame\":0,\"level\":1,\"al_pos\":1,\"anti_harass\":{},\"status\":0,\"building_recommend_version\":0,\"kingdom_title_info\":{},\"report_num\":0,\"al_name\":\"hhhhhh\",\"al_req_id_list\":{},\"al_req_id\":0,\"last_al_id\":0,\"cname\":\"Boss_BWPLM\",\"today_contribution\":0,\"uid\":20001946,\"iap_trigger_new_version\":1,\"sid\":1,\"age\":0,\"building_new_version\":0,\"uin\":\"Boss_BWPLM\",\"dead\":0,\"lord_name\":\"Garret\",\"has_change_flag\":0,\"custom_avatar\":\"\",\"has_change_player_name\":0,\"exp\":0,\"ksid\":1,\"al_join_t\":1773196628,\"today_contribution_next_refresh_time\":1773446400}",
+              "name": "svr_player_inc"
+            },
+            {
+              "data": "{\"artifact_list\":{}}",
+              "name": "svr_artifact"
+            },
+            {
+              "data": "{\"process_point\":0,\"claim_area_id\":0,\"cur_area_id\":0,\"recover_area_id\":0}",
+              "name": "svr_tk_area"
+            },
+            {
+              "data": "{\"p3_worker_defense_list\":[{\"defense_worker_num\":3,\"defense_worker_type\":0},{\"defense_worker_num\":0,\"defense_worker_type\":1}],\"defense_hero\":[{\"heros\":{},\"svr_id\":16}],\"defense_building\":[{\"form\":2,\"svr_id\":8},{\"form\":2,\"svr_id\":11}],\"clear_ids\":[6,1,5,3],\"defense_chest\":{}}",
+              "name": "svr_defense_war"
+            },
+            {
+              "data": "{\"heros\":{}}",
+              "name": "svr_tryout_hero_list"
+            },
+            {
+              "data": "{\"is_receive\":0,\"items\":{}}",
+              "name": "svr_expedition"
+            },
+            {
+              "data": "{\"common_coupon\":{}}",
+              "name": "svr_backpack_discount_coupon"
+            },
+            {
+              "data": "{\"list\":{}}",
+              "name": "svr_bookmark_list"
+            },
+            {
+              "data": "{\"list\":{}}",
+              "name": "svr_soldier_train_list"
+            },
+            {
+              "data": "{\"pet_list\":{}}",
+              "name": "svr_pet_list"
+            },
+            {
+              "data": "{\"can_claim_obstacle_id\":{}}",
+              "name": "svr_can_claim_obstacle"
+            },
+            {
+              "data": "{\"expire_time\":1770193709,\"list\":{},\"start_time\":1769502509}",
+              "name": "svr_hero_back_shop"
+            },
+            {
+              "data": "{\"last_total\":0,\"last_refresh_time\":0,\"dead_speedup\":0,\"wounded_speedup\":0,\"faith_speedup\":0,\"last_capacity\":0,\"next_free_dead_soldier_time\":0}",
+              "name": "svr_church_faith"
+            },
+            {
+              "data": "{\"prison_info_data\":{}}",
+              "name": "svr_prison_info_new"
+            },
+            {
+              "data": "{\"item_info\":{}}",
+              "name": "svr_birthday_card_info"
+            },
+            {
+              "data": "{\"preset_list\":{}}",
+              "name": "svr_player_equip_preset"
+            },
+            {
+              "data": "{\"claimed_sample_id\":{}}",
+              "name": "svr_radar_chapter"
+            },
+            {
+              "data": "{\"exps\":5392,\"coins\":0,\"hero_chests\":[{\"begin_time\":1769653568,\"buy\":0,\"chest_type\":0,\"chest_id\":2,\"end_time\":1772245568,\"buy_times\":0},{\"begin_time\":1772542101,\"buy\":0,\"chest_type\":1,\"chest_id\":2,\"end_time\":1773838101,\"buy_times\":0}]}",
+              "name": "svr_hero_resource"
+            },
+            {
+              "data": "{\"list\":{}}",
+              "name": "svr_in_list_soldier"
+            },
+            {
+              "data": "{\"origin_pos\":0,\"passive_move_city_flag\":0,\"svr_move_city_flag\":0}",
+              "name": "svr_player_kvk_info"
+            },
+            {
+              "data": "{\"island_unban_time\":0,\"island_banned_times\":0,\"be_like_times\":0,\"be_help_times\":0,\"login_dates\":0,\"like_times\":0,\"sign_in_reward\":0,\"unlock_time\":0}",
+              "name": "svr_island_base"
+            },
+            {
+              "data": "{\"fintime\":0,\"plt\":{},\"type\":0,\"bgtime\":0,\"status\":0,\"is_rating\":0}",
+              "name": "svr_satisfaction_inquiry"
+            },
+            {
+              "data": "{\"auto_queues\":{},\"wound_limit\":3000,\"lv\":1,\"items\":{}}",
+              "name": "svr_auto_hunting"
+            },
+            {
+              "data": "{\"invited_info\":{}}",
+              "name": "svr_al_invited"
+            },
+            {
+              "data": "{\"recover_area_id\":3}",
+              "name": "svr_area_ice"
+            },
+            {
+              "data": "{\"has_reward\":0,\"reward_list\":{}}",
+              "name": "svr_offline_defence_compensation"
+            },
+            {
+              "data": "{\"last_sign_year\":0,\"signed_days_list\":{},\"last_sign_month\":0,\"claimed_sign_total_list\":{}}",
+              "name": "svr_daily_sign"
+            },
+            {
+              "data": "{\"state\":2,\"first_status\":2,\"has_event\":0,\"claim_second\":1,\"second_time\":1769731200}",
+              "name": "svr_first_recharge_event"
+            },
+            {
+              "data": "{\"buff_detail_list\":[{\"buff_id\":394,\"buff_detail\":[{\"type\":11,\"num\":1}]},{\"buff_id\":479,\"buff_detail\":[{\"type\":0,\"num\":1000}]},{\"buff_id\":480,\"buff_detail\":[{\"type\":0,\"num\":1000}]},{\"buff_id\":44,\"buff_detail\":[{\"type\":11,\"num\":1}]},{\"buff_id\":935,\"buff_detail\":[{\"type\":11,\"num\":1500}]},{\"buff_id\":395,\"buff_detail\":[{\"type\":11,\"num\":7}]},{\"buff_id\":410,\"buff_detail\":[{\"type\":0,\"num\":1}]},{\"buff_id\":48,\"buff_detail\":[{\"type\":0,\"num\":1000}]},{\"buff_id\":72,\"buff_detail\":[{\"type\":0,\"num\":2000}]},{\"buff_id\":1082,\"buff_detail\":[{\"type\":11,\"num\":6}]},{\"buff_id\":477,\"buff_detail\":[{\"type\":0,\"num\":1000}]},{\"buff_id\":73,\"buff_detail\":[{\"type\":11,\"num\":922337203685477}]},{\"buff_id\":74,\"buff_detail\":[{\"type\":11,\"num\":922337203685477}]},{\"buff_id\":401,\"buff_detail\":[{\"type\":11,\"num\":1}]},{\"buff_id\":76,\"buff_detail\":[{\"type\":11,\"num\":922337203685477}]},{\"buff_id\":545,\"buff_detail\":[{\"type\":0,\"num\":1}]},{\"buff_id\":92,\"buff_detail\":[{\"type\":0,\"num\":6}]},{\"buff_id\":130,\"buff_detail\":[{\"type\":0,\"num\":4000}]},{\"buff_id\":408,\"buff_detail\":[{\"type\":0,\"num\":10}]},{\"buff_id\":75,\"buff_detail\":[{\"type\":11,\"num\":922337203685477}]},{\"buff_id\":478,\"buff_detail\":[{\"type\":0,\"num\":1000}]}]}",
+              "name": "svr_buff_detail_inc"
+            },
+            {
+              "data": "{\"explore_records\":{},\"explore_interactive_list\":{},\"progress_point\":0,\"explore_id\":0,\"finished_list\":{},\"status\":0,\"reward_list\":{}}",
+              "name": "svr_explore_info"
+            },
+            {
+              "data": "{}",
+              "name": "svr_special_quest"
+            },
+            {
+              "data": "{\"emo_id_list\":[39,47,61,59,51,73,75,72,71,70,69,65,64,63,57,56,55,54,53,52,50,49,48,46,58,60,62,45,44,43,42,41,74,76,40]}",
+              "name": "svr_emo_data"
+            },
+            {
+              "data": "{\"num\":0}",
+              "name": "svr_soldier_cost_breaks"
+            },
+            {
+              "data": "{\"pos\":0,\"quality\":6,\"scene_id\":0,\"id\":0,\"turn\":0,\"line_id\":0,\"trigger_flag\":0}",
+              "name": "svr_radar_gift_info"
+            },
+            {
+              "data": "{\"event_data\":\"{\\\"user_life_goal_reward\\\":[{\\\"reward\\\":[{\\\"a\\\":[0,6713,2]},{\\\"a\\\":[0,3857,2]},{\\\"a\\\":[0,3832,10]}],\\\"target\\\":10000},{\\\"reward\\\":[{\\\"a\\\":[0,6713,4]},{\\\"a\\\":[0,3857,4]},{\\\"a\\\":[0,3832,20]}],\\\"target\\\":120000},{\\\"reward\\\":[{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3857,6]},{\\\"a\\\":[0,3832,30]}],\\\"target\\\":500000},{\\\"reward\\\":[{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":1000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":1900000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":3800000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":5000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":7500000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":10000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":15000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":20000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":30000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":40000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":53000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":66000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":79000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":106000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":133000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":160000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":210000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":260000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":310000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":420000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":530000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":640000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":800000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":960000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":1100000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":1300000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":1600000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":1900000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":2200000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":2500000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":3100000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":3700000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":4300000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":4900000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":6100000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":7400000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":8700000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":10000000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":12500000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":15000000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":17500000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":20000000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":25000000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":30000000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":35000000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[0,6690,5]},{\\\"a\\\":[0,6713,6]},{\\\"a\\\":[0,3832,50]}],\\\"target\\\":40000000000}],\\\"basic\\\":{\\\"advance_show_type\\\":[1],\\\"show_ui\\\":0,\\\"doc_id\\\":1,\\\"event_tab_sort\\\":6,\\\"ui\\\":1,\\\"show_tab_id\\\":5},\\\"difficult_conf\\\":[{\\\"goal_reward\\\":[{\\\"reward\\\":[{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6710,5]},{\\\"a\\\":[0,3857,1]},{\\\"a\\\":[0,3501,2]},{\\\"a\\\":[0,3507,2]},{\\\"a\\\":[0,3513,2]},{\\\"a\\\":[0,3552,2]}],\\\"from\\\":1,\\\"to\\\":2500},{\\\"reward\\\":[{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6710,6]},{\\\"a\\\":[0,3857,2]},{\\\"a\\\":[0,3502,1]},{\\\"a\\\":[0,3508,1]},{\\\"a\\\":[0,3514,1]},{\\\"a\\\":[0,3553,1]}],\\\"from\\\":2501,\\\"to\\\":5000},{\\\"reward\\\":[{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6710,7]},{\\\"a\\\":[0,3857,3]},{\\\"a\\\":[0,3502,2]},{\\\"a\\\":[0,3508,2]},{\\\"a\\\":[0,3514,2]},{\\\"a\\\":[0,3553,2]}],\\\"from\\\":5001,\\\"to\\\":10000},{\\\"reward\\\":[{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6710,8]},{\\\"a\\\":[0,3857,4]},{\\\"a\\\":[0,3502,3]},{\\\"a\\\":[0,3508,3]},{\\\"a\\\":[0,3514,3]},{\\\"a\\\":[0,3553,3]}],\\\"from\\\":10001,\\\"to\\\":20000},{\\\"reward\\\":[{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6710,9]},{\\\"a\\\":[0,3857,5]},{\\\"a\\\":[0,3502,4]},{\\\"a\\\":[0,3508,4]},{\\\"a\\\":[0,3514,4]},{\\\"a\\\":[0,3553,4]}],\\\"from\\\":20001,\\\"to\\\":40000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,1]},{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6712,1]},{\\\"a\\\":[0,3857,6]},{\\\"a\\\":[0,3502,6]},{\\\"a\\\":[0,3508,6]},{\\\"a\\\":[0,3514,6]},{\\\"a\\\":[0,3553,6]}],\\\"from\\\":40001,\\\"to\\\":80000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,2]},{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6712,2]},{\\\"a\\\":[0,3857,7]},{\\\"a\\\":[0,3502,8]},{\\\"a\\\":[0,3508,8]},{\\\"a\\\":[0,3514,8]},{\\\"a\\\":[0,3553,8]}],\\\"from\\\":80001,\\\"to\\\":160000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,3]},{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6712,3]},{\\\"a\\\":[0,3857,8]},{\\\"a\\\":[0,3502,10]},{\\\"a\\\":[0,3508,10]},{\\\"a\\\":[0,3514,10]},{\\\"a\\\":[0,3553,10]}],\\\"from\\\":160001,\\\"to\\\":320000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,4]},{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6712,4]},{\\\"a\\\":[0,3857,9]},{\\\"a\\\":[0,3503,5]},{\\\"a\\\":[0,3509,5]},{\\\"a\\\":[0,3515,5]},{\\\"a\\\":[0,3554,5]}],\\\"from\\\":320001,\\\"to\\\":640000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,6]},{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6712,5]},{\\\"a\\\":[0,3857,10]},{\\\"a\\\":[0,3503,6]},{\\\"a\\\":[0,3509,6]},{\\\"a\\\":[0,3515,6]},{\\\"a\\\":[0,3554,6]}],\\\"from\\\":640001,\\\"to\\\":1300000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,8]},{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6712,6]},{\\\"a\\\":[0,3857,11]},{\\\"a\\\":[0,3503,7]},{\\\"a\\\":[0,3509,7]},{\\\"a\\\":[0,3515,7]},{\\\"a\\\":[0,3554,7]}],\\\"from\\\":1300001,\\\"to\\\":2500000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,10]},{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6712,7]},{\\\"a\\\":[0,3857,12]},{\\\"a\\\":[0,3503,8]},{\\\"a\\\":[0,3509,8]},{\\\"a\\\":[0,3515,8]},{\\\"a\\\":[0,3554,8]}],\\\"from\\\":2500001,\\\"to\\\":5000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,12]},{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6712,8]},{\\\"a\\\":[0,3857,13]},{\\\"a\\\":[0,3503,9]},{\\\"a\\\":[0,3509,9]},{\\\"a\\\":[0,3515,9]},{\\\"a\\\":[0,3554,9]}],\\\"from\\\":5000001,\\\"to\\\":10000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,14]},{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6712,9]},{\\\"a\\\":[0,3857,14]},{\\\"a\\\":[0,3503,10]},{\\\"a\\\":[0,3509,10]},{\\\"a\\\":[0,3515,10]},{\\\"a\\\":[0,3554,10]}],\\\"from\\\":10000001,\\\"to\\\":20000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,16]},{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6712,10]},{\\\"a\\\":[0,3857,15]},{\\\"a\\\":[0,3503,10]},{\\\"a\\\":[0,3509,10]},{\\\"a\\\":[0,3515,10]},{\\\"a\\\":[0,3554,10]}],\\\"from\\\":20000001,\\\"to\\\":40000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,18]},{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6712,11]},{\\\"a\\\":[0,3857,15]},{\\\"a\\\":[0,3503,11]},{\\\"a\\\":[0,3509,11]},{\\\"a\\\":[0,3515,11]},{\\\"a\\\":[0,3554,11]}],\\\"from\\\":40000001,\\\"to\\\":80000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,20]},{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6712,12]},{\\\"a\\\":[0,3857,15]},{\\\"a\\\":[0,3503,11]},{\\\"a\\\":[0,3509,11]},{\\\"a\\\":[0,3515,11]},{\\\"a\\\":[0,3554,11]}],\\\"from\\\":80000001,\\\"to\\\":160000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,22]},{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6712,13]},{\\\"a\\\":[0,3857,15]},{\\\"a\\\":[0,3503,12]},{\\\"a\\\":[0,3509,12]},{\\\"a\\\":[0,3515,12]},{\\\"a\\\":[0,3554,12]}],\\\"from\\\":160000001,\\\"to\\\":320000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,24]},{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6712,14]},{\\\"a\\\":[0,3857,15]},{\\\"a\\\":[0,3503,12]},{\\\"a\\\":[0,3509,12]},{\\\"a\\\":[0,3515,12]},{\\\"a\\\":[0,3554,12]}],\\\"from\\\":320000001,\\\"to\\\":640000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,26]},{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6712,15]},{\\\"a\\\":[0,3857,15]},{\\\"a\\\":[0,3503,13]},{\\\"a\\\":[0,3509,13]},{\\\"a\\\":[0,3515,13]},{\\\"a\\\":[0,3554,13]}],\\\"from\\\":640000001,\\\"to\\\":1300000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,28]},{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6712,16]},{\\\"a\\\":[0,3857,15]},{\\\"a\\\":[0,3503,13]},{\\\"a\\\":[0,3509,13]},{\\\"a\\\":[0,3515,13]},{\\\"a\\\":[0,3554,13]}],\\\"from\\\":1300000001,\\\"to\\\":2500000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,31]},{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6712,17]},{\\\"a\\\":[0,3857,15]},{\\\"a\\\":[0,3503,14]},{\\\"a\\\":[0,3509,14]},{\\\"a\\\":[0,3515,14]},{\\\"a\\\":[0,3554,14]}],\\\"from\\\":2500000001,\\\"to\\\":5000000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,34]},{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6712,18]},{\\\"a\\\":[0,3857,15]},{\\\"a\\\":[0,3503,14]},{\\\"a\\\":[0,3509,14]},{\\\"a\\\":[0,3515,14]},{\\\"a\\\":[0,3554,14]}],\\\"from\\\":5000000001,\\\"to\\\":10000000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,37]},{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6712,19]},{\\\"a\\\":[0,3857,15]},{\\\"a\\\":[0,3503,15]},{\\\"a\\\":[0,3509,15]},{\\\"a\\\":[0,3515,15]},{\\\"a\\\":[0,3554,15]}],\\\"from\\\":10000000001,\\\"to\\\":20000000000},{\\\"reward\\\":[{\\\"a\\\":[0,6900,40]},{\\\"a\\\":[315,41503,5]},{\\\"a\\\":[0,6712,20]},{\\\"a\\\":[0,3857,15]},{\\\"a\\\":[0,3503,15]},{\\\"a\\\":[0,3509,15]},{\\\"a\\\":[0,3515,15]},{\\\"a\\\":[0,3554,15]}],\\\"from\\\":20000000001,\\\"to\\\":40000000000}]}],\\\"show_reward\\\":[{\\\"a\\\":[0,6690,100]},{\\\"a\\\":[0,6900,100]},{\\\"a\\\":[315,41503,100]},{\\\"a\\\":[0,6713,100]},{\\\"a\\\":[0,3857,100]},{\\\"a\\\":[0,3492,1]},{\\\"a\\\":[0,3526,1]},{\\\"a\\\":[0,3743,1]}],\\\"donate_conf\\\":[{\\\"damage_percent\\\":500,\\\"point\\\":25},{\\\"damage_percent\\\":1000,\\\"point\\\":50},{\\\"damage_percent\\\":1500,\\\"point\\\":75},{\\\"damage_percent\\\":2000,\\\"point\\\":100},{\\\"damage_percent\\\":2500,\\\"point\\\":125}],\\\"version\\\":1,\\\"join_alliance_cool_down\\\":1800,\\\"al_point\\\":400,\\\"al_auto_msg_conf\\\":[{\\\"way\\\":{\\\"al_notice\\\":1,\\\"member_channel\\\":1,\\\"al_channel\\\":1},\\\"doc_id\\\":6},{\\\"way\\\":{\\\"al_notice\\\":1,\\\"member_channel\\\":1,\\\"al_channel\\\":1},\\\"doc_id\\\":7},{\\\"way\\\":{\\\"al_notice\\\":1,\\\"member_channel\\\":1,\\\"al_channel\\\":1},\\\"doc_id\\\":8}]}\",\"conf_btime\":1770177600}",
+              "name": "svr_boss_trap_show_info"
+            },
+            {
+              "data": "{\"hang_up_lv\":2,\"last_collect_timestamp\":1769655266,\"first_reward_flag\":1}",
+              "name": "svr_hang_up_production"
+            },
+            {
+              "data": "{\"num\":2000019}",
+              "name": "svr_camp_soldier_count"
+            },
+            {
+              "data": "{\"iap_goods\":{},\"goods\":{}}",
+              "name": "svr_mystery_shop"
+            },
+            {
+              "data": "{\"foremen\":{}}",
+              "name": "svr_foreman_list"
+            },
+            {
+              "data": "{\"next_refresh_time\":1773446400,\"collect_times\":0}",
+              "name": "svr_shop_chest"
+            },
+            {
+              "data": "{\"raid_id\":0}",
+              "name": "svr_raid_common"
+            },
+            {
+              "data": "{\"last_settle_time\":0,\"cost_list\":{}}",
+              "name": "svr_resource_cost"
+            },
+            {
+              "data": "{\"force\":10000028}",
+              "name": "svr_soldier_force"
+            },
+            {
+              "data": "{\"strength_lv\":1,\"radar_lv\":1,\"finished_intel_num\":1,\"have_not_intel_time\":0,\"intel_infos\":[{\"refresh_time\":1773223359,\"intel_type\":2}]}",
+              "name": "svr_radar_info"
+            },
+            {
+              "data": "{\"has_event\":0}",
+              "name": "svr_castle_lv_up_iap"
+            },
+            {
+              "data": "{\"items\":{}}",
+              "name": "svr_tip_window_list"
+            },
+            {
+              "data": "{\"gem\":114666,\"token_next_fresh_time\":0,\"iap_promote_num\":0,\"total_pay\":5,\"last_pay_time\":1769656668,\"iap_white_paid_limit\":0,\"total_buy\":1250,\"token_stage_1\":0,\"computeInfo\":{\"kf_lv\":1001},\"iap_white_user\":0,\"token_stage_0\":0,\"max_buy\":1250,\"week_buy\":0,\"max_pay\":5,\"total_cost\":2659,\"gem_seq\":1}",
+              "name": "svr_gem_stat"
+            },
+            {
+              "data": "{\"building_research_finish_flag\":{\"flags\":[0,0]},\"new_action_id\":85907703926358058}",
+              "name": "svr_compute_res"
+            },
+            {
+              "data": "{\"etime\":0,\"btime\":0,\"pos\":0,\"quality\":0,\"unlock\":0,\"work_info\":{},\"time_info\":{},\"status\":0,\"history\":{}}",
+              "name": "svr_robot_worker"
+            },
+            {
+              "data": "{\"equips\":{}}",
+              "name": "svr_hero_equip"
+            },
+            {
+              "data": "{\"has_event\":0}",
+              "name": "svr_price_recharge_iap_event"
+            },
+            {
+              "data": "{\"items\":[{\"num\":1,\"id\":7},{\"num\":1,\"id\":6},{\"num\":2,\"id\":5340},{\"num\":3,\"id\":8185},{\"num\":100,\"id\":3507},{\"num\":2,\"id\":3580},{\"num\":1,\"id\":6611},{\"num\":1,\"id\":8006},{\"num\":3,\"id\":5006},{\"num\":0,\"id\":4029},{\"num\":11,\"id\":8053},{\"num\":3,\"id\":4006},{\"num\":5,\"id\":8154},{\"num\":0,\"id\":3643},{\"num\":2,\"id\":1},{\"num\":100,\"id\":5312},{\"num\":168,\"id\":3606},{\"num\":100,\"id\":5311},{\"num\":99,\"id\":3552},{\"num\":2,\"id\":5005},{\"num\":3,\"id\":6012},{\"num\":1,\"id\":0},{\"num\":10,\"id\":3496},{\"num\":0,\"id\":3645},{\"num\":100,\"id\":3501},{\"num\":3,\"id\":6630},{\"num\":2,\"id\":4004},{\"num\":413,\"id\":8064},{\"num\":0,\"id\":3597},{\"num\":0,\"id\":3614},{\"num\":1,\"id\":8052},{\"num\":0,\"id\":4050},{\"num\":19,\"id\":8153},{\"num\":100,\"id\":3513},{\"num\":2,\"id\":6013},{\"num\":10,\"id\":6320},{\"num\":5,\"id\":3746},{\"num\":10,\"id\":3765},{\"num\":5,\"id\":6050},{\"num\":5,\"id\":6284},{\"num\":15,\"id\":3527},{\"num\":10,\"id\":3791},{\"num\":1,\"id\":3525},{\"num\":2,\"id\":5341},{\"num\":1,\"id\":6113},{\"num\":1,\"id\":6145},{\"num\":1,\"id\":216}]}",
+              "name": "svr_backpack_item"
+            },
+            {
+              "data": "{\"list\":{}}",
+              "name": "svr_city_npc"
+            },
+            {
+              "data": "{\"interactive_list\":{}}",
+              "name": "svr_interactive_list"
+            },
+            {
+              "data": "{\"items\":[{\"last_refresh_time\":1773369904,\"type\":0,\"use_times\":0},{\"last_refresh_time\":1773369904,\"type\":1,\"use_times\":0}]}",
+              "name": "svr_cycle_free_operate"
+            },
+            {
+              "data": "{\"event_list\":{},\"first\":0}",
+              "name": "svr_cycle_event"
+            },
+            {
+              "data": "{\"end_time\":1773446400,\"battlefield\":[{\"cur_pass_stage\":0,\"id\":1,\"extra_lv\":0,\"heroes\":{},\"max_pass_stage\":0,\"max_pass_lv\":0,\"enter_time\":0,\"last_heroes\":{},\"cur_lv\":0,\"select_lv\":0,\"can_next_lv\":0},{\"cur_pass_stage\":0,\"id\":2,\"extra_lv\":0,\"heroes\":{},\"max_pass_stage\":0,\"max_pass_lv\":0,\"enter_time\":0,\"last_heroes\":{},\"cur_lv\":0,\"select_lv\":0,\"can_next_lv\":0},{\"cur_pass_stage\":0,\"id\":3,\"extra_lv\":0,\"heroes\":{},\"max_pass_stage\":0,\"max_pass_lv\":0,\"enter_time\":0,\"last_heroes\":{},\"cur_lv\":0,\"select_lv\":0,\"can_next_lv\":0}],\"next_refresh_time\":1773532800,\"start_time\":1773273600}",
+              "name": "svr_honor_dungeon"
+            },
+            {
+              "data": "{\"function_open_list\":[{\"type\":1,\"value\":2}],\"hero_open_list\":{\"hero_add_list\":{},\"basic_hero_list\":[10,20,4,24,21,1,3,8,412,413,414,415,416,2,7,401,9]},\"function_list\":[{\"type\":1,\"value\":1}]}",
+              "name": "svr_function_open_schedule"
+            },
+            {
+              "data": "{\"claim_new_player_vip_reward_list\":{},\"claim_bp_vip_reward_list\":{},\"claim_bp_common_reward_list\":{},\"expire_flag\":1,\"quest_list\":{},\"day\":0,\"claim_new_player_common_reward_list\":{}}",
+              "name": "svr_new_player_quest"
+            },
+            {
+              "data": "{\"data_list\":[{\"status\":0,\"progress\":1,\"id\":174},{\"status\":1,\"progress\":1,\"id\":135},{\"status\":0,\"progress\":7,\"id\":7},{\"status\":0,\"progress\":18,\"id\":30},{\"status\":0,\"progress\":7090,\"id\":20},{\"status\":0,\"progress\":116,\"id\":27},{\"status\":0,\"progress\":11868,\"id\":22},{\"status\":1,\"progress\":1,\"id\":92},{\"status\":0,\"progress\":4800,\"id\":16},{\"status\":0,\"progress\":3,\"id\":100},{\"status\":1,\"progress\":1,\"id\":91},{\"status\":0,\"progress\":116,\"id\":26},{\"status\":0,\"progress\":1,\"id\":176},{\"status\":0,\"progress\":4,\"id\":313},{\"status\":0,\"progress\":7,\"id\":201},{\"status\":0,\"progress\":3,\"id\":101},{\"status\":1,\"progress\":1,\"id\":93},{\"status\":0,\"progress\":4,\"id\":308},{\"status\":0,\"progress\":3900,\"id\":18},{\"status\":0,\"progress\":7,\"id\":12},{\"status\":0,\"progress\":7,\"id\":15},{\"status\":0,\"progress\":3,\"id\":99},{\"status\":0,\"progress\":116,\"id\":29},{\"status\":0,\"progress\":116,\"id\":28},{\"status\":0,\"progress\":1,\"id\":175},{\"status\":1,\"progress\":1,\"id\":90}],\"show_achievement\":{},\"category_list\":[{\"category\":4,\"num\":1,\"claimed\":{}},{\"category\":0,\"num\":5,\"claimed\":{}},{\"category\":3,\"num\":4,\"claimed\":{}}]}",
+              "name": "svr_achievement"
+            },
+            {
+              "data": "{\"free_die_list\":{},\"list\":[{\"num\":1,\"soldier_id\":1}],\"die_list\":{}}",
+              "name": "svr_soldier_wounded"
+            },
+            {
+              "data": "{\"items\":{}}",
+              "name": "svr_battlefield_soldier_treatment"
+            },
+            {
+              "data": "{\"score\":0,\"claimed_reward_id\":{}}",
+              "name": "svr_fort_user_info"
+            },
+            {
+              "data": "{\"refresh_time\":1773446400,\"times\":0,\"pet_id\":0,\"stage\":0,\"value\":0}",
+              "name": "svr_tame_pet"
+            },
+            {
+              "data": "{\"cycle_events\":{}}",
+              "name": "svr_queue_info"
+            },
+            {
+              "data": "{\"list\":{},\"research_done\":{}}",
+              "name": "svr_research"
+            },
+            {
+              "data": "{\"action_energy_daily_used\":0,\"energy_next_refresh_time\":1773403200,\"action_energy\":12000,\"barbarian_action_energy_utime\":1773369904,\"action_energy_utime\":1773369903,\"barbarian_action_energy\":2000,\"energy_cur_reward_index\":3,\"action_energy_buy_times\":0,\"energy_cur_use_flag\":0,\"siege_energy_utime\":1773365789,\"siege_energy\":15}",
+              "name": "svr_player_energy"
+            },
+            {
+              "data": "{\"list\":[{\"cur_progress\":3,\"status\":0,\"id\":10517}]}",
+              "name": "svr_main_quest_list"
+            },
+            {
+              "data": "{\"list\":[{\"idx\":1,\"doc_id\":1},{\"idx\":2,\"doc_id\":2},{\"idx\":3,\"doc_id\":3},{\"idx\":4,\"doc_id\":4},{\"idx\":5,\"doc_id\":5},{\"idx\":6,\"doc_id\":6}]}",
+              "name": "svr_quick_speech_setting"
+            },
+            {
+              "data": "{\"next_refresh_time\":1773619200,\"goods\":{}}",
+              "name": "svr_vip_shop"
+            },
+            {
+              "data": "{\"upload_time\":0,\"upload_id\":\"\"}",
+              "name": "svr_custom_avatar"
+            },
+            {
+              "data": "{\"has_event\":0}",
+              "name": "svr_new_castle_lv_up_iap"
+            },
+            {
+              "data": "{\"box_list\":{},\"claim_progress\":0}",
+              "name": "svr_reward_rally_box"
+            },
+            {
+              "data": "{\"quest_list\":[{\"status\":0,\"cur_progress\":0,\"id\":11},{\"status\":0,\"cur_progress\":0,\"id\":1},{\"status\":0,\"cur_progress\":0,\"id\":21},{\"status\":0,\"cur_progress\":0,\"id\":31}]}",
+              "name": "svr_island_quest"
+            },
+            {
+              "data": "{\"fire_e_durability\":0,\"durability\":1,\"fire_fix_durability\":0,\"user_heros\":{},\"fire_b_durability\":0,\"fire_etime\":0,\"fire_btime\":0,\"carry_lord\":1,\"lord_time\":0,\"fire_ctime\":0,\"hero_list\":{},\"repaire_etime\":0,\"defend_flag\":0,\"use_queue_id\":6001,\"durablity_limit\":1,\"heros\":[{\"slot\":2,\"hero_id\":2},{\"slot\":1,\"hero_id\":21}]}",
+              "name": "svr_city_wall"
+            },
+            {
+              "data": "{\"queues\":{}}",
+              "name": "svr_queue"
+            },
+            {
+              "data": "{\"al_id\":20000103,\"is_skvk_emperor\":0,\"cid\":107800025700,\"report_num_last_reset_time\":0,\"al_nick\":\"BJK\",\"equip_grid\":8,\"al_title\":0,\"avatar\":0,\"vip_level\":1,\"invite_policy\":0,\"city_skin_put_on_id\":0,\"vip_new_version\":1,\"head_frame\":0,\"level\":1,\"al_pos\":1,\"anti_harass\":{},\"status\":0,\"building_recommend_version\":0,\"kingdom_title_info\":{},\"report_num\":0,\"al_name\":\"hhhhhh\",\"al_req_id\":0,\"cname\":\"Boss_BWPLM\",\"al_req_id_list\":{},\"last_al_id\":0,\"today_contribution\":0,\"uid\":20001946,\"iap_trigger_new_version\":1,\"sid\":1,\"age\":0,\"building_new_version\":0,\"uin\":\"Boss_BWPLM\",\"dead\":0,\"lord_name\":\"Garret\",\"has_change_flag\":0,\"custom_avatar\":\"\",\"has_change_player_name\":0,\"exp\":0,\"ksid\":1,\"al_join_t\":1773196628,\"today_contribution_next_refresh_time\":1773446400}",
+              "name": "svr_player"
+            },
+            {
+              "data": "{\"items\":{}}",
+              "name": "svr_player_backpack_crystal"
+            },
+            {
+              "data": "{\"heros\":[{\"flag\":1,\"reward_status\":0,\"id\":21},{\"flag\":1,\"reward_status\":0,\"id\":2},{\"flag\":1,\"reward_status\":0,\"id\":415}]}",
+              "name": "svr_hero_collections"
+            },
+            {
+              "data": "{\"skill_trees\":[{\"skills\":{},\"tree_id\":2,\"skill_point\":0},{\"skills\":{},\"tree_id\":1,\"skill_point\":0}]}",
+              "name": "svr_player_skill"
+            },
+            {
+              "data": "{\"list\":[{\"value\":0,\"id\":201},{\"value\":0,\"id\":101},{\"value\":2000000,\"id\":204},{\"value\":19,\"id\":1}]}",
+              "name": "svr_soldier"
+            },
+            {
+              "data": "{\"last_bless_index\":0,\"claimed_ids\":{},\"wait_foremen\":{},\"items\":{}}",
+              "name": "svr_foreman_data"
+            },
+            {
+              "data": "{\"list\":{}}",
+              "name": "svr_decorative_building"
+            },
+            {
+              "data": "{\"cur_progress\":3,\"status\":0,\"id\":10517}",
+              "name": "svr_main_quest"
+            },
+            {
+              "data": "{\"rating_gem\":0,\"rating_switch\":0}",
+              "name": "svr_login_compute"
+            },
+            {
+              "data": "{\"next_refresh_time\":0,\"goods\":{}}",
+              "name": "svr_new_expedition_shop"
+            },
+            {
+              "data": "{\"token_building\":{}}",
+              "name": "svr_token_building"
+            },
+            {
+              "data": "{\"event_list\":[{\"etime\":1773283390,\"task_list\":[{\"quest_id\":114001,\"id\":2,\"status\":0,\"target\":1,\"progress\":0,\"quest_type\":101},{\"quest_id\":92002001,\"id\":1,\"status\":0,\"target\":1,\"progress\":0,\"quest_type\":101}],\"id\":6,\"btime\":1773195790,\"status\":0,\"type\":2,\"mtime\":1773196990}],\"first\":1,\"next_flag\":0,\"finish_ids\":[2,5,10,4],\"is_rechallenge\":false}",
+              "name": "svr_defense_war_cycle_event"
+            },
+            {
+              "data": "{\"items\":{}}",
+              "name": "svr_city_raid"
+            },
+            {
+              "data": "{\"player_equips\":{}}",
+              "name": "svr_lord_equip"
+            },
+            {
+              "data": "{\"list\":[{\"idx\":1,\"emo_id\":39},{\"idx\":2,\"emo_id\":40}]}",
+              "name": "svr_quick_emo_setting"
+            },
+            {
+              "data": "{\"item\":{}}",
+              "name": "svr_recommend_recharge"
+            },
+            {
+              "data": "{\"buff_item\":[{\"buff_num\":303,\"id\":530},{\"buff_num\":303,\"id\":525},{\"buff_num\":110000,\"id\":936},{\"buff_num\":1000,\"id\":478},{\"buff_num\":6,\"id\":1082},{\"buff_num\":303,\"id\":523},{\"buff_num\":5,\"id\":872},{\"buff_num\":3,\"id\":887},{\"buff_num\":1,\"id\":401},{\"buff_num\":1,\"id\":607},{\"buff_num\":100000,\"id\":1220},{\"buff_num\":4000,\"id\":130},{\"buff_num\":26,\"id\":1577},{\"buff_num\":2,\"id\":581},{\"buff_num\":1000,\"id\":479},{\"buff_num\":1,\"id\":44},{\"buff_num\":303,\"id\":524},{\"buff_num\":7,\"id\":395},{\"buff_num\":100000,\"id\":70},{\"buff_num\":1000,\"id\":48},{\"buff_num\":303,\"id\":528},{\"buff_num\":40,\"id\":353},{\"buff_num\":1000,\"id\":477},{\"buff_num\":87427,\"id\":84},{\"buff_num\":922337203685477,\"id\":74},{\"buff_num\":1000,\"id\":871},{\"buff_num\":1,\"id\":394},{\"buff_num\":1,\"id\":345},{\"buff_num\":303,\"id\":529},{\"buff_num\":3,\"id\":269},{\"buff_num\":1,\"id\":545},{\"buff_num\":30,\"id\":354},{\"buff_num\":1,\"id\":610},{\"buff_num\":1,\"id\":410},{\"buff_num\":20000,\"id\":983},{\"buff_num\":922337203685477,\"id\":73},{\"buff_num\":12,\"id\":543},{\"buff_num\":303,\"id\":527},{\"buff_num\":303,\"id\":521},{\"buff_num\":303,\"id\":526},{\"buff_num\":2000,\"id\":666},{\"buff_num\":1,\"id\":344},{\"buff_num\":303,\"id\":522},{\"buff_num\":30000,\"id\":975},{\"buff_num\":999,\"id\":580},{\"buff_num\":12,\"id\":923},{\"buff_num\":922337203685477,\"id\":76},{\"buff_num\":20000,\"id\":1011},{\"buff_num\":5,\"id\":325},{\"buff_num\":922337203685477,\"id\":75},{\"buff_num\":2,\"id\":548},{\"buff_num\":57500,\"id\":1050},{\"buff_num\":10,\"id\":408},{\"buff_num\":7200,\"id\":542},{\"buff_num\":2000,\"id\":72},{\"buff_num\":6,\"id\":92},{\"buff_num\":1500,\"id\":935},{\"buff_num\":5,\"id\":296},{\"buff_num\":3500,\"id\":396},{\"buff_num\":20,\"id\":827},{\"buff_num\":1,\"id\":611},{\"buff_num\":20,\"id\":928},{\"buff_num\":100,\"id\":873},{\"buff_num\":60,\"id\":351},{\"buff_num\":50,\"id\":1070},{\"buff_num\":8,\"id\":602},{\"buff_num\":303,\"id\":520},{\"buff_num\":40,\"id\":352},{\"buff_num\":1000,\"id\":480},{\"buff_num\":1,\"id\":664},{\"buff_num\":303,\"id\":519},{\"buff_num\":1000000,\"id\":756}]}",
+              "name": "svr_buff"
+            },
+            {
+              "data": "{\"worker_list\":{}}",
+              "name": "svr_worker_leave_tips"
+            },
+            {
+              "data": "{\"data_list\":{},\"show_achievement\":{},\"category_list\":{}}",
+              "name": "svr_achievement_inc"
+            },
+            {
+              "data": "{\"ebuff\":{}}",
+              "name": "svr_op_common_data"
+            },
+            {
+              "data": "{\"heros\":[{\"exp\":0,\"is_performed\":0,\"lv\":7,\"id\":21,\"stage\":0,\"last_reset_time\":0,\"real_lv\":7,\"state\":0,\"train_slot_id\":0,\"slg_skill_lv\":[1,0],\"exclusive_equip_lv\":0,\"equips\":{},\"skill_lv\":[1,0,0],\"story_reward_get_record\":{}},{\"exp\":0,\"is_performed\":0,\"lv\":1,\"id\":2,\"stage\":0,\"last_reset_time\":0,\"real_lv\":1,\"state\":0,\"train_slot_id\":0,\"slg_skill_lv\":[1,0,0],\"exclusive_equip_lv\":0,\"equips\":{},\"skill_lv\":[1,0,0],\"story_reward_get_record\":{}},{\"exp\":0,\"is_performed\":0,\"lv\":1,\"id\":415,\"stage\":0,\"last_reset_time\":0,\"real_lv\":1,\"state\":0,\"train_slot_id\":0,\"slg_skill_lv\":[1,0],\"exclusive_equip_lv\":0,\"equips\":{},\"skill_lv\":[1,0,0],\"story_reward_get_record\":{}}]}",
+              "name": "svr_hero_list"
+            },
+            {
+              "data": "{\"max_tn\":1,\"defense\":{}}",
+              "name": "svr_arena_lineup_defense"
+            },
+            {
+              "data": "{\"evip_flag\":0,\"evip\":{\"level_chest\":{},\"login_days\":0,\"point\":0,\"level\":0,\"integral\":0,\"next_refresh\":0,\"login_chest\":0}}",
+              "name": "svr_player_evip"
+            },
+            {
+              "data": "{\"slot_info\":{},\"instructor_list\":[21,2,415]}",
+              "name": "svr_training_camp"
+            },
+            {
+              "data": "{\"list\":{}}",
+              "name": "svr_increase_queue_capacity"
+            },
+            {
+              "data": "{\"title_list\":{},\"show_title\":0}",
+              "name": "svr_self_title"
+            },
+            {
+              "data": "{\"btime\":0,\"slot\":0,\"num\":0}",
+              "name": "svr_bank"
+            },
+            {
+              "data": "{\"al_skill_detail\":{}}",
+              "name": "svr_al_pet_skill_self"
+            },
+            {
+              "data": "{\"pre_satis\":[5516,5516],\"max_satis\":5516,\"satis\":5516}",
+              "name": "svr_worker_satis"
+            },
+            {
+              "data": "{\"items\":{}}",
+              "name": "svr_ava_soldier_treatment"
+            },
+            {
+              "data": "{\"refresh_time\":1773446400,\"help_times\":0,\"queue_info\":{},\"difficulty_lv\":0,\"rob_times\":0,\"dispatch_task\":{}}",
+              "name": "svr_dispatch_task_inc"
+            },
+            {
+              "data": "{\"city_collect_building\":{}}",
+              "name": "svr_city_collect_new"
+            },
+            {
+              "data": "{\"key\":0,\"attack_count\":0,\"next_refresh_time\":1773446400,\"reward_alliance_list\":{},\"reward_personal_list\":{},\"alliance_invalid_flag\":0,\"next_attack_refresh_time\":1773446400,\"goal\":0}",
+              "name": "svr_holy_user_info"
+            },
+            {
+              "data": "{\"ab_test_group\":0,\"stage\":0,\"hang_up_time\":0,\"first_reward_flag\":0}",
+              "name": "svr_rpg_dungeon"
+            },
+            {
+              "data": "{\"list\":[{\"auto_break\":0,\"slot\":2},{\"auto_break\":0,\"slot\":1},{\"auto_break\":0,\"slot\":3}]}",
+              "name": "svr_train_hero"
+            },
+            {
+              "data": "{\"list\":{}}",
+              "name": "svr_soldier_treatment_list"
+            },
+            {
+              "data": "{\"items\":{}}",
+              "name": "svr_al_action_list"
+            },
+            {
+              "data": "{\"events\":{}}",
+              "name": "svr_new_battle_ready_event"
+            },
+            {
+              "data": "{\"next_recovery_time\":1773370504,\"gold_donate_num\":0,\"own_num\":25,\"crit_at\":0}",
+              "name": "svr_donate_info"
+            },
+            {
+              "data": "{\"refresh_time\":1773446400,\"box_quest_data\":{\"box_quest_score\":0,\"box_quest_next_refresh_time\":1773446400,\"box_quest_claimed_score\":{}},\"daily_quest_stage\":7,\"active_point\":0,\"quest_list\":[{\"quest_id\":1,\"id\":9,\"quest_target\":10,\"cur_progress\":0,\"status\":0,\"quest_type\":20094},{\"quest_id\":2,\"id\":8,\"quest_target\":30,\"cur_progress\":0,\"status\":0,\"quest_type\":20094},{\"quest_id\":2,\"id\":7,\"quest_target\":10,\"cur_progress\":0,\"status\":0,\"quest_type\":20094},{\"quest_id\":0,\"id\":6,\"quest_target\":30,\"cur_progress\":0,\"status\":0,\"quest_type\":20094},{\"quest_id\":0,\"id\":5,\"quest_target\":10,\"cur_progress\":0,\"status\":0,\"quest_type\":20094},{\"quest_id\":1,\"id\":60,\"quest_target\":1,\"cur_progress\":1,\"status\":1,\"quest_type\":11008},{\"quest_id\":0,\"id\":26,\"quest_target\":10000,\"cur_progress\":0,\"status\":0,\"quest_type\":405},{\"quest_id\":1,\"id\":44,\"quest_target\":5,\"cur_progress\":0,\"status\":0,\"quest_type\":8001},{\"quest_id\":2,\"id\":20,\"quest_target\":10000,\"cur_progress\":0,\"status\":0,\"quest_type\":405},{\"quest_id\":0,\"id\":27,\"quest_target\":50000,\"cur_progress\":0,\"status\":0,\"quest_type\":405},{\"quest_id\":1,\"id\":37,\"quest_target\":1,\"cur_progress\":0,\"status\":0,\"quest_type\":407},{\"quest_id\":1,\"id\":15,\"quest_target\":20,\"cur_progress\":0,\"status\":0,\"quest_type\":613},{\"quest_id\":1,\"id\":16,\"quest_target\":10,\"cur_progress\":0,\"status\":0,\"quest_type\":2004},{\"quest_id\":1,\"id\":13,\"quest_target\":1,\"cur_progress\":0,\"status\":0,\"quest_type\":613},{\"quest_id\":1,\"id\":14,\"quest_target\":5,\"cur_progress\":0,\"status\":0,\"quest_type\":613},{\"quest_id\":1,\"id\":65,\"quest_target\":3,\"cur_progress\":0,\"status\":0,\"quest_type\":12001},{\"quest_id\":1,\"id\":18,\"quest_target\":50000,\"cur_progress\":0,\"status\":0,\"quest_type\":405},{\"quest_id\":1,\"id\":17,\"quest_target\":10000,\"cur_progress\":0,\"status\":0,\"quest_type\":405},{\"quest_id\":1,\"id\":35,\"quest_target\":20,\"cur_progress\":0,\"status\":0,\"quest_type\":617},{\"quest_id\":1,\"id\":95,\"quest_target\":1,\"cur_progress\":0,\"status\":0,\"quest_type\":1001},{\"quest_id\":1,\"id\":36,\"quest_target\":40,\"cur_progress\":0,\"status\":0,\"quest_type\":617},{\"quest_id\":1,\"id\":10,\"quest_target\":30,\"cur_progress\":0,\"status\":0,\"quest_type\":20094},{\"quest_id\":3,\"id\":24,\"quest_target\":50000,\"cur_progress\":0,\"status\":0,\"quest_type\":405},{\"quest_id\":3,\"id\":23,\"quest_target\":10000,\"cur_progress\":0,\"status\":0,\"quest_type\":405},{\"quest_id\":1,\"id\":43,\"quest_target\":1,\"cur_progress\":0,\"status\":0,\"quest_type\":8001},{\"quest_id\":1,\"id\":39,\"quest_target\":4,\"cur_progress\":0,\"status\":0,\"quest_type\":407},{\"quest_id\":1,\"id\":38,\"quest_target\":2,\"cur_progress\":0,\"status\":0,\"quest_type\":407},{\"quest_id\":1,\"id\":45,\"quest_target\":10,\"cur_progress\":0,\"status\":0,\"quest_type\":8001},{\"quest_id\":1,\"id\":34,\"quest_target\":5,\"cur_progress\":0,\"status\":0,\"quest_type\":617},{\"quest_id\":1,\"id\":64,\"quest_target\":1,\"cur_progress\":0,\"status\":0,\"quest_type\":12001},{\"quest_id\":2,\"id\":21,\"quest_target\":50000,\"cur_progress\":0,\"status\":0,\"quest_type\":405}],\"claim_active_reward_list\":{}}",
+              "name": "svr_daily_quest"
+            },
+            {
+              "data": "{\"items\":[{\"type\":2,\"last_refresh_time\":1773369904},{\"type\":1,\"last_refresh_time\":1773109030},{\"type\":0,\"last_refresh_time\":1773109030},{\"type\":7,\"last_refresh_time\":1773360000},{\"type\":6,\"last_refresh_time\":1773369904},{\"type\":5,\"last_refresh_time\":1773369904},{\"type\":4,\"last_refresh_time\":1773369904},{\"type\":3,\"last_refresh_time\":1773287850}]}",
+              "name": "svr_cycle_free_item"
+            },
+            {
+              "data": "{\"help_other_times\":0,\"help_refresh_time\":0,\"items\":{}}",
+              "name": "svr_island_login_data"
+            },
+            {
+              "data": "{\"fog_clear\":{},\"mist_group\":1,\"area_id\":9,\"clear_times\":0,\"cleared_grid_pos_list\":{},\"finished_area_mist_list\":{},\"area_mist_id\":901,\"is_recovered\":1}",
+              "name": "svr_area_new"
+            },
+            {
+              "data": "{\"chapter_index\":5,\"passed_chapter_index\":4,\"chapter_quest\":[{\"time\":1773115326,\"status\":2,\"cur_progress\":1,\"id\":237},{\"time\":1773115342,\"status\":2,\"cur_progress\":5,\"id\":239},{\"status\":3,\"cur_progress\":0,\"id\":241},{\"status\":0,\"cur_progress\":1,\"id\":238},{\"time\":1773115326,\"status\":2,\"cur_progress\":5,\"id\":37},{\"status\":0,\"cur_progress\":0,\"id\":240},{\"time\":1773115433,\"status\":2,\"cur_progress\":1,\"id\":248},{\"status\":0,\"cur_progress\":2,\"id\":242},{\"time\":1773115326,\"status\":2,\"cur_progress\":1,\"id\":252}],\"flag\":0,\"chapter_etime\":0}",
+              "name": "svr_chapter_quest"
+            },
+            {
+              "data": "{\"has_event\":0}",
+              "name": "svr_multiple_target_recharge"
+            },
+            {
+              "data": "{\"lord_info_data\":{\"state_btime\":0,\"suicide_etime\":0,\"suicide_btime\":0,\"arrester_lord_info\":{\"uid\":0},\"state_etime\":0,\"cur_state\":0,\"lord_info\":{\"uid\":20001946,\"skin_id\":0,\"al_name\":\"hhhhhh\",\"ksid\":1,\"city_level\":7,\"al_nick\":\"BJK\",\"head_frame\":0,\"custom_avatar\":\"\",\"uname\":\"Boss_BWPLM\",\"avatar\":0,\"aid\":20000103,\"city_pos\":107800025700,\"lord_level\":1}}}",
+              "name": "svr_lord_info_new"
+            },
+            {
+              "data": "{\"quests\":{},\"unlock_time\":1769506538,\"login_dates\":8}",
+              "name": "svr_new_player_signin"
+            },
+            {
+              "data": "{\"best_history_mileage\":0,\"passed_hurdle\":{},\"last_begin_time\":0,\"facility\":{}}",
+              "name": "svr_hero_travel"
+            },
+            {
+              "data": "{\"mail_list\":[{\"need_handle\":1,\"time\":1773200383,\"worker_id\":3,\"type\":1,\"handle\":0,\"name_id\":3,\"mail_id\":880,\"fire\":0,\"doc_id\":\"4-16-1-4\",\"anonymous\":0,\"building_id\":7,\"furniture_id\":0,\"up_type\":0},{\"need_handle\":1,\"time\":1773200373,\"worker_id\":3,\"type\":1,\"handle\":0,\"name_id\":3,\"mail_id\":879,\"fire\":0,\"doc_id\":\"5-1601-1-1\",\"anonymous\":0,\"building_id\":7,\"furniture_id\":13,\"up_type\":1},{\"need_handle\":0,\"time\":1773200330,\"worker_id\":1,\"type\":0,\"handle\":0,\"name_id\":4,\"mail_id\":878,\"fire\":0,\"doc_id\":\"9-4\",\"anonymous\":0,\"building_id\":0,\"furniture_id\":0,\"up_type\":0},{\"need_handle\":0,\"time\":1773200192,\"worker_id\":1,\"type\":0,\"handle\":0,\"name_id\":4,\"mail_id\":877,\"fire\":0,\"doc_id\":\"7-4102-1-1\",\"anonymous\":0,\"building_id\":3,\"furniture_id\":7,\"up_type\":1},{\"need_handle\":1,\"time\":1773200136,\"worker_id\":3,\"type\":1,\"handle\":0,\"name_id\":3,\"mail_id\":876,\"fire\":0,\"doc_id\":\"5-4101-1-2\",\"anonymous\":1,\"building_id\":3,\"furniture_id\":1,\"up_type\":1},{\"need_handle\":0,\"time\":1773200035,\"worker_id\":12,\"type\":0,\"handle\":0,\"name_id\":2,\"mail_id\":875,\"fire\":0,\"doc_id\":\"11-5\",\"anonymous\":0,\"building_id\":0,\"furniture_id\":0,\"up_type\":0},{\"need_handle\":0,\"time\":1773199950,\"worker_id\":12,\"type\":0,\"handle\":0,\"name_id\":2,\"mail_id\":874,\"fire\":0,\"doc_id\":\"7-1803-2-1\",\"anonymous\":0,\"building_id\":17,\"furniture_id\":28,\"up_type\":1},{\"need_handle\":0,\"time\":1773199884,\"worker_id\":3,\"type\":1,\"handle\":0,\"name_id\":3,\"mail_id\":873,\"fire\":0,\"doc_id\":\"2-4\",\"anonymous\":0,\"building_id\":0,\"furniture_id\":0,\"up_type\":0},{\"need_handle\":0,\"time\":1773199847,\"worker_id\":1,\"type\":0,\"handle\":0,\"name_id\":4,\"mail_id\":872,\"fire\":0,\"doc_id\":\"9-5\",\"anonymous\":0,\"building_id\":0,\"furniture_id\":0,\"up_type\":0},{\"need_handle\":0,\"time\":1773199797,\"worker_id\":12,\"type\":0,\"handle\":0,\"name_id\":2,\"mail_id\":871,\"fire\":0,\"doc_id\":\"11-6\",\"anonymous\":0,\"building_id\":0,\"furniture_id\":0,\"up_type\":0}]}",
+              "name": "svr_worker_mail"
+            },
+            {
+              "data": "{\"list\":{}}",
+              "name": "svr_functional_building"
+            },
+            {
+              "data": "{\"event_list\":{},\"first\":0}",
+              "name": "svr_water_cycle_event"
+            },
+            {
+              "data": "{\"refresh_time\":1773446400,\"box_quest_data\":{\"box_quest_score\":0,\"box_quest_next_refresh_time\":1773446400,\"box_quest_claimed_score\":{}},\"daily_quest_stage\":7,\"active_point\":0,\"quest_list\":{},\"claim_active_reward_list\":{}}",
+              "name": "svr_daily_quest_inc"
+            },
+            {
+              "data": "{\"begin_time\":0,\"muck_ids\":{},\"castle_lv\":0,\"coming_flag\":0,\"index\":0,\"end_time\":0}",
+              "name": "svr_flood_coming"
+            },
+            {
+              "data": "{\"map_info\":{\"claimed_index\":{},\"map_id\":1,\"progress\":0,\"finished_id\":{}},\"enter_time\":0,\"cur_map\":1,\"cur_area\":1,\"clear_time\":-1}",
+              "name": "svr_map_exploring"
+            },
+            {
+              "data": "{\"purchase_times\":0,\"updt_time\":0,\"next_refresh_time\":1773446400,\"claimed_targets\":{},\"rewards_times\":0,\"season_info\":{\"btime\":1773014701,\"etime\":1773619500,\"season_id\":14},\"challenge_times\":0}",
+              "name": "svr_arena_times_info"
+            },
+            {
+              "data": "{\"ab_test_group\":0,\"last_finish_dungeon\":{\"passed_monster_group_ids\":[10202,10201],\"monster_group_id\":10202,\"chapter_id\":1,\"scene_id\":102},\"rely_ab_test_group\":0}",
+              "name": "svr_dungeon_passed"
+            },
+            {
+              "data": "{\"items\":{}}",
+              "name": "svr_player_backpack_equip"
+            },
+            {
+              "data": "{\"end_time\":1769753675}",
+              "name": "svr_worker_uprising"
+            },
+            {
+              "data": "{\"tokens\":[{\"fixed_rewards\":[{\"buy_num\":0,\"id\":5049,\"price\":200,\"raw_price\":200,\"limit\":1,\"discount\":0,\"cost_id\":5312,\"type\":0,\"index\":2,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":4006,\"price\":100,\"raw_price\":100,\"limit\":1,\"discount\":0,\"cost_id\":5312,\"type\":0,\"index\":1,\"num\":1,\"cost_type\":0}],\"exclusive_rewards\":{},\"unfixed_rewards\":[{\"buy_num\":0,\"id\":5049,\"num\":1,\"type\":0,\"limit\":1,\"discount\":0,\"cost_id\":5312,\"index\":2,\"raw_price\":800,\"cost_type\":0,\"price\":800},{\"buy_num\":0,\"id\":3494,\"num\":1,\"type\":0,\"limit\":1,\"discount\":0,\"cost_id\":5312,\"index\":1,\"raw_price\":160,\"cost_type\":0,\"price\":160},{\"buy_num\":0,\"id\":3494,\"num\":1,\"type\":0,\"limit\":1,\"discount\":0,\"cost_id\":5312,\"index\":5,\"raw_price\":160,\"cost_type\":0,\"price\":160},{\"buy_num\":0,\"id\":3494,\"num\":1,\"type\":0,\"limit\":1,\"discount\":0,\"cost_id\":5312,\"index\":4,\"raw_price\":160,\"cost_type\":0,\"price\":160},{\"buy_num\":0,\"id\":4006,\"num\":1,\"type\":0,\"limit\":1,\"discount\":0,\"cost_id\":5312,\"index\":3,\"raw_price\":400,\"cost_type\":0,\"price\":400}],\"stage\":1,\"version\":0,\"token_type\":1,\"unfixed_refresh_num\":0,\"fixed_next_refresh_time\":1773878400,\"coin\":0,\"next_daily_refresh_time\":1773446400,\"unfixed_next_refresh_time\":1773446400},{\"fixed_rewards\":[{\"buy_num\":0,\"id\":5049,\"price\":200,\"raw_price\":200,\"limit\":1,\"discount\":0,\"cost_id\":5311,\"type\":0,\"index\":2,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":3645,\"price\":100,\"raw_price\":100,\"limit\":1,\"discount\":0,\"cost_id\":5311,\"type\":0,\"index\":1,\"num\":1,\"cost_type\":0}],\"exclusive_rewards\":{},\"unfixed_rewards\":[{\"buy_num\":0,\"id\":3494,\"num\":1,\"type\":0,\"limit\":1,\"discount\":0,\"cost_id\":5311,\"index\":2,\"raw_price\":160,\"cost_type\":0,\"price\":160},{\"buy_num\":0,\"id\":3494,\"num\":1,\"type\":0,\"limit\":1,\"discount\":0,\"cost_id\":5311,\"index\":1,\"raw_price\":160,\"cost_type\":0,\"price\":160},{\"buy_num\":0,\"id\":5049,\"num\":1,\"type\":0,\"limit\":1,\"discount\":0,\"cost_id\":5311,\"index\":5,\"raw_price\":800,\"cost_type\":0,\"price\":800},{\"buy_num\":0,\"id\":5009,\"num\":1,\"type\":0,\"limit\":1,\"discount\":0,\"cost_id\":5311,\"index\":4,\"raw_price\":160,\"cost_type\":0,\"price\":160},{\"buy_num\":0,\"id\":5009,\"num\":1,\"type\":0,\"limit\":1,\"discount\":0,\"cost_id\":5311,\"index\":3,\"raw_price\":160,\"cost_type\":0,\"price\":160}],\"stage\":1,\"version\":0,\"token_type\":2,\"unfixed_refresh_num\":0,\"fixed_next_refresh_time\":1773878400,\"coin\":0,\"next_daily_refresh_time\":1773446400,\"unfixed_next_refresh_time\":1773446400},{\"fixed_rewards\":[{\"buy_num\":0,\"id\":430,\"price\":1,\"raw_price\":1,\"limit\":10000,\"discount\":0,\"cost_id\":7003,\"type\":25,\"index\":2,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":450,\"price\":100,\"raw_price\":100,\"limit\":100,\"discount\":0,\"cost_id\":7003,\"type\":25,\"index\":1,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":41403,\"price\":500,\"raw_price\":500,\"limit\":25,\"discount\":0,\"cost_id\":7003,\"type\":315,\"index\":3,\"num\":1,\"cost_type\":0}],\"exclusive_rewards\":{},\"unfixed_rewards\":[{\"buy_num\":0,\"id\":10503,\"price\":600,\"raw_price\":600,\"limit\":25,\"discount\":0,\"cost_id\":7003,\"type\":315,\"index\":2,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":2,\"price\":2100,\"raw_price\":2100,\"limit\":2,\"discount\":0,\"cost_id\":7003,\"type\":606,\"index\":1,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":3527,\"price\":400,\"raw_price\":400,\"limit\":5,\"discount\":0,\"cost_id\":7003,\"type\":0,\"index\":7,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":3598,\"price\":400,\"raw_price\":400,\"limit\":5,\"discount\":0,\"cost_id\":7003,\"type\":0,\"index\":6,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":8194,\"price\":3000,\"raw_price\":3000,\"limit\":1,\"discount\":0,\"cost_id\":7003,\"type\":0,\"index\":5,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":1,\"price\":1050,\"raw_price\":1050,\"limit\":4,\"discount\":0,\"cost_id\":7003,\"type\":606,\"index\":4,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":6630,\"price\":250,\"raw_price\":250,\"limit\":10,\"discount\":0,\"cost_id\":7003,\"type\":0,\"index\":3,\"num\":1,\"cost_type\":0}],\"stage\":1,\"version\":0,\"token_type\":3,\"unfixed_refresh_num\":0,\"fixed_next_refresh_time\":1773619200,\"coin\":0,\"next_daily_refresh_time\":1773619200,\"unfixed_next_refresh_time\":1773619200},{\"fixed_rewards\":[{\"buy_num\":0,\"id\":10503,\"price\":1000,\"raw_price\":1000,\"limit\":5,\"discount\":0,\"cost_id\":7004,\"type\":315,\"index\":9,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":8194,\"price\":9600,\"raw_price\":9600,\"limit\":1,\"discount\":0,\"cost_id\":7004,\"type\":0,\"index\":8,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":2,\"price\":7200,\"raw_price\":7200,\"limit\":1,\"discount\":0,\"cost_id\":7004,\"type\":606,\"index\":7,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":1,\"price\":3600,\"raw_price\":3600,\"limit\":3,\"discount\":0,\"cost_id\":7004,\"type\":606,\"index\":6,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":0,\"price\":1000,\"raw_price\":1000,\"limit\":14,\"discount\":0,\"cost_id\":7004,\"type\":606,\"index\":5,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":10603,\"price\":5000,\"raw_price\":5000,\"limit\":3,\"discount\":0,\"cost_id\":7004,\"type\":315,\"index\":4,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":6900,\"price\":5000,\"raw_price\":5000,\"limit\":5,\"discount\":0,\"cost_id\":7004,\"type\":0,\"index\":3,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":3495,\"price\":300,\"raw_price\":300,\"limit\":200,\"discount\":0,\"cost_id\":7004,\"type\":0,\"index\":17,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":6012,\"price\":300,\"raw_price\":300,\"limit\":10,\"discount\":0,\"cost_id\":7004,\"type\":0,\"index\":15,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":6629,\"price\":300,\"raw_price\":300,\"limit\":10,\"discount\":0,\"cost_id\":7004,\"type\":0,\"index\":16,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":6013,\"price\":1000,\"raw_price\":1000,\"limit\":10,\"discount\":0,\"cost_id\":7004,\"type\":0,\"index\":13,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":6630,\"price\":1000,\"raw_price\":1000,\"limit\":10,\"discount\":0,\"cost_id\":7004,\"type\":0,\"index\":14,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":6631,\"price\":2000,\"raw_price\":2000,\"limit\":10,\"discount\":0,\"cost_id\":7004,\"type\":0,\"index\":12,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":6320,\"price\":2000,\"raw_price\":2000,\"limit\":10,\"discount\":0,\"cost_id\":7004,\"type\":0,\"index\":11,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":10702,\"price\":500,\"raw_price\":500,\"limit\":10,\"discount\":0,\"cost_id\":7004,\"type\":315,\"index\":10,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":6046,\"price\":7500,\"raw_price\":7500,\"limit\":2,\"discount\":0,\"cost_id\":7004,\"type\":0,\"index\":2,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":6047,\"price\":24000,\"raw_price\":24000,\"limit\":1,\"discount\":0,\"cost_id\":7004,\"type\":0,\"index\":1,\"num\":1,\"cost_type\":0}],\"exclusive_rewards\":{},\"unfixed_rewards\":{},\"stage\":1,\"version\":0,\"token_type\":4,\"unfixed_refresh_num\":0,\"fixed_next_refresh_time\":1773619200,\"coin\":0,\"next_daily_refresh_time\":1773619200,\"unfixed_next_refresh_time\":1773619200},{\"fixed_rewards\":[{\"buy_num\":0,\"id\":3509,\"price\":3500,\"raw_price\":3500,\"limit\":100,\"discount\":0,\"cost_id\":8063,\"type\":0,\"index\":9,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":3503,\"price\":3500,\"raw_price\":3500,\"limit\":100,\"discount\":0,\"cost_id\":8063,\"type\":0,\"index\":8,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":8053,\"price\":7000,\"raw_price\":7000,\"limit\":20,\"discount\":0,\"cost_id\":8063,\"type\":0,\"index\":7,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":6331,\"price\":4000,\"raw_price\":4000,\"limit\":50,\"discount\":0,\"cost_id\":8063,\"type\":0,\"index\":6,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":460,\"price\":8000,\"raw_price\":8000,\"limit\":10,\"discount\":0,\"cost_id\":8063,\"type\":25,\"index\":5,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":3515,\"price\":3500,\"raw_price\":3500,\"limit\":100,\"discount\":0,\"cost_id\":8063,\"type\":0,\"index\":10,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":430,\"price\":16,\"raw_price\":16,\"limit\":1000,\"discount\":0,\"cost_id\":8063,\"type\":25,\"index\":3,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":10603,\"price\":6000,\"raw_price\":6000,\"limit\":10,\"discount\":0,\"cost_id\":8063,\"type\":315,\"index\":2,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":11303,\"price\":1000,\"raw_price\":1000,\"limit\":10,\"discount\":0,\"cost_id\":8063,\"type\":0,\"index\":1,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":450,\"price\":1600,\"raw_price\":1600,\"limit\":10,\"discount\":0,\"cost_id\":8063,\"type\":25,\"index\":4,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":3606,\"price\":1250,\"raw_price\":1250,\"limit\":100,\"discount\":0,\"cost_id\":8063,\"type\":0,\"index\":12,\"num\":1,\"cost_type\":0},{\"buy_num\":0,\"id\":3554,\"price\":3500,\"raw_price\":3500,\"limit\":100,\"discount\":0,\"cost_id\":8063,\"type\":0,\"index\":11,\"num\":1,\"cost_type\":0}],\"exclusive_rewards\":{},\"unfixed_rewards\":{},\"stage\":1,\"version\":0,\"token_type\":5,\"unfixed_refresh_num\":0,\"fixed_next_refresh_time\":1773619200,\"coin\":0,\"next_daily_refresh_time\":1773619200,\"unfixed_next_refresh_time\":1773619200},{\"fixed_rewards\":[{\"buy_num\":0,\"id\":6900,\"num\":10,\"type\":0,\"limit\":500,\"discount\":0,\"cost_id\":8071,\"cost_type\":0,\"index\":2,\"price\":2500,\"raw_price\":2500},{\"buy_num\":0,\"id\":3,\"num\":5,\"type\":261,\"limit\":500,\"discount\":0,\"cost_id\":8071,\"cost_type\":0,\"index\":1,\"price\":2500,\"raw_price\":2500}],\"exclusive_rewards\":{},\"unfixed_rewards\":[{\"buy_num\":0,\"id\":10603,\"num\":1,\"type\":315,\"limit\":1,\"discount\":20,\"cost_id\":8071,\"index\":2,\"raw_price\":500,\"cost_type\":0,\"price\":400},{\"buy_num\":0,\"id\":3498,\"num\":1,\"type\":0,\"limit\":1,\"discount\":20,\"cost_id\":8071,\"index\":1,\"raw_price\":500,\"cost_type\":0,\"price\":400},{\"buy_num\":0,\"id\":130,\"num\":5,\"type\":0,\"limit\":1,\"discount\":20,\"cost_id\":8071,\"index\":7,\"raw_price\":1500,\"cost_type\":0,\"price\":1200},{\"buy_num\":0,\"id\":10603,\"num\":1,\"type\":315,\"limit\":1,\"discount\":0,\"cost_id\":8071,\"index\":6,\"raw_price\":500,\"cost_type\":0,\"price\":500},{\"buy_num\":0,\"id\":3,\"num\":2,\"type\":261,\"limit\":1,\"discount\":20,\"cost_id\":8071,\"index\":5,\"raw_price\":1000,\"cost_type\":0,\"price\":800},{\"buy_num\":0,\"id\":10603,\"num\":1,\"type\":315,\"limit\":1,\"discount\":50,\"cost_id\":8071,\"index\":4,\"raw_price\":500,\"cost_type\":0,\"price\":250},{\"buy_num\":0,\"id\":10603,\"num\":1,\"type\":315,\"limit\":1,\"discount\":0,\"cost_id\":8071,\"index\":3,\"raw_price\":500,\"cost_type\":0,\"price\":500}],\"stage\":1,\"version\":0,\"token_type\":6,\"unfixed_refresh_num\":0,\"fixed_next_refresh_time\":1773446400,\"coin\":0,\"next_daily_refresh_time\":1773446400,\"unfixed_next_refresh_time\":1773446400},{\"fixed_rewards\":[{\"buy_num\":0,\"id\":8002,\"num\":1,\"type\":0,\"limit\":4,\"discount\":0,\"cost_id\":8142,\"cost_type\":0,\"index\":9,\"price\":1200,\"raw_price\":1200},{\"buy_num\":0,\"id\":8001,\"num\":1,\"type\":0,\"limit\":4,\"discount\":0,\"cost_id\":8142,\"cost_type\":0,\"index\":8,\"price\":1200,\"raw_price\":1200},{\"buy_num\":0,\"id\":430,\"num\":100,\"type\":25,\"limit\":20,\"discount\":0,\"cost_id\":8142,\"cost_type\":0,\"index\":7,\"price\":50,\"raw_price\":50},{\"buy_num\":0,\"id\":450,\"num\":1,\"type\":25,\"limit\":20,\"discount\":0,\"cost_id\":8142,\"cost_type\":0,\"index\":6,\"price\":50,\"raw_price\":50},{\"buy_num\":0,\"id\":460,\"num\":1,\"type\":25,\"limit\":5,\"discount\":0,\"cost_id\":8142,\"cost_type\":0,\"index\":5,\"price\":250,\"raw_price\":250},{\"buy_num\":0,\"id\":6690,\"num\":1,\"type\":0,\"limit\":5,\"discount\":0,\"cost_id\":8142,\"cost_type\":0,\"index\":4,\"price\":500,\"raw_price\":500},{\"buy_num\":0,\"id\":6712,\"num\":1,\"type\":0,\"limit\":10,\"discount\":0,\"cost_id\":8142,\"cost_type\":0,\"index\":3,\"price\":40,\"raw_price\":40},{\"buy_num\":0,\"id\":10603,\"num\":15,\"type\":315,\"limit\":5,\"discount\":0,\"cost_id\":8142,\"cost_type\":0,\"index\":2,\"price\":200,\"raw_price\":200},{\"buy_num\":0,\"id\":3,\"num\":1,\"type\":261,\"limit\":1,\"discount\":0,\"cost_id\":8142,\"cost_type\":0,\"index\":1,\"price\":600,\"raw_price\":600}],\"exclusive_rewards\":{},\"unfixed_rewards\":[{\"buy_num\":0,\"id\":10603,\"num\":1,\"type\":315,\"limit\":1,\"discount\":20,\"cost_id\":8142,\"index\":2,\"raw_price\":500,\"cost_type\":0,\"price\":400},{\"buy_num\":0,\"id\":130,\"num\":10,\"type\":0,\"limit\":1,\"discount\":20,\"cost_id\":8142,\"index\":1,\"raw_price\":1500,\"cost_type\":0,\"price\":1200},{\"buy_num\":0,\"id\":3498,\"num\":3,\"type\":0,\"limit\":1,\"discount\":50,\"cost_id\":8142,\"index\":6,\"raw_price\":1000,\"cost_type\":0,\"price\":500},{\"buy_num\":0,\"id\":3527,\"num\":4,\"type\":0,\"limit\":1,\"discount\":20,\"cost_id\":8142,\"index\":5,\"raw_price\":500,\"cost_type\":0,\"price\":400},{\"buy_num\":0,\"id\":3498,\"num\":3,\"type\":0,\"limit\":1,\"discount\":0,\"cost_id\":8142,\"index\":4,\"raw_price\":1000,\"cost_type\":0,\"price\":1000},{\"buy_num\":0,\"id\":130,\"num\":10,\"type\":0,\"limit\":1,\"discount\":20,\"cost_id\":8142,\"index\":3,\"raw_price\":1500,\"cost_type\":0,\"price\":1200}],\"stage\":1,\"version\":0,\"token_type\":7,\"unfixed_refresh_num\":0,\"fixed_next_refresh_time\":1773446400,\"coin\":0,\"next_daily_refresh_time\":1773446400,\"unfixed_next_refresh_time\":1773446400}]}",
+              "name": "svr_token_shop"
+            },
+            {
+              "data": "{\"queue_buff_item\":{}}",
+              "name": "svr_queue_buff"
+            },
+            {
+              "data": "{\"auto_coming_workers\":{},\"coming_workers\":[{\"name_id\":2,\"worker_id\":29},{\"name_id\":2,\"worker_id\":26},{\"name_id\":3,\"worker_id\":31},{\"name_id\":4,\"worker_id\":15},{\"name_id\":4,\"worker_id\":21},{\"name_id\":1,\"worker_id\":20},{\"name_id\":2,\"worker_id\":30},{\"name_id\":3,\"worker_id\":13},{\"name_id\":1,\"worker_id\":28},{\"name_id\":3,\"worker_id\":17},{\"name_id\":4,\"worker_id\":6},{\"name_id\":4,\"worker_id\":14}],\"first_flag\":1,\"cur_special\":{\"etime\":0,\"task_list\":{},\"btime\":0,\"worker_list\":{},\"status\":0,\"special_id\":0},\"coming_workers_in\":{}}",
+              "name": "svr_p3_worker_coming"
+            },
+            {
+              "data": "{\"schedule_change_time\":1769654101,\"schedule_time\":{},\"worker_eat\":{}}",
+              "name": "svr_p3_worker_schedule"
+            },
+            {
+              "data": "{\"wounded_troops\":[{\"value\":1,\"id\":1}],\"nomral_troops\":[{\"value\":0,\"id\":201},{\"value\":0,\"id\":101},{\"value\":2000000,\"id\":204},{\"value\":19,\"id\":1}],\"reserve_troops\":{}}",
+              "name": "svr_camp_soldier_list"
+            },
+            {
+              "data": "{\"reward_list\":{},\"refresh_time\":1769653568}",
+              "name": "svr_radar_time_reward"
+            },
+            {
+              "data": "{\"lv\":7,\"age\":1}",
+              "name": "svr_castle_reward"
+            },
+            {
+              "data": "{\"items\":{}}",
+              "name": "svr_item_consequence_open_num"
+            },
+            {
+              "data": "{\"records\":{},\"sp_records\":{}}",
+              "name": "svr_reset_equip_records"
+            },
+            {
+              "data": "{\"expire_flag\":1,\"quest_list\":{},\"day\":0,\"claim_reward_list\":{}}",
+              "name": "svr_pet_quest"
+            },
+            {
+              "data": "{\"community_event_portal_switch_control\":\"{\\\"sid_control\\\":[{\\\"btime\\\":1747613160,\\\"etime\\\":-1,\\\"sid_list\\\":[-1]}]}\",\"sub_game_merit_shop_new\":\"{\\\"item\\\":{\\\"9\\\":{\\\"reward\\\":{\\\"a\\\":[0,8001,1]},\\\"a\\\":{\\\"a2\\\":2,\\\"a1\\\":10,\\\"a3\\\":10,\\\"a4\\\":0},\\\"cost\\\":[218,0,5000000,10000]},\\\"8\\\":{\\\"reward\\\":{\\\"a\\\":[0,8002,1]},\\\"a\\\":{\\\"a2\\\":2,\\\"a1\\\":20,\\\"a3\\\":10,\\\"a4\\\":0},\\\"cost\\\":[218,0,5000000,10000]},\\\"7\\\":{\\\"reward\\\":{\\\"a\\\":[25,460,1]},\\\"a\\\":{\\\"a2\\\":2,\\\"a1\\\":15,\\\"a3\\\":10,\\\"a4\\\":0},\\\"cost\\\":[218,0,5000000,10000]},\\\"6\\\":{\\\"reward\\\":{\\\"a\\\":[25,450,1]},\\\"a\\\":{\\\"a2\\\":2,\\\"a1\\\":25,\\\"a3\\\":10,\\\"a4\\\":0},\\\"cost\\\":[218,0,1000000,10000]},\\\"5\\\":{\\\"reward\\\":{\\\"a\\\":[25,430,1]},\\\"a\\\":{\\\"a2\\\":2,\\\"a1\\\":2500,\\\"a3\\\":10,\\\"a4\\\":0},\\\"cost\\\":[218,0,10000,10000]},\\\"4\\\":{\\\"reward\\\":{\\\"a\\\":[0,6900,1]},\\\"a\\\":{\\\"a2\\\":2,\\\"a1\\\":10,\\\"a3\\\":10,\\\"a4\\\":0},\\\"cost\\\":[218,0,12500000,10000]},\\\"3\\\":{\\\"reward\\\":{\\\"a\\\":[0,6712,1]},\\\"a\\\":{\\\"a2\\\":2,\\\"a1\\\":20,\\\"a3\\\":10,\\\"a4\\\":0},\\\"cost\\\":[218,0,5000000,10000]},\\\"2\\\":{\\\"reward\\\":{\\\"a\\\":[315,10603,1]},\\\"a\\\":{\\\"a2\\\":2,\\\"a1\\\":3,\\\"a3\\\":10,\\\"a4\\\":0},\\\"cost\\\":[218,0,25000000,10000]},\\\"1\\\":{\\\"reward\\\":{\\\"a\\\":[315,703,1]},\\\"a\\\":{\\\"a2\\\":1,\\\"a1\\\":3,\\\"a3\\\":10,\\\"a4\\\":0},\\\"cost\\\":[218,0,25000000,10000]},\\\"0\\\":{\\\"reward\\\":{\\\"a\\\":[315,903,1]},\\\"a\\\":{\\\"a2\\\":1,\\\"a1\\\":6,\\\"a3\\\":10,\\\"a4\\\":0},\\\"cost\\\":[218,0,25000000,10000]},\\\"10\\\":{\\\"reward\\\":{\\\"a\\\":[0,4008,1]},\\\"a\\\":{\\\"a2\\\":2,\\\"a1\\\":20,\\\"a3\\\":10,\\\"a4\\\":0},\\\"cost\\\":[218,0,2500000,10000]},\\\"11\\\":{\\\"reward\\\":{\\\"a\\\":[0,3647,1]},\\\"a\\\":{\\\"a2\\\":2,\\\"a1\\\":20,\\\"a3\\\":10,\\\"a4\\\":0},\\\"cost\\\":[218,0,2500000,10000]},\\\"12\\\":{\\\"reward\\\":{\\\"a\\\":[0,3598,1]},\\\"a\\\":{\\\"a2\\\":2,\\\"a1\\\":20,\\\"a3\\\":10,\\\"a4\\\":0},\\\"cost\\\":[218,0,2500000,10000]},\\\"13\\\":{\\\"reward\\\":{\\\"a\\\":[0,3527,1]},\\\"a\\\":{\\\"a2\\\":2,\\\"a1\\\":20,\\\"a3\\\":10,\\\"a4\\\":0},\\\"cost\\\":[218,0,2500000,10000]},\\\"14\\\":{\\\"reward\\\":{\\\"a\\\":[0,3496,1]},\\\"a\\\":{\\\"a2\\\":2,\\\"a1\\\":50,\\\"a3\\\":10,\\\"a4\\\":0},\\\"cost\\\":[218,0,1500000,10000]}}}\",\"sub_game_player_invite\":\"{\\\"invite_duration\\\":86400,\\\"reminder\\\":[[1,7,2],[8,14,2],[15,30,3],[31,60,6]],\\\"invite_limit\\\":50}\",\"sub_game_pid_get_v2\":\"{\\\"303\\\":{\\\"-1\\\":[{\\\"pid\\\":[100028],\\\"order\\\":1,\\\"store_id\\\":3,\\\"store_type\\\":1011},{\\\"pid\\\":[7018],\\\"order\\\":2,\\\"store_id\\\":3,\\\"store_type\\\":1017},{\\\"pid\\\":[10709,10710,10711,10712,10713],\\\"order\\\":3,\\\"store_id\\\":1,\\\"store_type\\\":1002},{\\\"pid\\\":[30036],\\\"order\\\":4,\\\"store_id\\\":2,\\\"store_type\\\":1005},{\\\"pid\\\":[7002,7004,7005,7006,7003],\\\"order\\\":5,\\\"store_id\\\":2,\\\"store_type\\\":1017}]},\\\"139\\\":{\\\"9\\\":[{\\\"pid\\\":[10633,10584],\\\"order\\\":0,\\\"store_id\\\":6,\\\"store_type\\\":1002},{\\\"pid\\\":[111,112,113,999,134,135,136,137,138,139,140,142,143,144,145],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1001}],\\\"7\\\":[{\\\"pid\\\":[10758,10759,10760,10761,10762],\\\"order\\\":1,\\\"store_id\\\":1,\\\"store_type\\\":1002},{\\\"pid\\\":[42343,42344,42345,42346,42347],\\\"order\\\":2,\\\"store_id\\\":28,\\\"store_type\\\":1006},{\\\"pid\\\":[42292,42293,42294,42295,42296],\\\"order\\\":3,\\\"store_id\\\":28,\\\"store_type\\\":1006}],\\\"407\\\":[{\\\"pid\\\":[10648,10645],\\\"order\\\":0,\\\"store_id\\\":6,\\\"store_type\\\":1002}],\\\"401\\\":[{\\\"pid\\\":[42138],\\\"order\\\":0,\\\"store_id\\\":55,\\\"store_type\\\":1006}],\\\"409\\\":[{\\\"pid\\\":[10653,10650],\\\"order\\\":0,\\\"store_id\\\":6,\\\"store_type\\\":1002}],\\\"404\\\":[{\\\"pid\\\":[10643,10640],\\\"order\\\":0,\\\"store_id\\\":6,\\\"store_type\\\":1002}],\\\"406\\\":[{\\\"pid\\\":[137,138,139,140],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1001}],\\\"31\\\":[{\\\"pid\\\":[10629,10458],\\\"order\\\":0,\\\"store_id\\\":6,\\\"store_type\\\":1002}],\\\"5\\\":[{\\\"pid\\\":[142,143,144,145],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1001}],\\\"2\\\":[{\\\"pid\\\":[10617,10428],\\\"order\\\":0,\\\"store_id\\\":6,\\\"store_type\\\":1002}],\\\"32\\\":[{\\\"pid\\\":[10625,10443],\\\"order\\\":0,\\\"store_id\\\":6,\\\"store_type\\\":1002}]},\\\"19\\\":{\\\"2\\\":[{\\\"pid\\\":[42156,42157,42158,42159,42160,40024,40025,40026,40027,40028,42213,42214,42215,42216,42217,42310,42311,42312,42313,42314],\\\"order\\\":1,\\\"store_id\\\":39,\\\"store_type\\\":1006},{\\\"pid\\\":[7008,7016,7017,7018],\\\"order\\\":2,\\\"store_id\\\":3,\\\"store_type\\\":1017},{\\\"pid\\\":[10753,10754,10755,10756,10757],\\\"order\\\":3,\\\"store_id\\\":1,\\\"store_type\\\":1002},{\\\"pid\\\":[100019,100024,100025,100004],\\\"order\\\":4,\\\"store_id\\\":2,\\\"store_type\\\":1011},{\\\"pid\\\":[41626,41627,41628,41629,40778,42223,42224,42225,42226,42227,42320,42321,42322,42324],\\\"order\\\":5,\\\"store_id\\\":42,\\\"store_type\\\":1006},{\\\"pid\\\":[10071,10072,10073,10074,10075],\\\"order\\\":6,\\\"store_id\\\":1,\\\"store_type\\\":1002},{\\\"pid\\\":[30037],\\\"order\\\":7,\\\"store_id\\\":2,\\\"store_type\\\":1005},{\\\"pid\\\":[9,13,15],\\\"order\\\":8,\\\"store_id\\\":0,\\\"store_type\\\":20014}],\\\"1\\\":[{\\\"pid\\\":[42161,42162,42163,42164,42165,40926,40927,40928,40929,40930,42208,42209,42210,42212,42305,42306,42307,42308,42309],\\\"order\\\":1,\\\"store_id\\\":37,\\\"store_type\\\":1006},{\\\"pid\\\":[7008,7016,7017,7018],\\\"order\\\":2,\\\"store_id\\\":3,\\\"store_type\\\":1017},{\\\"pid\\\":[10753,10754,10755,10756,10757],\\\"order\\\":3,\\\"store_id\\\":1,\\\"store_type\\\":1002},{\\\"pid\\\":[100019,100024,100025,100004],\\\"order\\\":4,\\\"store_id\\\":2,\\\"store_type\\\":1011},{\\\"pid\\\":[41626,41627,41628,41629,40778,42223,42224,42225,42226,42227,42320,42321,42322,42324],\\\"order\\\":5,\\\"store_id\\\":42,\\\"store_type\\\":1006},{\\\"pid\\\":[10066,10067,10068,10069,10070],\\\"order\\\":6,\\\"store_id\\\":1,\\\"store_type\\\":1002},{\\\"pid\\\":[30037],\\\"order\\\":7,\\\"store_id\\\":2,\\\"store_type\\\":1005},{\\\"pid\\\":[9,13,15,17],\\\"order\\\":8,\\\"store_id\\\":0,\\\"store_type\\\":20014}],\\\"4\\\":[{\\\"pid\\\":[41630,41631,41632,41633,41634],\\\"order\\\":0,\\\"store_id\\\":46,\\\"store_type\\\":1006}],\\\"3\\\":[{\\\"pid\\\":[42151,42152,42153,42154,42155,40019,40020,40021,40022,40023,42218,42219,42220,42221,42222,42315,42316,42317,42318,42319],\\\"order\\\":9,\\\"store_id\\\":38,\\\"store_type\\\":1006},{\\\"pid\\\":[7008,7016,7017,7018],\\\"order\\\":1,\\\"store_id\\\":3,\\\"store_type\\\":1017},{\\\"pid\\\":[10753,10754,10755,10756,10757],\\\"order\\\":2,\\\"store_id\\\":1,\\\"store_type\\\":1002},{\\\"pid\\\":[100019,100024,100025,100004],\\\"order\\\":3,\\\"store_id\\\":2,\\\"store_type\\\":1011},{\\\"pid\\\":[41626,41627,41628,41629,40778,42223,42224,42225,42226,42227,42320,42321,42322,42324],\\\"order\\\":4,\\\"store_id\\\":42,\\\"store_type\\\":1006},{\\\"pid\\\":[10076,10077,10078,10079,10080],\\\"order\\\":5,\\\"store_id\\\":1,\\\"store_type\\\":1002},{\\\"pid\\\":[30037],\\\"order\\\":6,\\\"store_id\\\":2,\\\"store_type\\\":1005},{\\\"pid\\\":[9,13,15],\\\"order\\\":7,\\\"store_id\\\":0,\\\"store_type\\\":20014}]},\\\"600\\\":{\\\"0\\\":[{\\\"pid\\\":[10778,10779,10780,10781,10782],\\\"order\\\":0,\\\"store_id\\\":12,\\\"store_type\\\":1002}]},\\\"321\\\":{\\\"0\\\":[{\\\"pid\\\":[42077,42078,42079,42080,42081,42082,42088,42144,42145,42146,42147,42148,42149,42150,42270,42271,42272,42273,42274,42275,42276,42283,42284,42285,42286,42287,42288,42289],\\\"order\\\":0,\\\"store_id\\\":19,\\\"store_type\\\":1006},{\\\"pid\\\":[42429,42430,42431,42432,42433,42434,42435,42436,42437,42438,42439,42440,42441,42442],\\\"order\\\":0,\\\"store_id\\\":19,\\\"store_type\\\":1006}]},\\\"10031\\\":{\\\"-1\\\":[{\\\"pid\\\":[10532,10533],\\\"order\\\":0,\\\"store_id\\\":5,\\\"store_type\\\":1002}]},\\\"418\\\":{\\\"0\\\":[{\\\"pid\\\":[42353,42354,42355,42356,42357,42358,42359],\\\"order\\\":0,\\\"store_id\\\":113,\\\"store_type\\\":1020}]},\\\"3\\\":{\\\"2\\\":[{\\\"pid\\\":[10753,10754,10755,10756,10757],\\\"order\\\":1,\\\"store_id\\\":1,\\\"store_type\\\":1002},{\\\"pid\\\":[10313,10312,10311,10310,10309],\\\"order\\\":2,\\\"store_id\\\":1,\\\"store_type\\\":1002},{\\\"pid\\\":[100019,100024],\\\"order\\\":3,\\\"store_id\\\":2,\\\"store_type\\\":1011},{\\\"pid\\\":[7016,7008],\\\"order\\\":4,\\\"store_id\\\":3,\\\"store_type\\\":1017},{\\\"pid\\\":[7015],\\\"order\\\":5,\\\"store_id\\\":2,\\\"store_type\\\":1017},{\\\"pid\\\":[42252,42253,42254,42255,42256,42257,42258,42259,42260,42261,42262,42263,42264,42265,42266,42248,42249,42250,42251,42247],\\\"order\\\":6,\\\"store_id\\\":42,\\\"store_type\\\":1006},{\\\"pid\\\":[10753,10754,10755,10756,10757],\\\"order\\\":7,\\\"store_id\\\":1,\\\"store_type\\\":1002},{\\\"pid\\\":[42223,42224,42225,42226,42227,42208,42209,42210,42211,42212,42218,42219,42220,42221,42222,42213,42214,42215,42216,42217],\\\"order\\\":8,\\\"store_id\\\":42,\\\"store_type\\\":1006},{\\\"pid\\\":[42066,42067,42068,42069,42070],\\\"order\\\":9,\\\"store_id\\\":28,\\\"store_type\\\":1006}],\\\"1\\\":[{\\\"pid\\\":[10753,10754,10755,10756,10757],\\\"order\\\":1,\\\"store_id\\\":1,\\\"store_type\\\":1002},{\\\"pid\\\":[10313,10312,10311,10310,10309],\\\"order\\\":2,\\\"store_id\\\":1,\\\"store_type\\\":1002},{\\\"pid\\\":[100019,100024],\\\"order\\\":3,\\\"store_id\\\":2,\\\"store_type\\\":1011},{\\\"pid\\\":[7016,7008],\\\"order\\\":4,\\\"store_id\\\":3,\\\"store_type\\\":1017},{\\\"pid\\\":[7015],\\\"order\\\":5,\\\"store_id\\\":2,\\\"store_type\\\":1017},{\\\"pid\\\":[42252,42253,42254,42255,42256,42257,42258,42259,42260,42261,42262,42263,42264,42265,42266,42248,42249,42250,42251,42247],\\\"order\\\":6,\\\"store_id\\\":42,\\\"store_type\\\":1006},{\\\"pid\\\":[10753,10754,10755,10756,10757],\\\"order\\\":7,\\\"store_id\\\":1,\\\"store_type\\\":1002},{\\\"pid\\\":[42223,42224,42225,42226,42227,42208,42209,42210,42211,42212,42218,42219,42220,42221,42222,42213,42214,42215,42216,42217],\\\"order\\\":8,\\\"store_id\\\":42,\\\"store_type\\\":1006},{\\\"pid\\\":[42066,42067,42068,42069,42070],\\\"order\\\":9,\\\"store_id\\\":28,\\\"store_type\\\":1006}],\\\"0\\\":[{\\\"pid\\\":[10753,10754,10755,10756,10757],\\\"order\\\":1,\\\"store_id\\\":1,\\\"store_type\\\":1002},{\\\"pid\\\":[10313,10312,10311,10310,10309],\\\"order\\\":2,\\\"store_id\\\":1,\\\"store_type\\\":1002},{\\\"pid\\\":[100019,100024],\\\"order\\\":3,\\\"store_id\\\":2,\\\"store_type\\\":1011},{\\\"pid\\\":[7016,7008],\\\"order\\\":4,\\\"store_id\\\":3,\\\"store_type\\\":1017},{\\\"pid\\\":[7015],\\\"order\\\":5,\\\"store_id\\\":2,\\\"store_type\\\":1017},{\\\"pid\\\":[42252,42253,42254,42255,42256,42257,42258,42259,42260,42261,42262,42263,42264,42265,42266,42248,42249,42250,42251,42247],\\\"order\\\":6,\\\"store_id\\\":42,\\\"store_type\\\":1006},{\\\"pid\\\":[10753,10754,10755,10756,10757],\\\"order\\\":7,\\\"store_id\\\":1,\\\"store_type\\\":1002},{\\\"pid\\\":[42223,42224,42225,42226,42227,42208,42209,42210,42211,42212,42218,42219,42220,42221,42222,42213,42214,42215,42216,42217],\\\"order\\\":8,\\\"store_id\\\":42,\\\"store_type\\\":1006},{\\\"pid\\\":[42066,42067,42068,42069,42070],\\\"order\\\":9,\\\"store_id\\\":28,\\\"store_type\\\":1006}],\\\"4\\\":[{\\\"pid\\\":[10110,10111,10112,10113,10114],\\\"order\\\":0,\\\"store_id\\\":2,\\\"store_type\\\":1002}],\\\"3\\\":[{\\\"pid\\\":[10753,10754,10755,10756,10757],\\\"order\\\":1,\\\"store_id\\\":1,\\\"store_type\\\":1002},{\\\"pid\\\":[10313,10312,10311,10310,10309],\\\"order\\\":2,\\\"store_id\\\":1,\\\"store_type\\\":1002},{\\\"pid\\\":[100019,100024],\\\"order\\\":3,\\\"store_id\\\":2,\\\"store_type\\\":1011},{\\\"pid\\\":[7016,7008],\\\"order\\\":4,\\\"store_id\\\":3,\\\"store_type\\\":1017},{\\\"pid\\\":[7015],\\\"order\\\":5,\\\"store_id\\\":2,\\\"store_type\\\":1017},{\\\"pid\\\":[42252,42253,42254,42255,42256,42257,42258,42259,42260,42261,42262,42263,42264,42265,42266,42248,42249,42250,42251,42247],\\\"order\\\":6,\\\"store_id\\\":42,\\\"store_type\\\":1006},{\\\"pid\\\":[10753,10754,10755,10756,10757],\\\"order\\\":7,\\\"store_id\\\":1,\\\"store_type\\\":1002},{\\\"pid\\\":[42223,42224,42225,42226,42227,42208,42209,42210,42211,42212,42218,42219,42220,42221,42222,42213,42214,42215,42216,42217],\\\"order\\\":8,\\\"store_id\\\":42,\\\"store_type\\\":1006},{\\\"pid\\\":[42066,42067,42068,42069,42070],\\\"order\\\":9,\\\"store_id\\\":28,\\\"store_type\\\":1006}]},\\\"606\\\":{\\\"2\\\":[{\\\"pid\\\":[10793,10794,10795,10796,10797],\\\"order\\\":0,\\\"store_id\\\":12,\\\"store_type\\\":1002}],\\\"1\\\":[{\\\"pid\\\":[10788,10789,10790,10791,10792],\\\"order\\\":0,\\\"store_id\\\":12,\\\"store_type\\\":1002}],\\\"0\\\":[{\\\"pid\\\":[10783,10784,10785,10786,10787],\\\"order\\\":0,\\\"store_id\\\":12,\\\"store_type\\\":1002}]},\\\"319\\\":{\\\"-1\\\":[{\\\"pid\\\":[100028],\\\"order\\\":1,\\\"store_id\\\":2,\\\"store_type\\\":1011},{\\\"pid\\\":[7018],\\\"order\\\":2,\\\"store_id\\\":3,\\\"store_type\\\":1017},{\\\"pid\\\":[10763,10764,10765,10766,10767],\\\"order\\\":3,\\\"store_id\\\":1,\\\"store_type\\\":1002},{\\\"pid\\\":[7015],\\\"order\\\":4,\\\"store_id\\\":2,\\\"store_type\\\":1017},{\\\"pid\\\":[7011],\\\"order\\\":5,\\\"store_id\\\":6,\\\"store_type\\\":1017},{\\\"pid\\\":[7002,7004,7005,7006,7003],\\\"order\\\":6,\\\"store_id\\\":2,\\\"store_type\\\":1017},{\\\"pid\\\":[10527,10528,10529,10530,10531,10673,10674,10675,10676,10677],\\\"order\\\":7,\\\"store_id\\\":6,\\\"store_type\\\":1002},{\\\"pid\\\":[30024],\\\"order\\\":8,\\\"store_id\\\":-1,\\\"store_type\\\":1005}]},\\\"0\\\":{\\\"16224\\\":[{\\\"pid\\\":[42242],\\\"order\\\":0,\\\"store_id\\\":6,\\\"store_type\\\":1018}],\\\"6631\\\":[{\\\"pid\\\":[41610,41611,41612,41613,41614],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1006},{\\\"pid\\\":[10184,10185,10186,10187,10188],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"6671\\\":[{\\\"pid\\\":[10184,10185,10186,10187,10188],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"6103\\\":[{\\\"pid\\\":[10184,10185,10186,10187,10188],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"6097\\\":[{\\\"pid\\\":[10184,10185,10186,10187,10188],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"16225\\\":[{\\\"pid\\\":[42243],\\\"order\\\":0,\\\"store_id\\\":6,\\\"store_type\\\":1018}],\\\"6903\\\":[{\\\"pid\\\":[41641,41643,41644,41645,41648,41650,41651,41652,41653,41655,41656,41657,41658,41660,41661,41662],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1006},{\\\"pid\\\":[10768,10769,10770,10771,10772],\\\"order\\\":0,\\\"store_id\\\":11,\\\"store_type\\\":1002}],\\\"6679\\\":[{\\\"pid\\\":[10184,10185,10186,10187,10188],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"6091\\\":[{\\\"pid\\\":[10184,10185,10186,10187,10188],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"8064\\\":[{\\\"pid\\\":[42001,42002,42003],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1006},{\\\"pid\\\":[10668,10669,10670,10671,10672],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"8194\\\":[{\\\"pid\\\":[10798,10799,10800,10801,10802],\\\"order\\\":0,\\\"store_id\\\":12,\\\"store_type\\\":1002}],\\\"8183\\\":[{\\\"pid\\\":[42353,42354,42355,42356,42357,42358,42359],\\\"order\\\":0,\\\"store_id\\\":113,\\\"store_type\\\":1020}],\\\"6048\\\":[{\\\"pid\\\":[10544,10545,10546,10547,10548],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"20463\\\":[{\\\"pid\\\":[42283,42284,42285,42286,42287,42288,42289,42422,42423,42424,42425,42426,42427,42428],\\\"order\\\":0,\\\"store_id\\\":19,\\\"store_type\\\":1006}],\\\"8182\\\":[{\\\"pid\\\":[42353,42354,42355,42356,42357,42358,42359],\\\"order\\\":0,\\\"store_id\\\":113,\\\"store_type\\\":1020}],\\\"20455\\\":[{\\\"pid\\\":[42283,42284,42285,42286,42287,42288,42289,42422,42423,42424,42425,42426,42427,42428],\\\"order\\\":0,\\\"store_id\\\":19,\\\"store_type\\\":1006}],\\\"20460\\\":[{\\\"pid\\\":[42283,42284,42285,42286,42287,42288,42289,42422,42423,42424,42425,42426,42427,42428],\\\"order\\\":0,\\\"store_id\\\":19,\\\"store_type\\\":1006}],\\\"6100\\\":[{\\\"pid\\\":[10184,10185,10186,10187,10188],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"8180\\\":[{\\\"pid\\\":[42353,42354,42355,42356,42357,42358,42359],\\\"order\\\":0,\\\"store_id\\\":113,\\\"store_type\\\":1020}],\\\"8002\\\":[{\\\"pid\\\":[7014],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1017},{\\\"pid\\\":[100015],\\\"order\\\":0,\\\"store_id\\\":4,\\\"store_type\\\":1011},{\\\"pid\\\":[10768,10769,10770,10771,10772,10701,10696,10697,10698,10699,10700],\\\"order\\\":1,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"8179\\\":[{\\\"pid\\\":[42353,42354,42355,42356,42357,42358,42359],\\\"order\\\":0,\\\"store_id\\\":113,\\\"store_type\\\":1020}],\\\"7701\\\":[{\\\"pid\\\":[10184,10185,10186,10187,10188],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"6674\\\":[{\\\"pid\\\":[10184,10185,10186,10187,10188],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"8050\\\":[{\\\"pid\\\":[10607],\\\"order\\\":0,\\\"store_id\\\":5,\\\"store_type\\\":1002}],\\\"8058\\\":[{\\\"pid\\\":[10635],\\\"order\\\":0,\\\"store_id\\\":2,\\\"store_type\\\":1002},{\\\"pid\\\":[10693,10694,10695],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"16096\\\":[{\\\"pid\\\":[40698],\\\"order\\\":0,\\\"store_id\\\":6,\\\"store_type\\\":1018}],\\\"8053\\\":[{\\\"pid\\\":[10753,10754,10755,10756,10757],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1002},{\\\"pid\\\":[42066,42067,42068,42069,42070],\\\"order\\\":0,\\\"store_id\\\":28,\\\"store_type\\\":1006}],\\\"16095\\\":[{\\\"pid\\\":[40700],\\\"order\\\":0,\\\"store_id\\\":6,\\\"store_type\\\":1018}],\\\"6900\\\":[{\\\"pid\\\":[100028],\\\"order\\\":1,\\\"store_id\\\":3,\\\"store_type\\\":1011},{\\\"pid\\\":[10709,10710,10711,10712,10713],\\\"order\\\":2,\\\"store_id\\\":1,\\\"store_type\\\":1002},{\\\"pid\\\":[10709,10710,10711,10712,10713],\\\"order\\\":3,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"8088\\\":[{\\\"pid\\\":[10803,10804,10805,10806,10807],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1002},{\\\"pid\\\":[30039],\\\"order\\\":0,\\\"store_id\\\":2,\\\"store_type\\\":1005},{\\\"pid\\\":[42407,42408,42409,42410,42411],\\\"order\\\":0,\\\"store_id\\\":83,\\\"store_type\\\":1006}],\\\"16222\\\":[{\\\"pid\\\":[42238],\\\"order\\\":0,\\\"store_id\\\":6,\\\"store_type\\\":1018}],\\\"20456\\\":[{\\\"pid\\\":[42283,42284,42285,42286,42287,42288,42289,42422,42423,42424,42425,42426,42427,42428],\\\"order\\\":0,\\\"store_id\\\":19,\\\"store_type\\\":1006}],\\\"6665\\\":[{\\\"pid\\\":[10184,10185,10186,10187,10188],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"16227\\\":[{\\\"pid\\\":[42241],\\\"order\\\":0,\\\"store_id\\\":6,\\\"store_type\\\":1018}],\\\"20454\\\":[{\\\"pid\\\":[42283,42284,42285,42286,42287,42288,42289,42422,42423,42424,42425,42426,42427,42428],\\\"order\\\":0,\\\"store_id\\\":19,\\\"store_type\\\":1006}],\\\"7801\\\":[{\\\"pid\\\":[10184,10185,10186,10187,10188],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"6677\\\":[{\\\"pid\\\":[10184,10185,10186,10187,10188],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"6626\\\":[{\\\"pid\\\":[10525,10523,10521],\\\"order\\\":0,\\\"store_id\\\":5,\\\"store_type\\\":1002}],\\\"20457\\\":[{\\\"pid\\\":[42283,42284,42285,42286,42287,42288,42289,42422,42423,42424,42425,42426,42427,42428],\\\"order\\\":0,\\\"store_id\\\":19,\\\"store_type\\\":1006}],\\\"6676\\\":[{\\\"pid\\\":[10184,10185,10186,10187,10188],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"8181\\\":[{\\\"pid\\\":[42353,42354,42355,42356,42357,42358,42359],\\\"order\\\":0,\\\"store_id\\\":113,\\\"store_type\\\":1020}],\\\"20462\\\":[{\\\"pid\\\":[42283,42284,42285,42286,42287,42288,42289,42422,42423,42424,42425,42426,42427,42428],\\\"order\\\":0,\\\"store_id\\\":19,\\\"store_type\\\":1006}],\\\"20465\\\":[{\\\"pid\\\":[42283,42284,42285,42286,42287,42288,42289,42422,42423,42424,42425,42426,42427,42428],\\\"order\\\":0,\\\"store_id\\\":19,\\\"store_type\\\":1006}],\\\"6442\\\":[{\\\"pid\\\":[42267,42268,42269,42244,42245,42246],\\\"order\\\":0,\\\"store_id\\\":91,\\\"store_type\\\":1006}],\\\"20458\\\":[{\\\"pid\\\":[42283,42284,42285,42286,42287,42288,42289,42422,42423,42424,42425,42426,42427,42428],\\\"order\\\":0,\\\"store_id\\\":19,\\\"store_type\\\":1006}],\\\"20459\\\":[{\\\"pid\\\":[42283,42284,42285,42286,42287,42288,42289,42422,42423,42424,42425,42426,42427,42428],\\\"order\\\":0,\\\"store_id\\\":19,\\\"store_type\\\":1006}],\\\"20461\\\":[{\\\"pid\\\":[42283,42284,42285,42286,42287,42288,42289,42422,42423,42424,42425,42426,42427,42428],\\\"order\\\":0,\\\"store_id\\\":19,\\\"store_type\\\":1006}],\\\"16044\\\":[{\\\"pid\\\":[41432],\\\"order\\\":0,\\\"store_id\\\":6,\\\"store_type\\\":1018}],\\\"200005\\\":[{\\\"pid\\\":[41838],\\\"order\\\":0,\\\"store_id\\\":22,\\\"store_type\\\":1006}],\\\"6320\\\":[{\\\"pid\\\":[41610,41611,41612,41613,41614],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1006},{\\\"pid\\\":[10184,10185,10186,10187,10188],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"8001\\\":[{\\\"pid\\\":[7014],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1017},{\\\"pid\\\":[100015],\\\"order\\\":0,\\\"store_id\\\":4,\\\"store_type\\\":1011},{\\\"pid\\\":[10768,10769,10770,10771,10772,10701],\\\"order\\\":1,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"16223\\\":[{\\\"pid\\\":[42239],\\\"order\\\":0,\\\"store_id\\\":6,\\\"store_type\\\":1018}],\\\"6105\\\":[{\\\"pid\\\":[10184,10185,10186,10187,10188],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"6102\\\":[{\\\"pid\\\":[10184,10185,10186,10187,10188],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"16226\\\":[{\\\"pid\\\":[42240],\\\"order\\\":0,\\\"store_id\\\":6,\\\"store_type\\\":1018}],\\\"20464\\\":[{\\\"pid\\\":[42283,42284,42285,42286,42287,42288,42289,42422,42423,42424,42425,42426,42427,42428],\\\"order\\\":0,\\\"store_id\\\":19,\\\"store_type\\\":1006}]},\\\"10000\\\":{\\\"0\\\":[{\\\"pid\\\":[30000],\\\"order\\\":0,\\\"store_id\\\":-1,\\\"store_type\\\":1005},{\\\"pid\\\":[40029,40135,40136],\\\"order\\\":0,\\\"store_id\\\":1,\\\"store_type\\\":1006},{\\\"pid\\\":[1,2,3,4,5,6],\\\"order\\\":0,\\\"store_id\\\":-1,\\\"store_type\\\":1000}]},\\\"300\\\":{\\\"0\\\":[{\\\"pid\\\":[100019,100024,100004],\\\"order\\\":1,\\\"store_id\\\":2,\\\"store_type\\\":1011},{\\\"pid\\\":[10171,10172,10173,10174,10175],\\\"order\\\":2,\\\"store_id\\\":1,\\\"store_type\\\":1002}]},\\\"25\\\":{\\\"415\\\":[{\\\"pid\\\":[10661,10663,10664,10665],\\\"order\\\":0,\\\"store_id\\\":11,\\\"store_type\\\":1002}],\\\"430\\\":[{\\\"pid\\\":[7013],\\\"order\\\":0,\\\"store_id\\\":5,\\\"store_type\\\":1017},{\\\"pid\\\":[7002,7004,7005],\\\"order\\\":0,\\\"store_id\\\":2,\\\"store_type\\\":1017},{\\\"pid\\\":[10720,10721,10722,10723,10724,10549,10550,10551,10552,10553,10554,10637,10638,10639],\\\"order\\\":1,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"396\\\":[{\\\"pid\\\":[10656,10658,10659,10660],\\\"order\\\":0,\\\"store_id\\\":11,\\\"store_type\\\":1002}],\\\"450\\\":[{\\\"pid\\\":[7013],\\\"order\\\":0,\\\"store_id\\\":5,\\\"store_type\\\":1017},{\\\"pid\\\":[7002,7004,7005],\\\"order\\\":0,\\\"store_id\\\":2,\\\"store_type\\\":1017},{\\\"pid\\\":[10720,10721,10722,10723,10724,10549,10550,10551,10552,10553,10554,10637,10638,10639],\\\"order\\\":1,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"407\\\":[{\\\"pid\\\":[10656,10658,10659,10660],\\\"order\\\":0,\\\"store_id\\\":11,\\\"store_type\\\":1002}],\\\"427\\\":[{\\\"pid\\\":[10661,10663,10664,10665],\\\"order\\\":0,\\\"store_id\\\":11,\\\"store_type\\\":1002}],\\\"426\\\":[{\\\"pid\\\":[10661,10663,10664,10665],\\\"order\\\":0,\\\"store_id\\\":11,\\\"store_type\\\":1002}],\\\"416\\\":[{\\\"pid\\\":[10661,10663,10664,10665],\\\"order\\\":0,\\\"store_id\\\":11,\\\"store_type\\\":1002}],\\\"406\\\":[{\\\"pid\\\":[10656,10658,10659,10660],\\\"order\\\":0,\\\"store_id\\\":11,\\\"store_type\\\":1002}],\\\"395\\\":[{\\\"pid\\\":[10656,10658,10659,10660],\\\"order\\\":0,\\\"store_id\\\":11,\\\"store_type\\\":1002}],\\\"460\\\":[{\\\"pid\\\":[7013],\\\"order\\\":0,\\\"store_id\\\":5,\\\"store_type\\\":1017},{\\\"pid\\\":[7002,7004,7005],\\\"order\\\":0,\\\"store_id\\\":2,\\\"store_type\\\":1017},{\\\"pid\\\":[10720,10721,10722,10723,10724,10554,10549,10551,10552,10553,10554,10637,10638,10639],\\\"order\\\":1,\\\"store_id\\\":1,\\\"store_type\\\":1002}],\\\"428\\\":[{\\\"pid\\\":[10714,10715,10716,10718],\\\"order\\\":1,\\\"store_id\\\":11,\\\"store_type\\\":1002}],\\\"429\\\":[{\\\"pid\\\":[10714,10715,10716,10718],\\\"order\\\":1,\\\"store_id\\\":11,\\\"store_type\\\":1002}]},\\\"24\\\":{\\\"-1\\\":[{\\\"pid\\\":[10768,10769,10770,10771,10772],\\\"order\\\":0,\\\"store_id\\\":11,\\\"store_type\\\":1002}]},\\\"320\\\":{\\\"10401\\\":[{\\\"pid\\\":[10773,10774,10775,10776,10777,41624,41623,41622,41621,41620],\\\"order\\\":0,\\\"store_id\\\":59,\\\"store_type\\\":1006},{\\\"pid\\\":[10773,10774,10775,10776,10777,41624,41623,41622,41621,41620],\\\"order\\\":0,\\\"store_id\\\":6,\\\"store_type\\\":1002}],\\\"10032\\\":[{\\\"pid\\\":[42377,42378,42379,42380,42381],\\\"order\\\":0,\\\"store_id\\\":59,\\\"store_type\\\":1006}],\\\"10031\\\":[{\\\"pid\\\":[42377,42378,42379,42380,42381],\\\"order\\\":0,\\\"store_id\\\":59,\\\"store_type\\\":1006}],\\\"10002\\\":[{\\\"pid\\\":[10773,10774,10775,10776,10777,41624,41623,41622,41621,41620],\\\"order\\\":0,\\\"store_id\\\":59,\\\"store_type\\\":1006},{\\\"pid\\\":[10773,10774,10775,10776,10777,41624,41623,41622,41621,41620],\\\"order\\\":0,\\\"store_id\\\":6,\\\"store_type\\\":1002}],\\\"10009\\\":[{\\\"pid\\\":[10773,10774,10775,10776,10777,41624,41623,41622,41621,41620],\\\"order\\\":0,\\\"store_id\\\":59,\\\"store_type\\\":1006},{\\\"pid\\\":[10773,10774,10775,10776,10777,41624,41623,41622,41621,41620],\\\"order\\\":0,\\\"store_id\\\":6,\\\"store_type\\\":1002}],\\\"10007\\\":[{\\\"pid\\\":[10773,10774,10775,10776,10777,41624,41623,41622,41621,41620],\\\"order\\\":0,\\\"store_id\\\":59,\\\"store_type\\\":1006},{\\\"pid\\\":[10773,10774,10775,10776,10777,41624,41623,41622,41621,41620],\\\"order\\\":0,\\\"store_id\\\":6,\\\"store_type\\\":1002}],\\\"10005\\\":[{\\\"pid\\\":[42377,42378,42379,42380,42381],\\\"order\\\":0,\\\"store_id\\\":59,\\\"store_type\\\":1006}]}}\",\"sub_game_event_tab_sort\":\"{\\\"129\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":21},\\\"10023\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":170},\\\"4\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":11},\\\"65\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":70},\\\"21\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":53},\\\"37\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":5},\\\"81\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":7},\\\"91\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":10},\\\"67\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":1},\\\"23\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":60},\\\"99\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":70},\\\"73\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":51},\\\"83\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":10},\\\"103\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":160},\\\"106\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":24},\\\"126\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":1},\\\"101\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":40},\\\"139\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":1},\\\"68\\\":{\\\"pid_weight\\\":{\\\"18\\\":150,\\\"20\\\":140,\\\"22\\\":135,\\\"19\\\":130},\\\"weight\\\":130},\\\"119\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":200},\\\"10016\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":5},\\\"10009\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":90},\\\"1132\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":59},\\\"122\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":9},\\\"66\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":8},\\\"42\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":41},\\\"132\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":52},\\\"28\\\":{\\\"pid_weight\\\":{\\\"133\\\":22,\\\"134\\\":23,\\\"127\\\":20,\\\"128\\\":21,\\\"132\\\":22,\\\"125\\\":20,\\\"126\\\":21},\\\"weight\\\":20},\\\"92\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":35},\\\"82\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":13},\\\"78\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":60},\\\"80\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":3},\\\"133\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":20},\\\"128\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":25},\\\"124\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":8},\\\"137\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":70},\\\"111\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":11},\\\"121\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":30},\\\"71\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":30},\\\"76\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":20},\\\"10018\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":5},\\\"10024\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":50},\\\"69\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":40},\\\"79\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":1},\\\"102\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":45},\\\"24\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":13},\\\"116\\\":{\\\"pid_weight\\\":{\\\"17\\\":80,\\\"16\\\":85,\\\"12\\\":120,\\\"11\\\":110,\\\"6\\\":100,\\\"15\\\":90},\\\"weight\\\":80},\\\"100\\\":{\\\"pid_weight\\\":{},\\\"weight\\\":50}}\"}",
+              "name": "svr_dynamic_sub_game"
+            },
+            {
+              "data": "{\"claimed_sand_id\":{},\"cur_area_id\":0,\"recover_area_id\":0}",
+              "name": "svr_area"
+            },
+            {
+              "data": "{\"item\":{}}",
+              "name": "svr_energy_prize_recharge"
+            },
+            {
+              "data": "{\"list\":{}}",
+              "name": "svr_soldier_revive_list"
+            },
+            {
+              "data": "{\"loyalty\":{\"curLoyalty\":0,\"totalLoyalty\":0,\"refreshTime\":0,\"intervalFlag\":0,\"intervalLoyalty\":0},\"power\":0,\"ignites\":0,\"auto_set_worker_switch\":1,\"vip_flag\":0,\"today_storage_rss_num\":0,\"iap_gift_anonymous\":0,\"next_move_time_in_legion_war\":0,\"building_version\":0,\"portal_flag\":0,\"guide\":{\"flags\":[1,5]},\"scene_info\":\"\",\"dishes\":0,\"kvk_passive_move_city\":0,\"city_defense_end_time\":0,\"passive_move_city\":0,\"notification_switch\":{},\"move_city_flag\":0,\"help_loyalty\":{\"curLoyalty\":0,\"totalLoyalty\":0,\"refreshTime\":1773446400,\"intervalFlag\":1773369904,\"intervalLoyalty\":0},\"has_unlock_present\":0,\"sub_scene_list\":{},\"vip\":{\"next_refresh\":1773273600,\"login_days\":2,\"daily_chest\":[{\"status\":0,\"chest_id\":1}],\"point\":0,\"level\":1,\"honor_chest\":{},\"expired_time\":0,\"login_chest\":0},\"building_loyalty\":{\"curLoyalty\":0,\"totalLoyalty\":0,\"refreshTime\":1773446400,\"intervalFlag\":1773369904,\"intervalLoyalty\":0},\"notic_switch_info\":{},\"show_equip\":1}",
+              "name": "svr_player_func"
+            },
+            {
+              "data": "{\"max_pay\":[5],\"newest_pay_time\":20482,\"next_refresh_time\":1773115558,\"items\":[{\"type\":61,\"num\":3782}]}",
+              "name": "svr_cycle_cost_stat"
+            },
+            {
+              "data": "{\"global_broadcast\":{\"etime\":0,\"num\":0},\"pvp_move_refresh\":{\"etime\":0,\"num\":0}}",
+              "name": "svr_refresh_info"
+            },
+            {
+              "data": "{\"items\":{}}",
+              "name": "svr_self_al_help_apply_list"
+            },
+            {
+              "data": "{\"items\":{}}",
+              "name": "svr_red_envelopes"
+            },
+            {
+              "data": "{\"side_quest\":[{\"cur_progress\":1,\"status\":1,\"id\":11800},{\"cur_progress\":1,\"status\":1,\"id\":11700},{\"cur_progress\":2,\"status\":0,\"id\":11568},{\"cur_progress\":0,\"status\":0,\"id\":9001},{\"cur_progress\":0,\"status\":0,\"id\":11701},{\"cur_progress\":0,\"status\":0,\"id\":11570},{\"cur_progress\":0,\"status\":0,\"id\":8001},{\"cur_progress\":0,\"status\":0,\"id\":11801}]}",
+              "name": "svr_side_quest"
+            },
+            {
+              "data": "{\"event_info\":\"{\\\"alid\\\":20000103,\\\"uid\\\":20001946,\\\"sid\\\":1,\\\"legion_id\\\":0,\\\"alname\\\":\\\"hhhhhh\\\",\\\"personal_difficulty\\\":{},\\\"lang\\\":6,\\\"battle_id\\\":0,\\\"uname\\\":\\\"Boss_BWPLM\\\",\\\"castle_lv\\\":7,\\\"alnick\\\":\\\"BJK\\\",\\\"ctime\\\":1769502509,\\\"al_join_time\\\":1773196628}\"}",
+              "name": "svr_event_info"
+            },
+            {
+              "data": "{\"worker_list\":[{\"hos_id\":0,\"id\":2,\"sick_result\":0,\"svr_id\":5,\"set_time\":1769503228,\"name_id\":3,\"property\":[0,92303,21342,20888,26297],\"sick_time\":0,\"reason\":0,\"fur_id\":5,\"bed_id\":7,\"inc_flag\":0,\"status\":3},{\"hos_id\":0,\"id\":1,\"sick_result\":0,\"svr_id\":4,\"set_time\":1769502918,\"name_id\":4,\"property\":[0,91631,93688,85080,47404],\"sick_time\":0,\"reason\":0,\"fur_id\":2,\"bed_id\":7,\"inc_flag\":0,\"status\":1},{\"hos_id\":0,\"id\":12,\"sick_result\":0,\"svr_id\":17,\"set_time\":1769656563,\"name_id\":2,\"property\":[100000,100000,0,0,75077],\"sick_time\":0,\"reason\":0,\"fur_id\":28,\"bed_id\":10,\"inc_flag\":0,\"status\":1},{\"hos_id\":0,\"id\":4,\"sick_result\":0,\"svr_id\":9,\"set_time\":1769504884,\"name_id\":2,\"property\":[0,94882,92993,72593,88693],\"sick_time\":0,\"reason\":0,\"fur_id\":14,\"bed_id\":1,\"inc_flag\":0,\"status\":1},{\"hos_id\":0,\"id\":3,\"sick_result\":0,\"svr_id\":7,\"set_time\":1769503952,\"name_id\":3,\"property\":[100000,100000,100000,100000,88941],\"sick_time\":0,\"reason\":0,\"fur_id\":13,\"bed_id\":1,\"inc_flag\":0,\"status\":1}]}",
+              "name": "svr_p3_worker"
+            },
+            {
+              "data": "{\"shops\":[{\"refresh_time\":1773273600,\"goods\":[{\"goods_id\":9,\"index\":5,\"buy_times\":0},{\"goods_id\":8,\"index\":12,\"buy_times\":0},{\"goods_id\":7,\"index\":2,\"buy_times\":0},{\"goods_id\":6,\"index\":7,\"buy_times\":0},{\"goods_id\":2,\"index\":4,\"buy_times\":0},{\"goods_id\":1,\"index\":8,\"buy_times\":0},{\"goods_id\":35,\"index\":3,\"buy_times\":0},{\"goods_id\":31,\"index\":9,\"buy_times\":0},{\"goods_id\":17,\"index\":6,\"buy_times\":0},{\"goods_id\":16,\"index\":1,\"buy_times\":0},{\"goods_id\":30,\"index\":11,\"buy_times\":0},{\"goods_id\":20,\"index\":10,\"buy_times\":0}],\"id\":1},{\"refresh_time\":1773619200,\"goods\":[{\"goods_id\":83,\"index\":5,\"buy_times\":0},{\"goods_id\":85,\"index\":6,\"buy_times\":0},{\"goods_id\":65,\"index\":3,\"buy_times\":0},{\"goods_id\":60,\"index\":7,\"buy_times\":0},{\"goods_id\":80,\"index\":9,\"buy_times\":0},{\"goods_id\":58,\"index\":1,\"buy_times\":0},{\"goods_id\":79,\"index\":4,\"buy_times\":0},{\"goods_id\":68,\"index\":2,\"buy_times\":0},{\"goods_id\":77,\"index\":8,\"buy_times\":0}],\"id\":2}]}",
+              "name": "svr_al_shop"
+            },
+            {
+              "data": "{\"updt_time\":0,\"items\":{}}",
+              "name": "svr_token_chest"
+            },
+            {
+              "data": "{\"reward\":{},\"left_collect_count\":0,\"unlock_count\":0}",
+              "name": "svr_iap_card"
+            },
+            {
+              "data": "{\"record_list\":{}}",
+              "name": "svr_temporary_storage_reward"
+            },
+            {
+              "data": "{\"items\":[{\"last_update_time\":1769502509,\"cur_charge_count\":5,\"item_id\":8068},{\"last_update_time\":1769502509,\"cur_charge_count\":10,\"item_id\":16108},{\"last_update_time\":1769502509,\"cur_charge_count\":5,\"item_id\":8130}]}",
+              "name": "svr_charge_protector"
+            },
+            {
+              "data": "{\"cur_skin\":0,\"skins\":[{\"effective_time\":0,\"skin_id\":0,\"etime\":0}]}",
+              "name": "svr_city_skin_new"
+            },
+            {
+              "data": "{\"intel_instances\":[{\"reward_list\":[{\"a\":[315,2002,1]},{\"a\":[4,1,20]},{\"a\":[607,0,200]}],\"intel_status\":0,\"intel_ctime\":1,\"svr_intel_id\":10,\"explore_etime\":0,\"task_group_id\":0,\"intel_type\":2,\"disappear_time\":1773327759,\"task_id\":301501,\"unique_id\":\"165_1773151604793583_1\",\"pos\":107800025900},{\"intel_finish_time\":1773115536,\"reward_list\":[{\"a\":[300,0,1400]},{\"a\":[315,2002,1]},{\"a\":[0,6629,1]},{\"a\":[607,0,200]}],\"intel_status\":1,\"intel_ctime\":0,\"svr_intel_id\":5,\"explore_etime\":0,\"task_group_id\":0,\"intel_type\":2,\"disappear_time\":1773133359,\"task_id\":3051,\"unique_id\":\"71_1772608074875407_1\",\"pos\":107476025286}]}",
+              "name": "svr_radar_instance"
+            },
+            {
+              "data": "{\"claim_stage\":{},\"etime\":0,\"bounty_quest\":{},\"star\":0}",
+              "name": "svr_bounty_quest"
+            },
+            {
+              "data": "{\"queue_buff_detail_list\":{}}",
+              "name": "svr_queue_buff_detail"
+            },
+            {
+              "data": "{\"seq\":0,\"group\":1}",
+              "name": "svr_conn7"
+            },
+            {
+              "data": "{\"furnace_lv\":0,\"unlock_barbarion_list\":{}}",
+              "name": "svr_furnace_info_new"
+            },
+            {
+              "data": "{\"fixed_rewards\":{},\"exclusive_rewards\":{},\"unfixed_rewards\":{},\"stage\":0,\"version\":0,\"unfixed_refresh_num\":0,\"fixed_next_refresh_time\":0,\"coin\":0,\"next_daily_refresh_time\":0,\"unfixed_next_refresh_time\":0}",
+              "name": "svr_expedition_shop"
+            },
+            {
+              "data": "{\"wood_info\":[75]}",
+              "name": "svr_wood_connect"
+            },
+            {
+              "data": "{\"list\":[\"JoinAlliance\"]}",
+              "name": "svr_client_record"
+            },
+            {
+              "data": "{\"difficulty_lv\":0,\"help_times\":0,\"queue_info\":{},\"refresh_time\":1773446400,\"rob_times\":0,\"common_next_refresh_time\":0,\"special_next_refresh_time\":0,\"dispatch_task\":{}}",
+              "name": "svr_dispatch_task"
+            },
+            {
+              "data": "{\"items\":{}}",
+              "name": "svr_collectible_resource"
+            },
+            {
+              "data": "{\"types\":{}}",
+              "name": "svr_p3_worker_finish_quest"
+            },
+            {
+              "data": "{\"money_consume_speed\":0,\"product_speed\":[{\"value\":0,\"id\":0},{\"value\":0,\"id\":1},{\"value\":0,\"id\":2},{\"value\":0,\"id\":3},{\"value\":0,\"id\":4}],\"last_update_time\":0}",
+              "name": "svr_resource_production"
+            },
+            {
+              "data": "{\"next_refresh_time\":1773532800,\"token_week_limit\":2000,\"get_token_this_week\":0}",
+              "name": "svr_soldier_revive_free"
+            },
+            {
+              "data": "{\"title_apply_etime\":{},\"is_clear_all_fog_by_event\":0,\"force_flag\":0,\"occupy_report_id\":0,\"client_action_seq\":0,\"res_time\":1769506589,\"train_hero_force\":0,\"is_dragon_soul_auto_store\":0,\"unlock_fire\":true,\"move_city_troop_cancel_last_timestamp\":0,\"pre_register_reward_state\":0,\"change_building_mode_times\":0,\"force\":87427,\"been_unlock_hurt_dragon_building\":0,\"claimed_pre_down_reward\":{},\"p3_worker_init_time\":1769503621000,\"luoha_join_num\":0,\"can_claim_boss_trap_timestamp\":0,\"treasure_flag\":0,\"next_free_troop_speed_refresh_time\":1773619200,\"next_free_move_city_refresh_time\":1773446400,\"resource\":{\"num\":[1018719,997109,1018719,1018719,999999]},\"title_on_etime\":0,\"birthday\":0,\"updt_time\":1773200357,\"hero_summon_score\":1150,\"safe_resource\":{\"num\":[131604,75834,79455,127549,0]},\"hide_from_ally_flag\":0,\"is_use_free_second_building_queue\":1,\"worker_dead\":3,\"boss_trap_claimed_target\":{},\"boss_trap_hurt_record\":{\"end_time\":0,\"aid\":0},\"title_apply_reason\":{},\"in_territory\":0,\"boss_trap_top_damage\":0,\"has_atk_trap\":0,\"unlock_material_produce\":0,\"gs_force\":10000028,\"change_building_refresh_time\":0}",
+              "name": "svr_player_var"
+            },
+            {
+              "data": "{\"city_soldier_train_upgrade_seq\":0,\"soldier_list_seq\":0,\"city_soldier_treat_seq\":0,\"token_produce_seq\":0}",
+              "name": "svr_seq_list"
+            },
+            {
+              "data": "{\"buff_item\":[{\"buff_num\":5,\"id\":325},{\"buff_num\":303,\"id\":525},{\"buff_num\":110000,\"id\":936},{\"buff_num\":57500,\"id\":1050},{\"buff_num\":6,\"id\":1082},{\"buff_num\":303,\"id\":523},{\"buff_num\":5,\"id\":872},{\"buff_num\":3,\"id\":887},{\"buff_num\":922337203685477,\"id\":75},{\"buff_num\":1,\"id\":607},{\"buff_num\":100000,\"id\":1220},{\"buff_num\":4000,\"id\":130},{\"buff_num\":26,\"id\":1577},{\"buff_num\":2,\"id\":581},{\"buff_num\":303,\"id\":520},{\"buff_num\":1,\"id\":44},{\"buff_num\":303,\"id\":524},{\"buff_num\":7,\"id\":395},{\"buff_num\":100000,\"id\":70},{\"buff_num\":1000,\"id\":48},{\"buff_num\":303,\"id\":528},{\"buff_num\":40,\"id\":353},{\"buff_num\":20,\"id\":928},{\"buff_num\":87427,\"id\":84},{\"buff_num\":922337203685477,\"id\":74},{\"buff_num\":1000,\"id\":871},{\"buff_num\":1,\"id\":394},{\"buff_num\":1,\"id\":345},{\"buff_num\":303,\"id\":529},{\"buff_num\":3,\"id\":269},{\"buff_num\":1,\"id\":545},{\"buff_num\":30,\"id\":354},{\"buff_num\":1,\"id\":610},{\"buff_num\":1,\"id\":410},{\"buff_num\":20000,\"id\":983},{\"buff_num\":922337203685477,\"id\":73},{\"buff_num\":12,\"id\":543},{\"buff_num\":303,\"id\":527},{\"buff_num\":303,\"id\":521},{\"buff_num\":20,\"id\":827},{\"buff_num\":2000,\"id\":666},{\"buff_num\":2000,\"id\":72},{\"buff_num\":6,\"id\":92},{\"buff_num\":30000,\"id\":975},{\"buff_num\":999,\"id\":580},{\"buff_num\":12,\"id\":923},{\"buff_num\":303,\"id\":530},{\"buff_num\":20000,\"id\":1011},{\"buff_num\":1500,\"id\":935},{\"buff_num\":303,\"id\":519},{\"buff_num\":1,\"id\":344},{\"buff_num\":1000,\"id\":478},{\"buff_num\":10,\"id\":408},{\"buff_num\":1000,\"id\":479},{\"buff_num\":40,\"id\":352},{\"buff_num\":7200,\"id\":542},{\"buff_num\":303,\"id\":522},{\"buff_num\":5,\"id\":296},{\"buff_num\":3500,\"id\":396},{\"buff_num\":1,\"id\":401},{\"buff_num\":303,\"id\":526},{\"buff_num\":1,\"id\":611},{\"buff_num\":100,\"id\":873},{\"buff_num\":60,\"id\":351},{\"buff_num\":50,\"id\":1070},{\"buff_num\":8,\"id\":602},{\"buff_num\":1000,\"id\":477},{\"buff_num\":1000,\"id\":480},{\"buff_num\":2,\"id\":548},{\"buff_num\":1,\"id\":664},{\"buff_num\":922337203685477,\"id\":76},{\"buff_num\":1000000,\"id\":756}]}",
+              "name": "svr_buff_inc"
+            },
+            {
+              "data": "{\"svr_buff_item\":{},\"rune_buff_item\":{\"buff_item\":{}},\"kvk_kill_buff_list\":{},\"iap_buff_item\":{},\"next_free_peace_time\":0,\"kingdom_buff_item\":{},\"dragon_buff_item\":{},\"hurt_dragon_buff_item\":{},\"buff_item\":{},\"kvk_recover_buff_list\":{}}",
+              "name": "svr_time_buff"
+            },
+            {
+              "data": "{\"flag\":0,\"items\":[{\"num\":2,\"id\":2402},{\"num\":3,\"id\":2002},{\"num\":10,\"id\":203},{\"num\":4,\"id\":2103}]}",
+              "name": "svr_backpack_hero_piece_new"
+            },
+            {
+              "data": "{\"refresh_time\":1773446400,\"times\":0,\"infos\":[{\"etime\":0,\"key\":1431,\"be_robbed\":0,\"free_refresh\":0,\"reward\":[{\"a\":[3,0,98000]},{\"a\":[3,1,98000]},{\"a\":[3,2,98000]},{\"a\":[3,3,98000]},{\"a\":[0,6040,1]},{\"a\":[0,3645,1]},{\"a\":[0,3614,1]},{\"a\":[0,6629,1]}],\"robbed_reward\":{},\"force\":0,\"unique_id\":\"\",\"hero_infos\":{}}]}",
+              "name": "svr_truck_info"
+            },
+            {
+              "data": "{\"items\":{}}",
+              "name": "svr_backpack_limit_time_item"
+            },
+            {
+              "data": "{\"item\":{}}",
+              "name": "svr_gold_prize_gunshot_info"
+            },
+            {
+              "data": "{\"exps\":0,\"stage_item\":{}}",
+              "name": "svr_pet_extra"
+            },
+            {
+              "data": "{\"list\":{}}",
+              "name": "svr_exchange_coin"
+            },
+            {
+              "data": "{\"cur_skin\":0,\"skins\":[{\"effective_time\":0,\"skin_id\":0,\"etime\":0}]}",
+              "name": "svr_lord_skin_new"
+            },
+            {
+              "data": "{\"flag\":0,\"items\":{}}",
+              "name": "svr_backpack_hero_poster"
+            },
+            {
+              "data": "{\"help_list\":[{\"claim\":0,\"wk_type\":2,\"time\":1769594791,\"worker_id\":0,\"type\":0,\"reward\":{},\"mail_id\":3,\"name_id\":1,\"doc_id\":\"57\",\"choice\":0,\"satis_change\":0,\"fire\":0,\"order\":1},{\"claim\":0,\"wk_type\":2,\"time\":1769594791,\"worker_id\":0,\"type\":0,\"reward\":{},\"mail_id\":4,\"name_id\":1,\"doc_id\":\"30\",\"choice\":0,\"satis_change\":0,\"fire\":0,\"order\":1},{\"claim\":0,\"wk_type\":2,\"time\":1769752955,\"worker_id\":0,\"type\":0,\"reward\":{},\"mail_id\":8,\"name_id\":1,\"doc_id\":\"25\",\"choice\":0,\"satis_change\":0,\"fire\":0,\"order\":1},{\"claim\":0,\"wk_type\":2,\"time\":1769752955,\"worker_id\":0,\"type\":0,\"reward\":{},\"mail_id\":9,\"name_id\":1,\"doc_id\":\"73\",\"choice\":0,\"satis_change\":0,\"fire\":0,\"order\":1}]}",
+              "name": "svr_worker_help"
+            },
+            {
+              "data": "{\"list\":{}}",
+              "name": "svr_trap_soldier_wounded"
+            },
+            {
+              "data": "{\"has_event\":0}",
+              "name": "svr_solo_recharge_event"
+            },
+            {
+              "data": "{\"next_refresh_time\":0,\"award_list\":{},\"award_times\":0}",
+              "name": "svr_box_award_info"
+            },
+            {
+              "data": "{\"enter_lvl_time\":0,\"lvl_id\":0,\"lvl_kick_flag\":0,\"passive_move_time\":0,\"has_enter_lvl\":0,\"move_cool_time\":0,\"lvl_etime\":0,\"move_times\":0}",
+              "name": "svr_player_lvl_info"
+            },
+            {
+              "data": "{\"items\":{}}",
+              "name": "svr_backpack_hero_exclusive_equip"
+            },
+            {
+              "data": "{\"car_records\":{}}",
+              "name": "svr_car_records"
+            }
+          ],
+          "error": -161,
+          "main": 1
+        }
+      ],
+      "push_result": 0
+    }
+  ]
+}

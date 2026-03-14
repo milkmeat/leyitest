@@ -147,7 +147,6 @@ class LLMClient:
                 {"role": "user", "content": user_prompt},
             ],
             temperature=temperature,
-            response_format={"type": "json_object"},
         )
 
         content = response.choices[0].message.content
@@ -168,11 +167,53 @@ class LLMClient:
             usage_str, content,
         )
 
-        try:
-            return json.loads(content)
-        except json.JSONDecodeError as e:
-            logger.error("JSON 解析失败: %s\n原始内容: %s", e, content[:500])
-            raise ValueError(f"LLM 返回非法 JSON: {e}") from e
+        return self._extract_json(content)
+
+    @staticmethod
+    def _extract_json(text: str) -> dict[str, Any]:
+        """从 LLM 文本响应中提取 JSON
+
+        支持三种格式：
+        1. 纯 JSON 文本
+        2. ```json ... ``` 代码块
+        3. 混合文本中的第一个 { ... } 块
+        """
+        import re
+
+        stripped = text.strip()
+
+        # 1) 纯 JSON
+        if stripped.startswith("{"):
+            try:
+                return json.loads(stripped)
+            except json.JSONDecodeError:
+                pass
+
+        # 2) ```json ... ``` 代码块
+        m = re.search(r"```(?:json)?\s*\n?(.*?)\n?```", stripped, re.DOTALL)
+        if m:
+            try:
+                return json.loads(m.group(1).strip())
+            except json.JSONDecodeError:
+                pass
+
+        # 3) 第一个 { ... } 块（贪婪匹配最外层大括号）
+        brace_start = stripped.find("{")
+        if brace_start >= 0:
+            depth = 0
+            for i in range(brace_start, len(stripped)):
+                if stripped[i] == "{":
+                    depth += 1
+                elif stripped[i] == "}":
+                    depth -= 1
+                    if depth == 0:
+                        try:
+                            return json.loads(stripped[brace_start:i + 1])
+                        except json.JSONDecodeError:
+                            break
+
+        logger.error("JSON 提取失败，原始内容: %s", stripped[:500])
+        raise ValueError(f"无法从 LLM 响应中提取 JSON")
 
     async def close(self):
         """关闭底层 HTTP 客户端"""

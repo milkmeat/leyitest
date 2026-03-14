@@ -186,7 +186,9 @@ class AIController:
         stats.instructions_count = len(instructions)
         if instructions:
             try:
-                results = await self.executor.execute_batch(instructions)
+                results = await self.executor.execute_batch(
+                    instructions, accounts=snapshot.accounts if snapshot else None,
+                )
                 stats.actions_ok = sum(1 for r in results if r.success)
                 stats.actions_fail = sum(1 for r in results if not r.success)
             except Exception as e:
