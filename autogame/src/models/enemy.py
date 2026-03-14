@@ -61,6 +61,27 @@ class Enemy(BaseModel):
         )
 
     @classmethod
+    def from_player_info(cls, info: dict) -> Enemy:
+        """从 get_player_info() 返回的扁平 dict 构建
+
+        Args:
+            info: {uid, pos, name, alliance_id, alliance_name, soldiers, ...}
+        """
+        pos = info.get("pos", (0, 0))
+        soldiers = [
+            Soldier(id=s["id"], value=s["value"])
+            for s in info.get("soldiers", [])
+        ]
+        return cls(
+            uid=info["uid"],
+            name=info.get("name", ""),
+            city_pos=tuple(pos) if isinstance(pos, list) else pos,
+            alliance_id=info.get("alliance_id", 0),
+            alliance_name=info.get("alliance_name", ""),
+            soldiers=soldiers,
+        )
+
+    @classmethod
     def from_user_obj(cls, obj: dict) -> Enemy:
         """从 svr_user_objs 中 type=2 对象构建（更详细）
 

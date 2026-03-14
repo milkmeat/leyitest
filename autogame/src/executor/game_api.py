@@ -93,7 +93,10 @@ class GameAPIClient:
     # 底层发送
     # ------------------------------------------------------------------
 
-    async def _send(self, uid: int, cmd: str, param: Dict[str, Any]) -> Dict[str, Any]:
+    async def _send(
+        self, uid: int, cmd: str, param: Dict[str, Any],
+        header_overrides: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         """发送单条命令到游戏服务器（GET 协议）
 
         协议格式: GET {base_url}?{json_body}
@@ -103,6 +106,7 @@ class GameAPIClient:
             uid: 玩家 UID
             cmd: 后台命令字（如 "fixed_move_city_new"）
             param: 命令参数
+            header_overrides: 覆盖请求头字段（如 aid 用于切换联盟视角）
 
         Returns:
             服务器响应 dict
@@ -110,6 +114,8 @@ class GameAPIClient:
         session = await self._ensure_session()
         header = dict(self.default_header)
         header["uid"] = uid
+        if header_overrides:
+            header.update(header_overrides)
 
         body = {
             "header": header,
@@ -143,6 +149,7 @@ class GameAPIClient:
 
     async def send_cmd(self, cmd_name: str, uid: int,
                        param_overrides: Optional[Dict[str, Any]] = None,
+                       header_overrides: Optional[Dict[str, Any]] = None,
                        **overrides) -> Dict[str, Any]:
         """立即发送一条命令
 
@@ -151,6 +158,7 @@ class GameAPIClient:
             uid: 玩家 UID（header 中的调用者身份）
             param_overrides: 协议参数覆盖（dict 形式），用于协议字段名与
                              Python 关键字冲突的场景（如字段名也叫 "uid"）
+            header_overrides: 覆盖请求头字段（如 aid 用于切换联盟视角）
             **overrides: 覆盖 default_param 中的参数（便捷写法）
 
         Returns:
@@ -160,7 +168,7 @@ class GameAPIClient:
         all_overrides = dict(param_overrides or {})
         all_overrides.update(overrides)
         param = self.build_param(cmd_name, **all_overrides)
-        return await self._send(uid, info["cmd"], param)
+        return await self._send(uid, info["cmd"], param, header_overrides=header_overrides)
 
     def queue_cmd(self, cmd_name: str, uid: int,
                   param_overrides: Optional[Dict[str, Any]] = None,
@@ -379,9 +387,20 @@ class GameAPIClient:
         """获取玩家全量数据"""
         return await self.send_cmd("get_all_player_data", uid)
 
-    async def get_map_overview(self, uid: int, sid: int = 0) -> Dict[str, Any]:
-        """获取地图缩略信息"""
-        return await self.send_cmd("get_map_overview", uid, sid=sid)
+    async def get_map_overview(
+        self, uid: int, sid: int = 0,
+        header_overrides: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """获取地图缩略信息
+
+        Args:
+            uid: 查询用账号 UID
+            sid: 场景 ID（0=主城, 1=活动地图）
+            header_overrides: 覆盖请求头（如 aid 切换联盟视角）
+        """
+        return await self.send_cmd(
+            "get_map_overview", uid, sid=sid, header_overrides=header_overrides,
+        )
 
     async def get_map_detail(self, uid: int, sid: int = 0, bid_list: List = None) -> Dict[str, Any]:
         """获取地图详细信息"""

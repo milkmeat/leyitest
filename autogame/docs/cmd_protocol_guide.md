@@ -144,24 +144,49 @@
 | 项目 | 值 |
 |------|------|
 | 后台 cmd | `get_map_brief_obj` |
-| 作用域 | **整个地图所有对象（玩家、建筑、NPC 等）** |
+| 作用域 | 地图所有建筑/NPC + **header.aid 所属联盟的玩家城市** |
 | 参数 | `sid: 1`（必须传 sid=1，sid=0 可能返回不同结果） |
+| header 关键字段 | `aid` — 决定返回哪个联盟的玩家（见下方行为说明） |
+
+#### header.aid 对 type=2 玩家返回的影响（实测 2026-03-14）
+
+| header.aid | header.uid | type=2 返回 | 建筑等非玩家对象 |
+|------------|-----------|-------------|-----------------|
+| 我方联盟 aid (20000118) | 任意 | **仅我方联盟成员**（20人） | 全部返回（118个） |
+| 敌方联盟 aid (20000119) | 敌方uid | **仅敌方联盟成员**（21人） | 全部返回（118个） |
+| 0 | 合法uid | **仅该 uid 自己**（1人） | 全部返回（118个） |
+| 0 | 0 | **无玩家**（0人） | 全部返回（118个） |
+
+> **关键发现：服务器按 `header.aid` 过滤 type=2 玩家，只返回同联盟成员。**
+> 建筑（type=8/27/48/64/121/156）不受 aid 过滤，始终全部返回。
+> 不存在"一次返回所有联盟玩家"的方式。
+
+**当前 data_sync 策略：** 分别用我方 aid 和敌方 aid 各请求一次（共 2 次），合并结果。
+代码：`DataSyncer._sync_map_both_sides()` — 并发 2 次请求，建筑从我方响应取，敌方玩家从敌方响应取。
+
+```python
+# 用法示例：用敌方 aid 查询敌方联盟成员位置
+resp = await client.get_map_overview(
+    enemy_uid, sid=1,
+    header_overrides={"aid": enemy_aid},
+)
+```
 
 **返回的数据模块：**
 
 #### svr_map_brief_objs — 地图简要对象列表
 
-test server 实测返回 138 个对象，type 分布：
+test server 实测返回 ~138 个对象（取决于 aid），type 分布：
 
-| type | 含义 | 数量(示例) | 关键字段 |
-|------|------|-----------|---------|
-| 2 | 玩家城市 | 20 | uid, pos, aid, ksid |
-| 8 | 联盟建筑/堡垒 | 18 | aid, alName, alNick, alFlag, key |
-| 27 | 据点/资源点 | 74 | pos, key |
-| 64 | 城市据点 | 16 | pos, key |
-| 121 | 高级要塞 | 5 | aid, alName |
-| 156 | KVK 据点 | 4 | — |
-| 48 | KVK 城堡 | 1 | — |
+| type | 含义 | 数量(示例) | 受 aid 过滤 | 关键字段 |
+|------|------|-----------|:-----------:|---------|
+| 2 | 玩家城市 | 20-21 | **是** | uid, pos, aid, ksid, fightFlag |
+| 8 | 联盟建筑/堡垒 | 18 | 否 | aid, alName, alNick, alFlag, key |
+| 27 | 据点/资源点 | 74 | 否 | pos, key |
+| 64 | 城市据点 | 16 | 否 | pos, key |
+| 121 | 高级要塞 | 5 | 否 | aid, alName |
+| 156 | KVK 据点 | 4 | 否 | — |
+| 48 | KVK 城堡 | 1 | 否 | — |
 
 **type=2 玩家城市对象示例：**
 ```json
@@ -345,19 +370,25 @@ await client.send_cmd("create_rally", uid,
 
 ---
 
-## 三、数据感知两步查询模式
+## 三、数据感知查询模式
 
 团战 AI 获取全局态势的标准流程：
 
 ```
-Step 1: get_map_overview (sid=1)
-   → 拿到所有玩家 uid + 坐标 + 联盟归属
-   → 拿到所有建筑/据点位置和归属
+Step 1: get_map_overview × 2（并发，共 2 次请求）
+   ├─ aid=我方 → 我方玩家 uid+坐标 + 全部建筑/据点
+   └─ aid=敌方 → 敌方玩家 uid+坐标（建筑重复，忽略）
 
-Step 2: 对每个需要详查的 uid，并发调用：
-   ├─ get_all_player_data(uid)  → 战力、城墙、增援信息
-   └─ get_player_info(uid)      → 士兵数量、英雄状态、buff
+Step 2: 对每个我方 uid，并发调用 get_player_info：
+   → 士兵数量、英雄状态、buff
+
+Step 3（可选）: 对需要详查的 uid，调用：
+   └─ get_all_player_data(uid)  → 战力、城墙、增援信息
 ```
+
+> **注意**：Step 1 必须分两次请求（我方 aid + 敌方 aid），
+> 因为地图 brief API 按 header.aid 过滤 type=2 玩家，无法一次获取所有联盟。
+> 详见 1.3 节的 aid 过滤行为表。
 
 **信息分布在两个后端服务上：**
 

@@ -114,17 +114,16 @@ class DataSyncer:
         errors.extend(acct_errors)
 
         # 2) 同步地图 — 用第一个成功账号的 uid
+        #    分别用我方/敌方 aid 请求地图 brief，获取双方玩家+建筑
         buildings: list[Building] = []
         enemies: list[Enemy] = []
         if accounts:
             first_uid = next(iter(accounts))
             try:
-                buildings, enemies = await self._sync_map(first_uid)
+                buildings, enemies = await self._sync_map_both_sides(first_uid)
             except Exception as e:
                 logger.error("map sync failed: %s", e)
                 errors.append(SyncError(uid=first_uid, step="map", message=str(e)))
-        else:
-            errors.append(SyncError(uid=0, step="map", message="无可用账号，跳过地图同步"))
 
         return SyncSnapshot(
             accounts=accounts,
@@ -166,18 +165,56 @@ class DataSyncer:
             except Exception as e:
                 return SyncError(uid=uid, step="account", message=str(e))
 
-    async def _sync_map(
+    async def _sync_map_both_sides(
         self, uid: int,
     ) -> Tuple[list[Building], list[Enemy]]:
-        """同步地图概览，解析建筑和非我方玩家
+        """分别用我方/敌方 aid 请求地图 brief，合并双方数据
+
+        地图 brief API 按 header 中的 aid 过滤，只返回同联盟成员。
+        因此需要两次请求：我方 aid 获取建筑，敌方 aid 获取敌方玩家。
 
         Args:
             uid: 用于发起查询的账号 UID
         """
-        async with self._semaphore:
-            resp = await self.client.get_map_overview(uid, sid=1)
+        alliances = self.config.accounts.alliances
+        enemy_aid_val = alliances.enemy.aid if alliances else 0
 
-        return self._parse_map_response(resp)
+        # 并发请求：我方视角 + 敌方视角
+        async with self._semaphore:
+            tasks = [
+                self.client.get_map_overview(uid, sid=1),
+            ]
+            if enemy_aid_val:
+                enemy_uid = self.config.accounts.enemy_uids()[0] if self.config.accounts.enemy_uids() else uid
+                tasks.append(
+                    self.client.get_map_overview(
+                        enemy_uid, sid=1,
+                        header_overrides={"aid": enemy_aid_val},
+                    )
+                )
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # 解析我方视角 → 建筑 + (可能有的) 敌方
+        buildings: list[Building] = []
+        enemies: list[Enemy] = []
+
+        our_resp = results[0]
+        if not isinstance(our_resp, Exception):
+            buildings, enemies = self._parse_map_response(our_resp)
+
+        # 解析敌方视角 → 敌方玩家
+        if len(results) > 1:
+            enemy_resp = results[1]
+            if not isinstance(enemy_resp, Exception):
+                _, enemy_players = self._parse_map_response(enemy_resp)
+                # 合并去重（敌方视角查到的覆盖我方视角）
+                existing = {e.uid for e in enemies}
+                for e in enemy_players:
+                    if e.uid not in existing:
+                        enemies.append(e)
+
+        logger.info("map sync: %d buildings, %d enemies", len(buildings), len(enemies))
+        return buildings, enemies
 
     def _parse_map_response(
         self, resp: dict,

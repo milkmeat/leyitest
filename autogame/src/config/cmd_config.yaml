@@ -136,8 +136,12 @@ commands:
     default_param:
       all: 0
       list:
+        - "svr_lord_info_new"
         - "svr_player"
-    description: "获取玩家基础信息（含联盟等）"
+        - "svr_soldier"
+        - "svr_hero_list"
+        - "svr_buff"
+    description: "获取玩家完整信息（坐标/联盟/兵种/英雄/buff）"
 
   # --- 获取联盟成员列表 ---
   get_al_members:
