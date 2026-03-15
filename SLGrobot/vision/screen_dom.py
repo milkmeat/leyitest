@@ -103,10 +103,26 @@ def infer_scene(dom: dict, screenshot: np.ndarray) -> str:
     if "territory" in icon_names:
         return "world_map"
 
-    # 8-10. Secondary scenes
+    # 8-10. Secondary scenes (icon-based or text-based)
     for scene_name in ("hero_recruit", "hero_upgrade", "hero"):
         if scene_name in icon_names:
             return scene_name
+
+    # 8b. Hero recruit — text fallback: "英雄" + "招募" in top-right
+    #     (displayed as two lines, detected as two elements near x>900)
+    _top_right_texts = set()
+    for region in ("top_bar", "center"):
+        for elem in screen.get(region, []):
+            ex = elem.get("pos", [0, 0])[0]
+            ey = elem.get("pos", [0, 0])[1]
+            if ex > 900 and ey < 300:
+                txt = elem.get("text", "") or elem.get("value", "")
+                if "英雄" in txt:
+                    _top_right_texts.add("英雄")
+                if "招募" in txt:
+                    _top_right_texts.add("招募")
+    if "英雄" in _top_right_texts and "招募" in _top_right_texts:
+        return "hero_recruit"
 
     return "unknown"
 

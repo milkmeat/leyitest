@@ -98,9 +98,8 @@
     ],
     "hero_recruit": [
       {"type": "finger", "action": "tap_fingertip"},
-      {"type": "button", "color_match": "purple", "action": "tap"},
-      {"type": "icon", "name": "back_arrow", "action": "tap"},
-      {"action": "tap_blank"}
+      {"type": "button", "text_match": "免费", "action": "tap"},
+      {"type": "icon", "name": "back_arrow", "action": "tap"}
     ],
     "building_upgrade": [
       {"type": "finger", "action": "tap_fingertip"},
