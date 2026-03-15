@@ -622,6 +622,20 @@ class GameBot:
             True if scene was fully handled (caller should skip to next
             iteration). False to continue to priority rules.
         """
+        # Finger always takes priority in special scenes
+        if dom:
+            for region in ("top_bar", "center", "bottom_bar"):
+                for elem in dom.get("screen", {}).get(region, []):
+                    if elem.get("type") == "finger":
+                        tip = elem.get("fingertip", elem.get("pos"))
+                        if tip and not dry_run:
+                            logger.info(
+                                f"Finger detected in {scene} — "
+                                f"tapping fingertip at {tip}")
+                            self.adb.tap(tip[0], tip[1])
+                            time.sleep(0.5)
+                        return True
+
         # Exit dialog — game's pause/quit overlay.
         # Tap "继续" (rightmost icon) and wait 60s cooldown.
         if scene == "exit_dialog":

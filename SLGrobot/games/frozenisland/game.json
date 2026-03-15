@@ -51,7 +51,7 @@
   "grid_cols": 8,
   "grid_rows": 6,
 
-  "loop_start_sleep": 1.4,
+  "loop_start_sleep": 2.5,
 
   "auto_priorities": {
     "popup": [
@@ -96,7 +96,9 @@
       {"type": "button", "text_match": "升级", "color_match": "blue", "has_red_text": false, "action": "tap"},
       {"type": "icon", "name": "back_arrow", "action": "tap"}
     ],
-    "battle_formation": [],
+    "battle_formation": [
+      {"type": "finger", "action": "tap_fingertip"}
+    ],
     "story_dialogue": [
       {"type": "finger", "action": "tap_fingertip"},
       {"type": "text", "value_match": "跳过|skip", "action": "tap"},
