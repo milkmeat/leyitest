@@ -488,10 +488,14 @@ class GameBot:
                     self.game_logger.save_loop_screenshot(screenshot, scene)
 
                     # 2a-2. Adaptive loop sleep: double if stuck on same scene
+                    #        Exception: building_upgrade reduces to 0.7s
                     if scene == _last_scene:
-                        new_sleep = min(
-                            _current_loop_sleep * 2, _MAX_LOOP_SLEEP
-                        )
+                        if scene == "building_upgrade":
+                            new_sleep = 0.7
+                        else:
+                            new_sleep = min(
+                                _current_loop_sleep * 2, _MAX_LOOP_SLEEP
+                            )
                         if new_sleep != _current_loop_sleep:
                             _current_loop_sleep = new_sleep
                             logger.info(
