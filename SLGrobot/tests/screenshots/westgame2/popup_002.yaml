@@ -1,0 +1,6 @@
+scene: popup
+required_elements:
+- type: finger
+auto_action:
+  type: tap
+  reason_match: "priority:tap_fingertip:finger"

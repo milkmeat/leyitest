@@ -73,6 +73,7 @@
 
   "auto_priorities": {
     "popup": [
+      {"type": "finger", "action": "tap_fingertip"},
       {"type": "button", "text_match": "领取|claim|collect|一键领取", "action": "tap"},
       {"type": "button", "text_match": "确[认定]|ok|confirm", "action": "tap"},
       {"type": "icon", "name": "close_x", "action": "tap"},
@@ -89,23 +90,28 @@
       {"type": "finger", "action": "tap_fingertip"}
     ],
     "hero": [
+      {"type": "finger", "action": "tap_fingertip"},
       {"type": "icon", "name": "back_arrow", "action": "tap"},
       {"action": "tap_blank"}
     ],
     "hero_recruit": [
+      {"type": "finger", "action": "tap_fingertip"},
       {"type": "button", "color_match": "purple", "action": "tap"},
       {"type": "icon", "name": "back_arrow", "action": "tap"},
       {"action": "tap_blank"}
     ],
     "building_upgrade": [
+      {"type": "finger", "action": "tap_fingertip"},
       {"type": "button", "text_match": "升级", "color_match": "blue", "action": "tap"},
       {"action": "tap_blank"}
     ],
     "hero_upgrade": [
+      {"type": "finger", "action": "tap_fingertip"},
       {"type": "icon", "name": "back_arrow", "action": "tap"},
       {"action": "tap_blank"}
     ],
     "story_dialogue": [
+      {"type": "finger", "action": "tap_fingertip"},
       {"type": "text", "value_match": "跳过|skip", "action": "tap"},
       {"type": "icon", "name": "down_triangle", "action": "tap"},
       {"action": "tap_center"}
