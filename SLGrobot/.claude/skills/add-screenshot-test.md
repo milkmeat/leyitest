@@ -2,6 +2,8 @@
 
 This skill captures a screenshot from the running emulator and creates a regression test case for the screenshot unit testing framework.
 
+TRIGGER when: user says "添加截屏测试", "add screenshot test", "截屏做测试用例", "从模拟器截屏生成回归测试", "capture a screenshot test case", or any similar request to create a screenshot-based test case from the emulator.
+
 ## Workflow
 
 1. Capture a screenshot from the emulator:
