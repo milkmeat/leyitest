@@ -98,6 +98,11 @@ def _match_element(expected: dict, actual: dict) -> bool:
         if not re.search(expected["color_match"], color, re.IGNORECASE):
             return False
 
+    # Optional has_red_text (exact boolean match)
+    if "has_red_text" in expected:
+        if actual.get("has_red_text", False) != expected["has_red_text"]:
+            return False
+
     return True
 
 

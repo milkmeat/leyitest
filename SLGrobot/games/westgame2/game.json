@@ -108,7 +108,7 @@
     ],
     "hero_upgrade": [
       {"type": "finger", "action": "tap_fingertip"},
-      {"type": "button", "text_match": "升级", "color_match": "blue", "action": "tap"},
+      {"type": "button", "text_match": "升级", "color_match": "blue", "has_red_text": false, "action": "tap"},
       {"type": "icon", "name": "back_arrow", "action": "tap"}
     ],
     "story_dialogue": [

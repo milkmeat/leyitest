@@ -222,13 +222,16 @@ class ScreenDOMBuilder:
 
         # Add button elements
         for btn in buttons:
-            elements.append({
+            elem = {
                 "type": "button",
                 "text": btn.text,
                 "pos": list(btn.pos),
                 "size": list(btn.size),
                 "color": btn.color,
-            })
+            }
+            if btn.has_red_text:
+                elem["has_red_text"] = True
+            elements.append(elem)
 
         # Add indicator elements
         for ind in indicators:

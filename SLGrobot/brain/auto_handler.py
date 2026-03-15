@@ -80,6 +80,9 @@ def _match_rule_against_elements(
                 elem_color = elem.get("color", "")
                 if not re.search(color_match, elem_color, re.IGNORECASE):
                     continue
+            if "has_red_text" in rule:
+                if elem.get("has_red_text", False) != rule["has_red_text"]:
+                    continue
 
         elif rule_type == "text":
             value_match = rule.get("value_match")

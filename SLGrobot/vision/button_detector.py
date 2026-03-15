@@ -24,6 +24,7 @@ class ButtonElement:
     pos: tuple[int, int]        # center (cx, cy)
     size: tuple[int, int]       # (width, height)
     color: str                  # "green" | "blue" | "purple" | "gold" | "red" | "gray"
+    has_red_text: bool = False  # True if red text inside (e.g. insufficient resources)
 
 
 class ButtonDetector:
@@ -94,6 +95,9 @@ class ButtonDetector:
 
         # Merge overlapping detections
         merged = self._merge_overlapping(raw_buttons)
+
+        # Check for red text inside non-red buttons
+        self._detect_red_text(merged, hsv)
 
         logger.debug(f"Buttons detected: {len(merged)}")
         return merged
@@ -239,3 +243,24 @@ class ButtonDetector:
         area_b = b.size[0] * b.size[1]
         union = area_a + area_b - intersection
         return intersection / union if union > 0 else 0.0
+
+    _RED_TEXT_RATIO = 0.01  # 1% red pixels → has red text
+
+    def _detect_red_text(self, buttons: list[ButtonElement],
+                         hsv: np.ndarray) -> None:
+        """Mark buttons that contain red text (e.g. insufficient resources)."""
+        for btn in buttons:
+            if btn.color == "red":
+                continue
+            x1 = btn.pos[0] - btn.size[0] // 2
+            y1 = btn.pos[1] - btn.size[1] // 2
+            x2 = btn.pos[0] + btn.size[0] // 2
+            y2 = btn.pos[1] + btn.size[1] // 2
+            roi = hsv[y1:y2, x1:x2]
+            if roi.size == 0:
+                continue
+            mask1 = cv2.inRange(roi, (0, 100, 100), (10, 255, 255))
+            mask2 = cv2.inRange(roi, (170, 100, 100), (180, 255, 255))
+            red_ratio = (np.count_nonzero(mask1) + np.count_nonzero(mask2)) / max(roi.shape[0] * roi.shape[1], 1)
+            if red_ratio > self._RED_TEXT_RATIO:
+                btn.has_red_text = True
