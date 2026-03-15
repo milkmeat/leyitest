@@ -46,11 +46,11 @@ class FingerDetector:
     # All finger template variants: (cache_name, transform, flip_type)
     # transform: None=original, int=cv2.flip code, str "cwN"=CW rotation by N°
     _FINGER_VARIANTS = [
-        ("icons/tutorial_finger",           None,    "normal"),
-        ("icons/tutorial_finger_hflip",     1,       "hflip"),
-        ("icons/tutorial_finger_vflip",     0,       "vflip"),
-        ("icons/tutorial_finger_hvflip",   -1,       "hvflip"),
-        ("icons/tutorial_finger_rot117cw", "cw117",  "rot117cw"),
+        ("tutorial_finger",           None,    "normal"),
+        ("tutorial_finger_hflip",     1,       "hflip"),
+        ("tutorial_finger_vflip",     0,       "vflip"),
+        ("tutorial_finger_hvflip",   -1,       "hvflip"),
+        ("tutorial_finger_rot117cw", "cw117",  "rot117cw"),
     ]
 
     # Scale factors for multi-scale detection.  The game renders the
@@ -418,7 +418,7 @@ class FingerDetector:
             if not isinstance(cache, dict):
                 return
 
-            base_name = "icons/tutorial_finger"
+            base_name = "tutorial_finger"
             entry = cache.get(base_name)
             if entry is None or not isinstance(entry, tuple):
                 return
@@ -534,8 +534,8 @@ class FingerDetector:
             # are similar enough at low resolution).
             # rot117cw covers the rotated variant (very different silhouette).
             self._prescan_templates: list[tuple[np.ndarray, np.ndarray | None]] = []
-            for ori_name in ["icons/tutorial_finger",
-                             "icons/tutorial_finger_rot117cw"]:
+            for ori_name in ["tutorial_finger",
+                             "tutorial_finger_rot117cw"]:
                 entry = cache.get(ori_name)
                 if entry is None:
                     continue

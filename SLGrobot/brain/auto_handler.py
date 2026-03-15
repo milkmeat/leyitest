@@ -10,7 +10,7 @@ Priority rules are defined per-game in ``game.json`` under
     "auto_priorities": {
         "popup": [
             {"type": "button", "text_match": "领取|claim", "action": "tap"},
-            {"type": "icon", "name": "buttons/close_x", "action": "tap"},
+            {"type": "icon", "name": "close_x", "action": "tap"},
             {"action": "tap_blank"}
         ],
         "_default": [

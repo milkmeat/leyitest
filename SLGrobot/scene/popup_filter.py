@@ -23,12 +23,7 @@ class PopupFilter:
 
     # Common close button template names to search for
     CLOSE_TEMPLATES = [
-        "buttons/close",
-        "buttons/close_x",
-        "buttons/x",
-        "buttons/cancel",
-        "buttons/confirm",
-        "buttons/ok",
+        "close_x",
     ]
 
     # OCR text patterns that dismiss popups (e.g. battle result screen)
@@ -148,22 +143,7 @@ class PopupFilter:
                 time.sleep(0.5)
                 return True
 
-        # Strategy 3: Search all button templates for anything in the popup area
-        all_buttons = self.template_matcher.match_all(screenshot, "buttons")
-        for match in all_buttons:
-            tname = match.template_name.lower()
-            # Skip close/x templates — they were already checked with
-            # stricter position validation in Strategy 2.
-            if "close" in tname or "/x" in tname:
-                continue
-            # Accept any non-close button found on screen (action buttons
-            # like "upgrade" often appear at the bottom of popup panels).
-            logger.info(f"Popup: tapping button '{match.template_name}' at ({match.x}, {match.y})")
-            self.adb.tap(match.x, match.y)
-            time.sleep(0.5)
-            return True
-
-        # Strategy 4: If we detected a dark overlay but found no buttons,
+        # Strategy 3: If we detected a dark overlay but found no buttons,
         # try tapping outside the popup area
         if self._has_dark_overlay(screenshot):
             # Tap in the dark border area (top-left) to dismiss

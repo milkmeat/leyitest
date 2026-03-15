@@ -29,13 +29,13 @@ class TemplateMatcher:
     # Useful when the same icon appears in different color variants (e.g. dark-red
     # vs light-red close button).  Normal BGR matching fails across color variants,
     # but the Saturation channel preserves shape while ignoring hue/lightness.
-    COLOR_INVARIANT_TEMPLATES: set[str] = {"buttons/close_x"}
+    COLOR_INVARIANT_TEMPLATES: set[str] = {"close_x"}
 
     # Templates that should prefer the top-right match when multiple instances
     # exist on screen.  Close/X buttons semantically belong to the top-right
     # corner of popups; when a similar shape appears elsewhere (e.g. mid-screen),
     # the top-right one is almost always the correct target.
-    PREFER_TOP_RIGHT_TEMPLATES: set[str] = {"buttons/close_x"}
+    PREFER_TOP_RIGHT_TEMPLATES: set[str] = {"close_x"}
 
     # Templates that require strict size AND color matching.
     # After the normal CCOEFF shape match, an additional BGR pixel-level color
@@ -43,8 +43,8 @@ class TemplateMatcher:
     # the matched region must be below STRICT_COLOR_MAX_DIFF.  This prevents
     # similarly-shaped but differently-colored icons from matching.
     STRICT_COLOR_TEMPLATES: set[str] = {
-        "icons/upgrade_arrow",
-        "icons/train_brawler",
+        "upgrade_arrow",
+        "train_brawler",
     }
     STRICT_COLOR_MAX_DIFF: float = 30.0
     STRICT_COLOR_CCOEFF_THRESHOLD: float = 0.6
@@ -59,7 +59,7 @@ class TemplateMatcher:
     # close_x is a red X on transparent background — impostors either
     # lack red entirely (red_x=0) or have red bleeding into the
     # background region (red_bg>0.30).
-    RED_PIXEL_TEMPLATES: set[str] = {"buttons/close_x"}
+    RED_PIXEL_TEMPLATES: set[str] = {"close_x"}
     _RED_OPAQUE_MIN: float = 0.15
     _RED_BG_MAX: float = 0.30
 
@@ -158,7 +158,7 @@ class TemplateMatcher:
     # Templates that require boundary contrast verification after other
     # checks pass.  Rejects matches where the template silhouette blends
     # into a same-colour background (low contrast at the edge).
-    BOUNDARY_CHECK_TEMPLATES: set[str] = {"buttons/close_x"}
+    BOUNDARY_CHECK_TEMPLATES: set[str] = {"close_x"}
     _BOUNDARY_CONTRAST_THRESHOLD: float = 20.0
     _BOUNDARY_MIN_PIXELS: int = 10
 
@@ -198,7 +198,7 @@ class TemplateMatcher:
                     # Grayscale — convert to BGR
                     image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
-                # Key: relative path without extension, e.g. "buttons/close"
+                # Key: relative path without extension, e.g. "close_x"
                 rel_path = os.path.relpath(filepath, self.template_dir)
                 name = os.path.splitext(rel_path)[0].replace("\\", "/")
                 self._cache[name] = (image, mask)

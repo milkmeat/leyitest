@@ -1335,9 +1335,9 @@ class CLI:
         tm = self.bot.template_matcher
 
         # Show raw top-5 CCORR candidates with red-pixel ratios
-        candidates = tm.match_one_multi(screenshot, "buttons/close_x",
+        candidates = tm.match_one_multi(screenshot, "close_x",
                                         max_matches=5)
-        entry = tm._cache.get("buttons/close_x")
+        entry = tm._cache.get("close_x")
         opaque = None
         if entry is not None:
             _, mask = entry
@@ -1345,7 +1345,7 @@ class CLI:
                 opaque = mask[:, :, 0] > 0
 
         # Pre-compute boundary masks for diagnostic display
-        bmasks = tm._get_boundary_masks("buttons/close_x")
+        bmasks = tm._get_boundary_masks("close_x")
 
         best = None
         best_score = -1.0

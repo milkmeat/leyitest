@@ -198,11 +198,11 @@ class TestTapIcon(unittest.TestCase):
     def test_tap_icon_found(self):
         runner, _, tm = _make_runner()
         tm.match_one_multi.return_value = [
-            FakeMatchResult("nav_bar/expedition", 0.9, 540, 1850,
+            FakeMatchResult("expedition", 0.9, 540, 1850,
                             (490, 1800, 590, 1900))
         ]
         runner.load([
-            {"tap_icon": ["nav_bar/expedition"], "delay": 2.0}
+            {"tap_icon": ["expedition"], "delay": 2.0}
         ])
         result = runner.execute_one(_make_screenshot())
         assert len(result) == 1
@@ -213,7 +213,7 @@ class TestTapIcon(unittest.TestCase):
         runner, _, tm = _make_runner()
         tm.match_one_multi.return_value = []
         runner.load([
-            {"tap_icon": ["nav_bar/expedition"], "delay": 2.0}
+            {"tap_icon": ["expedition"], "delay": 2.0}
         ])
         result = runner.execute_one(_make_screenshot())
         assert result is None
@@ -225,8 +225,8 @@ class TestEnsureMainCity(unittest.TestCase):
     def _mock_main_city(self, tm, is_main_city):
         """Configure tm.match_one to return main_city match or None."""
         def mock_match_one(screenshot, name):
-            if name == "scenes/main_city" and is_main_city:
-                return FakeMatchResult("scenes/main_city", 0.9, 50, 50,
+            if name == "world" and is_main_city:
+                return FakeMatchResult("world", 0.9, 50, 50,
                                        (0, 0, 100, 100))
             return None
         tm.match_one.side_effect = mock_match_one
@@ -248,10 +248,10 @@ class TestEnsureMainCity(unittest.TestCase):
         """Taps back_arrow when not at main city, does not advance."""
         runner, _, tm = _make_runner()
         def mock_match_one(screenshot, name):
-            if name == "scenes/main_city":
+            if name == "world":
                 return None
-            if name == "buttons/back_arrow":
-                return FakeMatchResult("buttons/back_arrow", 0.9, 60, 80,
+            if name == "back_arrow":
+                return FakeMatchResult("back_arrow", 0.9, 60, 80,
                                        (30, 50, 90, 110))
             return None
         tm.match_one.side_effect = mock_match_one
@@ -267,8 +267,8 @@ class TestEnsureMainCity(unittest.TestCase):
         """Taps close_x when no back_arrow found."""
         runner, _, tm = _make_runner()
         def mock_match_one(screenshot, name):
-            if name == "buttons/close_x":
-                return FakeMatchResult("buttons/close_x", 0.85, 1000, 200,
+            if name == "close_x":
+                return FakeMatchResult("close_x", 0.85, 1000, 200,
                                        (970, 170, 1030, 230))
             return None
         tm.match_one.side_effect = mock_match_one
@@ -311,15 +311,15 @@ class TestEnsureMainCity(unittest.TestCase):
         runner, _, tm = _make_runner()
         main_city_check_count = [0]
         def mock_match_one(screenshot, name):
-            if name == "scenes/main_city":
+            if name == "world":
                 main_city_check_count[0] += 1
                 # Succeed on 3rd main_city check
                 if main_city_check_count[0] >= 3:
-                    return FakeMatchResult("scenes/main_city", 0.9, 50, 50,
+                    return FakeMatchResult("world", 0.9, 50, 50,
                                            (0, 0, 100, 100))
                 return None
-            if name == "buttons/back_arrow":
-                return FakeMatchResult("buttons/back_arrow", 0.9, 60, 80,
+            if name == "back_arrow":
+                return FakeMatchResult("back_arrow", 0.9, 60, 80,
                                        (30, 50, 90, 110))
             return None
         tm.match_one.side_effect = mock_match_one
@@ -349,7 +349,7 @@ class TestExpeditionQuestScript(unittest.TestCase):
         steps = [
             {"ensure_main_city": [], "delay": 1.5,
              "description": "确认在主城界面"},
-            {"tap_icon": ["nav_bar/expedition"], "delay": 2.0,
+            {"tap_icon": ["expedition"], "delay": 2.0,
              "description": "点击远征图标"},
             {"tap_text": ["开始战斗"], "delay": 1.5,
              "description": "点击开始战斗"},
@@ -367,8 +367,8 @@ class TestExpeditionQuestScript(unittest.TestCase):
 
         # Step 1: ensure_main_city — mock as already at main city
         tm.match_one.side_effect = lambda ss, name: (
-            FakeMatchResult("scenes/main_city", 0.9, 50, 50, (0, 0, 100, 100))
-            if name == "scenes/main_city" else None
+            FakeMatchResult("world", 0.9, 50, 50, (0, 0, 100, 100))
+            if name == "world" else None
         )
         result = runner.execute_one(_make_screenshot())
         assert result == []
@@ -376,7 +376,7 @@ class TestExpeditionQuestScript(unittest.TestCase):
 
         # Step 2: tap_icon expedition
         tm.match_one_multi.return_value = [
-            FakeMatchResult("nav_bar/expedition", 0.9, 540, 1850,
+            FakeMatchResult("expedition", 0.9, 540, 1850,
                             (490, 1800, 590, 1900))
         ]
         result = runner.execute_one(_make_screenshot())
@@ -543,8 +543,8 @@ class TestClaimQuestRewardScript(unittest.TestCase):
 
         # Step 1: ensure_main_city — mock as already at main city
         tm.match_one.side_effect = lambda ss, name: (
-            FakeMatchResult("scenes/main_city", 0.9, 50, 50, (0, 0, 100, 100))
-            if name == "scenes/main_city" else None
+            FakeMatchResult("world", 0.9, 50, 50, (0, 0, 100, 100))
+            if name == "world" else None
         )
         result = runner.execute_one(_make_screenshot())
         assert result == []
@@ -629,7 +629,7 @@ class TestClaimQuestRewardScript(unittest.TestCase):
 
         # Step 9: tap_icon close_x
         tm.match_one_multi.return_value = [
-            FakeMatchResult("buttons/close_x", 0.9, 1020, 200,
+            FakeMatchResult("close_x", 0.9, 1020, 200,
                             (990, 170, 1050, 230))
         ]
         result = runner.execute_one(_make_screenshot())

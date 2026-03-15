@@ -64,7 +64,7 @@ The auto loop is scene-first: each iteration takes a screenshot, classifies the 
 - **LLM is stateless** — game state is persisted in `data/game_state.json` and passed as context to each LLM call
 - **Scene-first dispatch** — every auto-loop iteration starts with scene classification before deciding what to do
 - **Validate-execute-confirm pipeline** — `ActionValidator` → `ActionRunner` (with retry) → `ResultChecker`
-- **禁止使用 Android 系统 BACK 键 (keycode=4)** — SLG 游戏的建筑面板和内嵌 UI 不响应系统 BACK 键，使用 BACK 会导致循环卡死。退出策略优先级：① 点击 `buttons/back_arrow` 模板 ② 点击空���区域 `(500, 100)` ③ 使用 `popup_filter` 关闭弹窗
+- **禁止使用 Android 系统 BACK 键 (keycode=4)** — SLG 游戏的建筑面板和内嵌 UI 不响应系统 BACK 键，使用 BACK 会导致循环卡死。退出策略优先级：① 点击 `back_arrow` 模板 ② 点击空���区域 `(500, 100)` ③ 使用 `popup_filter` 关闭弹窗
 - **坚决避免重复代码块** — 发现重复逻辑时必须通过提取公共函数/方法进行重构复用，而非复制粘贴。新增功能前先检查是否已有可复用的实现
 
 ### Action Dict Protocol
@@ -88,19 +88,17 @@ Scene types: `main_city`, `world_map`, `hero`, `hero_recruit`, `battle`, `popup`
 
 Game operations are defined as JSON quest scripts in `games/<id>/game.json` under `quest_scripts`. Each script has an optional `name` (English identifier) and a `pattern` (Chinese regex). CLI supports bilingual matching: `quest claim_quest_reward` or `quest 领取任务奖励` both work (name match first, then pattern regex). Scripts are multi-step sequences with verbs: `tap_xy`, `tap_text`, `tap_icon`, `swipe`, `wait_text`, `ensure_main_city`, `ensure_world_map`, `read_text`, `eval`, `find_building`. Executed by `QuestScriptRunner` (`brain/quest_script.py`), triggered automatically via quest bar matching or manually via `quest` CLI command. See `quest_scripting.md` for full reference.
 
-Quest script MD 文件中图标引用可以只写文件名（如 `[[upgrade_arrow.png]]`），生成 JSON 时需根据模板文件在 `templates/` 下的实际位置补全目录前缀（如 `"icons/upgrade_arrow"`）。`QuestScriptRunner` 的 `tap_icon` 直接调用 `TemplateMatcher`，不会自动补全前缀。
+Quest script MD 文件中图标引用直接写文件名（如 `[[upgrade_arrow.png]]`），生成 JSON 时去掉 `.png` 扩展名即可（如 `"upgrade_arrow"`）。`QuestScriptRunner` 的 `tap_icon` 直接调用 `TemplateMatcher`。
 
 ### Template Matcher 路径规则
 
-`TemplateMatcher` 加载 `games/<id>/templates/` 下的所有 PNG 文件，缓存 key 为**相对路径去掉扩展名**，`\` 替换为 `/`。
+`TemplateMatcher` 加载 `games/<id>/templates/` 下的所有 PNG 文件，缓存 key 为**文件名去掉扩展名**（单层目录，无子目录前缀）。
 
-- 磁盘文件: `games/westgame2/templates/icons/search.png`
-- 缓存 key: `icons/search`
-- 代码调用: `template_matcher.match_one(screenshot, "icons/search")`
+- 磁盘文件: `games/westgame2/templates/search.png`
+- 缓存 key: `search`
+- 代码调用: `template_matcher.match_one(screenshot, "search")`
 
-常用目录前缀：`buttons/`、`icons/`、`nav_bar/`、`scenes/`、`popups/`。
-
-**编写脚本时**：`tap_icon` 的参数必须是缓存 key（含目录前缀、不含 `.png`），如 `["icons/balance_config"]`，不能只写文件名 `"balance_config"`。
+**编写脚本时**：`tap_icon` 的参数必须是缓存 key（不含 `.png`），如 `["upgrade_arrow"]`。
 
 **调试模板匹配**：使用 `python -c` 脚本时，`TemplateMatcher` 必须传入正确的模板目录 `games/<id>/templates`（而非默认的 `config.TEMPLATE_DIR`，那个指向旧的 `templates/`）。
 
@@ -113,7 +111,7 @@ Quest script MD 文件中图标引用可以只写文件名（如 `[[upgrade_arro
 - `config.py` — all global constants (ADB host/port, screen resolution, timing, thresholds, file paths). Emulator presets (`EMULATOR_PRESETS`) allow switching between BlueStacks and Nox via `ACTIVE_EMULATOR` or `--emulator` CLI flag
 - **切换游戏**：只需改 `config.py` 中的 `ACTIVE_GAME`（当前为 `"frozenisland"`），`GAME_PACKAGE` 和所有 `games/<id>/` 资源路径自动跟随。支持的游戏见 `GAME_PACKAGES` 字典。详见 `how_to_change_game.md`
 - `data/navigation_paths.json` — predefined tap sequences for navigating between game screens (17 paths)
-- `games/<id>/templates/` — PNG template images organized by category (`buttons/`, `icons/`, `nav_bar/`, `scenes/`, `popups/`), loaded by `TemplateMatcher` via `game_profile.template_dir`
+- `games/<id>/templates/` — PNG template images in flat directory (no subdirectories), loaded by `TemplateMatcher` via `game_profile.template_dir`
 - `games/<id>/city_layout.md` — building positions on the city map (used by BuildingFinder)
 
 ## Platform Requirements

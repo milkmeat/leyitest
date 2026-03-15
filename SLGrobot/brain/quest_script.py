@@ -498,13 +498,13 @@ class QuestScriptRunner:
     def _is_main_city(self, screenshot: np.ndarray) -> bool:
         """Check if screenshot shows main city (bottom-right corner icon)."""
         corner = self._crop_corner(screenshot)
-        match = self.template_matcher.match_one(corner, "scenes/main_city")
+        match = self.template_matcher.match_one(corner, "world")
         return match is not None and match.confidence >= self._SCENE_CONFIDENCE
 
     def _is_world_map(self, screenshot: np.ndarray) -> bool:
         """Check if screenshot shows world map (bottom-right corner icon)."""
         corner = self._crop_corner(screenshot)
-        match = self.template_matcher.match_one(corner, "scenes/world_map")
+        match = self.template_matcher.match_one(corner, "territory")
         return match is not None and match.confidence >= self._SCENE_CONFIDENCE
 
     def _do_ensure_main_city(self, step: dict, screenshot: np.ndarray,
@@ -540,7 +540,7 @@ class QuestScriptRunner:
         # Shortcut: if on world_map, tap territory icon to go back to main city
         if self._is_world_map(screenshot):
             match = self.template_matcher.match_one(screenshot,
-                                                    "nav_bar/territory")
+                                                    "territory")
             if match:
                 logger.info(
                     f"Quest script: ensure_main_city — on world_map, "
@@ -554,7 +554,7 @@ class QuestScriptRunner:
 
         # Try back_arrow first
         match = self.template_matcher.match_one(screenshot,
-                                                "buttons/back_arrow")
+                                                "back_arrow")
         if match:
             logger.info(
                 f"Quest script: ensure_main_city — tapping back_arrow "
@@ -567,7 +567,7 @@ class QuestScriptRunner:
 
         # Try close_x
         match = self.template_matcher.match_one(screenshot,
-                                                "buttons/close_x")
+                                                "close_x")
         if match:
             logger.info(
                 f"Quest script: ensure_main_city — tapping close_x "
@@ -630,7 +630,7 @@ class QuestScriptRunner:
         # Shortcut: if on main_city, tap world icon to switch to world map
         if self._is_main_city(screenshot):
             match = self.template_matcher.match_one(screenshot,
-                                                    "nav_bar/world")
+                                                    "world")
             if match:
                 logger.info(
                     f"Quest script: ensure_world_map — on main_city, "
@@ -644,7 +644,7 @@ class QuestScriptRunner:
 
         # Try back_arrow first
         match = self.template_matcher.match_one(screenshot,
-                                                "buttons/back_arrow")
+                                                "back_arrow")
         if match:
             logger.info(
                 f"Quest script: ensure_world_map — tapping back_arrow "
@@ -657,7 +657,7 @@ class QuestScriptRunner:
 
         # Try close_x
         match = self.template_matcher.match_one(screenshot,
-                                                "buttons/close_x")
+                                                "close_x")
         if match:
             logger.info(
                 f"Quest script: ensure_world_map — tapping close_x "

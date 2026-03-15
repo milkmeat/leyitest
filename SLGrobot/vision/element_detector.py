@@ -114,13 +114,6 @@ class ElementDetector:
         if result:
             return self._match_to_element(result)
 
-        # Try with common prefixes, but only if target has no category yet
-        if "/" not in target:
-            for prefix in ["buttons/", "icons/", "scenes/"]:
-                result = self.template_matcher.match_one(screenshot, prefix + target)
-                if result:
-                    return self._match_to_element(result)
-
         return None
 
     def _locate_by_ocr(self, screenshot: np.ndarray, target: str) -> Element | None:

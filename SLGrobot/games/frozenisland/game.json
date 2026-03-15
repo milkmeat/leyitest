@@ -28,28 +28,19 @@
     "close_popup", "check_mail", "collect_daily"
   ],
 
-  "known_popups": [
-    ["buttons/view", "buttons/close_x"]
-  ],
-  "reward_templates": [
-    "buttons/claim", "buttons/collect", "buttons/ok", "buttons/confirm"
-  ],
+  "known_popups": [],
+  "reward_templates": [],
   "close_text_patterns": ["关闭", "close", "×", "X"],
   "claim_text_patterns": ["领取", "claim", "collect", "收集", "一键领取"],
 
-  "action_button_templates": [
-    "buttons/upgrade_building", "buttons/upgrade", "buttons/build"
-  ],
+  "action_button_templates": [],
   "action_button_texts": [
     "一键上阵", "出战", "开始战斗", "攻击",
     "建造", "升级", "训练", "研究", "确定", "前往",
     "开始", "使用", "派遣", "出征", "行军", "下一个", "领取"
   ],
 
-  "popup_close_templates": [
-    "buttons/close", "buttons/close_x", "buttons/x",
-    "buttons/cancel", "buttons/confirm", "buttons/ok"
-  ],
+  "popup_close_templates": ["close_x"],
   "popup_close_texts": [
     "返回领地", "领取", "返回", "关闭", "确定", "确认"
   ],
@@ -65,7 +56,7 @@
     "popup": [
       {"type": "button", "text_match": "领取|claim|collect|一键领取", "action": "tap"},
       {"type": "button", "text_match": "确[认定]|ok|confirm", "action": "tap"},
-      {"type": "icon", "name": "buttons/close_x", "action": "tap"},
+      {"type": "icon", "name": "close_x", "action": "tap"},
       {"type": "button", "text_match": "关闭|close", "action": "tap"},
       {"action": "tap_blank"}
     ],
@@ -79,22 +70,22 @@
       {"type": "finger", "action": "tap_fingertip"}
     ],
     "hero": [
-      {"type": "icon", "name": "buttons/back_arrow", "action": "tap"},
+      {"type": "icon", "name": "back_arrow", "action": "tap"},
       {"action": "tap_blank"}
     ],
     "hero_recruit": [
       {"type": "button", "color_match": "purple", "action": "tap"},
-      {"type": "icon", "name": "buttons/back_arrow", "action": "tap"},
+      {"type": "icon", "name": "back_arrow", "action": "tap"},
       {"action": "tap_blank"}
     ],
     "story_dialogue": [
       {"type": "text", "value_match": "跳过|skip", "action": "tap"},
-      {"type": "icon", "name": "icons/down_triangle", "action": "tap"},
+      {"type": "icon", "name": "down_triangle", "action": "tap"},
       {"action": "tap_center"}
     ],
     "_default": [
       {"type": "finger", "action": "tap_fingertip"},
-      {"type": "icon", "name": "buttons/back_arrow", "action": "tap"},
+      {"type": "icon", "name": "back_arrow", "action": "tap"},
       {"type": "button", "text_match": "领取|claim|collect", "action": "tap"},
       {"action": "tap_blank"}
     ]

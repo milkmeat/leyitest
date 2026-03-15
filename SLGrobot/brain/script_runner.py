@@ -175,7 +175,7 @@ def find_element(dom: dict, target: dict) -> dict | None:
     Target format:
         {type: "button", text: "升级"}
         {type: "text", value: "升级完成"}
-        {type: "icon", name: "icons/search"}
+        {type: "icon", name: "search"}
         {type: "red_dot"}
 
     For multiple matches, picks closest to target["pos"] if provided,
