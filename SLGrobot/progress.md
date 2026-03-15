@@ -84,36 +84,36 @@
 
 ### TODO
 
-- [ ] **2.1 脚本加载器**
+- [x] **2.1 脚本加载器**
   - 从 `games/<id>/scripts/<name>.yaml` 读取脚本
   - YAML 解析 + 基本 schema 校验（必要字段检查）
   - 列出所有可用脚本
 
-- [ ] **2.2 元素查找算法** (`find_element`)
+- [x] **2.2 元素查找算法** (`find_element`)
   - 按 type（button/text/icon/red_dot/green_check/finger）匹配
   - 多匹配时按距离原始 pos 最近排序
   - 文字匹配支持子串包含
 
-- [ ] **2.3 条件求值引擎** (`evaluate_condition`)
+- [x] **2.3 条件求值引擎** (`evaluate_condition`)
   - 支持 `exists` / `not_exists` / `scene` 条件
   - 支持 `all`（AND）/ `any`（OR）组合
   - 条件求值前自动截图 + 构建 DOM
 
-- [ ] **2.4 ScriptRunner 核心** (`brain/script_runner.py`)
+- [x] **2.4 ScriptRunner 核心** (`brain/script_runner.py`)
   - `tap` 动作：坐标直接点击 → 验证（target 消失？） → fallback 元素定位重试（最多 3 次）
   - `swipe` 动作：from → to，duration_ms
   - `wait` 动作：静态等待 N 秒
   - `wait_for` 动作：轮询 DOM 直到目标元素出现（timeout + poll_interval）
   - `if` 动作：条件求值 → 执行 then / else 分支（支持嵌套）
   - 执行日志：每步打印动作、坐标、结果
-  - 错误处理：重试耗尽后抛异常并输出当前 DOM 快照
+  - 错误处理：tap 重试耗尽 warn + continue；wait_for 超时 raise ScriptAbortError
 
-- [ ] **2.5 Script CLI 命令** (`main.py`)
+- [x] **2.5 Script CLI 命令** (`main.py`)
   - `python main.py run <script_name>` — 执行脚本
   - `python main.py run <name> --dry` — 干跑模式（打印步骤，不执行）
   - `python main.py scripts` — 列出所有可用脚本
 
-- [ ] **2.6 测试**
+- [ ] ~~**2.6 测试**~~ (deferred — needs emulator + real scripts)
   - 脚本加载 + schema 校验测试
   - 条件求值逻辑测试（exists / not_exists / all / any / scene）
   - 元素查找算法测试（单匹配、多匹配、无匹配）
@@ -138,24 +138,24 @@
 
 ### TODO
 
-- [ ] **3.1 优先级匹配引擎** (`find_priority_match`)
+- [x] **3.1 优先级匹配引擎** (`find_priority_match`)
   - 按 type 匹配（finger / icon / button / red_dot / green_check / text）
   - button 支持 `text_match`（正则）和 `color` 匹配
   - icon 支持 `name` 精确匹配
   - 返回第一个匹配的元素
 
-- [ ] **3.2 AutoHandler 重写** (`brain/auto_handler.py`)
+- [x] **3.2 AutoHandler 重写** (`brain/auto_handler.py`)
   - `__init__` 接收 `dom_builder` 和 `game_profile`
   - `get_action(dom) -> dict | None`：按场景查优先级表 → 匹配元素 → 返回 tap 动作
   - 无匹配时返回 None（循环等待）
   - 日志：每次决策记录场景、优先级命中项、元素坐标
 
-- [ ] **3.3 Auto 循环重写** (`main.py` 中的 auto_loop)
+- [x] **3.3 Auto 循环重写** (`main.py` 中的 auto_loop)
   - 每次迭代：截图 → DOM → AutoHandler.get_action → 执行 → 等待
   - 支持 `--loops N` 限制循环次数
   - stuck 检测：连续 N 次 DOM 无变化 → 尝试 stuck_recovery
 
-- [ ] **3.4 测试**
+- [ ] ~~**3.4 测试**~~ (deferred — verified via live auto loop)
   - 优先级匹配逻辑的单元测试
   - 用截图 PNG 模拟不同场景，验证优先级选择正确
   - 端到端：在模拟器上运行 `python main.py auto --loops 10`，观察行为
@@ -193,10 +193,10 @@
   - 同 frozenisland，但适配 westgame2 的场景模板名和按钮文字
   - 包含 exit_dialog、shoot_mini_game 等特有场景
 
-- [ ] **4.4 DOM 场景推断集成**
-  - ScreenDOMBuilder 的 `_classify_scene` 使用 game_profile.scene_rules
-  - 规则顺序匹配，首条命中即返回
-  - 无命中时 fallback 到 "unknown"
+- [x] **4.4 DOM 场景推断集成**
+  - `infer_scene(dom, screenshot)` 在 `build()` 末尾调用，基于 DOM 元素推断场景
+  - 优先级顺序：popup > exit_dialog > loading(像素) > story_dialogue > shoot_mini_game > main_city > world_map > hero_recruit > hero_upgrade > hero > unknown
+  - auto_loop 不再调用 SceneClassifier，直接使用 `dom["screen"]["scene"]`
 
 - [ ] **4.5 测试**
   - 验证两个游戏的 game.json 可正常加载
@@ -317,8 +317,8 @@
 | Phase | Status | Started | Completed |
 |-------|--------|---------|-----------|
 | Phase 1: DOM Builder | Done (1.6 skipped) | 2026-03-14 | 2026-03-14 |
-| Phase 2: Script Runner | In progress | 2026-03-15 | — |
-| Phase 3: Auto Handler | Not started | — | — |
-| Phase 4: Game Config | Not started | — | — |
+| Phase 2: Script Runner | Done (2.6 deferred) | 2026-03-15 | 2026-03-15 |
+| Phase 3: Auto Handler | Done (3.4 deferred) | 2026-03-15 | 2026-03-15 |
+| Phase 4: Game Config | In progress (4.4 done) | 2026-03-15 | — |
 | Phase 5: Cleanup | Not started | — | — |
 | Phase 6: Integration | Not started | — | — |
