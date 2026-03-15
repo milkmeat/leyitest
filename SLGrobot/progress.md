@@ -312,6 +312,24 @@
 
 ---
 
+## Screenshot 单元测试框架
+
+**Goal**: 离线回归测试，验证 DOM 解析、场景推断、AutoHandler 输出的正确性。基于保存的 PNG 截图运行，无需模拟器。
+
+### TODO
+
+- [x] **Git LFS 配置** — `.gitattributes` 追踪 `tests/screenshots/**/*.png`
+- [x] **目录结构** — `tests/screenshots/{westgame2,frozenisland}/`
+- [x] **screenshot_helpers.py** — `build_pipeline()` 缓存流水线，`run_one_case()` 断言场景/元素/动作
+- [x] **test_screenshot.py** — CLI 入口，支持按游戏/用例过滤，分组复用流水线，汇总通过/失败
+- [x] **generate_expected.py** — 对截图运行流水线，输出 YAML 草稿供人工审查
+- [x] **Claude Code 技能** — `.claude/skills/add-screenshot-test.md`，交互式创建测试用例
+- [x] **使用文档** — `docs/screenshot_testing.md`
+
+详见 `docs/screenshot_testing.md`。
+
+---
+
 ## Progress Summary
 
 | Phase | Status | Started | Completed |
@@ -322,3 +340,4 @@
 | Phase 4: Game Config | In progress (4.4 done) | 2026-03-15 | — |
 | Phase 5: Cleanup | Not started | — | — |
 | Phase 6: Integration | Not started | — | — |
+| Screenshot 测试框架 | Done | 2026-03-15 | 2026-03-15 |
