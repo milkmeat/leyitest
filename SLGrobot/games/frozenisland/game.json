@@ -18,8 +18,9 @@
   "resource_order": ["food", "wood", "stone", "gold"],
 
   "scenes": [
-    "main_city", "world_map", "hero", "hero_recruit",
-    "battle", "popup", "loading", "story_dialogue", "unknown"
+    "main_city", "world_map", "hero", "hero_recruit", "hero_upgrade",
+    "battle", "popup", "exit_dialog", "loading", "story_dialogue",
+    "shoot_mini_game", "building_upgrade", "battle_formation", "unknown"
   ],
 
   "known_tasks": [
@@ -40,9 +41,9 @@
     "开始", "使用", "派遣", "出征", "行军", "下一个", "领取"
   ],
 
-  "popup_close_templates": ["close_x"],
+  "popup_close_templates": ["close_x", "close_x.2"],
   "popup_close_texts": [
-    "返回领地", "领取", "返回", "关闭", "确定", "确认"
+    "返回领地", "关闭", "确定", "确认", "取消", "返回", "领取", "前往", "全部领取"
   ],
 
   "finger_ncc_threshold": 0.68,
@@ -50,13 +51,19 @@
   "grid_cols": 8,
   "grid_rows": 6,
 
-  "loop_start_sleep": 0.7,
+  "loop_start_sleep": 1.4,
 
   "auto_priorities": {
     "popup": [
+      {"type": "finger", "action": "tap_fingertip"},
       {"type": "button", "text_match": "领取|claim|collect|一键领取", "action": "tap"},
       {"type": "button", "text_match": "确[认定]|ok|confirm", "action": "tap"},
+      {"type": "button", "text_match": "返回.*", "action": "tap"},
+      {"type": "button", "text_match": "继续", "action": "tap"},
+      {"type": "button", "text_match": "^前往$", "action": "tap"},
       {"type": "icon", "name": "close_x", "action": "tap"},
+      {"type": "icon", "name": "close_x.2", "action": "tap"},
+      {"type": "icon", "name": "close_x_flag", "action": "tap"},
       {"type": "button", "text_match": "关闭|close", "action": "tap"},
       {"action": "tap_blank"}
     ],
@@ -70,15 +77,28 @@
       {"type": "finger", "action": "tap_fingertip"}
     ],
     "hero": [
+      {"type": "finger", "action": "tap_fingertip"},
       {"type": "icon", "name": "back_arrow", "action": "tap"},
       {"action": "tap_blank"}
     ],
     "hero_recruit": [
-      {"type": "button", "color_match": "purple", "action": "tap"},
-      {"type": "icon", "name": "back_arrow", "action": "tap"},
+      {"type": "finger", "action": "tap_fingertip"},
+      {"type": "button", "text_match": "免费", "action": "tap"},
+      {"type": "icon", "name": "back_arrow", "action": "tap"}
+    ],
+    "building_upgrade": [
+      {"type": "finger", "action": "tap_fingertip"},
+      {"type": "button", "text_match": "升级|建造|下一个", "color_match": "blue", "action": "tap"},
       {"action": "tap_blank"}
     ],
+    "hero_upgrade": [
+      {"type": "finger", "action": "tap_fingertip"},
+      {"type": "button", "text_match": "升级", "color_match": "blue", "has_red_text": false, "action": "tap"},
+      {"type": "icon", "name": "back_arrow", "action": "tap"}
+    ],
+    "battle_formation": [],
     "story_dialogue": [
+      {"type": "finger", "action": "tap_fingertip"},
       {"type": "text", "value_match": "跳过|skip", "action": "tap"},
       {"type": "icon", "name": "down_triangle", "action": "tap"},
       {"action": "tap_center"}

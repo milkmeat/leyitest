@@ -360,6 +360,7 @@ class ScreenDOMBuilder:
     # --- Fast template matching with prescreening ---
 
     _MATCH_SCALE = 0.5  # match at half resolution for speed
+    _EDGE_RATIO_MIN = 0.2  # reject if match region edges < 20% of template edges
 
     def _match_all_fast(self, screenshot: np.ndarray) -> list[MatchResult]:
         """Match all templates at 0.5x resolution for speed (~1s).
@@ -400,6 +401,14 @@ class ScreenDOMBuilder:
                     opaque_ratio = float((mask[:, :, 0] > 0).sum()) / (th * tw)
                     needs_ncc = opaque_ratio < 0.9
                 self._scaled_cache[name] = (s_tpl, s_mask, needs_ncc)
+            # Pre-compute edge pixel counts for each template
+            self._tpl_edge_counts: dict[str, int] = {}
+            for name, (template, _mask) in self.tm._cache.items():
+                if "tutorial_finger" in name:
+                    continue
+                gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+                edges = cv2.Canny(gray, 50, 150)
+                self._tpl_edge_counts[name] = int(np.count_nonzero(edges))
 
         threshold = self.tm.threshold
         results = []
@@ -469,6 +478,19 @@ class ScreenDOMBuilder:
                             logger.debug(
                                 f"_match_all_fast NCC rejected: {name} "
                                 f"CCORR={roi_max:.3f} ncc={ncc:.3f}")
+                            continue
+                    # Edge density check: reject matches in flat/dark regions
+                    tpl_edges = self._tpl_edge_counts.get(name, 0)
+                    if tpl_edges > 0:
+                        crop_gray = cv2.cvtColor(
+                            crop if needs_ncc else roi[ry:ry + th, rx:rx + tw],
+                            cv2.COLOR_BGR2GRAY)
+                        crop_edges = int(np.count_nonzero(
+                            cv2.Canny(crop_gray, 50, 150)))
+                        if crop_edges < tpl_edges * self._EDGE_RATIO_MIN:
+                            logger.debug(
+                                f"_match_all_fast edge rejected: {name} "
+                                f"crop_edges={crop_edges} tpl_edges={tpl_edges}")
                             continue
                     abs_x = roi_x1 + rx + tw // 2
                     abs_y = roi_y1 + ry + th // 2
