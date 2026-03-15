@@ -108,7 +108,16 @@ def infer_scene(dom: dict, screenshot: np.ndarray) -> str:
         if scene_name in icon_names:
             return scene_name
 
-    # 8b. Hero recruit — text fallback: "英雄" + "招募" in top-right
+    # 8b. Hero upgrade — "属性" + "技能" in bottom_bar
+    _bottom_texts = {
+        elem.get("value", "")
+        for elem in screen.get("bottom_bar", [])
+        if elem.get("type") == "text"
+    }
+    if "属性" in _bottom_texts and "技能" in _bottom_texts:
+        return "hero_upgrade"
+
+    # 8c. Hero recruit — text fallback: "英雄" + "招募" in top-right
     #     (displayed as two lines, detected as two elements near x>900)
     _top_right_texts = set()
     for region in ("top_bar", "center"):
