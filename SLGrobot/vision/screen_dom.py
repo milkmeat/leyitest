@@ -108,7 +108,16 @@ def infer_scene(dom: dict, screenshot: np.ndarray) -> str:
         if scene_name in icon_names:
             return scene_name
 
-    # 8b. Hero upgrade — "属性" + "技能" in bottom_bar
+    # 8b. Battle formation — "一键上阵" button in bottom_bar
+    _bottom_btn_texts = {
+        elem.get("text", "")
+        for elem in screen.get("bottom_bar", [])
+        if elem.get("type") == "button"
+    }
+    if any("上阵" in t for t in _bottom_btn_texts):
+        return "battle_formation"
+
+    # 8c. Hero upgrade — "属性" + "技能" in bottom_bar
     _bottom_texts = {
         elem.get("value", "")
         for elem in screen.get("bottom_bar", [])

@@ -634,6 +634,32 @@ class GameBot:
                 time.sleep(60)
             return True
 
+        # Battle formation — tap "一键上阵" then "出战" (gold button).
+        if scene == "battle_formation":
+            logger.info(
+                "Battle formation detected — tapping '一键上阵' "
+                "then '出战'"
+            )
+            if not dry_run:
+                # Find 一键上阵 button position from DOM
+                deploy_pos = None
+                gold_pos = None
+                for region in ("top_bar", "center", "bottom_bar"):
+                    for elem in dom.get("screen", {}).get(region, []):
+                        if elem.get("type") != "button":
+                            continue
+                        if "上阵" in elem.get("text", ""):
+                            deploy_pos = elem["pos"]
+                        elif elem.get("color") == "gold":
+                            gold_pos = elem["pos"]
+                if deploy_pos:
+                    self.adb.tap(deploy_pos[0], deploy_pos[1])
+                    time.sleep(1.0)
+                if gold_pos:
+                    self.adb.tap(gold_pos[0], gold_pos[1])
+                    time.sleep(1.0)
+            return True
+
         # Shooting mini-game — swipe right to aim and wait.
         if scene == "shoot_mini_game":
             logger.info(
