@@ -79,6 +79,7 @@
       {"type": "button", "text_match": "返回小镇", "action": "tap"},
       {"type": "button", "text_match": "继续", "action": "tap"},
       {"type": "icon", "name": "close_x", "action": "tap"},
+      {"type": "icon", "name": "close_x_flag", "action": "tap"},
       {"type": "button", "text_match": "关闭|close", "action": "tap"},
       {"action": "tap_blank"}
     ],
