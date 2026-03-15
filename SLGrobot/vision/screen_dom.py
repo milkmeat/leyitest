@@ -73,7 +73,17 @@ def infer_scene(dom: dict, screenshot: np.ndarray) -> str:
     if "shoot_mini_game" in icon_names:
         return "shoot_mini_game"
 
-    # 6-7. Primary scenes
+    # 6. Building upgrade panel — "升级" button in right-center area
+    for region in ("top_bar", "center", "bottom_bar"):
+        for elem in screen.get(region, []):
+            if (elem.get("type") == "button"
+                    and "升级" in elem.get("text", "")
+                    and elem.get("pos", [0, 0])[0] > 700
+                    and 800 < elem.get("pos", [0, 0])[1] < 1050
+                    and elem.get("size", [0, 0])[0] > 150):
+                return "building_upgrade"
+
+    # 7-8. Primary scenes
     if "world" in icon_names:
         return "main_city"
     if "territory" in icon_names:
@@ -318,7 +328,7 @@ class ScreenDOMBuilder:
 
         # Build scaled template cache on first call
         if not hasattr(self, "_scaled_cache"):
-            self._scaled_cache: dict[str, tuple[np.ndarray, np.ndarray | None]] = {}
+            self._scaled_cache: dict[str, tuple[np.ndarray, np.ndarray | None, bool]] = {}
             for name, (template, mask) in self.tm._cache.items():
                 if "tutorial_finger" in name:
                     continue
@@ -330,15 +340,20 @@ class ScreenDOMBuilder:
                 s_tpl = cv2.resize(template, (s_tw, s_th),
                                    interpolation=cv2.INTER_AREA)
                 s_mask = None
+                # Track whether this template needs NCC verification
+                # (masked with <90% opaque pixels)
+                needs_ncc = False
                 if mask is not None:
                     s_mask = cv2.resize(mask, (s_tw, s_th),
                                        interpolation=cv2.INTER_AREA)
-                self._scaled_cache[name] = (s_tpl, s_mask)
+                    opaque_ratio = float((mask[:, :, 0] > 0).sum()) / (th * tw)
+                    needs_ncc = opaque_ratio < 0.9
+                self._scaled_cache[name] = (s_tpl, s_mask, needs_ncc)
 
         threshold = self.tm.threshold
         results = []
 
-        for name, (s_tpl, s_mask) in self._scaled_cache.items():
+        for name, (s_tpl, s_mask, needs_ncc) in self._scaled_cache.items():
             s_th, s_tw = s_tpl.shape[:2]
             if s_tw >= small_w or s_th >= small_h:
                 continue
@@ -391,6 +406,19 @@ class ScreenDOMBuilder:
                 _, roi_max, _, roi_loc = cv2.minMaxLoc(roi_res)
                 if roi_max >= threshold:
                     rx, ry = roi_loc
+                    # NCC verification for low-opacity masked templates
+                    if needs_ncc:
+                        crop = roi[ry:ry + th, rx:rx + tw]
+                        if crop.shape[:2] != (th, tw):
+                            continue
+                        opaque_mask = mask[:, :, 0] > 0
+                        ncc = TemplateMatcher.compute_masked_ncc(
+                            template, crop, opaque_mask)
+                        if ncc < TemplateMatcher._MASKED_NCC_THRESHOLD:
+                            logger.debug(
+                                f"_match_all_fast NCC rejected: {name} "
+                                f"CCORR={roi_max:.3f} ncc={ncc:.3f}")
+                            continue
                     abs_x = roi_x1 + rx + tw // 2
                     abs_y = roi_y1 + ry + th // 2
                     results.append(MatchResult(
