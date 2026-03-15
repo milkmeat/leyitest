@@ -1,0 +1,9 @@
+scene: popup
+required_elements:
+- type: button
+  text_match: 返回小镇
+- type: button
+  text_match: 继续
+auto_action:
+  type: tap
+  reason_match: "tap:button:返回小镇"
