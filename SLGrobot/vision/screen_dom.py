@@ -234,6 +234,7 @@ class ScreenDOMBuilder:
             self._assign_regions(dom, elements)
 
         dom["screen"]["scene"] = infer_scene(dom, screenshot)
+        logger.debug("DOM result:\n%s", self.to_yaml(dom))
         return dom
 
     def to_yaml(self, dom: dict) -> str:
