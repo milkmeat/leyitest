@@ -61,8 +61,17 @@ def infer_scene(dom: dict, screenshot: np.ndarray) -> str:
         return "exit_dialog"
 
     # 3. Loading — pixel analysis (no DOM indicator)
+    # Guard: if buttons with text exist, it's a dark popup (e.g. reward
+    # screen), not a loading screen.
     gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
     if gray.std() < 20 or gray.mean() < 30 or gray.mean() > 240:
+        has_buttons = any(
+            elem.get("type") == "button" and elem.get("text")
+            for region in ("top_bar", "center", "bottom_bar")
+            for elem in screen.get(region, [])
+        )
+        if has_buttons:
+            return "popup"
         return "loading"
 
     # 4. Story dialogue
