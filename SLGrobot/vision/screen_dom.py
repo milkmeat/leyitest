@@ -29,6 +29,64 @@ logger = logging.getLogger(__name__)
 INDICATOR_NEAR_RADIUS = 80
 
 
+def infer_scene(dom: dict, screenshot: np.ndarray) -> str:
+    """Infer scene from DOM elements and screenshot pixels.
+
+    Called at end of build() to set dom["screen"]["scene"].
+    Detection priority: popup > exit_dialog > loading > story_dialogue >
+    shoot_mini_game > main_city > world_map > hero_recruit > hero_upgrade >
+    hero > unknown.
+    """
+    screen = dom.get("screen", {})
+
+    # 1. Popup already detected by PopupDetector
+    if "popup" in screen:
+        return "popup"
+
+    # Collect icon names from all DOM elements
+    icon_names = set()
+    for region in ("top_bar", "center", "bottom_bar"):
+        for elem in screen.get(region, []):
+            if elem.get("type") == "icon":
+                icon_names.add(elem["name"])
+    # Also check popup children (in case popup has icons)
+    popup = screen.get("popup")
+    if popup:
+        for elem in popup.get("children", []):
+            if elem.get("type") == "icon":
+                icon_names.add(elem["name"])
+
+    # 2. Exit dialog
+    if "exit_dialog" in icon_names:
+        return "exit_dialog"
+
+    # 3. Loading — pixel analysis (no DOM indicator)
+    gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
+    if gray.std() < 20 or gray.mean() < 30 or gray.mean() > 240:
+        return "loading"
+
+    # 4. Story dialogue
+    if "down_triangle" in icon_names:
+        return "story_dialogue"
+
+    # 5. Shoot mini game (westgame2)
+    if "shoot_mini_game" in icon_names:
+        return "shoot_mini_game"
+
+    # 6-7. Primary scenes
+    if "world" in icon_names:
+        return "main_city"
+    if "territory" in icon_names:
+        return "world_map"
+
+    # 8-10. Secondary scenes
+    for scene_name in ("hero_recruit", "hero_upgrade", "hero"):
+        if scene_name in icon_names:
+            return scene_name
+
+    return "unknown"
+
+
 class ScreenDOMBuilder:
     """Build a structured DOM from a screenshot.
 
@@ -150,7 +208,7 @@ class ScreenDOMBuilder:
         dom = {
             "screen": {
                 "resolution": [w, h],
-                "scene": "unknown",  # placeholder — Phase 4 adds scene rules
+                "scene": "unknown",  # set by infer_scene() below
             }
         }
 
@@ -175,6 +233,7 @@ class ScreenDOMBuilder:
         else:
             self._assign_regions(dom, elements)
 
+        dom["screen"]["scene"] = infer_scene(dom, screenshot)
         return dom
 
     def to_yaml(self, dom: dict) -> str:

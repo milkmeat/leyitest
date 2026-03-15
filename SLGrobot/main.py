@@ -5,7 +5,7 @@ Supports two modes:
   - Auto mode (--auto): autonomous scene-driven loop
 
 Auto loop flow:
-  screenshot -> classify scene ->
+  screenshot -> build DOM (infer scene) ->
     popup/loading    -> handle -> continue
     tutorial_finger  -> follow tap -> continue
     quest_bar green  -> claim reward -> continue
@@ -400,8 +400,8 @@ class GameBot:
     def auto_loop(self, max_loops: int = 0) -> None:
         """Run the autonomous DOM-driven decision loop with error recovery.
 
-        Decision hierarchy (Phase 3):
-        1. Screenshot → DOM → inject classifier scene
+        Decision hierarchy:
+        1. Screenshot → DOM (with inferred scene)
         2. Special-case pre-check (exit_dialog, shoot_mini_game)
         3. Priority rules via auto_handler.get_action(dom)
         4. Execute winning action
@@ -479,8 +479,9 @@ class GameBot:
                     # 1b. Mark frame for OCR caching
                     self.ocr.set_frame(screenshot)
 
-                    # 2. Classify scene (Phase 4 will replace with DOM scene rules)
-                    scene = self.classifier.classify(screenshot)
+                    # 2. Build DOM (includes scene inference)
+                    dom = self.dom_builder.build(screenshot)
+                    scene = dom["screen"]["scene"]
                     logger.debug(f"Scene: {scene}")
 
                     # 2a. Save loop screenshot (one per loop)
@@ -525,11 +526,7 @@ class GameBot:
                     if len(scene_history) >= 2 and scene_history[-1] != scene_history[-2]:
                         self.stuck_recovery.reset()
 
-                    # 3. Build DOM and inject classifier scene
-                    dom = self.dom_builder.build(screenshot)
-                    dom.setdefault("screen", {})["scene"] = scene
-
-                    # 3a. Special-case pre-check (can't be expressed as rules)
+                    # 3. Special-case pre-check (can't be expressed as rules)
                     special = self._process_scene(screenshot, scene, dom)
                     if special:
                         continue
@@ -649,23 +646,17 @@ class GameBot:
     def simulate_auto_iteration(self, screenshot) -> None:
         """Simulate one auto-loop iteration on a static screenshot.
 
-        Builds DOM, classifies scene, matches priority rules — all in
+        Builds DOM (with inferred scene), matches priority rules — all in
         dry_run mode (no ADB actions, no sleeps, no persistence).
         """
         # 1b. Mark frame for OCR caching
         self.ocr.set_frame(screenshot)
 
-        # 2. Classify scene
-        scene = self.classifier.classify(screenshot)
-        scores = self.classifier.get_confidence(screenshot)
-        print(f"Scene: {scene}")
-        for s, score in sorted(scores.items(), key=lambda x: -x[1]):
-            if score > 0:
-                print(f"  {s}: {score:.3f}")
-
-        # 3. Build DOM and inject scene
+        # 2. Build DOM (includes scene inference)
         dom = self.dom_builder.build(screenshot)
-        dom.setdefault("screen", {})["scene"] = scene
+        scene = dom["screen"]["scene"]
+        print(f"Scene: {scene}")
+
         yaml_str = self.dom_builder.to_yaml(dom)
         print(f"\nDOM:\n{yaml_str}")
 
@@ -1516,7 +1507,15 @@ class CLI:
                 print("No game profile loaded (using built-in defaults)")
 
     def cmd_auto(self, args: list[str]) -> None:
-        max_loops = int(args[0]) if args else 0
+        max_loops = 0
+        i = 0
+        while i < len(args):
+            if args[i] == "--loops" and i + 1 < len(args):
+                max_loops = int(args[i + 1])
+                i += 2
+            else:
+                max_loops = int(args[i])
+                i += 1
         self.bot.auto_loop(max_loops)
 
     def cmd_help(self, args: list[str]) -> None:
