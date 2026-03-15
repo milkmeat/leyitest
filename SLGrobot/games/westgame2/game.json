@@ -102,7 +102,7 @@
     ],
     "building_upgrade": [
       {"type": "finger", "action": "tap_fingertip"},
-      {"type": "button", "text_match": "升级", "color_match": "blue", "action": "tap"},
+      {"type": "button", "text_match": "升级|建造|下一个", "color_match": "blue", "action": "tap"},
       {"action": "tap_blank"}
     ],
     "hero_upgrade": [

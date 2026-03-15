@@ -82,13 +82,15 @@ def infer_scene(dom: dict, screenshot: np.ndarray) -> str:
     if "shoot_mini_game" in icon_names:
         return "shoot_mini_game"
 
-    # 6. Building upgrade panel — "升级" button in known positions:
+    # 6. Building upgrade panel — "升级/建造/下一个" button in known positions:
     #    - right-center (x>700, 800<y<1050): side panel layout
     #    - bottom-center (x<700, y>1700): bottom panel layout
+    _upgrade_keywords = ("升级", "建造", "下一个")
     for region in ("top_bar", "center", "bottom_bar"):
         for elem in screen.get(region, []):
+            btn_text = elem.get("text", "")
             if (elem.get("type") == "button"
-                    and "升级" in elem.get("text", "")
+                    and any(kw in btn_text for kw in _upgrade_keywords)
                     and elem.get("size", [0, 0])[0] > 150):
                 ex, ey = elem.get("pos", [0, 0])
                 if ((ex > 700 and 800 < ey < 1050)
