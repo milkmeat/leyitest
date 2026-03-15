@@ -73,6 +73,9 @@ class GameProfile:
     # YAML scripts directory (v2 script runner)
     scripts_dir: str = ""
 
+    # DOM-based auto-handler priority rules (Phase 3)
+    auto_priorities: dict[str, list[dict]] = field(default_factory=dict)
+
 
 def load_game_profile(game_id: str,
                       games_dir: str = "games") -> GameProfile:
@@ -149,6 +152,9 @@ def load_game_profile(game_id: str,
 
         # Scripts directory
         scripts_dir=os.path.join(game_dir, "scripts"),
+
+        # Auto priorities
+        auto_priorities=data.get("auto_priorities", {}),
     )
 
     logger.info(f"Loaded game profile: {profile.display_name} ({game_id})")
