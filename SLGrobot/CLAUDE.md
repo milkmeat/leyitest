@@ -54,7 +54,7 @@ The auto loop is scene-first: each iteration takes a screenshot, classifies the 
 | `vision/` | Visual Perception | Template matching, OCR text detection, grid overlay, element detection, building finder |
 | `scene/` | Scene Understanding | Scene classification, popup detection/auto-close, scene-specific handlers |
 | `state/` | State Management | In-memory game state, OCR-based state extraction, JSON persistence |
-| `brain/` | Decision Making | Quest script runner, auto-handler, LLM planner, stuck recovery |
+| `brain/` | Decision Making | YAML script runner, auto-handler, LLM planner, stuck recovery |
 | `executor/` | Execution Pipeline | Action validation → execution (with retry) → result verification |
 | `utils/` | Utilities | Logging (console + `.log` + `.jsonl`), image helpers |
 
@@ -84,11 +84,19 @@ All modules exchange actions as dicts with a `type` field:
 
 Scene types: `main_city`, `world_map`, `hero`, `hero_recruit`, `battle`, `popup`, `loading`, `unknown`
 
-### Quest Scripting System
+### Quest Scripting System (YAML)
 
-Game operations are defined as JSON quest scripts in `games/<id>/game.json` under `quest_scripts`. Each script has an optional `name` (English identifier) and a `pattern` (Chinese regex). CLI supports bilingual matching: `quest claim_quest_reward` or `quest 领取任务奖励` both work (name match first, then pattern regex). Scripts are multi-step sequences with verbs: `tap_xy`, `tap_text`, `tap_icon`, `swipe`, `wait_text`, `ensure_main_city`, `ensure_world_map`, `read_text`, `eval`, `find_building`. Executed by `QuestScriptRunner` (`brain/quest_script.py`), triggered automatically via quest bar matching or manually via `quest` CLI command. See `quest_scripting.md` for full reference.
+Game operations are defined as YAML scripts in `games/<id>/scripts/*.yaml`. Each script has `name`, optional `pattern` (Chinese regex for auto-matching), and `steps`. CLI supports bilingual matching: `quest claim_quest_reward` or `quest 领取任务奖励` both work (name match first, then pattern regex). Executed by `ScriptRunner` (`brain/script_runner.py`) via `quest` CLI command.
 
-Quest script MD 文件中图标引用直接写文件名（如 `[[upgrade_arrow.png]]`），生成 JSON 时去掉 `.png` 扩展名即可（如 `"upgrade_arrow"`）。`QuestScriptRunner` 的 `tap_icon` 直接调用 `TemplateMatcher`。
+**Action types**: `tap`, `swipe`, `wait`, `wait_for`, `if`, `ensure_main_city`, `ensure_world_map`, `find_building`, `read_text`, `eval`
+
+**Target types** (for `tap` and `wait_for`):
+- `{type: text, value: "升级", nth: -1}` — direct OCR (no DOM), supports `nth`/`region`
+- `{type: icon, name: "close_x"}` — direct template matching (no DOM)
+- `{type: primary_button}` — HSV color detection
+- `{type: button, text: "确定"}` — DOM lookup
+
+**Key features**: `repeat`/`optional` on any step, `{var_name}` variable substitution, smart target dispatch (text/icon bypass DOM for performance).
 
 ### Template Matcher 路径规则
 
@@ -105,6 +113,14 @@ Quest script MD 文件中图标引用直接写文件名（如 `[[upgrade_arrow.p
 ### Building Finder
 
 `BuildingFinder` (`vision/building_finder.py`) finds and taps buildings on the scrollable city map. It uses a press-drag-read technique: ADB swipe reveals building names, a concurrent screenshot + OCR identifies the target, then taps at the compensated position after the swipe ends. Integrated as the `find_building` quest script verb and action type. Configuration in `game.json` under `city_layout`. See `docs/building_finder.md` for details.
+
+### Screen DOM（视觉 DOM）
+
+`vision/screen_dom.py` 构建的 Screen DOM 是**纯视觉层面的结构化描述**，不是 Android 系统 DOM（UIAutomator / Accessibility Tree）。它从截图中通过 OCR + 模板匹配提取所有可见元素，组织成结构化 YAML（分区域：top_bar、center、bottom_bar、popup 等）。
+
+- **用途**：仅用于**场景分类**（`infer_scene()`），不参与 Quest Script 的元素定位
+- **不使用系统 DOM 的原因**：SLG 游戏 UI 通常是自绘的（Canvas/OpenGL），Android 系统 DOM dump 无法获取游戏内部 UI 元素，OCR + 模板匹配是更可靠的方案
+- **Quest Script 元素识别方式**：全部基于纯视觉——OCR 找文字（`tap_text`）、模板匹配找图标（`tap_icon`）、HSV 颜色检测找按钮（`tap_primary_button`）、固定坐标（`tap_xy`）
 
 ## Configuration
 

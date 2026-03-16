@@ -1,0 +1,30 @@
+name: train
+pattern: "训练.*?(?P<troop_type>步兵|骑兵|远程兵)"
+description: "定位兵营并训练指定兵种"
+steps:
+  - action: ensure_main_city
+    max_retries: 10
+    wait: 1.5
+
+  - action: find_building
+    building: "步兵营"
+    scroll: true
+    max_attempts: 3
+    wait: 2.0
+    repeat: 2
+
+  - action: tap
+    target: {type: icon, name: "train_brawler"}
+    wait: 2.0
+
+  - action: tap
+    target: {type: text, value: "{troop_type}", nth: -1}
+    wait: 1.5
+
+  - action: tap
+    target: {type: text, value: "训练", nth: -1}
+    wait: 1.5
+
+  - action: tap
+    target: {type: icon, name: "back_arrow"}
+    wait: 1.5

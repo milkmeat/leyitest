@@ -64,9 +64,6 @@ class GameProfile:
     # OCR error corrections (common misrecognitions)
     ocr_corrections: dict[str, str] = field(default_factory=dict)
 
-    # Quest scripts (multi-step patterns)
-    quest_scripts: list[dict] = field(default_factory=list)
-
     # Brief pause (seconds) at the start of each auto-loop iteration
     loop_start_sleep: float = 0.7
 
@@ -153,9 +150,6 @@ def load_game_profile(game_id: str,
 
         # OCR corrections
         ocr_corrections=data.get("ocr_corrections", {}),
-
-        # Quest scripts
-        quest_scripts=data.get("quest_scripts", []),
 
         # Loop start sleep
         loop_start_sleep=data.get("loop_start_sleep", 0.7),

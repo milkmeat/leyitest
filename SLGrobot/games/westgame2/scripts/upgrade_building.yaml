@@ -1,0 +1,59 @@
+name: upgrade_building
+pattern: "将?(?P<building>.+?)升[至级]"
+description: "定位建筑并执行升级操作"
+steps:
+  - action: ensure_main_city
+    max_retries: 10
+    wait: 1.5
+
+  - action: find_building
+    building: "{building}"
+    scroll: true
+    max_attempts: 3
+    wait: 2.0
+
+  - action: tap
+    target: {type: text, value: "建造"}
+    wait: 2.0
+    optional: true
+
+  - action: tap
+    target: {type: icon, name: "upgrade_arrow"}
+    wait: 2.0
+    optional: true
+
+  - action: tap
+    target: {type: text, value: "升级"}
+    wait: 2.0
+    repeat: 5
+    optional: true
+
+  - action: tap
+    target: {type: text, value: "建造"}
+    wait: 2.0
+    repeat: 2
+    optional: true
+
+  - action: tap
+    target: {type: text, value: "下一个"}
+    wait: 2.0
+    repeat: 5
+    optional: true
+
+  - action: tap
+    target: {type: text, value: "建造"}
+    wait: 2.0
+    repeat: 2
+    optional: true
+
+  - action: tap
+    target: {type: text, value: "升级"}
+    wait: 2.0
+    repeat: 2
+    optional: true
+
+  - action: tap
+    target: {type: text, value: "升级", nth: -1}
+    wait: 2.0
+    repeat: 2
+    optional: true

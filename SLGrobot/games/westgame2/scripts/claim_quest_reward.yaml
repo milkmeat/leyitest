@@ -1,0 +1,48 @@
+name: claim_quest_reward
+pattern: "领取任务奖励"
+description: "依次打开章节/成长/每日任务，领取所有奖励"
+steps:
+  - action: ensure_main_city
+    max_retries: 10
+    wait: 1.5
+
+  - action: tap
+    pos: [70, 1600]
+    wait: 2.0
+
+  - action: tap
+    target: {type: text, value: "章节任务"}
+    wait: 1.5
+    optional: true
+
+  - action: tap
+    target: {type: text, value: "领取", nth: -1}
+    wait: 1.5
+    repeat: 10
+    optional: true
+
+  - action: tap
+    target: {type: text, value: "成长任务"}
+    wait: 1.5
+    optional: true
+
+  - action: tap
+    target: {type: text, value: "领取", nth: -1}
+    wait: 1.5
+    repeat: 10
+    optional: true
+
+  - action: tap
+    target: {type: text, value: "每日任务"}
+    wait: 1.5
+    optional: true
+
+  - action: tap
+    target: {type: text, value: "领取", nth: -1}
+    wait: 1.5
+    repeat: 10
+    optional: true
+
+  - action: tap
+    target: {type: icon, name: "close_x"}
+    wait: 1.5

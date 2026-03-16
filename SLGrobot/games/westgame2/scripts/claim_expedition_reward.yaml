@@ -1,0 +1,28 @@
+name: claim_expedition_reward
+pattern: "领取远征奖励"
+description: "领取远征奖励并返回主城"
+steps:
+  - action: ensure_main_city
+    max_retries: 10
+    wait: 1.5
+
+  - action: tap
+    target: {type: text, value: "远征"}
+    wait: 1.5
+
+  - action: tap
+    target: {type: text, value: "领取"}
+    wait: 1.5
+
+  - action: tap
+    target: {type: text, value: "领取"}
+    wait: 1.5
+    optional: true
+
+  - action: tap
+    target: {type: text, value: "确定"}
+    wait: 1.5
+
+  - action: tap
+    target: {type: icon, name: "back_arrow"}
+    wait: 1.5

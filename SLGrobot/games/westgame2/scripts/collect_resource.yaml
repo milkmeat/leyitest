@@ -1,0 +1,68 @@
+name: collect_resource
+pattern: "采集(?:资源)?(?P<resource_type>小麦|木材|石材|铁块|银币)"
+description: "在世界地图上搜索并采集指定资源"
+steps:
+  - action: ensure_world_map
+    max_retries: 10
+    wait: 1.5
+
+  - action: tap
+    pos: [65, 1300]
+    wait: 2.0
+
+  - action: tap
+    target: {type: text, value: "木材", nth: -1}
+    region: [0, 1350, 1080, 1500]
+    wait: 1.0
+    optional: true
+
+  - action: tap
+    target: {type: text, value: "铁块", nth: -1}
+    region: [0, 1350, 1080, 1500]
+    wait: 1.0
+    optional: true
+
+  - action: tap
+    pos: [540, 900]
+    wait: 1.5
+
+  - action: tap
+    pos: [65, 1300]
+    wait: 2.0
+
+  - action: tap
+    target: {type: text, value: "石材", nth: -1}
+    region: [0, 1350, 1080, 1500]
+    wait: 1.0
+    optional: true
+
+  - action: tap
+    pos: [540, 900]
+    wait: 1.5
+
+  - action: tap
+    pos: [65, 1300]
+    wait: 2.0
+
+  - action: tap
+    target: {type: text, value: "{resource_type}", nth: -1}
+    region: [0, 1350, 1080, 1500]
+    wait: 1.5
+
+  - action: tap
+    target: {type: text, value: "搜索", nth: -1}
+    wait: 1.5
+
+  - action: tap
+    pos: [540, 700]
+    wait: 1.5
+
+  - action: tap
+    target: {type: text, value: "均衡配置", nth: -1}
+    region: [0, 1700, 1080, 1920]
+    wait: 1.5
+
+  - action: tap
+    target: {type: text, value: "行军", nth: -1}
+    region: [0, 1700, 1080, 1920]
+    wait: 1.5

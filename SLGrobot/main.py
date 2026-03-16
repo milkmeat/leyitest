@@ -40,7 +40,9 @@ from state.persistence import StatePersistence
 from brain.auto_handler import AutoHandler
 from brain.stuck_recovery import StuckRecovery
 from brain.finger_detector import FingerDetector
-from brain.script_runner import ScriptRunner, load_script, list_scripts, ScriptAbortError
+from brain.script_runner import (
+    ScriptRunner, load_script, list_scripts, ScriptAbortError, _step_summary,
+)
 from vision.screen_dom import ScreenDOMBuilder
 from executor.action_validator import ActionValidator
 from executor.action_runner import ActionRunner
@@ -183,12 +185,12 @@ class GameBot:
             game_profile=game_profile,
         )
 
-        # Quest scripts for synchronous execution
-        self._quest_scripts = (
-            game_profile.quest_scripts
-            if game_profile and game_profile.quest_scripts
-            else []
-        )
+        # Quest scripts — loaded from YAML files in scripts_dir
+        self._quest_scripts: list[dict] = []
+        if game_profile and game_profile.scripts_dir:
+            self._quest_scripts = self._load_yaml_quest_scripts(
+                game_profile.scripts_dir
+            )
 
         # Abort cooldown — prevent immediate restart of the same quest
         self._last_abort_time: float = 0.0
@@ -203,6 +205,28 @@ class GameBot:
         self.adb.tap(540, 1820)
         time.sleep(0.3)
         self.adb.tap(540, 100)
+
+    @staticmethod
+    def _load_yaml_quest_scripts(scripts_dir: str) -> list[dict]:
+        """Load all YAML scripts that have a 'pattern' field.
+
+        Returns list of parsed script dicts (each with name, pattern, steps).
+        """
+        scripts = []
+        if not os.path.isdir(scripts_dir):
+            return scripts
+        import glob as _glob
+        for path in sorted(_glob.glob(os.path.join(scripts_dir, "*.yaml"))):
+            try:
+                script = load_script(path)
+                if script.get("pattern"):
+                    scripts.append(script)
+            except (ValueError, Exception) as e:
+                logger.warning(f"Skipping invalid quest script {path}: {e}")
+        logger.info(
+            f"Loaded {len(scripts)} quest script(s) from {scripts_dir}"
+        )
+        return scripts
 
     # -- Quest helpers (synchronous execution) --
 
@@ -245,21 +269,25 @@ class GameBot:
                 return False
         return True
 
-    def _run_quest_script(self, quest_name: str, steps: list[dict],
+    def _run_quest_script(self, quest_name: str, script: dict,
                           regex_match: re.Match | None = None) -> bool:
         """Synchronously execute a quest script (blocks auto loop).
 
-        Returns True if script completed successfully, False on abort/timeout.
-        """
-        from brain.quest_script import QuestScriptRunner
+        Args:
+            quest_name: Display name of the quest.
+            script: Parsed YAML script dict (with 'steps').
+            regex_match: Optional regex match for variable extraction.
 
-        runner = QuestScriptRunner(
+        Returns True if script completed successfully, False on abort.
+        """
+        runner = ScriptRunner(
+            adb=self.adb,
+            dom_builder=self.dom_builder,
+            screenshot_fn=self.screenshot_mgr.capture,
             ocr_locator=self.ocr,
             template_matcher=self.template_matcher,
-            adb_controller=self.adb,
-            screenshot_fn=self.screenshot_mgr.capture,
+            building_finder=self.building_finder,
         )
-        runner.load(steps)
 
         # Extract named regex groups into runner variables
         if regex_match:
@@ -267,65 +295,15 @@ class GameBot:
                 if value is not None:
                     runner.variables[var_name] = value
 
-        max_iterations = len(steps) * 10
-        timeout = 120.0  # seconds
-        start_time = time.time()
-        iteration = 0
-
-        logger.info(f"Running quest script for '{quest_name}' ({len(steps)} steps)")
-
-        while not runner.is_done() and iteration < max_iterations:
-            if time.time() - start_time > timeout:
-                logger.warning(
-                    f"Quest script timeout ({timeout}s) for '{quest_name}'"
-                )
-                self._last_abort_time = time.time()
-                self._last_aborted_quest = quest_name
-                return False
-
-            iteration += 1
-            try:
-                screenshot = self.screenshot_mgr.capture()
-            except Exception as e:
-                logger.error(f"Screenshot failed during quest script: {e}")
-                self._last_abort_time = time.time()
-                self._last_aborted_quest = quest_name
-                return False
-
-            actions = runner.execute_one(screenshot)
-            if actions is None:
-                # Step waiting (e.g. text not found), retry
-                time.sleep(1.0)
-                continue
-
-            if not actions:
-                # No-op step (read_text, eval)
-                continue
-
-            for action in actions:
-                self.runner.execute(action)
-                time.sleep(action.get("delay", 1.0))
-
-        if runner.is_aborted():
-            logger.warning(
-                f"Quest script aborted for '{quest_name}': "
-                f"{runner.abort_reason}"
-            )
+        logger.info(
+            f"Running quest script for '{quest_name}' "
+            f"({len(script['steps'])} steps)"
+        )
+        ok = runner.run(script)
+        if not ok:
             self._last_abort_time = time.time()
             self._last_aborted_quest = quest_name
-            return False
-
-        if runner.is_done():
-            logger.info(f"Quest script completed for '{quest_name}'")
-            return True
-
-        logger.warning(
-            f"Quest script stopped after {iteration} iterations "
-            f"for '{quest_name}'"
-        )
-        self._last_abort_time = time.time()
-        self._last_aborted_quest = quest_name
-        return False
+        return ok
 
     def _try_claim_quest_reward(self) -> bool:
         """Tap green check on quest bar to claim reward.
@@ -924,6 +902,9 @@ class CLI:
             self.bot.adb,
             self.bot.dom_builder,
             self.bot.screenshot_mgr.capture,
+            ocr_locator=self.bot.ocr,
+            template_matcher=self.bot.template_matcher,
+            building_finder=self.bot.building_finder,
         )
         ok = runner.run(script, dry_run=dry_run)
         print(f"\nResult: {'OK' if ok else 'ABORTED'}")
@@ -1042,15 +1023,15 @@ class CLI:
         header = f"{rule_name}  /{pattern}/" if rule_name else f"/{pattern}/"
         print(f"Matched rule: {header} ({len(steps)} steps)")
 
-        # Create standalone runner
-        from brain.quest_script import QuestScriptRunner
-        runner = QuestScriptRunner(
+        # Create runner with full dependencies
+        runner = ScriptRunner(
+            adb=self.bot.adb,
+            dom_builder=self.bot.dom_builder,
+            screenshot_fn=self.bot.screenshot_mgr.capture,
             ocr_locator=self.bot.ocr,
             template_matcher=self.bot.template_matcher,
-            adb_controller=self.bot.adb,
-            screenshot_fn=self.bot.screenshot_mgr.capture,
+            building_finder=self.bot.building_finder,
         )
-        runner.load(steps)
 
         # Extract named regex groups into runner variables
         if matched_match:
@@ -1059,49 +1040,14 @@ class CLI:
                     runner.variables[var_name] = value
                     print(f"  Extracted: {var_name} = '{value}'")
 
-        max_iterations = len(steps) * 10  # safety limit
-        iteration = 0
-
-        while not runner.is_done() and iteration < max_iterations:
-            iteration += 1
-            try:
-                screenshot = self.bot.screenshot_mgr.capture()
-            except Exception as e:
-                print(f"Screenshot failed: {e}")
-                break
-
-            actions = runner.execute_one(screenshot)
-            if actions is None:
-                # Step waiting (e.g. text not found), retry
-                print(f"  Step {runner.step_index + 1}/{len(steps)}: waiting...")
-                time.sleep(1.0)
-                continue
-
-            if not actions:
-                # No-op step (read_text, eval)
-                cur = runner.steps[max(0, runner.step_index - 1)]
-                print(f"  Step {runner.step_index}/{len(steps)}: "
-                      f"{cur.get('description', 'done')}")
-                continue
-
-            # Execute actions
-            for action in actions:
-                delay = action.get("delay", 1.0)
-                desc = action.get("reason", "")
-                print(f"  Step {runner.step_index}/{len(steps)}: "
-                      f"tap ({action.get('x')}, {action.get('y')}) — {desc}")
-                self.bot.runner.execute(action)
-                time.sleep(delay)
-
-        if runner.is_aborted():
-            print(f"Quest script ABORTED: {runner.abort_reason}")
-        elif runner.is_done():
+        ok = runner.run(matched_rule)
+        if ok:
             print(f"Quest script completed ({len(steps)} steps)")
         else:
-            print(f"Quest script stopped after {iteration} iterations")
+            print("Quest script ABORTED")
 
     def cmd_quest_rules(self, args: list[str]) -> None:
-        """List all quest action rules."""
+        """List all quest action rules (YAML scripts with pattern)."""
         rules = self.bot._quest_scripts
         if not rules:
             print("No quest scripts loaded.")
@@ -1111,18 +1057,19 @@ class CLI:
             name = rule.get("name", "")
             pattern = rule.get("pattern", "?")
             steps = rule.get("steps", [])
+            desc = rule.get("description", "")
             header = f"{name}  /{pattern}/" if name else f"/{pattern}/"
             print(f"  {i + 1}. {header}  ({len(steps)} steps)")
+            if desc:
+                print(f"     {desc}")
             for j, step in enumerate(steps):
-                desc = step.get("description", "")
-                verb = "?"
-                for v in ("tap_xy", "tap_text", "tap_icon", "swipe", "wait_text", "ensure_main_city", "ensure_world_map", "read_text", "eval", "find_building"):
-                    if v in step:
-                        verb = f"{v}={step[v]}"
-                        break
+                action = step.get("action", "?")
                 repeat = step.get("repeat", 1)
+                optional = step.get("optional", False)
                 repeat_str = f" x{repeat}" if repeat > 1 else ""
-                print(f"      {j + 1}. {verb}{repeat_str}  {desc}")
+                opt_str = " (optional)" if optional else ""
+                summary = _step_summary(step)
+                print(f"      {j + 1}. {action}: {summary}{repeat_str}{opt_str}")
 
     def cmd_quest_test(self, args: list[str]) -> None:
         """Dry-run a quest script — show steps without executing."""
@@ -1136,7 +1083,7 @@ class CLI:
             print("No quest scripts loaded.")
             return
 
-        matched_rule, _ = self._match_quest_rule(rules, quest_text)
+        matched_rule, matched_match = self._match_quest_rule(rules, quest_text)
 
         if matched_rule is None:
             print(f"No rule matches '{quest_text}'")
@@ -1148,77 +1095,19 @@ class CLI:
         header = f"{name}  /{pattern}/" if name else f"/{pattern}/"
         print(f"Matched: {header}  ({len(steps)} steps)")
         print(f"Dry run for quest text: '{quest_text}'")
+        if matched_match:
+            for var_name, value in matched_match.groupdict().items():
+                if value is not None:
+                    print(f"  Variable: {var_name} = '{value}'")
         print()
-        for i, step in enumerate(steps):
-            desc = step.get("description", "")
-            delay = step.get("delay", 1.0)
-            repeat = step.get("repeat", 1)
-            verb = "?"
-            detail = ""
-            if "tap_xy" in step:
-                verb = "tap_xy"
-                detail = f"({step['tap_xy'][0]}, {step['tap_xy'][1]})"
-            elif "tap_text" in step:
-                args_val = step["tap_text"]
-                if isinstance(args_val, str):
-                    args_val = [args_val]
-                verb = "tap_text"
-                detail = f"'{args_val[0]}'"
-                if len(args_val) > 1:
-                    detail += f" (#{args_val[1]})"
-            elif "tap_icon" in step:
-                args_val = step["tap_icon"]
-                if isinstance(args_val, str):
-                    args_val = [args_val]
-                verb = "tap_icon"
-                detail = f"'{args_val[0]}'"
-                if len(args_val) > 1:
-                    detail += f" (#{args_val[1]})"
-            elif "swipe" in step:
-                verb = "swipe"
-                args_val = step["swipe"]
-                detail = f"({args_val[0]},{args_val[1]})->({args_val[2]},{args_val[3]})"
-                if len(args_val) > 4:
-                    detail += f" {args_val[4]}ms"
-            elif "wait_text" in step:
-                args_val = step["wait_text"]
-                if isinstance(args_val, str):
-                    args_val = [args_val]
-                verb = "wait_text"
-                detail = f"'{args_val[0]}'"
-            elif "ensure_main_city" in step:
-                verb = "ensure_main_city"
-                args_val = step.get("ensure_main_city", [])
-                if isinstance(args_val, list) and args_val:
-                    detail = f"max_retries={args_val[0]}"
-                else:
-                    detail = "max_retries=10"
-            elif "ensure_world_map" in step:
-                verb = "ensure_world_map"
-                args_val = step.get("ensure_world_map", [])
-                if isinstance(args_val, list) and args_val:
-                    detail = f"max_retries={args_val[0]}"
-                else:
-                    detail = "max_retries=10"
-            elif "read_text" in step:
-                verb = "read_text"
-                detail = f"({step['read_text'][0]}, {step['read_text'][1]}) -> ${step['read_text'][2]}"
-            elif "eval" in step:
-                verb = "eval"
-                detail = f"${step['eval'][0]} = {step['eval'][1]}"
-            elif "find_building" in step:
-                verb = "find_building"
-                args_val = step["find_building"]
-                if isinstance(args_val, str):
-                    args_val = [args_val]
-                detail = f"'{args_val[0]}'"
-                if len(args_val) > 1 and isinstance(args_val[1], dict):
-                    detail += f" opts={args_val[1]}"
 
-            repeat_str = f" x{repeat}" if repeat > 1 else ""
-            print(f"  {i + 1}. [{verb}] {detail}  delay={delay}s{repeat_str}")
-            if desc:
-                print(f"     {desc}")
+        # Use ScriptRunner dry_run mode
+        runner = ScriptRunner(
+            adb=self.bot.adb,
+            dom_builder=self.bot.dom_builder,
+            screenshot_fn=self.bot.screenshot_mgr.capture,
+        )
+        runner.run(matched_rule, dry_run=True)
 
     def cmd_detect_finger(self, args: list[str]) -> None:
         """Detect tutorial finger on screen and save debug crop."""

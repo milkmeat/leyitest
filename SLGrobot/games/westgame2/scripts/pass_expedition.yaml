@@ -1,0 +1,31 @@
+name: pass_expedition
+pattern: "通过.*远征"
+description: "进入远征战斗并完成一轮"
+steps:
+  - action: ensure_main_city
+    max_retries: 10
+    wait: 1.5
+
+  - action: tap
+    target: {type: text, value: "远征"}
+    wait: 1.5
+
+  - action: tap
+    target: {type: text, value: "开始战斗"}
+    wait: 1.5
+
+  - action: tap
+    target: {type: text, value: "一键上阵"}
+    wait: 1.5
+
+  - action: tap
+    pos: [900, 1870]
+    wait: 3.0
+
+  - action: wait_for
+    target: {type: text, value: "返回小镇"}
+    timeout: 60
+
+  - action: tap
+    target: {type: text, value: "返回小镇"}
+    wait: 1.5
