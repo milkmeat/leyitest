@@ -43,12 +43,17 @@ def infer_scene(dom: dict, screenshot: np.ndarray) -> str:
     if "popup" in screen:
         return "popup"
 
-    # Collect icon names from all DOM elements
+    # Collect icon names and max confidence from all DOM elements
     icon_names = set()
+    icon_max_conf: dict[str, float] = {}
     for region in ("top_bar", "center", "bottom_bar"):
         for elem in screen.get(region, []):
             if elem.get("type") == "icon":
-                icon_names.add(elem["name"])
+                name = elem["name"]
+                icon_names.add(name)
+                conf = elem.get("confidence", 0)
+                if conf > icon_max_conf.get(name, 0):
+                    icon_max_conf[name] = conf
     # Also check popup children (in case popup has icons)
     popup = screen.get("popup")
     if popup:
@@ -74,8 +79,10 @@ def infer_scene(dom: dict, screenshot: np.ndarray) -> str:
             return "popup"
         return "loading"
 
-    # 4. Story dialogue
-    if "down_triangle" in icon_names:
+    # 4. Story dialogue — requires high-confidence down_triangle (>= 0.75).
+    #    At lower game thresholds (e.g. 0.6) down_triangle can false-match
+    #    UI elements on non-dialogue screens.
+    if icon_max_conf.get("down_triangle", 0) >= 0.75:
         return "story_dialogue"
 
     # 5. Shoot mini game (westgame2)

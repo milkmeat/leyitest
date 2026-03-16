@@ -46,7 +46,9 @@
     "返回领地", "关闭", "确定", "确认", "取消", "返回", "领取", "前往", "全部领取"
   ],
 
-  "finger_ncc_threshold": 0.68,
+  "template_match_threshold": 0.6,
+  "finger_ncc_threshold": 0.55,
+  "finger_boundary_threshold": 12.0,
 
   "grid_cols": 8,
   "grid_rows": 6,

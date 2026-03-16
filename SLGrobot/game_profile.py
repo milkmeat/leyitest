@@ -53,6 +53,9 @@ class GameProfile:
     grid_cols: int = 8
     grid_rows: int = 6
 
+    # Template matching threshold (0.0 = use class default)
+    template_match_threshold: float = 0.0
+
     # Finger detection — NCC threshold (0.0 = use class default)
     finger_ncc_threshold: float = 0.0
     # Finger detection — boundary contrast threshold (0.0 = use class default)
@@ -137,6 +140,9 @@ def load_game_profile(game_id: str,
         # Grid
         grid_cols=data.get("grid_cols", 8),
         grid_rows=data.get("grid_rows", 6),
+
+        # Template matching
+        template_match_threshold=data.get("template_match_threshold", 0.0),
 
         # Finger detection
         finger_ncc_threshold=data.get("finger_ncc_threshold", 0.0),

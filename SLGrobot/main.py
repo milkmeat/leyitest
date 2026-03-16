@@ -113,7 +113,8 @@ class GameBot:
         self.screenshot_mgr = ScreenshotManager(self.adb, config.SCREENSHOT_DIR)
 
         # Vision layer
-        self.template_matcher = TemplateMatcher(template_dir)
+        threshold = game_profile.template_match_threshold if game_profile else None
+        self.template_matcher = TemplateMatcher(template_dir, threshold or None)
         ocr_corrections = game_profile.ocr_corrections if game_profile else {}
         self.ocr = OCRLocator(corrections=ocr_corrections)
         self.grid = GridOverlay(grid_cols, grid_rows)

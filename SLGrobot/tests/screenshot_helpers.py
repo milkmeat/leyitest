@@ -52,7 +52,7 @@ def build_pipeline(game_id: str) -> dict:
 
     profile = load_game_profile(game_id)
     ocr = OCRLocator(corrections=profile.ocr_corrections)
-    tm = TemplateMatcher(profile.template_dir)
+    tm = TemplateMatcher(profile.template_dir, profile.template_match_threshold or None)
     grid = GridOverlay(profile.grid_cols, profile.grid_rows)
     detector = ElementDetector(tm, ocr, grid)
     finger = FingerDetector(detector, profile)
