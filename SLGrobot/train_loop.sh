@@ -5,9 +5,9 @@
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
-RESOURCES=("木材" "石材" "铁块")
+RESOURCES=("木材" "石材" "铁块" "小麦")
 TROOPS=("步兵" "骑兵" "远程兵")
-INTERVAL=$((70 * 60))  # 70分钟，单位秒
+INTERVAL=$((80 * 60))  # 70分钟，单位秒
 
 echo "=== 训练循环启动 ==="
 echo "每轮采集: ${RESOURCES[*]}"

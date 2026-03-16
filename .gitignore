@@ -118,3 +118,4 @@ cython_debug/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+SLGrobot/.claude/settings.local.json
