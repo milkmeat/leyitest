@@ -174,7 +174,8 @@ class ScreenDOMBuilder:
         self.finger_detector = finger_detector
         self.button_detector = ButtonDetector()
         self.indicator_detector = IndicatorDetector()
-        self.popup_detector = PopupDetector()
+        popup_dr = game_profile.popup_darkness_ratio if game_profile else 0.0
+        self.popup_detector = PopupDetector(darkness_ratio=popup_dr)
 
         # Region boundaries (from game_profile or defaults)
         if game_profile is not None:

@@ -25,6 +25,18 @@ class PopupDetector:
     # Minimum popup area as fraction of screen area
     MIN_POPUP_AREA_RATIO = 0.05
 
+    def __init__(self, darkness_ratio: float = 0.0) -> None:
+        """Initialize PopupDetector.
+
+        Args:
+            darkness_ratio: Per-game override for DARKNESS_RATIO.
+                            0.0 means use the class default (0.5).
+        """
+        if darkness_ratio > 0:
+            self.darkness_ratio = darkness_ratio
+        else:
+            self.darkness_ratio = self.DARKNESS_RATIO
+
     def detect(self, screenshot: np.ndarray) -> tuple[int, int, int, int] | None:
         """Detect popup overlay and return its bounds.
 
@@ -52,7 +64,7 @@ class PopupDetector:
         # Check popup condition
         if center_mean <= self.MIN_CENTER_BRIGHTNESS:
             return None
-        if border_mean >= center_mean * self.DARKNESS_RATIO:
+        if border_mean >= center_mean * self.darkness_ratio:
             return None
 
         logger.debug(

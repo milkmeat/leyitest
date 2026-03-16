@@ -79,6 +79,9 @@ class GameProfile:
     # DOM-based auto-handler priority rules (Phase 3)
     auto_priorities: dict[str, list[dict]] = field(default_factory=dict)
 
+    # Popup detector — darkness ratio override (0.0 = use class default 0.5)
+    popup_darkness_ratio: float = 0.0
+
     # DOM region boundaries (Phase 4)
     dom_top_y: int = 200       # top_bar 下界
     dom_bottom_y: int = 1700   # bottom_bar 上界
@@ -165,6 +168,9 @@ def load_game_profile(game_id: str,
 
         # Auto priorities
         auto_priorities=data.get("auto_priorities", {}),
+
+        # Popup detector
+        popup_darkness_ratio=data.get("popup_darkness_ratio", 0.0),
 
         # DOM region boundaries
         dom_top_y=data.get("dom_top_y", 200),
