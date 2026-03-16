@@ -7,7 +7,7 @@ cd "$SCRIPT_DIR"
 
 RESOURCES=("木材" "石材" "铁块" "小麦")
 TROOPS=("步兵" "骑兵" "远程兵")
-INTERVAL=$((80 * 60))  # 70分钟，单位秒
+INTERVAL=$((85 * 60))  # 70分钟，单位秒
 
 echo "=== 训练循环启动 ==="
 echo "每轮采集: ${RESOURCES[*]}"
@@ -85,7 +85,7 @@ while true; do
         fi
     done
 
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] 第${cycle}轮完成，等待 70 分钟..."
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] 第${cycle}轮完成，等待 85 分钟..."
     cycle=$((cycle + 1))
     sleep $INTERVAL
 done

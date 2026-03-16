@@ -51,7 +51,7 @@ steps:
 
   - action: tap
     target: {type: text, value: "搜索", nth: -1}
-    wait: 1.5
+    wait: 5
 
   - action: tap
     pos: [540, 700]
