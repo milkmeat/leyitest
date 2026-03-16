@@ -8,7 +8,6 @@
   },
   "buildings": {},
   "troops_marching": [],
-  "task_queue": [],
   "last_actions": [
     {
       "timestamp": "2026-02-21T14:01:48.920045",
@@ -232,14 +231,11 @@
     }
   ],
   "cooldowns": {},
-  "last_llm_consult": "2026-02-20T16:32:36.883246",
   "last_update": "2026-02-21T14:05:25.528580",
   "loop_count": 1328,
   "quest_bar_visible": true,
   "quest_bar_has_red_badge": false,
   "quest_bar_current_quest": "将驻防站升至2级。",
   "quest_bar_has_green_check": false,
-  "quest_bar_has_tutorial_finger": true,
-  "quest_workflow_phase": "execute_quest",
-  "quest_workflow_target": "将6号起居室升至3."
+  "quest_bar_has_tutorial_finger": true
 }
