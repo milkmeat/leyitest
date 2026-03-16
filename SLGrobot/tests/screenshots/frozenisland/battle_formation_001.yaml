@@ -1,0 +1,6 @@
+scene: battle_formation
+required_elements:
+- type: finger
+auto_action:
+  type: tap
+  reason_match: "tap_fingertip"

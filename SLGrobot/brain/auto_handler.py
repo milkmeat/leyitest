@@ -1,177 +1,228 @@
-"""Auto Handler - Instant automatic operations (<100ms).
+"""Auto Handler - DOM-based priority rule engine for the auto loop.
 
-Handles:
-- Close known popups (identified by content, then tap close_x)
-- Claim rewards (detect red dots / reward indicators)
-- Skip loading/waiting screens
+Phase 3 rewrite: replaces template-matching approach with DOM-driven
+priority rules. Each scene has an ordered list of rules; the first
+matching rule produces the action.
+
+Priority rules are defined per-game in ``game.json`` under
+``auto_priorities``. Format::
+
+    "auto_priorities": {
+        "popup": [
+            {"type": "button", "text_match": "领取|claim", "action": "tap"},
+            {"type": "icon", "name": "close_x", "action": "tap"},
+            {"action": "tap_blank"}
+        ],
+        "_default": [
+            {"type": "finger", "action": "tap_fingertip"},
+            {"action": "tap_blank"}
+        ]
+    }
 """
 
 import logging
+import re
 
-import numpy as np
-
-from vision.template_matcher import TemplateMatcher
-from vision.element_detector import ElementDetector, Element, is_gray_button
-from state.game_state import GameState
+from brain.script_runner import _flatten_elements, find_element
 
 logger = logging.getLogger(__name__)
 
 
-class AutoHandler:
-    """Instant auto-actions: close popups, claim rewards, skip loading.
+def match_priority(dom: dict, rules: list[dict]) -> dict | None:
+    """Match first priority rule against DOM elements.
 
-    These actions are safe to execute without any strategic planning.
-    They run every loop iteration and should complete in <100ms.
+    Iterates rules in order. For each rule, searches DOM elements
+    for a match. Returns the action dict for the first matching rule,
+    or None if no rule matched.
+
+    Returns:
+        Action dict: {"type": "tap", "x": ..., "y": ..., "reason": ...}
+        or None if no rule matched.
     """
+    elements = _flatten_elements(dom)
 
-    # Known popup patterns: (identifier_template, close_template)
-    # When identifier is matched, tap the close template to dismiss.
-    KNOWN_POPUPS = [
-        ("buttons/view", "buttons/close_x"),       # Alliance recruit message
-    ]
+    for rule in rules:
+        rule_type = rule.get("type")
 
-    # Templates that indicate claimable rewards
-    REWARD_TEMPLATES = [
-        "buttons/claim",
-        "buttons/collect",
-        "buttons/ok",
-        "buttons/confirm",
-    ]
+        # Unconditional fallback (no type specified)
+        if rule_type is None:
+            action_name = rule.get("action", "tap_blank")
+            return _make_fallback_action(action_name, rule)
 
-    # Text patterns for auto-actions (OCR-based)
-    CLOSE_TEXT_PATTERNS = ["关闭", "close", "×", "X"]
-    CLAIM_TEXT_PATTERNS = ["领取", "claim", "collect", "收集", "一键领取"]
+        # Type-based matching
+        matched_elem = _match_rule_against_elements(rule, rule_type, elements)
+        if matched_elem is not None:
+            return _make_element_action(rule, rule_type, matched_elem)
 
-    def __init__(self, template_matcher: TemplateMatcher,
-                 element_detector: ElementDetector,
-                 game_profile=None) -> None:
-        self.template_matcher = template_matcher
-        self.detector = element_detector
-        if game_profile:
-            if game_profile.known_popups:
-                self._known_popups = [tuple(p) for p in game_profile.known_popups]
-            else:
-                self._known_popups = self.KNOWN_POPUPS
-            self._reward_templates = (
-                game_profile.reward_templates or self.REWARD_TEMPLATES)
-            self._close_text_patterns = (
-                game_profile.close_text_patterns or self.CLOSE_TEXT_PATTERNS)
-            self._claim_text_patterns = (
-                game_profile.claim_text_patterns or self.CLAIM_TEXT_PATTERNS)
-        else:
-            self._known_popups = self.KNOWN_POPUPS
-            self._reward_templates = self.REWARD_TEMPLATES
-            self._close_text_patterns = self.CLOSE_TEXT_PATTERNS
-            self._claim_text_patterns = self.CLAIM_TEXT_PATTERNS
+    return None
 
-    def get_actions(self, screenshot: np.ndarray, game_state: GameState) -> list[dict]:
-        """Detect and return auto-actions for the current screen.
 
-        Returns list of action dicts ready for execution.
-        Actions are ordered by priority: popups first, then rewards.
-        """
-        actions = []
+def _match_rule_against_elements(
+    rule: dict, rule_type: str, elements: list[dict]
+) -> dict | None:
+    """Find the first DOM element matching a priority rule.
 
-        # 1. Close popups
-        popup_action = self._check_popup(screenshot)
-        if popup_action:
-            actions.append(popup_action)
-            return actions  # Close popup first, then re-evaluate
+    Returns the matching element dict, or None.
+    """
+    for elem in elements:
+        if elem.get("type") != rule_type:
+            continue
 
-        # 2. Claim visible rewards / red dots
-        reward_action = self._check_rewards(screenshot)
-        if reward_action:
-            actions.append(reward_action)
+        # Type-specific attribute matching
+        if rule_type == "button":
+            text_match = rule.get("text_match")
+            color_match = rule.get("color_match")
+            if text_match:
+                elem_text = elem.get("text", "")
+                if not re.search(text_match, elem_text, re.IGNORECASE):
+                    continue
+            if color_match:
+                elem_color = elem.get("color", "")
+                if not re.search(color_match, elem_color, re.IGNORECASE):
+                    continue
+            if "has_red_text" in rule:
+                if elem.get("has_red_text", False) != rule["has_red_text"]:
+                    continue
 
-        # 3. Skip loading screens
-        skip_action = self._check_loading(screenshot, game_state)
-        if skip_action:
-            actions.append(skip_action)
+        elif rule_type == "text":
+            value_match = rule.get("value_match")
+            if value_match:
+                elem_value = elem.get("value", "")
+                if not re.search(value_match, elem_value, re.IGNORECASE):
+                    continue
 
-        return actions
-
-    def _check_popup(self, screenshot: np.ndarray) -> dict | None:
-        """Check for known dismissible popups by content, then tap close button.
-
-        Each known popup is identified by a content template (e.g. "查看" button
-        for alliance recruitment). Only when the identifier matches do we look
-        for the corresponding close button. This avoids accidentally closing
-        dialogs that the bot intentionally opened.
-        """
-        for identifier, close_template in self._known_popups:
-            id_match = self.template_matcher.match_one(screenshot, identifier)
-            if id_match is None:
+        elif rule_type == "icon":
+            name = rule.get("name", "")
+            elem_name = elem.get("name", "")
+            if name != elem_name:
                 continue
 
-            # Identifier matched — find the close button
-            close_match = self.template_matcher.match_one(screenshot, close_template)
-            if close_match is not None:
-                logger.info(
-                    f"Auto: known popup detected ('{identifier}'), "
-                    f"closing via '{close_template}' at ({close_match.x}, {close_match.y})"
-                )
-                return {
-                    "type": "tap",
-                    "x": close_match.x,
-                    "y": close_match.y,
-                    "delay": 0.5,
-                    "reason": f"auto_close_popup:{identifier}",
-                }
+        # finger, red_dot, green_check — type-only match (no extra attrs)
 
-            logger.warning(
-                f"Auto: popup identified ('{identifier}') but close button "
-                f"'{close_template}' not found"
+        return elem
+
+    return None
+
+
+def _make_element_action(
+    rule: dict, rule_type: str, elem: dict
+) -> dict:
+    """Create an action dict from a matched element."""
+    action_name = rule.get("action", "tap")
+    pos = elem.get("pos", [540, 960])
+
+    if action_name == "tap_fingertip" and rule_type == "finger":
+        # Use fingertip position if available
+        fingertip = elem.get("fingertip")
+        if fingertip:
+            pos = fingertip
+
+    x, y = pos[0], pos[1]
+    reason = _build_reason(rule, elem)
+
+    return {
+        "type": "tap",
+        "x": x,
+        "y": y,
+        "delay": 0.5,
+        "reason": reason,
+    }
+
+
+def _make_fallback_action(action_name: str, rule: dict) -> dict:
+    """Create an action dict for unconditional fallback rules."""
+    if action_name == "tap_blank":
+        return {
+            "type": "tap",
+            "x": 540,
+            "y": 100,
+            "delay": 0.5,
+            "reason": "priority:tap_blank",
+        }
+    if action_name == "tap_center":
+        return {
+            "type": "tap",
+            "x": 540,
+            "y": 960,
+            "delay": 0.5,
+            "reason": "priority:tap_center",
+        }
+    if action_name == "wait":
+        return {
+            "type": "wait",
+            "seconds": rule.get("seconds", 2),
+            "reason": "priority:wait",
+        }
+    # Unknown fallback action — default to tap_blank
+    return {
+        "type": "tap",
+        "x": 540,
+        "y": 100,
+        "delay": 0.5,
+        "reason": f"priority:{action_name}",
+    }
+
+
+def _build_reason(rule: dict, elem: dict) -> str:
+    """Build a human-readable reason string for logging."""
+    rule_type = rule.get("type", "?")
+    action = rule.get("action", "tap")
+
+    if rule_type == "button":
+        text = elem.get("text", "")
+        return f"priority:{action}:button:{text}"
+    if rule_type == "text":
+        value = elem.get("value", "")
+        return f"priority:{action}:text:{value}"
+    if rule_type == "icon":
+        name = elem.get("name", "")
+        return f"priority:{action}:icon:{name}"
+    if rule_type == "finger":
+        return f"priority:{action}:finger"
+    return f"priority:{action}:{rule_type}"
+
+
+class AutoHandler:
+    """DOM-based auto-handler using priority rules.
+
+    Reads scene from DOM, looks up priority rules for that scene,
+    and returns the first matching action.
+    """
+
+    def __init__(self, game_profile=None):
+        self._priorities: dict[str, list[dict]] = {}
+        if game_profile and game_profile.auto_priorities:
+            self._priorities = game_profile.auto_priorities
+        logger.info(
+            f"AutoHandler initialized with {len(self._priorities)} "
+            f"scene rule sets"
+        )
+
+    def get_action(self, dom: dict) -> dict | None:
+        """Get best action for current DOM.
+
+        1. Read scene from dom["screen"]["scene"]
+        2. Look up scene in priorities, fall back to "_default"
+        3. match_priority(dom, rules)
+        4. Return action dict or None
+        """
+        scene = dom.get("screen", {}).get("scene", "unknown")
+
+        # Look up rules for this scene
+        rules = self._priorities.get(scene)
+        if rules is None:
+            rules = self._priorities.get("_default", [])
+
+        if not rules:
+            return None
+
+        action = match_priority(dom, rules)
+        if action:
+            logger.info(
+                f"AutoHandler [{scene}]: {action.get('reason', '?')} "
+                f"-> ({action.get('x', '?')}, {action.get('y', '?')})"
             )
+        else:
+            logger.debug(f"AutoHandler [{scene}]: no rule matched")
 
-        return None
-
-    def _check_rewards(self, screenshot: np.ndarray) -> dict | None:
-        """Check for claimable rewards."""
-        # Try template matching
-        for template_name in self._reward_templates:
-            match = self.template_matcher.match_one(screenshot, template_name)
-            if match is not None:
-                logger.info(f"Auto: reward button found '{template_name}'")
-                return {
-                    "type": "tap",
-                    "x": match.x,
-                    "y": match.y,
-                    "delay": 0.5,
-                    "reason": f"auto_claim_reward:{template_name}",
-                }
-
-        # Try OCR-based detection
-        for text in self._claim_text_patterns:
-            element = self.detector.locate(screenshot, text, methods=["ocr"])
-            if element is not None:
-                if is_gray_button(screenshot, element):
-                    logger.info(
-                        f"Auto: claim text '{text}' is gray (disabled), "
-                        f"skipping"
-                    )
-                    continue
-                logger.info(f"Auto: claim text found '{text}'")
-                return {
-                    "type": "tap",
-                    "x": element.x,
-                    "y": element.y,
-                    "delay": 0.5,
-                    "reason": f"auto_claim_reward_text:{text}",
-                }
-
-        return None
-
-    def _check_loading(self, screenshot: np.ndarray, game_state: GameState) -> dict | None:
-        """Check for loading/waiting screens that can be skipped."""
-        if game_state.scene == "loading":
-            # Tap center to try to skip
-            h, w = screenshot.shape[:2]
-            logger.debug("Auto: tapping center to skip loading")
-            return {
-                "type": "tap",
-                "x": w // 2,
-                "y": h // 2,
-                "delay": 1.0,
-                "reason": "auto_skip_loading",
-            }
-        return None
+        return action

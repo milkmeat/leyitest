@@ -1,0 +1,7 @@
+scene: popup
+required_elements:
+- type: icon
+  name: close_x_flag
+auto_action:
+  type: tap
+  reason_match: "tap:icon:close_x_flag"

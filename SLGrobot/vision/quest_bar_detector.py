@@ -72,7 +72,7 @@ class QuestBarDetector:
         """Detect quest bar elements in the screenshot.
 
         Steps:
-        1. Template match icons/task_scroll to locate scroll icon
+        1. Template match task_scroll to locate scroll icon
         2. Validate scroll Y position is in expected range
         3. Check for red badge in scroll icon's upper-right quadrant
         4. OCR the region right of scroll icon for quest text
@@ -89,7 +89,7 @@ class QuestBarDetector:
         h, w = screenshot.shape[:2]
 
         # 1. Find scroll icon
-        match = self.template_matcher.match_one(screenshot, "icons/task_scroll")
+        match = self.template_matcher.match_one(screenshot, "task_scroll")
         if match is None:
             logger.debug("Quest bar: scroll icon not found")
             return info
@@ -310,7 +310,7 @@ class QuestBarDetector:
 
         Gracefully handles missing template (not all setups have it).
         """
-        match = self.template_matcher.match_one(screenshot, "icons/tutorial_finger")
+        match = self.template_matcher.match_one(screenshot, "tutorial_finger")
         if match is not None:
             info.has_tutorial_finger = True
             info.tutorial_finger_pos = (match.x, match.y)

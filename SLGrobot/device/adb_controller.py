@@ -116,6 +116,35 @@ class ADBController:
             self._connected = False
             return False
 
+    def get_foreground_package(self) -> str | None:
+        """Get the package name of the current foreground app.
+
+        Returns:
+            Package name string, or None if detection fails.
+        """
+        try:
+            result = self._run_adb(
+                ["shell", "dumpsys", "activity", "activities"],
+                timeout=10,
+            )
+            if result.returncode != 0:
+                return None
+            output = result.stdout.decode("utf-8", errors="replace")
+            # Look for mResumedActivity or mFocusedActivity line
+            for line in output.splitlines():
+                if "mResumedActivity" in line or "mFocusedActivity" in line:
+                    # Format: "mResumedActivity: ActivityRecord{... com.pkg/.Activity ...}"
+                    for token in line.split():
+                        if "/" in token and "." in token:
+                            pkg = token.split("/")[0]
+                            # Strip leading { if present
+                            pkg = pkg.lstrip("{")
+                            return pkg
+            return None
+        except Exception as e:
+            logger.warning(f"Failed to get foreground package: {e}")
+            return None
+
     def reconnect(self, max_retries: int = 3, base_delay: float = 2.0) -> bool:
         """Reconnect to the emulator with exponential backoff.
 

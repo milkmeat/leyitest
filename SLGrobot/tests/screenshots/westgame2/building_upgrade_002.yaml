@@ -1,0 +1,9 @@
+scene: building_upgrade
+required_elements:
+- type: button
+  text_match: 升级
+- type: button
+  text_match: 2号起居室
+auto_action:
+  type: tap
+  reason_match: "tap:button:升级"

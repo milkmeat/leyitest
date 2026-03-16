@@ -1,0 +1,7 @@
+# 特殊场景：在 _process_scene() 中处理（先tap一键上阵，再tap出战），
+# 不走 auto_handler 优先级规则，所以 auto_action 返回 null。
+scene: battle_formation
+required_elements:
+- type: button
+  text_match: 一键上阵
+auto_action: null

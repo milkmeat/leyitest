@@ -5,7 +5,7 @@ Supports two modes:
   - Auto mode (--auto): autonomous scene-driven loop
 
 Auto loop flow:
-  screenshot -> classify scene ->
+  screenshot -> build DOM (infer scene) ->
     popup/loading    -> handle -> continue
     tutorial_finger  -> follow tap -> continue
     quest_bar green  -> claim reward -> continue
@@ -33,7 +33,7 @@ from vision.template_matcher import TemplateMatcher
 from vision.ocr_locator import OCRLocator
 from vision.grid_overlay import GridOverlay
 from vision.building_finder import BuildingFinder, parse_city_layout
-from vision.element_detector import ElementDetector, find_primary_button, find_purple_button, has_red_text_near_button, is_gray_button
+from vision.element_detector import ElementDetector
 from scene.classifier import SceneClassifier
 from scene.popup_filter import PopupFilter
 from state.game_state import GameState
@@ -42,6 +42,8 @@ from state.persistence import StatePersistence
 from brain.auto_handler import AutoHandler
 from brain.stuck_recovery import StuckRecovery
 from brain.finger_detector import FingerDetector
+from brain.script_runner import ScriptRunner, load_script, list_scripts, ScriptAbortError
+from vision.screen_dom import ScreenDOMBuilder
 from executor.action_validator import ActionValidator
 from executor.action_runner import ActionRunner
 from utils.logger import GameLogger
@@ -58,6 +60,9 @@ Commands:
   status                        Show connection and game state
   state                         Show current game state
   scene                         Classify current scene
+  dom [--save]                   Build Screen DOM (YAML) of current screen
+  run <name> [--dry]             Execute a YAML script (v2 DOM-aware runner)
+  scripts                        List available YAML scripts
   quest <name or text>           Execute a quest script (bilingual: name or text)
   quest_rules                   List all quest scripts (name + pattern)
   quest_test <name or text>     Dry-run a quest script (show steps)
@@ -140,10 +145,7 @@ class GameBot:
         )
 
         # Brain layer
-        self.auto_handler = AutoHandler(
-            self.template_matcher, self.detector,
-            game_profile=game_profile,
-        )
+        self.auto_handler = AutoHandler(game_profile=game_profile)
         # Building finder (optional, depends on city_layout config)
         self.building_finder: BuildingFinder | None = None
         if game_profile and game_profile.city_layout:
@@ -183,6 +185,12 @@ class GameBot:
         # Finger detector (extracted from old QuestWorkflow)
         self.finger_detector = FingerDetector(self.detector, game_profile)
 
+        # Screen DOM builder (v2 unified vision pipeline)
+        self.dom_builder = ScreenDOMBuilder(
+            self.ocr, self.template_matcher, self.finger_detector,
+            game_profile=game_profile,
+        )
+
         # Quest scripts for synchronous execution
         self._quest_scripts = (
             game_profile.quest_scripts
@@ -195,10 +203,8 @@ class GameBot:
         self._last_aborted_quest: str = ""
         self._ABORT_COOLDOWN: int = 180  # seconds (3 minutes)
 
-        # Auto-loop stateful counters (used by _process_scene)
+        # Auto-loop stateful counters
         self._auto_consecutive_unknown = 0
-        self._auto_last_unknown_primary_pos: tuple[int, int] | None = None
-        self._auto_popup_last_primary_pos: tuple[int, int] | None = None
 
     def tap_blank_area(self) -> None:
         """Tap blank areas at bottom then top to dismiss overlays."""
@@ -392,13 +398,13 @@ class GameBot:
         return True
 
     def auto_loop(self, max_loops: int = 0) -> None:
-        """Run the autonomous two-layer decision loop with error recovery.
+        """Run the autonomous DOM-driven decision loop with error recovery.
 
         Decision hierarchy:
-        1. Popup/loading -> handle immediately (auto layer)
-        2. Unknown scene  -> press BACK to escape
-        3. Pending tasks   -> rule engine plans, executor runs with validation
-        4. Nothing to do   -> auto-handler scans for opportunistic actions
+        1. Screenshot → DOM (with inferred scene)
+        2. Special-case pre-check (exit_dialog, shoot_mini_game)
+        3. Priority rules via auto_handler.get_action(dom)
+        4. Execute winning action
 
         Hardening (Phase 5):
         - ADB reconnect on disconnection
@@ -413,20 +419,13 @@ class GameBot:
         consecutive_errors = 0
         consecutive_screenshot_failures = 0
         self._auto_consecutive_unknown = 0
-        self._auto_last_unknown_primary_pos = None
         max_consecutive_errors = 5
-        # Finger exhaust: skip finger if same coords detected N times
-        _finger_last_pos: tuple[int, int] | None = None
-        _finger_same_count = 0
-        _FINGER_EXHAUST_LIMIT = 3
-        # Popup primary button exhaust: close popup if same button repeats
-        self._auto_popup_last_primary_pos = None
-        # Adaptive loop_start_sleep: doubles when stuck on same scene, max 25s
+        # Adaptive loop_start_sleep: doubles when stuck on same scene
         _base_loop_sleep = (self.game_profile.loop_start_sleep
                             if self.game_profile else 0.7)
         _current_loop_sleep = _base_loop_sleep
         _last_scene: str | None = None
-        _MAX_LOOP_SLEEP = 15.0
+        _MAX_LOOP_SLEEP = 5.0
 
         print(f"Starting auto loop (max_loops={max_loops or 'infinite'})...")
         print("Press Ctrl+C to stop.\n")
@@ -477,23 +476,26 @@ class GameBot:
                         time.sleep(config.LOOP_INTERVAL)
                         continue
 
-                    # 1b. Mark frame for OCR caching — all subsequent
-                    #     find_all_text(screenshot) calls in this iteration
-                    #     return cached results instead of re-running OCR.
+                    # 1b. Mark frame for OCR caching
                     self.ocr.set_frame(screenshot)
 
-                    # 2. Classify scene
-                    scene = self.classifier.classify(screenshot)
+                    # 2. Build DOM (includes scene inference)
+                    dom = self.dom_builder.build(screenshot)
+                    scene = dom["screen"]["scene"]
                     logger.debug(f"Scene: {scene}")
 
                     # 2a. Save loop screenshot (one per loop)
                     self.game_logger.save_loop_screenshot(screenshot, scene)
 
                     # 2a-2. Adaptive loop sleep: double if stuck on same scene
+                    #        Exception: building_upgrade reduces to 0.7s
                     if scene == _last_scene:
-                        new_sleep = min(
-                            _current_loop_sleep * 2, _MAX_LOOP_SLEEP
-                        )
+                        if scene == "building_upgrade":
+                            new_sleep = 0.7
+                        else:
+                            new_sleep = min(
+                                _current_loop_sleep * 2, _MAX_LOOP_SLEEP
+                            )
                         if new_sleep != _current_loop_sleep:
                             _current_loop_sleep = new_sleep
                             logger.info(
@@ -511,7 +513,6 @@ class GameBot:
 
                     # 2b. Stuck detection
                     scene_history.append(scene)
-                    # Keep history bounded
                     if len(scene_history) > config.STUCK_MAX_SAME_SCENE * 2:
                         scene_history = scene_history[-config.STUCK_MAX_SAME_SCENE * 2:]
 
@@ -525,80 +526,42 @@ class GameBot:
                         time.sleep(config.LOOP_INTERVAL)
                         continue
 
-                    # 2b. Reset stuck escalation if scene changed
+                    # 2b-2. Reset stuck escalation if scene changed
                     if len(scene_history) >= 2 and scene_history[-1] != scene_history[-2]:
                         self.stuck_recovery.reset()
 
-                    # 2c. Tutorial finger detection — highest priority.
-                    #     Runs BEFORE state update so finger can be tapped
-                    #     within the ~3s it stays on screen.
-                    #     Always tap the finger directly (no quest scripts
-                    #     in auto mode — scripts are CLI-only via `quest`).
-                    finger, flip = self.finger_detector.detect(screenshot)
-                    if finger is not None:
-                        # Finger detected — reset exhaust trackers
-                        self._auto_consecutive_unknown = 0
-                        self._auto_popup_last_primary_pos = None
-                        self._auto_last_unknown_primary_pos = None
-                        # Finger detected — reset adaptive sleep
-                        if _current_loop_sleep != _base_loop_sleep:
-                            logger.info(
-                                f"Finger detected, loop_start_sleep reset "
-                                f"to {_base_loop_sleep}s"
-                            )
-                            _current_loop_sleep = _base_loop_sleep
-                        tip_x, tip_y = self.finger_detector.fingertip_pos(
-                            finger.x, finger.y, flip
-                        )
-                        # Exhaust check: if same position repeats, likely
-                        # a false positive — skip and let other handlers run.
-                        finger_pos = (tip_x, tip_y)
-                        if finger_pos == _finger_last_pos:
-                            _finger_same_count += 1
-                        else:
-                            _finger_last_pos = finger_pos
-                            _finger_same_count = 1
-                        if _finger_same_count > _FINGER_EXHAUST_LIMIT:
-                            # Re-detect excluding the exhausted position
-                            # to find a different (real) finger.
-                            finger2, flip2 = self.finger_detector.detect(
-                                screenshot,
-                                exclude_positions=[_finger_last_pos],
-                            )
-                            if finger2 is not None:
-                                tip2_x, tip2_y = self.finger_detector.fingertip_pos(
-                                    finger2.x, finger2.y, flip2
-                                )
-                                logger.info(
-                                    f"Finger exhausted at ({tip_x}, {tip_y}), "
-                                    f"found alternative {flip2} at "
-                                    f"({tip2_x}, {tip2_y})"
-                                )
-                                self.adb.tap(tip2_x, tip2_y)
-                                time.sleep(0.8)
-                                continue
-                            logger.info(
-                                f"Finger exhausted at ({tip_x}, {tip_y}) "
-                                f"after {_finger_same_count} repeats, skipping"
-                            )
-                        else:
-                            logger.info(
-                                f"Tutorial finger detected at "
-                                f"({finger.x}, {finger.y}) {flip}, "
-                                f"tapping fingertip ({tip_x}, {tip_y})"
-                            )
-                            self.adb.tap(tip_x, tip_y)
-                            time.sleep(0.8)
-                            continue
-                    else:
-                        # No finger detected — reset exhaust counter
-                        _finger_last_pos = None
-                        _finger_same_count = 0
-
-                    # 2d-9. Process scene
-                    handled = self._process_scene(screenshot, scene)
-                    if handled:
+                    # 3. Special-case pre-check (can't be expressed as rules)
+                    special = self._process_scene(screenshot, scene, dom)
+                    if special:
                         continue
+
+                    # 3b. Update state on main_city
+                    if scene == "main_city":
+                        self.state_tracker.update(screenshot, scene)
+
+                    # 4. Priority rules via auto_handler
+                    action = self.auto_handler.get_action(dom)
+                    if action:
+                        action_type = action.get("type")
+                        if action_type == "tap":
+                            self.adb.tap(action["x"], action["y"])
+                            time.sleep(action.get("delay", 0.5))
+                        elif action_type == "wait":
+                            time.sleep(action.get("seconds", 2))
+                        # Reset adaptive sleep on finger tap
+                        reason = action.get("reason", "")
+                        if "finger" in reason:
+                            if _current_loop_sleep != _base_loop_sleep:
+                                _current_loop_sleep = _base_loop_sleep
+                                logger.info(
+                                    f"Finger action, loop_start_sleep "
+                                    f"reset to {_base_loop_sleep}s"
+                                )
+                    else:
+                        logger.debug("No priority rule matched, idle")
+
+                    # 5. Persist state
+                    self.persistence.save(self.game_state)
 
                     # Reset error counter on successful iteration
                     consecutive_errors = 0
@@ -642,30 +605,39 @@ class GameBot:
             )
 
     def _process_scene(self, screenshot, scene: str,
+                       dom: dict | None = None,
                        dry_run: bool = False) -> bool:
-        """Process a classified scene: detect, decide, and (optionally) act.
+        """Pre-check for special scenes that can't be priority rules.
 
-        Contains all scene-handling logic extracted from the auto loop.
+        Handles only exit_dialog (60s cooldown) and shoot_mini_game (swipe).
+        All other scenes are handled by auto_handler.get_action(dom).
 
         Args:
             screenshot: Current frame (numpy array).
             scene: Classified scene string.
-            dry_run: If True, skip all ADB actions, sleeps, and persistence.
+            dom: Screen DOM dict (unused in pre-check, kept for API compat).
+            dry_run: If True, skip all ADB actions and sleeps.
 
         Returns:
             True if scene was fully handled (caller should skip to next
-            iteration).  False if fell through to auto-handler (normal
-            iteration end).
+            iteration). False to continue to priority rules.
         """
-        # 2d. Update state on main_city (after finger check so
-        #     the expensive OCR doesn't delay finger detection).
-        if scene == "main_city":
-            self.state_tracker.update(screenshot, scene)
+        # Finger always takes priority in special scenes
+        if dom:
+            for region in ("top_bar", "center", "bottom_bar"):
+                for elem in dom.get("screen", {}).get(region, []):
+                    if elem.get("type") == "finger":
+                        tip = elem.get("fingertip", elem.get("pos"))
+                        if tip and not dry_run:
+                            logger.info(
+                                f"Finger detected in {scene} — "
+                                f"tapping fingertip at {tip}")
+                            self.adb.tap(tip[0], tip[1])
+                            time.sleep(0.5)
+                        return True
 
-        # 3. Exit dialog — game's pause/quit overlay.
-        #    Must be handled before popup/loading/quest workflow
-        #    since the dark background can be misclassified.
-        #    Tap "继续" (rightmost icon) and wait 60s cooldown.
+        # Exit dialog — game's pause/quit overlay.
+        # Tap "继续" (rightmost icon) and wait 60s cooldown.
         if scene == "exit_dialog":
             logger.info(
                 "Exit dialog detected — tapping '继续' and "
@@ -676,92 +648,33 @@ class GameBot:
                 time.sleep(60)
             return True
 
-        # 3b. Hero list / Hero recruit — not part of normal
-        #     quest flow, just back out immediately.
-        if scene == "hero":
-            back = self.template_matcher.match_one(
-                screenshot, "buttons/back_arrow"
+        # Battle formation — tap "一键上阵" then "出战" (gold button).
+        if scene == "battle_formation":
+            logger.info(
+                "Battle formation detected — tapping '一键上阵' "
+                "then '出战'"
             )
-            if back:
-                logger.info(
-                    f"Hero list: tapping back arrow "
-                    f"at ({back.x}, {back.y})"
-                )
-                if not dry_run:
-                    self.adb.tap(back.x, back.y)
-            else:
-                logger.info("Hero list: no back arrow, tapping blank area")
-                if not dry_run:
-                    self.tap_blank_area()
             if not dry_run:
-                time.sleep(0.5)
+                # Find 一键上阵 button position from DOM
+                deploy_pos = None
+                gold_pos = None
+                for region in ("top_bar", "center", "bottom_bar"):
+                    for elem in dom.get("screen", {}).get(region, []):
+                        if elem.get("type") != "button":
+                            continue
+                        if "上阵" in elem.get("text", ""):
+                            deploy_pos = elem["pos"]
+                        elif elem.get("color") == "gold":
+                            gold_pos = elem["pos"]
+                if deploy_pos:
+                    self.adb.tap(deploy_pos[0], deploy_pos[1])
+                    time.sleep(1.0)
+                if gold_pos:
+                    self.adb.tap(gold_pos[0], gold_pos[1])
+                    time.sleep(1.0)
             return True
 
-        if scene == "hero_recruit":
-            purple = find_purple_button(screenshot)
-            if purple is not None:
-                logger.info(
-                    f"Hero recruit: tapping purple button "
-                    f"at ({purple.x}, {purple.y})"
-                )
-                if not dry_run:
-                    self.adb.tap(purple.x, purple.y)
-            else:
-                # No purple button — exit via back arrow
-                back = self.template_matcher.match_one(
-                    screenshot, "buttons/back_arrow"
-                )
-                if back:
-                    logger.info(
-                        f"Hero recruit: no purple button, "
-                        f"tapping back arrow at ({back.x}, {back.y})"
-                    )
-                    if not dry_run:
-                        self.adb.tap(back.x, back.y)
-                else:
-                    logger.info("Hero recruit: no purple button, tapping blank area")
-                    if not dry_run:
-                        self.tap_blank_area()
-            if not dry_run:
-                time.sleep(0.5)
-            return True
-
-        # 3c. Hero upgrade — click primary button if no red
-        #     text (insufficient resources), otherwise back out.
-        if scene == "hero_upgrade":
-            primary = find_primary_button(screenshot)
-            if primary is not None and not has_red_text_near_button(
-                screenshot, primary
-            ):
-                logger.info(
-                    f"Hero upgrade: resources OK, tapping "
-                    f"primary button at ({primary.x}, {primary.y})"
-                )
-                if not dry_run:
-                    self.adb.tap(primary.x, primary.y)
-                    time.sleep(0.8)
-            else:
-                reason = (
-                    "red text (insufficient resources)"
-                    if primary else "no primary button"
-                )
-                logger.info(f"Hero upgrade: {reason}, backing out")
-            back = self.template_matcher.match_one(
-                screenshot, "buttons/back_arrow"
-            )
-            if back:
-                if not dry_run:
-                    self.adb.tap(back.x, back.y)
-            else:
-                logger.info("Hero upgrade: no back arrow, tapping blank area")
-                if not dry_run:
-                    self.tap_blank_area()
-            if not dry_run:
-                time.sleep(0.5)
-            return True
-
-        # 3d. Shooting mini-game — swipe right to aim and wait
-        #     for the mini-game to finish automatically.
+        # Shooting mini-game — swipe right to aim and wait.
         if scene == "shoot_mini_game":
             logger.info(
                 "Shooting mini-game detected — swiping right "
@@ -772,319 +685,38 @@ class GameBot:
                 time.sleep(10)
             return True
 
-        # 4. Handle popups immediately (quest scripts run
-        #    synchronously so auto loop is already paused)
-        if scene == "popup":
-            # Check for claimable rewards before closing
-            reward_action = self.auto_handler._check_rewards(screenshot)
-            if reward_action:
-                logger.info("Popup: reward button found, claiming first")
-                if not dry_run:
-                    self._execute_validated_actions(
-                        [reward_action], scene, screenshot
-                    )
-                    time.sleep(0.3)
-                return True
-            # Check for primary action button (前往, 升级, etc.)
-            # Popup buttons can appear anywhere, use relaxed y_fraction.
-            # If same position as last time, the tap had no effect
-            # — skip primary and close the popup instead.
-            primary = find_primary_button(screenshot, y_fraction=0.2)
-            if primary is not None:
-                pos = (primary.x, primary.y)
-                if pos == self._auto_popup_last_primary_pos:
-                    logger.info(
-                        f"Popup: primary button at {pos} "
-                        f"same as last time, closing popup instead"
-                    )
-                    self._auto_popup_last_primary_pos = None
-                else:
-                    logger.info(
-                        f"Popup: primary button at "
-                        f"({primary.x}, {primary.y}), tapping"
-                    )
-                    if not dry_run:
-                        self.adb.tap(primary.x, primary.y)
-                    self._auto_popup_last_primary_pos = pos
-                    if not dry_run:
-                        time.sleep(0.3)
-                    return True
-            logger.info("Popup detected, attempting to close")
-            if not dry_run:
-                self.popup_filter.handle(screenshot)
-                time.sleep(0.3)
-            return True
-
-        # 4. Story dialogue — try skip button first, then
-        #    down-triangle to advance one frame
-        if scene == "story_dialogue":
-            # Try OCR skip button first
-            skip_element = None
-            for skip_text in ["跳过", "skip"]:
-                skip_element = self.detector.locate(
-                    screenshot, skip_text, methods=["ocr"]
-                )
-                if skip_element is not None:
-                    break
-            if skip_element is not None:
-                logger.info(
-                    f"Story dialogue: tapping skip "
-                    f"'{skip_element.name}' "
-                    f"at ({skip_element.x}, {skip_element.y})"
-                )
-                if not dry_run:
-                    self.adb.tap(skip_element.x, skip_element.y)
-            else:
-                match = self.template_matcher.match_one(
-                    screenshot, "icons/down_triangle"
-                )
-                if match:
-                    logger.info(
-                        f"Story dialogue: tapping triangle "
-                        f"at ({match.x}, {match.y})"
-                    )
-                    if not dry_run:
-                        self.adb.tap(match.x, match.y)
-                else:
-                    logger.info("Story dialogue: tapping center")
-                    if not dry_run:
-                        self.adb.tap(540, 960)
-            if not dry_run:
-                time.sleep(0.3)
-            return True
-
-        # 5. Skip loading screens (but check for buttons first —
-        #    reward popups with dark backgrounds get misclassified
-        #    as loading; real loading screens have no buttons).
-        if scene == "loading":
-            primary = find_primary_button(screenshot, y_fraction=0.2)
-            if primary is not None:
-                logger.info(
-                    f"Loading screen has primary button "
-                    f"at ({primary.x}, {primary.y}) — "
-                    f"likely a reward popup, tapping"
-                )
-                if not dry_run:
-                    self.adb.tap(primary.x, primary.y)
-                    time.sleep(0.3)
-            elif not dry_run and self.popup_filter.handle(screenshot):
-                logger.info(
-                    "Loading screen had popup elements, "
-                    "handled by popup filter"
-                )
-            else:
-                logger.info("Loading screen, waiting...")
-                if not dry_run:
-                    time.sleep(config.LOOP_INTERVAL)
-            return True
-
-        # 5b. Expedition formation — tap "一键上阵" then "出战".
-        #     Detected by OCR since there's no dedicated scene
-        #     template; runs only when scene is unknown.
-        if scene == "unknown":
-            one_click = self.detector.locate(
-                screenshot, "一键上阵", methods=["ocr"]
-            )
-            if one_click is not None:
-                logger.info(
-                    f"Expedition formation: tapping "
-                    f"'一键上阵' at ({one_click.x}, {one_click.y})"
-                )
-                if not dry_run:
-                    self.adb.tap(one_click.x, one_click.y)
-                    time.sleep(1.0)
-                # "出战" is the gold button to the right of
-                # "一键上阵".  OCR can't read white-on-gold text
-                # and find_primary_button picks the blue button
-                # (Tier 1) instead, so use layout position.
-                sh, sw = screenshot.shape[:2]
-                battle_x = int(sw * 0.7)
-                battle_y = one_click.y
-                logger.info(
-                    f"Expedition formation: tapping "
-                    f"'出战' at ({battle_x}, {battle_y})"
-                )
-                if not dry_run:
-                    self.adb.tap(battle_x, battle_y)
-                    time.sleep(0.5)
-                self._auto_consecutive_unknown = 0
-                return True
-
-        # 6. Handle unknown scenes with escalating escape
-        #    Level 1 (counter 1): back_arrow / popup / BACK
-        #    Level 2 (counter 2): primary button / BACK
-        #    Level 3 (counter >=3): tap blank area to reach main city
-        if scene == "unknown":
-            self._auto_consecutive_unknown += 1
-            logger.info(
-                f"Unknown scene ({self._auto_consecutive_unknown} consecutive)"
-            )
-
-            handled = False
-
-            # Try back arrow template (building panels have
-            # a visible back arrow in the top-left corner).
-            if not handled:
-                back = self.template_matcher.match_one(
-                    screenshot, "buttons/back_arrow"
-                )
-                if back:
-                    logger.info(
-                        f"Unknown scene: tapping back arrow "
-                        f"at ({back.x}, {back.y})"
-                    )
-                    if not dry_run:
-                        self.adb.tap(back.x, back.y)
-                    handled = True
-                    self._auto_consecutive_unknown = 0
-
-            # Try primary button (blue/green action buttons).
-            # If we tap the same position as last time, the
-            # previous tap had no effect — skip it so the
-            # counter keeps rising toward the escalation
-            # threshold (tap blank area at >=3).
-            if not handled:
-                primary = find_primary_button(
-                    screenshot, y_fraction=0.2)
-                if primary is not None:
-                    pos = (primary.x, primary.y)
-                    if pos == self._auto_last_unknown_primary_pos:
-                        logger.info(
-                            f"Unknown scene: primary button "
-                            f"at {pos} same as last time, "
-                            f"skipping"
-                        )
-                    else:
-                        logger.info(
-                            f"Unknown scene: primary button "
-                            f"at {pos}, tapping"
-                        )
-                        if not dry_run:
-                            self.adb.tap(primary.x, primary.y)
-                        self._auto_last_unknown_primary_pos = pos
-                        handled = True
-                        self._auto_consecutive_unknown = 0
-
-            # Try popup filter (skips OCR if no dark overlay).
-            if not handled and not dry_run and self.popup_filter.handle(screenshot):
-                logger.info(
-                    "Unknown scene handled by popup filter"
-                )
-                handled = True
-                self._auto_consecutive_unknown = 0
-
-            # Escalation: tap blank area to navigate to main city
-            if not handled and self._auto_consecutive_unknown >= 3:
-                logger.warning(
-                    f"Unknown scene stuck ({self._auto_consecutive_unknown}x),"
-                    f" tapping blank area to escape"
-                )
-                if not dry_run:
-                    self.tap_blank_area()
-                    self.game_logger.log_recovery(
-                        "unknown_scene_escape",
-                        f"Tapped blank area after "
-                        f"{self._auto_consecutive_unknown} "
-                        f"consecutive unknown scenes"
-                    )
-                self._auto_consecutive_unknown = 0
-
-            # Fallback: tap blank area (don't reset counter
-            # to allow escalation on next iteration).
-            if not handled:
-                logger.info("Unknown scene: tapping blank area")
-                if not dry_run:
-                    self.tap_blank_area()
-
-            if not dry_run:
-                time.sleep(config.LOOP_INTERVAL)
-            return True
-        else:
-            self._auto_consecutive_unknown = 0
-            self._auto_last_unknown_primary_pos = None
-            self._auto_popup_last_primary_pos = None
-
-        # 7. Update game state (main_city already updated
-        #    in step 2c before finger detection)
-        if scene != "main_city":
-            self.state_tracker.update(screenshot, scene)
-
-        # 7.5 Quest reward — claim if green check visible
-        #     and no tutorial finger on screen.
-        if (scene == "main_city"
-                and self.game_state.quest_bar_visible
-                and self.game_state.quest_bar_has_green_check
-                and not self.game_state.quest_bar_has_tutorial_finger):
-            if not dry_run:
-                self._try_claim_quest_reward()
-            else:
-                logger.info("Quest reward: green check detected, would claim")
-            return True
-
-        # 7.6 Known popup banners (e.g. alliance recruit).
-        #     Runs every iteration regardless of task queue.
-        popup_action = self.auto_handler._check_popup(screenshot)
-        if popup_action:
-            if not dry_run:
-                self._execute_validated_actions(
-                    [popup_action], scene, screenshot)
-                time.sleep(0.3)
-            else:
-                logger.info(f"Known popup banner: {popup_action}")
-            return True
-
-        # 8. Auto-handler decision
-        actions = self.auto_handler.get_actions(
-            screenshot, self.game_state
-        )
-
-        # 8. Execute actions with validation pipeline
-        if not dry_run:
-            self._execute_validated_actions(actions, scene, screenshot)
-
-        # 9. Persist state
-        if not dry_run:
-            self.persistence.save(self.game_state)
-
         return False
 
     def simulate_auto_iteration(self, screenshot) -> None:
         """Simulate one auto-loop iteration on a static screenshot.
 
-        Runs scene classification, finger detection, and scene handling
-        in dry_run mode (no ADB actions, no sleeps, no persistence).
+        Builds DOM (with inferred scene), matches priority rules — all in
+        dry_run mode (no ADB actions, no sleeps, no persistence).
         """
         # 1b. Mark frame for OCR caching
         self.ocr.set_frame(screenshot)
 
-        # 2. Classify scene
-        scene = self.classifier.classify(screenshot)
-        scores = self.classifier.get_confidence(screenshot)
+        # 2. Build DOM (includes scene inference)
+        dom = self.dom_builder.build(screenshot)
+        scene = dom["screen"]["scene"]
         print(f"Scene: {scene}")
-        for s, score in sorted(scores.items(), key=lambda x: -x[1]):
-            if score > 0:
-                print(f"  {s}: {score:.3f}")
 
-        # 2c. Finger detection
-        finger, flip = self.finger_detector.detect(screenshot)
-        if finger is not None:
-            tip_x, tip_y = self.finger_detector.fingertip_pos(
-                finger.x, finger.y, flip
-            )
-            print(f"Finger: ({finger.x}, {finger.y}) {flip}, "
-                  f"tip=({tip_x}, {tip_y})")
-        else:
-            print("Finger: not detected")
+        yaml_str = self.dom_builder.to_yaml(dom)
+        print(f"\nDOM:\n{yaml_str}")
 
-        # Initialize counters for dry run
+        # 3a. Special-case pre-check
         self._auto_consecutive_unknown = 0
-        self._auto_last_unknown_primary_pos = None
-        self._auto_popup_last_primary_pos = None
+        special = self._process_scene(screenshot, scene, dom, dry_run=True)
+        if special:
+            print(f"\nResult: special handler (exit_dialog/shoot_mini_game)")
+            return
 
-        # Process scene in dry-run mode
-        print()
-        handled = self._process_scene(screenshot, scene, dry_run=True)
-        print(f"\nResult: {'handled (would continue)' if handled else 'fell through to auto_handler'}")
+        # 4. Priority rules
+        action = self.auto_handler.get_action(dom)
+        if action:
+            print(f"\nPriority action: {action}")
+        else:
+            print(f"\nNo priority rule matched — idle")
 
     def _execute_validated_actions(self, actions: list[dict],
                                     pre_scene: str,
@@ -1231,6 +863,106 @@ class CLI:
         for s, score in sorted(scores.items(), key=lambda x: -x[1]):
             if score > 0:
                 print(f"  {s}: {score:.3f}")
+
+    def cmd_dom(self, args: list[str]) -> None:
+        """Capture screenshot and output YAML DOM of all interactive elements."""
+        import os
+        import time as _time
+
+        screenshot = self.bot.screenshot_mgr.capture()
+        t0 = _time.perf_counter()
+        dom = self.bot.dom_builder.build(screenshot)
+        elapsed = _time.perf_counter() - t0
+        yaml_str = self.bot.dom_builder.to_yaml(dom)
+        print(yaml_str)
+        print(f"# DOM build time: {elapsed:.2f}s")
+
+        if "--save" in args:
+            save_dir = os.path.join("data", "dom_history")
+            os.makedirs(save_dir, exist_ok=True)
+            ts = _time.strftime("%Y%m%d_%H%M%S")
+            img_path = os.path.join(save_dir, f"{ts}.png")
+            yaml_path = os.path.join(save_dir, f"{ts}.yaml")
+            import cv2 as _cv2
+            _cv2.imwrite(img_path, screenshot)
+            with open(yaml_path, "w", encoding="utf-8") as f:
+                f.write(yaml_str)
+            print(f"# Saved: {img_path}, {yaml_path}")
+
+    def cmd_run(self, args: list[str]) -> None:
+        """Execute a YAML script (v2 DOM-aware runner)."""
+        if not args:
+            print("Usage: run <name> [--dry]")
+            return
+
+        name = args[0]
+        dry_run = "--dry" in args
+
+        # Resolve script path
+        scripts_dir = ""
+        if self.bot.game_profile:
+            scripts_dir = self.bot.game_profile.scripts_dir
+
+        if not scripts_dir or not os.path.isdir(scripts_dir):
+            print(f"Scripts directory not found: {scripts_dir}")
+            return
+
+        script_path = os.path.join(scripts_dir, f"{name}.yaml")
+        if not os.path.isfile(script_path):
+            available = list_scripts(scripts_dir)
+            print(f"Script not found: {name}")
+            if available:
+                print(f"Available: {', '.join(available)}")
+            return
+
+        try:
+            script = load_script(script_path)
+        except ValueError as e:
+            print(f"Invalid script: {e}")
+            return
+
+        desc = script.get("description", "")
+        print(f"Script: {script['name']}")
+        if desc:
+            print(f"  {desc}")
+        print(f"  Steps: {len(script['steps'])}")
+        if dry_run:
+            print("  Mode: dry-run")
+        print()
+
+        runner = ScriptRunner(
+            self.bot.adb,
+            self.bot.dom_builder,
+            self.bot.screenshot_mgr.capture,
+        )
+        ok = runner.run(script, dry_run=dry_run)
+        print(f"\nResult: {'OK' if ok else 'ABORTED'}")
+
+    def cmd_scripts(self, args: list[str]) -> None:
+        """List available YAML scripts."""
+        scripts_dir = ""
+        if self.bot.game_profile:
+            scripts_dir = self.bot.game_profile.scripts_dir
+
+        if not scripts_dir or not os.path.isdir(scripts_dir):
+            print(f"No scripts directory: {scripts_dir}")
+            return
+
+        names = list_scripts(scripts_dir)
+        if not names:
+            print("No scripts found.")
+            return
+
+        print(f"Scripts in {scripts_dir}:")
+        for name in names:
+            path = os.path.join(scripts_dir, f"{name}.yaml")
+            try:
+                script = load_script(path)
+                desc = script.get("description", "")
+                steps = len(script.get("steps", []))
+                print(f"  {name:<30s} {steps} steps  {desc}")
+            except (ValueError, Exception) as e:
+                print(f"  {name:<30s} (error: {e})")
 
     def cmd_auto_test(self, args: list[str]) -> None:
         """Simulate one auto-loop iteration on a static screenshot."""
@@ -1638,9 +1370,9 @@ class CLI:
         tm = self.bot.template_matcher
 
         # Show raw top-5 CCORR candidates with red-pixel ratios
-        candidates = tm.match_one_multi(screenshot, "buttons/close_x",
+        candidates = tm.match_one_multi(screenshot, "close_x",
                                         max_matches=5)
-        entry = tm._cache.get("buttons/close_x")
+        entry = tm._cache.get("close_x")
         opaque = None
         if entry is not None:
             _, mask = entry
@@ -1648,7 +1380,7 @@ class CLI:
                 opaque = mask[:, :, 0] > 0
 
         # Pre-compute boundary masks for diagnostic display
-        bmasks = tm._get_boundary_masks("buttons/close_x")
+        bmasks = tm._get_boundary_masks("close_x")
 
         best = None
         best_score = -1.0
@@ -1819,7 +1551,15 @@ class CLI:
                 print("No game profile loaded (using built-in defaults)")
 
     def cmd_auto(self, args: list[str]) -> None:
-        max_loops = int(args[0]) if args else 0
+        max_loops = 0
+        i = 0
+        while i < len(args):
+            if args[i] == "--loops" and i + 1 < len(args):
+                max_loops = int(args[i + 1])
+                i += 2
+            else:
+                max_loops = int(args[i])
+                i += 1
         self.bot.auto_loop(max_loops)
 
     def cmd_help(self, args: list[str]) -> None:
@@ -1886,14 +1626,35 @@ def main():
 
     GameLogger(config.LOG_DIR)
 
-    # Load game profile
+    # Detect game from emulator's foreground app if --game not explicitly provided
+    game_explicit = "--game" in sys.argv
     games_dir = getattr(config, "GAMES_DIR", "games")
+    game_id = args.game
+
+    if not game_explicit:
+        # Build reverse lookup: package -> game_id
+        pkg_to_game = {pkg: gid for gid, pkg in config.GAME_PACKAGES.items()}
+        # Connect ADB early to detect foreground app
+        from device.adb_controller import ADBController
+        _adb = ADBController(config.ADB_HOST, config.ADB_PORT, config.ADB_PATH)
+        if _adb.connect():
+            fg_pkg = _adb.get_foreground_package()
+            if fg_pkg:
+                if fg_pkg in pkg_to_game:
+                    game_id = pkg_to_game[fg_pkg]
+                    print(f"Detected game: {game_id} (package: {fg_pkg})")
+                else:
+                    print(f"Unknown game package: {fg_pkg}")
+                    print(f"Supported: {', '.join(f'{gid} ({pkg})' for gid, pkg in config.GAME_PACKAGES.items())}")
+                    sys.exit(1)
+
+    # Load game profile
     game_profile = None
     try:
-        game_profile = load_game_profile(args.game, games_dir)
+        game_profile = load_game_profile(game_id, games_dir)
         print(f"Game: {game_profile.display_name}")
     except FileNotFoundError:
-        print(f"Warning: game profile '{args.game}' not found, using defaults")
+        print(f"Warning: game profile '{game_id}' not found, using defaults")
 
     bot = GameBot(game_profile=game_profile)
 

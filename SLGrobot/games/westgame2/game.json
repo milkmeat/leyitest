@@ -20,7 +20,7 @@
   "scenes": [
     "main_city", "world_map", "hero", "hero_recruit", "hero_upgrade",
     "battle", "popup", "exit_dialog", "loading", "story_dialogue",
-    "shoot_mini_game", "unknown"
+    "shoot_mini_game", "building_upgrade", "battle_formation", "unknown"
   ],
 
   "known_tasks": [
@@ -29,28 +29,19 @@
     "close_popup", "check_mail", "collect_daily"
   ],
 
-  "known_popups": [
-    ["buttons/view", "buttons/close_x"]
-  ],
-  "reward_templates": [
-    "buttons/claim", "buttons/collect", "buttons/ok", "buttons/confirm"
-  ],
+  "known_popups": [],
+  "reward_templates": [],
   "close_text_patterns": ["关闭", "close", "×", "X"],
   "claim_text_patterns": ["领取", "claim", "collect", "收集", "一键领取"],
 
-  "action_button_templates": [
-    "buttons/upgrade_building", "buttons/upgrade", "buttons/build"
-  ],
+  "action_button_templates": [],
   "action_button_texts": [
     "一键上阵", "出战", "开始战斗", "攻击",
     "建造", "升级", "训练", "研究", "确定", "前往",
     "开始", "使用", "派遣", "出征", "行军", "下一个", "领取"
   ],
 
-  "popup_close_templates": [
-    "buttons/close", "buttons/close_x", "buttons/x",
-    "buttons/cancel", "buttons/confirm", "buttons/ok"
-  ],
+  "popup_close_templates": ["close_x"],
   "popup_close_texts": [
     "返回领地", "关闭", "确定", "确认", "取消", "返回", "领取", "前往", "全部领取"
   ],
@@ -66,7 +57,7 @@
 
   "finger_ncc_threshold": 0.83,
 
-  "loop_start_sleep": 0.7,
+  "loop_start_sleep": 1.4,
 
   "city_layout": {
     "file": "city_layout.md",
@@ -78,6 +69,65 @@
     "drag_offset": 150,
     "tap_offset_x": 100,
     "tap_offset_y": 150
+  },
+
+  "auto_priorities": {
+    "popup": [
+      {"type": "finger", "action": "tap_fingertip"},
+      {"type": "button", "text_match": "领取|claim|collect|一键领取", "action": "tap"},
+      {"type": "button", "text_match": "确[认定]|ok|confirm", "action": "tap"},
+      {"type": "button", "text_match": "返回小镇", "action": "tap"},
+      {"type": "button", "text_match": "继续", "action": "tap"},
+      {"type": "button", "text_match": "^前往$", "action": "tap"},
+      {"type": "icon", "name": "close_x", "action": "tap"},
+      {"type": "icon", "name": "close_x_flag", "action": "tap"},
+      {"type": "button", "text_match": "关闭|close", "action": "tap"},
+      {"action": "tap_blank"}
+    ],
+    "loading": [],
+    "main_city": [
+      {"type": "finger", "action": "tap_fingertip"},
+      {"type": "green_check", "action": "tap"},
+      {"type": "red_dot", "action": "tap"}
+    ],
+    "world_map": [
+      {"type": "finger", "action": "tap_fingertip"}
+    ],
+    "hero": [
+      {"type": "finger", "action": "tap_fingertip"},
+      {"type": "icon", "name": "back_arrow", "action": "tap"},
+      {"action": "tap_blank"}
+    ],
+    "hero_recruit": [
+      {"type": "finger", "action": "tap_fingertip"},
+      {"type": "button", "text_match": "免费", "action": "tap"},
+      {"type": "icon", "name": "back_arrow", "action": "tap"}
+    ],
+    "building_upgrade": [
+      {"type": "finger", "action": "tap_fingertip"},
+      {"type": "button", "text_match": "升级|建造|下一个", "color_match": "blue", "action": "tap"},
+      {"action": "tap_blank"}
+    ],
+    "hero_upgrade": [
+      {"type": "finger", "action": "tap_fingertip"},
+      {"type": "button", "text_match": "升级", "color_match": "blue", "has_red_text": false, "action": "tap"},
+      {"type": "icon", "name": "back_arrow", "action": "tap"}
+    ],
+    "battle_formation": [
+      {"type": "finger", "action": "tap_fingertip"}
+    ],
+    "story_dialogue": [
+      {"type": "finger", "action": "tap_fingertip"},
+      {"type": "text", "value_match": "跳过|skip", "action": "tap"},
+      {"type": "icon", "name": "down_triangle", "action": "tap"},
+      {"action": "tap_center"}
+    ],
+    "_default": [
+      {"type": "finger", "action": "tap_fingertip"},
+      {"type": "icon", "name": "back_arrow", "action": "tap"},
+      {"type": "button", "text_match": "领取|claim|collect", "action": "tap"},
+      {"action": "tap_blank"}
+    ]
   },
 
   "quest_scripts": [
@@ -115,7 +165,6 @@
       "pattern": "通过.*远征",
       "steps": [
         {"ensure_main_city": [], "delay": 1.5, "description": "确认在主城界面"},
-        {"tap_icon": ["nav_bar/expedition"], "delay": 2.0, "description": "点击远征图标"},
         {"tap_text": ["开始战斗"], "delay": 1.5, "description": "点击开始战斗"},
         {"tap_text": ["一键上阵"], "delay": 1.5, "description": "点击一键上阵"},
         {"tap_xy": [900, 1870], "delay": 3.0, "description": "点击出战按钮"},
@@ -135,7 +184,7 @@
         {"tap_text": ["领取", -1], "delay": 1.5, "repeat": 10, "optional": true, "description": "重复点击最后一个领取，找不到则停止"},
         {"tap_text": ["每日任务"], "delay": 1.5, "optional": true, "description": "点击每日任务"},
         {"tap_text": ["领取", -1], "delay": 1.5, "repeat": 10, "optional": true, "description": "重复点击最后一个领取，找不到则停止"},
-        {"tap_icon": ["buttons/close_x"], "delay": 1.5, "description": "关闭返回主城"}
+        {"tap_icon": ["close_x"], "delay": 1.5, "description": "关闭返回主城"}
       ]
     },
     {
@@ -143,11 +192,10 @@
       "pattern": "领取远征奖励",
       "steps": [
         {"ensure_main_city": [], "delay": 1.5, "description": "确认在主城界面"},
-        {"tap_icon": ["nav_bar/expedition"], "delay": 2.0, "description": "点击远征图标"},
         {"tap_text": ["领取"], "delay": 1.5, "description": "点击领取奖励"},
         {"tap_text": ["领取"], "delay": 1.5, "optional": true, "description": "点击领取"},
         {"tap_text": ["确定"], "delay": 1.5, "description": "点击确定"},
-        {"tap_icon": ["buttons/back_arrow"], "delay": 1.5, "description": "返回主城"}
+        {"tap_icon": ["back_arrow"], "delay": 1.5, "description": "返回主城"}
       ]
     },
     {
@@ -156,10 +204,10 @@
       "steps": [
         {"ensure_main_city": [], "delay": 1.5, "description": "确认在主城界面"},
         {"find_building": ["步兵营"], "delay": 2.0, "repeat": 2, "description": "定位到步兵营并点击2次（收集已训练士兵）"},
-        {"tap_icon": ["icons/train_brawler"], "delay": 2.0, "description": "点击训练步兵图标进入训练界面"},
+        {"tap_icon": ["train_brawler"], "delay": 2.0, "description": "点击训练步兵图标进入训练界面"},
         {"tap_text": ["{troop_type}", -1], "delay": 1.5, "description": "点击最后一个兵种切换到目标兵种"},
         {"tap_text": ["训练", -1], "delay": 1.5, "description": "点击最后一个训练开始训练"},
-        {"tap_icon": ["buttons/back_arrow"], "delay": 1.5, "description": "返回主城"}
+        {"tap_icon": ["back_arrow"], "delay": 1.5, "description": "返回主城"}
       ]
     },
     {
@@ -169,7 +217,7 @@
         {"ensure_main_city": [], "delay": 1.5, "description": "确认在主城界面"},
         {"find_building": ["{building}"], "delay": 2.0, "description": "定位到建筑并点击"},
         {"tap_text": ["建造"], "delay": 2.0, "optional": true, "description": "点击建造（新建筑时出现）"},
-        {"tap_icon": ["icons/upgrade_arrow"], "delay": 2.0, "optional": true, "description": "点击升级箭头图标"},
+        {"tap_icon": ["upgrade_arrow"], "delay": 2.0, "optional": true, "description": "点击升级箭头图标"},
         {"tap_text": ["升级"], "delay": 2.0, "repeat": 5, "optional": true, "description": "点击升级"},
         {"tap_text": ["建造"], "delay": 2.0, "repeat": 2, "optional": true, "description": "点击建造"},
         {"tap_text": ["下一个"], "delay": 2.0, "repeat": 5, "optional": true, "description": "点击下一个"},

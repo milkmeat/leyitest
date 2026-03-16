@@ -1,0 +1,9 @@
+scene: building_upgrade
+required_elements:
+- type: button
+  text_match: 升级|建造|下一个
+- type: button
+  text_match: 采石场
+auto_action:
+  type: tap
+  reason_match: "tap:button:升级"

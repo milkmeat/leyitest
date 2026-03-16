@@ -1,0 +1,8 @@
+scene: hero_upgrade
+required_elements:
+- type: finger
+- type: icon
+  name: back_arrow
+auto_action:
+  type: tap
+  reason_match: "tap_fingertip:finger"
