@@ -58,6 +58,7 @@
       {"type": "finger", "action": "tap_fingertip"},
       {"type": "button", "text_match": "领取|claim|collect|一键领取", "action": "tap"},
       {"type": "button", "text_match": "确[认定]|ok|confirm", "action": "tap"},
+      {"type": "button", "text_match": "欢迎", "action": "tap"},
       {"type": "button", "text_match": "返回.*", "action": "tap"},
       {"type": "button", "text_match": "继续", "action": "tap"},
       {"type": "button", "text_match": "^前往$", "action": "tap"},
