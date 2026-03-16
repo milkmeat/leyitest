@@ -177,30 +177,31 @@
 
 ### TODO
 
-- [ ] **4.1 GameProfile 新字段** (`game_profile.py`)
+- [x] **4.1 GameProfile 新字段** (`game_profile.py`)
   - `dom_top_y: int` — top_bar 下界（默认 200）
   - `dom_bottom_y: int` — bottom_bar 上界（默认 1700）
-  - `scene_rules: list[dict]` — 场景识别规则（顺序匹配）
+  - ~~`scene_rules: list[dict]` — 场景识别规则~~ (skipped — `infer_scene()` 硬编码逻辑运行良好)
   - `auto_priorities: dict[str, list[dict]]` — 各场景点击优先级
   - 加载时从 game.json 读取，缺省用默认值
 
-- [ ] **4.2 frozenisland game.json 更新**
-  - 添加 `scene_rules`（popup / loading / main_city / world_map / hero / story_dialogue）
-  - 添加 `auto_priorities`（popup / main_city / world_map / story_dialogue / loading / _default）
-  - 可选：`dom_top_y`、`dom_bottom_y`（如果默认值不适用）
+- [x] **4.2 frozenisland game.json 更新**
+  - ~~`scene_rules`~~ (skipped — 使用硬编码 `infer_scene()`)
+  - `auto_priorities` 已配置（popup / main_city / world_map / story_dialogue / loading / _default）
+  - `dom_top_y`、`dom_bottom_y` 使用默认值（200 / 1700）
 
-- [ ] **4.3 westgame2 game.json 更新**
-  - 同 frozenisland，但适配 westgame2 的场景模板名和按钮文字
-  - 包含 exit_dialog、shoot_mini_game 等特有场景
+- [x] **4.3 westgame2 game.json 更新**
+  - ~~`scene_rules`~~ (skipped — 使用硬编码 `infer_scene()`)
+  - `auto_priorities` 已配置，包含 exit_dialog、shoot_mini_game 等特有场景
+  - `dom_top_y`、`dom_bottom_y` 使用默认值（200 / 1700）
 
 - [x] **4.4 DOM 场景推断集成**
   - `infer_scene(dom, screenshot)` 在 `build()` 末尾调用，基于 DOM 元素推断场景
   - 优先级顺序：popup > exit_dialog > loading(像素) > story_dialogue > shoot_mini_game > main_city > world_map > hero_recruit > hero_upgrade > hero > unknown
   - auto_loop 不再调用 SceneClassifier，直接使用 `dom["screen"]["scene"]`
 
-- [ ] **4.5 测试**
+- [x] **4.5 测试**
   - 验证两个游戏的 game.json 可正常加载
-  - 验证场景规则对各种 DOM 正确识别场景
+  - 验证场景推断对各种 DOM 正确识别场景（通过 screenshot 测试框架）
   - 验证优先级配置正确驱动 AutoHandler 决策
 
 ### 验收标准
@@ -337,7 +338,7 @@
 | Phase 1: DOM Builder | Done (1.6 skipped) | 2026-03-14 | 2026-03-14 |
 | Phase 2: Script Runner | Done (2.6 deferred) | 2026-03-15 | 2026-03-15 |
 | Phase 3: Auto Handler | Done (3.4 deferred) | 2026-03-15 | 2026-03-15 |
-| Phase 4: Game Config | In progress (4.4 done) | 2026-03-15 | — |
+| Phase 4: Game Config | Done (scene_rules skipped) | 2026-03-15 | 2026-03-16 |
 | Phase 5: Cleanup | Not started | — | — |
 | Phase 6: Integration | Not started | — | — |
 | Screenshot 测试框架 | Done | 2026-03-15 | 2026-03-15 |

@@ -169,9 +169,13 @@ class ScreenDOMBuilder:
         self.indicator_detector = IndicatorDetector()
         self.popup_detector = PopupDetector()
 
-        # Region boundaries (configurable via game_profile in Phase 4)
-        self.top_y = 200
-        self.bottom_y = 1700
+        # Region boundaries (from game_profile or defaults)
+        if game_profile is not None:
+            self.top_y = game_profile.dom_top_y
+            self.bottom_y = game_profile.dom_bottom_y
+        else:
+            self.top_y = 200
+            self.bottom_y = 1700
 
     def build(self, screenshot: np.ndarray) -> dict:
         """Full pipeline: screenshot → DOM dict.

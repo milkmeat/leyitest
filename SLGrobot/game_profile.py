@@ -76,6 +76,10 @@ class GameProfile:
     # DOM-based auto-handler priority rules (Phase 3)
     auto_priorities: dict[str, list[dict]] = field(default_factory=dict)
 
+    # DOM region boundaries (Phase 4)
+    dom_top_y: int = 200       # top_bar 下界
+    dom_bottom_y: int = 1700   # bottom_bar 上界
+
 
 def load_game_profile(game_id: str,
                       games_dir: str = "games") -> GameProfile:
@@ -155,6 +159,10 @@ def load_game_profile(game_id: str,
 
         # Auto priorities
         auto_priorities=data.get("auto_priorities", {}),
+
+        # DOM region boundaries
+        dom_top_y=data.get("dom_top_y", 200),
+        dom_bottom_y=data.get("dom_bottom_y", 1700),
     )
 
     logger.info(f"Loaded game profile: {profile.display_name} ({game_id})")
