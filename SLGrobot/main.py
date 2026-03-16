@@ -34,8 +34,6 @@ from vision.ocr_locator import OCRLocator
 from vision.grid_overlay import GridOverlay
 from vision.building_finder import BuildingFinder, parse_city_layout
 from vision.element_detector import ElementDetector
-from scene.classifier import SceneClassifier
-from scene.popup_filter import PopupFilter
 from state.game_state import GameState
 from state.state_tracker import StateTracker
 from state.persistence import StatePersistence
@@ -59,7 +57,7 @@ Commands:
   center                        Tap screen center
   status                        Show connection and game state
   state                         Show current game state
-  scene                         Classify current scene
+  scene                         Detect current scene (via Screen DOM)
   dom [--save]                   Build Screen DOM (YAML) of current screen
   run <name> [--dry]             Execute a YAML script (v2 DOM-aware runner)
   scripts                        List available YAML scripts
@@ -121,13 +119,6 @@ class GameBot:
         self.grid = GridOverlay(grid_cols, grid_rows)
         self.detector = ElementDetector(self.template_matcher, self.ocr, self.grid)
 
-        # Scene layer
-        self.classifier = SceneClassifier(self.template_matcher, game_profile=game_profile)
-        self.popup_filter = PopupFilter(
-            self.template_matcher, self.adb, self.ocr,
-            game_profile=game_profile,
-        )
-
         # State layer
         default_resources = (
             game_profile.default_resources if game_profile else None
@@ -170,7 +161,7 @@ class GameBot:
                 logger.info(f"City layout file not found: {layout_path}")
 
         # Executor layer (Phase 4)
-        self.validator = ActionValidator(self.detector, self.classifier)
+        self.validator = ActionValidator(self.detector)
         self.runner = ActionRunner(
             self.adb, self.input_actions, self.detector,
             self.grid, self.screenshot_mgr,
@@ -856,13 +847,11 @@ class CLI:
         print(gs.summary())
 
     def cmd_scene(self, args: list[str]) -> None:
+        """Detect current scene using Screen DOM inference."""
         screenshot = self.bot.screenshot_mgr.capture()
-        scene = self.bot.classifier.classify(screenshot)
-        scores = self.bot.classifier.get_confidence(screenshot)
+        dom = self.bot.dom_builder.build(screenshot)
+        scene = dom["screen"]["scene"]
         print(f"Scene: {scene}")
-        for s, score in sorted(scores.items(), key=lambda x: -x[1]):
-            if score > 0:
-                print(f"  {s}: {score:.3f}")
 
     def cmd_dom(self, args: list[str]) -> None:
         """Capture screenshot and output YAML DOM of all interactive elements."""
@@ -1309,51 +1298,6 @@ class CLI:
         out_path = "debug_finger.png"
         cv2.imwrite(out_path, crop)
         print(f"Saved {crop.shape[1]}x{crop.shape[0]} crop -> {out_path}")
-
-    def cmd_detect_finger_old(self, args: list[str]) -> None:
-        """Detect tutorial finger using the original (unoptimized) method."""
-        if args:
-            screenshot = cv2.imread(args[0])
-            if screenshot is None:
-                print(f"Failed to read image: {args[0]}")
-                return
-        else:
-            screenshot = self.bot.screenshot_mgr.capture()
-        fd = self.bot.finger_detector
-
-        # Show raw matches for all variants (before threshold filter)
-        for cache_name, _, flip_type in fd._all_variants:
-            raw = fd.element_detector.locate(
-                screenshot, cache_name, methods=["template"]
-            )
-            if raw is not None:
-                ncc = fd.verify_ncc(screenshot, raw.x, raw.y, flip_type)
-                bcon = fd.verify_boundary_contrast(
-                    screenshot, raw.x, raw.y, flip_type)
-                print(f"Raw {flip_type:7s}: ccorr={raw.confidence:.3f} "
-                      f"at ({raw.x}, {raw.y})  ncc={ncc:.3f}  "
-                      f"boundary={bcon:.1f}")
-            else:
-                print(f"Raw {flip_type:7s}: no match")
-        print(f"  (threshold: ccorr>={fd._FINGER_CONFIDENCE_THRESHOLD}, "
-              f"ncc>={fd._FINGER_NCC_THRESHOLD}, "
-              f"boundary>={fd._FINGER_BOUNDARY_THRESHOLD})")
-
-        import time
-        t0 = time.perf_counter()
-        finger_match, flip_type = fd.detect_old(screenshot)
-        elapsed = time.perf_counter() - t0
-        print(f"detect_old elapsed: {int(elapsed * 1000)}ms")
-
-        if finger_match is None:
-            print("No finger detected (rejected by three-stage filter).")
-            return
-
-        tip_x, tip_y = fd.fingertip_pos(
-            finger_match.x, finger_match.y, flip_type)
-        print(f"Finger center: ({finger_match.x}, {finger_match.y})  "
-              f"confidence={finger_match.confidence:.3f}  {flip_type}")
-        print(f"Fingertip:     ({tip_x}, {tip_y})")
 
     def cmd_detect_close_x(self, args: list[str]) -> None:
         """Detect close_x button on screen and save debug crop."""

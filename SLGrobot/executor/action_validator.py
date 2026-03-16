@@ -10,7 +10,6 @@ import numpy as np
 
 import config
 from vision.element_detector import ElementDetector
-from scene.classifier import SceneClassifier
 
 logger = logging.getLogger(__name__)
 
@@ -21,13 +20,10 @@ class ActionValidator:
     Validates that:
     - Target element exists on screen (for text-based targets)
     - Coordinates are within screen bounds
-    - Current scene matches expected scene (if specified)
     """
 
-    def __init__(self, element_detector: ElementDetector,
-                 scene_classifier: SceneClassifier) -> None:
+    def __init__(self, element_detector: ElementDetector) -> None:
         self.detector = element_detector
-        self.classifier = scene_classifier
         self.screen_width = config.SCREEN_WIDTH
         self.screen_height = config.SCREEN_HEIGHT
 

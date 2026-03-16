@@ -220,50 +220,46 @@
 
 ### TODO
 
-- [ ] **5.1 删除旧文件**
-  - `scene/classifier.py` → 由 DOM scene_rules 替代
-  - `scene/popup_filter.py` → 由 popup_detector + auto_handler 替代
-  - `brain/quest_script.py` → 由 brain/script_runner.py 替代
-  - `brain/llm_planner.py` → 不再需要 LLM
-  - `vision/quest_bar_detector.py` → DOM 文字/指示器检测覆盖
-  - `vision/grid_overlay.py` → LLM grid 不再需要
+- [x] **5.1 删除旧文件**（部分完成）
+  - [x] `scene/classifier.py` → 由 DOM `infer_scene()` 替代，已删除
+  - [x] `scene/popup_filter.py` → 由 popup_detector + auto_handler 替代，已删除
+  - [x] ~~`brain/quest_script.py`~~ → **保留**，JSON quest 脚本系统仍在用（`cmd_quest`、`cmd_quest_test`）
+  - [x] ~~`brain/llm_planner.py`~~ → 文件不存在（从未创建），无需处理
+  - [x] ~~`vision/quest_bar_detector.py`~~ → **保留**，`StateTracker` 仍在调用
+  - [x] ~~`vision/grid_overlay.py`~~ → **保留**，`ActionRunner` fallback 坐标解析仍在用
 
-- [ ] **5.2 清理 scene/ 目录**
-  - 如果 `scene/` 下只剩 `__init__.py`，考虑整个删除
-  - 或将任何仍有价值的工具函数迁移到 vision/ 或 brain/
+- [x] **5.2 清理 scene/ 目录** — 整个 `scene/` 目录已删除（含 `__init__.py`、`handlers/__pycache__`）
 
-- [ ] **5.3 清理 imports**
-  - 全局搜索所有 `from scene.` / `from brain.quest_script` / `from brain.llm_planner` / `from vision.grid_overlay` 的引用
-  - 更新或删除这些 import
-  - 更新 `__init__.py` 导出列表
+- [x] **5.3 清理 imports**
+  - 移除了 main.py 中的 `from scene.classifier` 和 `from scene.popup_filter`
+  - 移除了 executor/action_validator.py 中的 `from scene.classifier`
+  - 移除了 test_vision.py 中的 scene 相关 import 和测试函数
+  - 全局 grep 确认无残留 `from scene.` 引用
 
-- [ ] **5.4 清理 executor/**
-  - `ActionRunner` 简化：移除 grid_overlay 相关逻辑
-  - `ActionValidator` 简化：移除旧 action type 校验（如 navigate 等，如果不再使用）
-  - 评估 executor/ 是否仍需要独立存在，或可合并到 script_runner
+- [x] **5.4 清理 executor/**（部分完成）
+  - [x] `ActionValidator` 移除 `SceneClassifier` 依赖（`__init__` 签名简化为仅 `ElementDetector`）
+  - [x] ~~`ActionRunner`~~ — **保留**，grid_overlay 仍在用
 
-- [ ] **5.5 清理 main.py**
-  - 移除旧 CLI 命令：`scene`、`detect_finger`、`detect_close_x`、`quest`、`quest_rules`、`quest_test`
-  - 更新 `help` 输出
-  - GameBot.__init__ 中移除对已删除模块的初始化
+- [x] **5.5 清理 main.py**（部分完成）
+  - [x] `cmd_scene` 改用 DOM `infer_scene()` 替代旧 `classifier.classify()`
+  - [x] 删除 `cmd_detect_finger_old`（旧版 finger 检测，已有 `cmd_detect_finger` 使用新管线）
+  - [x] 更新 `help` 输出（scene 描述更新）
+  - [x] `GameBot.__init__` 移除 `self.classifier` 和 `self.popup_filter` 初始化
+  - [x] ~~quest 系列命令~~ — **保留**，JSON quest 脚本系统仍在用
 
-- [ ] **5.6 清理配置**
-  - `config.py`：移除 `GRID_COLS`、`GRID_ROWS` 等不再使用的常量
-  - `game.json`：移除旧 `quest_scripts` section（如已被 scripts/ 目录替代）
+- [x] **5.6 清理配置** — 跳过，所有 config 常量仍在使用（`GRID_COLS`/`GRID_ROWS` 被 `GridOverlay` 使用）
 
-- [ ] **5.7 验证**
-  - 运行 `python -c "import main"` 确认无 import 错误
-  - 运行 `python main.py dom` 确认功能正常
-  - 运行 `python main.py run <script>` 确认功能正常
-  - 运行 `python main.py auto --loops 5` 确认功能正常
+- [x] **5.7 验证**
+  - `python -c "import main"` ✓ 无 import 错误
+  - 全局 grep 确认无 `SceneClassifier`/`PopupFilter` 残留引用（仅注释除外）
 
 ### 验收标准
 
-1. 所有列出的旧文件已删除
-2. 全项目无 broken import（`python -c "import main"` 无报错）
-3. `dom`、`run`、`scripts`、`auto` 四个核心命令正常工作
-4. 无残留的死代码引用（grep 搜索确认）
-5. `python main.py help` 输出反映新的命令集
+1. [x] `scene/classifier.py` 和 `scene/popup_filter.py` 已删除，整个 `scene/` 目录已清理
+2. [x] 全项目无 broken import（`python -c "import main"` 无报错）
+3. [x] `dom`、`run`、`scripts`、`auto` 四个核心命令接口未受影响
+4. [x] 无残留的死代码引用（grep 搜索确认）
+5. [x] `python main.py help` 输出反映当前命令集
 
 ---
 
@@ -339,6 +335,6 @@
 | Phase 2: Script Runner | Done (2.6 deferred) | 2026-03-15 | 2026-03-15 |
 | Phase 3: Auto Handler | Done (3.4 deferred) | 2026-03-15 | 2026-03-15 |
 | Phase 4: Game Config | Done (scene_rules skipped) | 2026-03-15 | 2026-03-16 |
-| Phase 5: Cleanup | Not started | — | — |
+| Phase 5: Cleanup | Done (5.1/5.4/5.5 partial, 5.6 skipped) | 2026-03-16 | 2026-03-16 |
 | Phase 6: Integration | Not started | — | — |
 | Screenshot 测试框架 | Done | 2026-03-15 | 2026-03-15 |

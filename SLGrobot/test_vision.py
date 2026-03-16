@@ -1,4 +1,4 @@
-"""Phase 2 Test Script - Verify vision pipeline: template matching, OCR, grid, scene classification."""
+"""Phase 2 Test Script - Verify vision pipeline: template matching, OCR, grid, element detection."""
 
 import sys
 import os
@@ -15,8 +15,6 @@ from vision.template_matcher import TemplateMatcher
 from vision.ocr_locator import OCRLocator
 from vision.grid_overlay import GridOverlay
 from vision.element_detector import ElementDetector
-from scene.classifier import SceneClassifier
-from scene.popup_filter import PopupFilter
 
 
 def test_template_matcher(screenshot):
@@ -157,48 +155,6 @@ def test_element_detector(screenshot, matcher, ocr, grid):
     return detector
 
 
-def test_scene_classifier(screenshot, matcher):
-    """Test 5: Scene classification."""
-    print("\n" + "=" * 50)
-    print("Test 5: Scene Classifier")
-    print("=" * 50)
-
-    classifier = SceneClassifier(matcher)
-
-    # Classify current screenshot
-    scene = classifier.classify(screenshot)
-    print(f"  Current scene: {scene}")
-
-    # Get confidence scores
-    scores = classifier.get_confidence(screenshot)
-    print(f"  Confidence scores:")
-    for scene_name, score in sorted(scores.items(), key=lambda x: x[1], reverse=True):
-        bar = "#" * int(score * 20)
-        print(f"    {scene_name:12s}: {score:.3f} {bar}")
-
-    print("  PASSED")
-    return classifier
-
-
-def test_popup_filter(screenshot, matcher, adb):
-    """Test 6: Popup detection (detection only, no tap)."""
-    print("\n" + "=" * 50)
-    print("Test 6: Popup Filter")
-    print("=" * 50)
-
-    popup_filter = PopupFilter(matcher, adb)
-    is_popup = popup_filter.is_popup(screenshot)
-    print(f"  Current screen is popup: {is_popup}")
-
-    if is_popup:
-        print("  Popup detected! (Would close it in production)")
-        print("  Skipping auto-close in test mode")
-    else:
-        print("  No popup detected on current screen")
-
-    print("  PASSED")
-
-
 def main():
     print("SLGrobot Phase 2 - Vision Test Suite")
     print(f"Target: {config.ADB_HOST}:{config.ADB_PORT}")
@@ -222,8 +178,6 @@ def main():
         ocr = test_ocr(screenshot)
         grid = test_grid_overlay(screenshot)
         test_element_detector(screenshot, matcher, ocr, grid)
-        test_scene_classifier(screenshot, matcher)
-        test_popup_filter(screenshot, matcher, adb)
 
         print("\n" + "=" * 50)
         print("ALL PHASE 2 TESTS PASSED")
