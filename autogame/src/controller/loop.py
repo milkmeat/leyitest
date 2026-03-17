@@ -30,9 +30,11 @@ from src.perception.data_sync import DataSyncer
 try:
     from src.ai.llm_client import LLMClient
     from src.ai.l1_leader import L1Coordinator
+    from src.ai.l2_commander import L2Commander
 except ImportError:
     LLMClient = None  # type: ignore[misc,assignment]
     L1Coordinator = None  # type: ignore[misc,assignment]
+    L2Commander = None  # type: ignore[misc,assignment]
 
 
 @dataclass
@@ -66,10 +68,13 @@ class AIController:
         self.log_dir = config.system.logging.dir
         self._stop = False
 
-        # L1 协调器（可选 — 传入 llm_client 时启用 AI 决策）
+        # L2 指挥官 + L1 协调器（可选 — 传入 llm_client 时启用 AI 决策）
+        self.l2_commander = None
         self.l1_coordinator = None
         if llm_client is not None and L1Coordinator is not None:
             self.l1_coordinator = L1Coordinator(config, llm_client)
+        if llm_client is not None and L2Commander is not None:
+            self.l2_commander = L2Commander(config, llm_client)
 
     async def run(self, max_rounds: int = 0):
         """启动主循环
@@ -156,23 +161,26 @@ class AIController:
         print(f"[sync]   {stats.account_count} 账号, {stats.building_count} 建筑, "
               f"{stats.enemy_count} 敌方 ({stats.sync_time:.2f}s)")
 
-        # ── Phase 2: L2 (stub) ──
+        # ── Phase 2: L2 ──
         t0 = time.monotonic()
-        l2_orders: list[Any] = []
+        l2_orders: dict[int, str] = {}
         try:
-            # TODO: 接入 L2Commander
-            l2_orders = []
+            if self.l2_commander and snapshot:
+                l2_orders = await self.l2_commander.decide(snapshot)
         except Exception as e:
             stats.phase_errors.append(f"l2: {e}")
         stats.l2_time = round(time.monotonic() - t0, 2)
-        print(f"[L2]     stub — 跳过 ({stats.l2_time:.2f}s)")
+        if self.l2_commander:
+            print(f"[L2]     {len(l2_orders)} 条指令 ({stats.l2_time:.2f}s)")
+        else:
+            print(f"[L2]     跳过 (无 LLM) ({stats.l2_time:.2f}s)")
 
         # ── Phase 3: L1 ──
         t0 = time.monotonic()
         instructions: list[Any] = []
         try:
             if self.l1_coordinator and snapshot:
-                instructions = await self.l1_coordinator.decide_all(snapshot, l2_orders={})
+                instructions = await self.l1_coordinator.decide_all(snapshot, l2_orders=l2_orders)
         except Exception as e:
             stats.phase_errors.append(f"l1: {e}")
         stats.l1_time = round(time.monotonic() - t0, 2)
