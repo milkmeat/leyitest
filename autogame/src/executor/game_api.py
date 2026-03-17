@@ -403,6 +403,23 @@ class GameAPIClient:
         info = await self.get_player_info(uid, modules=["svr_lord_info_new"])
         return info.get("pos")
 
+    async def get_player_lvl_info(self, uid: int) -> int:
+        """获取玩家当前所在的 AVA 战场 ID
+
+        Returns:
+            lvl_id: 0 表示在普通地图，非0 为 AVA 战场副本 ID
+        """
+        data = await self.send_cmd("get_player_lvl_info", uid)
+        try:
+            for item in data["res_data"][0]["push_list"][0]["data"]:
+                if item.get("name") == "svr_player_lvl_info":
+                    raw = item.get("data", "")
+                    parsed = json.loads(raw) if isinstance(raw, str) else raw
+                    return parsed.get("lvl_id", 0)
+        except (KeyError, IndexError, TypeError, json.JSONDecodeError):
+            logger.warning("get_player_lvl_info 响应结构异常 uid=%s", uid)
+        return 0
+
     async def get_all_player_data(self, uid: int) -> Dict[str, Any]:
         """获取玩家全量数据"""
         return await self.send_cmd("get_all_player_data", uid)

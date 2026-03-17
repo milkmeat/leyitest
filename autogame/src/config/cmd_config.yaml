@@ -143,6 +143,15 @@ commands:
         - "svr_buff"
     description: "获取玩家完整信息（坐标/联盟/兵种/英雄/buff）"
 
+  # --- 获取玩家临时战场信息 ---
+  get_player_lvl_info:
+    cmd: "login_get"
+    default_param:
+      all: 0
+      list:
+        - "svr_player_lvl_info"
+    description: "获取玩家临时战场信息（lvl_id=0 表示在普通地图，非0 为 AVA 战场副本 ID）"
+
   # --- 获取联盟成员列表 ---
   get_al_members:
     cmd: "get_self_al_member"
