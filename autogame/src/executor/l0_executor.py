@@ -283,13 +283,17 @@ class L0Executor:
                     "id": instr.building_id,
                     "pos": str(encode_pos(instr.target_x, instr.target_y)),
                 }
+                # 从 building_id 提取 target_type（格式: {type}_{id}_{level}）
+                target_type = int(instr.building_id.split("_")[0]) if "_" in instr.building_id else 13
             else:
                 target_info = {
                     "id": f"2_{instr.target_uid}_1",
                     "pos": str(encode_pos(instr.target_x, instr.target_y)),
                 }
+                target_type = 2  # 玩家主城
             return await self.client.create_rally(
                 instr.uid, target_info, march, instr.prepare_time,
+                target_type=target_type,
             )
 
         elif action == ActionType.JOIN_RALLY:

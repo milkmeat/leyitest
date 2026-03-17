@@ -5,8 +5,8 @@ loop:
   sync_timeout: 5               # Phase 1 数据同步超时 (秒)
 
 llm:
-  timeout_seconds: 60           # 单次 LLM 调用超时
-  max_retries: 1                # LLM 调用失败重试次数 (0=不重试)
+  timeout_seconds: 120          # 单次 LLM 调用超时
+  max_retries: 2                # LLM 调用失败重试次数 (0=不重试)
   # model, base_url, api_key 已移至 config/llm_secret.yaml (gitignored)
 
 concurrency:

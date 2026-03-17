@@ -116,9 +116,15 @@ class LLMClient:
                 )
             except Exception as e:
                 last_error = e
+                # 429 速率限制: 指数退避
+                is_rate_limit = "429" in str(e) or "rate" in str(e).lower()
+                backoff = (2 ** attempt) * (3 if is_rate_limit else 1)
                 logger.warning(
-                    "LLM 调用失败 (attempt %d/%d): %s", attempt + 1, attempts, e
+                    "LLM 调用失败 (attempt %d/%d): %s — 等待 %ds",
+                    attempt + 1, attempts, e, backoff,
                 )
+                if attempt < attempts - 1:
+                    await asyncio.sleep(backoff)
 
         raise last_error  # type: ignore[misc]
 

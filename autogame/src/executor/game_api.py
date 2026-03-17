@@ -294,14 +294,34 @@ class GameAPIClient:
     async def reinforce_building(
         self, uid: int, target_info: Dict[str, Any], march_info: Dict[str, Any],
     ) -> Dict[str, Any]:
-        """驻防/增援建筑"""
-        return await self.send_cmd("reinforce_building", uid, target_info=target_info, march_info=march_info)
+        """驻防/增援建筑
+
+        自动从 target_info["id"] 提取 target_type。
+        """
+        building_id = target_info.get("id", "")
+        target_type = int(building_id.split("_")[0]) if "_" in building_id else 13
+        return await self.send_cmd(
+            "reinforce_building", uid,
+            target_type=target_type,
+            target_info=target_info,
+            march_info=march_info,
+        )
 
     async def attack_building(
         self, uid: int, target_info: Dict[str, Any], march_info: Dict[str, Any],
     ) -> Dict[str, Any]:
-        """攻击建筑"""
-        return await self.send_cmd("attack_building", uid, target_info=target_info, march_info=march_info)
+        """攻击建筑
+
+        自动从 target_info["id"] 提取 target_type（建筑ID格式: {type}_{id}_{level}）。
+        """
+        building_id = target_info.get("id", "")
+        target_type = int(building_id.split("_")[0]) if "_" in building_id else 13
+        return await self.send_cmd(
+            "attack_building", uid,
+            target_type=target_type,
+            target_info=target_info,
+            march_info=march_info,
+        )
 
     async def get_player_info(
         self, uid: int, modules: Optional[List[str]] = None,
