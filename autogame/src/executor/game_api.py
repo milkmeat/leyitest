@@ -454,3 +454,179 @@ class GameAPIClient:
         if op_type is not None:
             overrides["op_type"] = op_type
         return await self.send_cmd("add_resource", uid, **overrides)
+
+    # ------------------------------------------------------------------
+    # AVA 战场内操作
+    # ------------------------------------------------------------------
+
+    async def lvl_move_city(self, uid: int, x: int, y: int) -> Dict[str, Any]:
+        """AVA 战场内移城到 (x, y)"""
+        return await self.send_cmd("lvl_move_city", uid, tar_pos=encode_pos(x, y))
+
+    async def lvl_battle_login_get(self, uid: int, lvl_id: int) -> Dict[str, Any]:
+        """获取 AVA 战场队伍信息"""
+        return await self.send_cmd("lvl_battle_login_get", uid, lvl_id=lvl_id)
+
+    async def lvl_scout_player(
+        self, uid: int, target_uid: int, target_pos: int,
+    ) -> Dict[str, Any]:
+        """AVA 战场内侦查玩家
+
+        Args:
+            target_uid: 目标玩家 UID
+            target_pos: 编码后的坐标（x*100000000+y*100）
+        """
+        target_info = {
+            "id": target_uid,
+            "pos": target_pos,
+            "type": 10101,
+            "unique_id": "",
+            "lv": 20,
+        }
+        return await self.send_cmd("lvl_dispatch_scout_player", uid, target_info=target_info)
+
+    async def lvl_scout_building(
+        self, uid: int, building_id: int, building_pos: int, key: int = 0,
+    ) -> Dict[str, Any]:
+        """AVA 战场内侦查建筑
+
+        Args:
+            building_id: 建筑 ID
+            building_pos: 编码后的坐标
+            key: 建筑 key
+        """
+        target_info = {
+            "id": building_id,
+            "pos": building_pos,
+            "type": 10001,
+            "unique_id": "",
+            "key": key,
+        }
+        return await self.send_cmd("lvl_dispatch_scout_building", uid, target_info=target_info)
+
+    async def lvl_attack_player(
+        self, uid: int, target_id: str, target_pos: int,
+        march_info: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """AVA 战场内攻打玩家
+
+        Args:
+            target_id: 目标唯一 ID
+            target_pos: 编码后的坐标
+            march_info: 出征部队信息（可选，为 None 时使用 YAML 默认值）
+        """
+        overrides: Dict[str, Any] = {
+            "target_info": {"id": target_id, "pos": target_pos},
+        }
+        if march_info:
+            overrides["march_info"] = march_info
+        return await self.send_cmd("lvl_dispatch_troop", uid, **overrides)
+
+    async def lvl_attack_building(
+        self, uid: int, target_id: str, target_pos: int, key: int = 0,
+        march_info: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """AVA 战场内攻打建筑
+
+        Args:
+            target_id: 建筑唯一 ID
+            target_pos: 编码后的坐标
+            key: 建筑 key
+            march_info: 出征部队信息
+        """
+        overrides: Dict[str, Any] = {
+            "target_info": {"id": target_id, "pos": target_pos, "key": key},
+        }
+        if march_info:
+            overrides["march_info"] = march_info
+        return await self.send_cmd("lvl_dispatch_troop_building", uid, **overrides)
+
+    async def lvl_create_rally(
+        self, uid: int, target_id: str,
+        march_info: Optional[Dict[str, Any]] = None,
+        prepare_time: int = 60, tn_limit: int = 1,
+        timestamp: str = "",
+    ) -> Dict[str, Any]:
+        """AVA 战场内对玩家发起集结
+
+        Args:
+            target_id: 目标唯一 ID
+            march_info: 队长出征部队信息
+            prepare_time: 集结准备时间（默认60秒）
+            tn_limit: 部队数量限制
+        """
+        overrides: Dict[str, Any] = {
+            "target_info": {"id": target_id},
+            "prepare_time": prepare_time,
+            "tn_limit": tn_limit,
+            "timestamp": timestamp,
+        }
+        if march_info:
+            overrides["march_info"] = march_info
+        return await self.send_cmd("lvl_create_rally_war", uid, **overrides)
+
+    async def lvl_create_rally_building(
+        self, uid: int, target_id: str,
+        march_info: Optional[Dict[str, Any]] = None,
+        prepare_time: int = 60, tn_limit: int = 1,
+        timestamp: str = "",
+    ) -> Dict[str, Any]:
+        """AVA 战场内对建筑发起集结"""
+        overrides: Dict[str, Any] = {
+            "target_info": {"id": target_id},
+            "prepare_time": prepare_time,
+            "tn_limit": tn_limit,
+            "timestamp": timestamp,
+        }
+        if march_info:
+            overrides["march_info"] = march_info
+        return await self.send_cmd("lvl_create_rally_war_building", uid, **overrides)
+
+    async def lvl_rally_dismiss(self, uid: int, unique_id: str) -> Dict[str, Any]:
+        """AVA 战场内解散集结 (unique_id 格式: 107_xxx)"""
+        return await self.send_cmd("lvl_rally_dismiss", uid, unique_id=unique_id)
+
+    async def lvl_join_rally(
+        self, uid: int, target_id: str, target_pos: int = 0,
+        march_info: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """AVA 战场内参与集结
+
+        Args:
+            target_id: 集结唯一 ID
+            target_pos: 集结目标编码坐标
+            march_info: 队员出征部队信息
+        """
+        overrides: Dict[str, Any] = {
+            "target_info": {"id": target_id, "pos": target_pos},
+        }
+        if march_info:
+            overrides["march_info"] = march_info
+        return await self.send_cmd("lvl_join_rally_war", uid, **overrides)
+
+    async def lvl_speed_up_troop(self, uid: int, unique_id: str) -> Dict[str, Any]:
+        """AVA 战场内行军加速 (unique_id 如 102_xxx 或 101_xxx)"""
+        return await self.send_cmd("lvl_use_troop_speed_up_item", uid, unique_id=unique_id)
+
+    async def lvl_recall_reinforce(self, uid: int, unique_id: str) -> Dict[str, Any]:
+        """AVA 战场内取消参与集结 (unique_id 格式: 101_xxx)"""
+        return await self.send_cmd("lvl_recall_reinforce", uid, unique_id=unique_id)
+
+    async def lvl_recall_troop(self, uid: int, unique_id: str) -> Dict[str, Any]:
+        """AVA 战场内召回普通队伍 (unique_id 格式: 101_xxx)"""
+        return await self.send_cmd("lvl_use_troop_return_item", uid, unique_id=unique_id)
+
+    async def lvl_recall_from_building(
+        self, uid: int, troop_ids: List[str], pos: int = 0,
+    ) -> Dict[str, Any]:
+        """AVA 战场内从建筑中召回队伍
+
+        Args:
+            troop_ids: 队伍 ID 列表
+            pos: 队伍当前位置（编码坐标）
+        """
+        return await self.send_cmd(
+            "lvl_change_troop", uid,
+            march_info={"ids": troop_ids},
+            target_info={"pos": pos},
+        )

@@ -326,3 +326,219 @@ commands:
       lvl_id: "战场ID"
     default_param: {}
     description: "进入AVA临时战场"
+
+# ============================================================
+# 六、AVA 战场内操作 (进入战场后的实际作战指令)
+# ============================================================
+
+  # --- 战场内移城 ---
+  lvl_move_city:
+    cmd: "lvl_move_city"
+    required_param:
+      tar_pos: "目标坐标（编码后的值，x*100000000+y*100）"
+    default_param:
+      use_gem: 1
+      item_id: 1
+    description: "AVA战场内移城"
+
+  # --- 获取战场队伍信息 ---
+  lvl_battle_login_get:
+    cmd: "lvl_battle_login_get"
+    required_param:
+      lvl_id: "战场ID"
+    default_param:
+      lvl_id: 0
+    description: "获取AVA临时战场玩家的队伍ID"
+
+  # --- 战场内侦查玩家 ---
+  lvl_dispatch_scout_player:
+    cmd: "lvl_dispatch_scout"
+    default_param:
+      march_type: 101
+      scout_queue_id: 8001
+      target_info:
+        id: 0
+        pos: 0
+        type: 10101
+        unique_id: ""
+        lv: 20
+    description: "AVA战场内侦查玩家"
+
+  # --- 战场内侦查建筑 ---
+  lvl_dispatch_scout_building:
+    cmd: "lvl_dispatch_scout"
+    default_param:
+      march_type: 101
+      scout_queue_id: 8001
+      target_info:
+        id: 0
+        pos: 0
+        type: 10001
+        unique_id: ""
+        key: 0
+    description: "AVA战场内侦查建筑"
+
+  # --- 战场内攻打玩家 ---
+  lvl_dispatch_troop:
+    cmd: "lvl_dispatch_troop"
+    default_param:
+      march_info:
+        carry_lord: 1
+        hero:
+          vice: {}
+        heros: {}
+        leader: 1
+        over_defend: false
+        queue_id: 6001
+        soldier:
+          204: 1000
+        soldier_total_num: 1000
+      march_type: 2
+      target_info:
+        id: ""
+        pos: ""
+      target_type: 10101
+    description: "AVA战场内攻打玩家"
+
+  # --- 战场内攻打建筑 ---
+  lvl_dispatch_troop_building:
+    cmd: "lvl_dispatch_troop"
+    default_param:
+      march_info:
+        carry_lord: 1
+        hero:
+          vice: {}
+        heros: {}
+        leader: 1
+        over_defend: false
+        queue_id: 6001
+        soldier:
+          204: 1000
+        soldier_total_num: 1000
+      march_type: 15
+      target_info:
+        id: ""
+        pos: 0
+        key: 0
+      target_type: 10001
+    description: "AVA战场内攻打建筑"
+
+  # --- 战场内对玩家发起集结 ---
+  lvl_create_rally_war:
+    cmd: "lvl_create_rally_war"
+    default_param:
+      march_info:
+        carry_lord: 1
+        hero:
+          vice: {}
+        heros: {}
+        leader: 1
+        over_defend: false
+        queue_id: 6001
+        soldier:
+          204: 1000
+        soldier_total_num: 1000
+      march_type: 13
+      prepare_time: 60
+      recommand_troop: []
+      target_info:
+        id: ""
+      target_type: 10101
+      timestamp: ""
+      tn_limit: 1
+    description: "AVA战场内对玩家发起集结"
+
+  # --- 战场内对建筑发起集结 ---
+  lvl_create_rally_war_building:
+    cmd: "lvl_create_rally_war"
+    default_param:
+      march_info:
+        carry_lord: 1
+        hero:
+          vice: {}
+        heros: {}
+        leader: 1
+        over_defend: false
+        queue_id: 6001
+        soldier:
+          204: 1000
+        soldier_total_num: 1000
+      march_type: 14
+      prepare_time: 60
+      recommand_troop: []
+      target_info:
+        id: ""
+      target_type: 10001
+      timestamp: ""
+      tn_limit: 1
+    description: "AVA战场内对建筑发起集结"
+
+  # --- 战场内解散集结 ---
+  lvl_rally_dismiss:
+    cmd: "lvl_rally_dismiss"
+    default_param:
+      unique_id: ""
+    description: "AVA战场内解散集结（unique_id通过lvl_battle_login_get获取，格式107_xxx）"
+
+  # --- 战场内参与集结 ---
+  lvl_join_rally_war:
+    cmd: "lvl_dispatch_troop"
+    default_param:
+      march_info:
+        carry_lord: 1
+        hero:
+          vice: {}
+        heros: {}
+        leader: 0
+        over_defend: false
+        queue_id: 6001
+        soldier:
+          204: 1000
+        soldier_total_num: 1000
+      march_type: 12
+      target_info:
+        id: ""
+        pos: 0
+      target_type: 107
+    description: "AVA战场内参与集结"
+
+  # --- 战场内行军加速 ---
+  lvl_use_troop_speed_up_item:
+    cmd: "lvl_use_troop_speed_up_item"
+    required_param:
+      unique_id: "队伍唯一ID（如 102_200106468001 或 101_1773137411106081）"
+    default_param:
+      cost_type: 1
+      item_id: 130
+      item_num: 1
+      unique_id: ""
+    description: "AVA战场内行军队伍加速"
+
+  # --- 战场内取消参与集结 ---
+  lvl_recall_reinforce:
+    cmd: "lvl_recall_reinforce"
+    default_param:
+      unique_id: ""
+    description: "AVA战场内取消参与集结（unique_id为行军队伍ID，格式101_xxx）"
+
+  # --- 战场内召回普通队伍 ---
+  lvl_use_troop_return_item:
+    cmd: "lvl_use_troop_return_item"
+    default_param:
+      cost_type: 1
+      item_id: 306
+      item_num: 1
+      unique_id: ""
+    description: "AVA战场内召回普通队伍（unique_id为行军队伍ID，格式101_xxx）"
+
+  # --- 战场内从建筑召回队伍 ---
+  lvl_change_troop:
+    cmd: "lvl_change_troop"
+    default_param:
+      march_info:
+        ids: []
+      march_type: 5
+      target_info:
+        pos: 0
+      target_type: 10004
+    description: "AVA战场内从建筑中召回队伍（ids为队伍ID列表，pos为队伍当前位置）"

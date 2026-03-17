@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------
 
 class ActionType(str, Enum):
+    # --- 主世界指令 ---
     MOVE_CITY = "MOVE_CITY"
     ATTACK_TARGET = "ATTACK_TARGET"
     SCOUT = "SCOUT"
@@ -41,6 +42,20 @@ class ActionType(str, Enum):
     RETREAT = "RETREAT"
     RALLY_DISMISS = "RALLY_DISMISS"
     RECALL_REINFORCE = "RECALL_REINFORCE"
+    # --- AVA 战场内指令 ---
+    LVL_MOVE_CITY = "LVL_MOVE_CITY"
+    LVL_ATTACK_PLAYER = "LVL_ATTACK_PLAYER"
+    LVL_ATTACK_BUILDING = "LVL_ATTACK_BUILDING"
+    LVL_SCOUT_PLAYER = "LVL_SCOUT_PLAYER"
+    LVL_SCOUT_BUILDING = "LVL_SCOUT_BUILDING"
+    LVL_INITIATE_RALLY = "LVL_INITIATE_RALLY"
+    LVL_INITIATE_RALLY_BUILDING = "LVL_INITIATE_RALLY_BUILDING"
+    LVL_JOIN_RALLY = "LVL_JOIN_RALLY"
+    LVL_RALLY_DISMISS = "LVL_RALLY_DISMISS"
+    LVL_RECALL_REINFORCE = "LVL_RECALL_REINFORCE"
+    LVL_RECALL_TROOP = "LVL_RECALL_TROOP"
+    LVL_SPEED_UP = "LVL_SPEED_UP"
+    LVL_RECALL_FROM_BUILDING = "LVL_RECALL_FROM_BUILDING"
 
 
 class AIInstruction(BaseModel):
@@ -54,10 +69,12 @@ class AIInstruction(BaseModel):
     target_y: int = 0
     target_uid: int = 0                # 目标玩家 UID
     building_id: str = ""              # 建筑 unique_id
-    rally_id: str = ""                 # 集结 ID（JOIN_RALLY）
-    troop_ids: list[str] = []          # 部队 ID 列表（RETREAT）
-    prepare_time: int = 300            # 集结准备时间秒（INITIATE_RALLY）
+    rally_id: str = ""                 # 集结 ID（JOIN_RALLY / LVL_JOIN_RALLY）
+    troop_ids: list[str] = []          # 部队 ID 列表（RETREAT / LVL_RECALL_FROM_BUILDING）
+    prepare_time: int = 300            # 集结准备时间秒（INITIATE_RALLY 默认300, LVL 默认60）
     reinforce_id: str = ""             # 增援部队 unique_id（RECALL_REINFORCE 用）
+    troop_unique_id: str = ""          # 队伍唯一 ID（LVL_SPEED_UP / LVL_RECALL_TROOP / LVL_RECALL_REINFORCE）
+    building_key: int = 0              # 建筑 key（LVL 战场建筑操作用）
     reason: str = ""                   # L1 决策理由（日志用）
 
 
@@ -104,6 +121,13 @@ class L0Executor:
             ActionType.SCOUT,
             ActionType.GARRISON_BUILDING,
             ActionType.INITIATE_RALLY,
+            ActionType.LVL_MOVE_CITY,
+            ActionType.LVL_ATTACK_PLAYER,
+            ActionType.LVL_ATTACK_BUILDING,
+            ActionType.LVL_SCOUT_PLAYER,
+            ActionType.LVL_SCOUT_BUILDING,
+            ActionType.LVL_INITIATE_RALLY,
+            ActionType.LVL_INITIATE_RALLY_BUILDING,
         }
         if instr.action in needs_coords:
             if not (0 <= instr.target_x < self.map_width):
@@ -143,6 +167,55 @@ class L0Executor:
         elif instr.action == ActionType.RECALL_REINFORCE:
             if not instr.reinforce_id:
                 return False, "RECALL_REINFORCE 需要 reinforce_id 非空"
+
+        # --- AVA 战场指令校验 ---
+        elif instr.action == ActionType.LVL_ATTACK_PLAYER:
+            if instr.target_uid <= 0:
+                return False, "LVL_ATTACK_PLAYER 需要 target_uid > 0"
+
+        elif instr.action == ActionType.LVL_ATTACK_BUILDING:
+            if not instr.building_id:
+                return False, "LVL_ATTACK_BUILDING 需要 building_id 非空"
+
+        elif instr.action == ActionType.LVL_SCOUT_PLAYER:
+            if instr.target_uid <= 0:
+                return False, "LVL_SCOUT_PLAYER 需要 target_uid > 0"
+
+        elif instr.action == ActionType.LVL_SCOUT_BUILDING:
+            if not instr.building_id:
+                return False, "LVL_SCOUT_BUILDING 需要 building_id 非空"
+
+        elif instr.action == ActionType.LVL_INITIATE_RALLY:
+            if instr.target_uid <= 0:
+                return False, "LVL_INITIATE_RALLY 需要 target_uid > 0"
+
+        elif instr.action == ActionType.LVL_INITIATE_RALLY_BUILDING:
+            if not instr.building_id:
+                return False, "LVL_INITIATE_RALLY_BUILDING 需要 building_id 非空"
+
+        elif instr.action == ActionType.LVL_JOIN_RALLY:
+            if not instr.rally_id:
+                return False, "LVL_JOIN_RALLY 需要 rally_id 非空"
+
+        elif instr.action == ActionType.LVL_RALLY_DISMISS:
+            if not instr.rally_id:
+                return False, "LVL_RALLY_DISMISS 需要 rally_id 非空"
+
+        elif instr.action == ActionType.LVL_RECALL_REINFORCE:
+            if not instr.troop_unique_id:
+                return False, "LVL_RECALL_REINFORCE 需要 troop_unique_id 非空"
+
+        elif instr.action == ActionType.LVL_RECALL_TROOP:
+            if not instr.troop_unique_id:
+                return False, "LVL_RECALL_TROOP 需要 troop_unique_id 非空"
+
+        elif instr.action == ActionType.LVL_SPEED_UP:
+            if not instr.troop_unique_id:
+                return False, "LVL_SPEED_UP 需要 troop_unique_id 非空"
+
+        elif instr.action == ActionType.LVL_RECALL_FROM_BUILDING:
+            if not instr.troop_ids:
+                return False, "LVL_RECALL_FROM_BUILDING 需要 troop_ids 非空"
 
         return True, ""
 
@@ -205,9 +278,16 @@ class L0Executor:
         last_rally_id: str = ""
         last_rally_pos: str = ""
 
+        _rally_actions = {ActionType.JOIN_RALLY, ActionType.LVL_JOIN_RALLY}
+        _initiate_actions = {
+            ActionType.INITIATE_RALLY,
+            ActionType.LVL_INITIATE_RALLY,
+            ActionType.LVL_INITIATE_RALLY_BUILDING,
+        }
+
         for instr in instructions:
             # 自动回填 rally_id 和坐标
-            if (instr.action == ActionType.JOIN_RALLY
+            if (instr.action in _rally_actions
                     and not instr.rally_id and last_rally_id):
                 instr = instr.model_copy(update={"rally_id": last_rally_id})
                 logger.info("自动回填 rally_id=%s → uid=%d", last_rally_id, instr.uid)
@@ -215,13 +295,13 @@ class L0Executor:
             result = await self.execute(instr, rally_pos=last_rally_pos)
             results.append(result)
 
-            # 从 INITIATE_RALLY 响应中提取 rally_id 和 pos
-            if (result.success and instr.action == ActionType.INITIATE_RALLY):
+            # 从 INITIATE_RALLY / LVL_INITIATE_RALLY 响应中提取 rally_id 和 pos
+            if (result.success and instr.action in _initiate_actions):
                 rid, rpos = self._extract_rally_info(result.server_response)
                 if rid:
                     last_rally_id = rid
                     last_rally_pos = rpos
-                    logger.info("提取 rally_id=%s pos=%s from INITIATE_RALLY uid=%d", rid, rpos, instr.uid)
+                    logger.info("提取 rally_id=%s pos=%s from %s uid=%d", rid, rpos, instr.action.value, instr.uid)
 
         return results
 
@@ -311,6 +391,68 @@ class L0Executor:
         elif action == ActionType.RECALL_REINFORCE:
             return await self.client.recall_reinforce(instr.uid, instr.reinforce_id)
 
+        # --- AVA 战场指令 ---
+        elif action == ActionType.LVL_MOVE_CITY:
+            return await self.client.lvl_move_city(instr.uid, instr.target_x, instr.target_y)
+
+        elif action == ActionType.LVL_ATTACK_PLAYER:
+            target_id = f"2_{instr.target_uid}_1"
+            target_pos = encode_pos(instr.target_x, instr.target_y)
+            return await self.client.lvl_attack_player(instr.uid, target_id, target_pos, march)
+
+        elif action == ActionType.LVL_ATTACK_BUILDING:
+            target_pos = encode_pos(instr.target_x, instr.target_y)
+            return await self.client.lvl_attack_building(
+                instr.uid, instr.building_id, target_pos,
+                key=instr.building_key, march_info=march,
+            )
+
+        elif action == ActionType.LVL_SCOUT_PLAYER:
+            target_pos = encode_pos(instr.target_x, instr.target_y)
+            return await self.client.lvl_scout_player(instr.uid, instr.target_uid, target_pos)
+
+        elif action == ActionType.LVL_SCOUT_BUILDING:
+            target_pos = encode_pos(instr.target_x, instr.target_y)
+            return await self.client.lvl_scout_building(
+                instr.uid, int(instr.building_id) if instr.building_id.isdigit() else 0,
+                target_pos, key=instr.building_key,
+            )
+
+        elif action == ActionType.LVL_INITIATE_RALLY:
+            target_id = f"2_{instr.target_uid}_1"
+            prepare = instr.prepare_time if instr.prepare_time != 300 else 60
+            return await self.client.lvl_create_rally(
+                instr.uid, target_id, march, prepare_time=prepare,
+            )
+
+        elif action == ActionType.LVL_INITIATE_RALLY_BUILDING:
+            prepare = instr.prepare_time if instr.prepare_time != 300 else 60
+            return await self.client.lvl_create_rally_building(
+                instr.uid, instr.building_id, march, prepare_time=prepare,
+            )
+
+        elif action == ActionType.LVL_JOIN_RALLY:
+            target_pos = encode_pos(instr.target_x, instr.target_y) if (instr.target_x or instr.target_y) else 0
+            if rally_pos:
+                target_pos = int(rally_pos)
+            return await self.client.lvl_join_rally(instr.uid, instr.rally_id, target_pos, march)
+
+        elif action == ActionType.LVL_RALLY_DISMISS:
+            return await self.client.lvl_rally_dismiss(instr.uid, instr.rally_id)
+
+        elif action == ActionType.LVL_RECALL_REINFORCE:
+            return await self.client.lvl_recall_reinforce(instr.uid, instr.troop_unique_id)
+
+        elif action == ActionType.LVL_RECALL_TROOP:
+            return await self.client.lvl_recall_troop(instr.uid, instr.troop_unique_id)
+
+        elif action == ActionType.LVL_SPEED_UP:
+            return await self.client.lvl_speed_up_troop(instr.uid, instr.troop_unique_id)
+
+        elif action == ActionType.LVL_RECALL_FROM_BUILDING:
+            pos = encode_pos(instr.target_x, instr.target_y) if (instr.target_x or instr.target_y) else 0
+            return await self.client.lvl_recall_from_building(instr.uid, instr.troop_ids, pos)
+
         else:
             raise ValueError(f"未知 action: {action}")
 
@@ -339,6 +481,33 @@ class L0Executor:
             return f"解散集结 {instr.rally_id}"
         elif a == ActionType.RECALL_REINFORCE:
             return f"撤回增援 {instr.reinforce_id}"
+        # --- AVA 战场 ---
+        elif a == ActionType.LVL_MOVE_CITY:
+            return f"[AVA] 移城到 ({instr.target_x},{instr.target_y})"
+        elif a == ActionType.LVL_ATTACK_PLAYER:
+            return f"[AVA] 攻击玩家 uid={instr.target_uid} @ ({instr.target_x},{instr.target_y})"
+        elif a == ActionType.LVL_ATTACK_BUILDING:
+            return f"[AVA] 攻击建筑 {instr.building_id} @ ({instr.target_x},{instr.target_y})"
+        elif a == ActionType.LVL_SCOUT_PLAYER:
+            return f"[AVA] 侦查玩家 uid={instr.target_uid} @ ({instr.target_x},{instr.target_y})"
+        elif a == ActionType.LVL_SCOUT_BUILDING:
+            return f"[AVA] 侦查建筑 {instr.building_id} @ ({instr.target_x},{instr.target_y})"
+        elif a == ActionType.LVL_INITIATE_RALLY:
+            return f"[AVA] 对玩家 uid={instr.target_uid} 发起集结 准备{instr.prepare_time}s"
+        elif a == ActionType.LVL_INITIATE_RALLY_BUILDING:
+            return f"[AVA] 对建筑 {instr.building_id} 发起集结 准备{instr.prepare_time}s"
+        elif a == ActionType.LVL_JOIN_RALLY:
+            return f"[AVA] 参与集结 {instr.rally_id}"
+        elif a == ActionType.LVL_RALLY_DISMISS:
+            return f"[AVA] 解散集结 {instr.rally_id}"
+        elif a == ActionType.LVL_RECALL_REINFORCE:
+            return f"[AVA] 取消集结 {instr.troop_unique_id}"
+        elif a == ActionType.LVL_RECALL_TROOP:
+            return f"[AVA] 召回队伍 {instr.troop_unique_id}"
+        elif a == ActionType.LVL_SPEED_UP:
+            return f"[AVA] 行军加速 {instr.troop_unique_id}"
+        elif a == ActionType.LVL_RECALL_FROM_BUILDING:
+            return f"[AVA] 从建筑召回 {instr.troop_ids}"
         return ""
 
     # 默认出征兵力上限（每支部队，测试服实测 5000 可用，10000 被拒）
