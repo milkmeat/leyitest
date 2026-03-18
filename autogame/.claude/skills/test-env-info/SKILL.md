@@ -86,6 +86,37 @@ AVA战场内的命令字使用 `lvl_` 前缀，与普通地图命令字分离：
 | 行军加速 | - | lvl_use_troop_speed_up_item |
 | 获取战场队伍信息 | - | lvl_battle_login_get |
 
+### 当前活跃 AVA 战场（2026-03-18）
+
+**战场 ID**: `lvl_id=29999`
+
+| 项目 | 值 |
+|------|-----|
+| 战场 ID | 29999 |
+| 已进入账号 | enemy_02 (20010669), acc_01 (20010643) |
+| 阵营配置 | camp_id=1 (我方), camp_id=2 (敌方) |
+
+### CLI 命令 - AVA 战场操作
+
+```bash
+# 查询账号所在战场
+python src/main.py uid_ava_status <uid>
+
+# 添加账号到战场名单（指定阵营）
+python src/main.py uid_ava_add <lvl_id> <uid> <camp_id>
+
+# 进入战场（需先添加到名单）
+python src/main.py uid_ava_enter <lvl_id> <uid>
+```
+
+**完整迁移流程**：
+```bash
+# 示例：将账号迁移到 lvl_id=29999，阵营 1
+python src/main.py uid_ava_add 29999 20010643 1    # 添加到名单
+python src/main.py uid_ava_enter 29999 20010643     # 进入战场
+python src/main.py uid_ava_status 20010643          # 验证状态
+```
+
 ### 账号分布状态（2026-03-18）
 
 **当前配置** (`config/accounts.yaml`)：
@@ -100,4 +131,29 @@ AVA战场内的命令字使用 `lvl_` 前缀，与普通地图命令字分离：
 - **API客户端**: `src/executor/game_api.py` — 包含所有游戏命令字方法
 - **环境配置**: `config/env_config.yaml` — 服务器连接信息
 - **账号配置**: `config/accounts.yaml` — 账号列表
+- **小队配置**: `config/squads.yaml` — 按联盟分组的账号小队
+- **主入口**: `src/main.py` — CLI 命令定义（包含 uid_helper 系列）
+- **命令配置**: `src/config/cmd_config.yaml` — 所有命令字定义（含 AVA 相关）
 - **检查脚本**: `scripts/check_ava_accounts.py` — AVA战场状态检查工具
+
+## GM 指令 - 测试环境准备
+
+### uid_helper 命令集
+
+```bash
+# 账号复制
+python src/main.py uid_copy <src_uid> <tar_uid>
+
+# 联盟管理
+python src/main.py uid_create_al <name> <nick>        # 创建联盟
+python src/main.py uid_join_al <aid> <uid1> [uid2...] # 加入+改名
+python src/main.py uid_members <aid>                  # 查看成员
+
+# 一站式准备
+python src/main.py uid_setup <alliance_key> <src_uid> <tar_uid...>
+
+# AVA 战场迁移
+python src/main.py uid_ava_add <lvl_id> <uid> <camp_id>  # 添加到名单
+python src/main.py uid_ava_enter <lvl_id> <uid>           # 进入战场
+python src/main.py uid_ava_status <uid>                   # 查询状态
+```

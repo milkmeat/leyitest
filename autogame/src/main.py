@@ -1256,6 +1256,71 @@ async def cmd_uid_setup(alliance_key: str, src_uid_str: str, *uid_args: str, env
         await client.close()
 
 
+async def cmd_uid_ava_add(lvl_id_str: str, uid_str: str, camp_id_str: str, env: str = None):
+    """将玩家添加到AVA战场名单: uid_ava_add <lvl_id> <uid> <camp_id>"""
+    from src.executor.game_api import GameAPIClient
+    client = GameAPIClient(env=env)
+    try:
+        lvl_id = int(lvl_id_str)
+        uid = int(uid_str)
+        camp_id = int(camp_id_str)
+        print(f"将 uid={uid} 添加到 AVA 战场 lvl_id={lvl_id} 阵营={camp_id}")
+        # 使用 param_overrides 避免 uid 参数冲突（header uid vs 命令参数 uid）
+        resp = await client.send_cmd("ava_add_player", uid,
+                                     param_overrides={"lvl_id": lvl_id, "uid": uid, "camp_id": camp_id})
+        code = _print_ret_code(resp)
+        if code == 0:
+            print(f"  [OK] uid={uid} 已添加到战场 {lvl_id} 阵营 {camp_id}")
+        else:
+            print(f"  [FAIL] 添加失败", file=sys.stderr)
+    finally:
+        await client.close()
+
+
+async def cmd_uid_ava_enter(lvl_id_str: str, uid_str: str, env: str = None):
+    """进入AVA战场: uid_ava_enter <lvl_id> <uid>"""
+    from src.executor.game_api import GameAPIClient
+    client = GameAPIClient(env=env)
+    try:
+        lvl_id = int(lvl_id_str)
+        uid = int(uid_str)
+        print(f"uid={uid} 进入 AVA 战场 lvl_id={lvl_id}")
+
+        # 进入战场前先检查当前战场状态
+        before_lvl = await client.get_player_lvl_info(uid)
+        print(f"  进入前: lvl_id={before_lvl}")
+
+        resp = await client.send_cmd("ava_enter_battle", uid, lvl_id=lvl_id)
+        code = _print_ret_code(resp)
+        if code == 0:
+            # 验证: 读取进入后的战场信息
+            after_lvl = await client.get_player_lvl_info(uid)
+            print(f"  进入后: lvl_id={after_lvl}")
+            if after_lvl == lvl_id:
+                print(f"  [OK] uid={uid} 成功进入战场 {lvl_id}")
+            else:
+                print(f"  [warn] 战场ID不匹配 (预期={lvl_id} 实际={after_lvl})", file=sys.stderr)
+        else:
+            print(f"  [FAIL] 进入战场失败", file=sys.stderr)
+    finally:
+        await client.close()
+
+
+async def cmd_uid_ava_status(uid_str: str, env: str = None):
+    """查询玩家AVA战场状态: uid_ava_status <uid>"""
+    from src.executor.game_api import GameAPIClient
+    client = GameAPIClient(env=env)
+    try:
+        uid = int(uid_str)
+        lvl_id = await client.get_player_lvl_info(uid)
+        if lvl_id == 0:
+            print(f"uid={uid} 当前在普通地图 (未进入AVA战场)")
+        else:
+            print(f"uid={uid} 当前在 AVA 战场 lvl_id={lvl_id}")
+    finally:
+        await client.close()
+
+
 # ---------------------------------------------------------------------------
 # 命令注册
 # ---------------------------------------------------------------------------
@@ -1303,6 +1368,9 @@ COMMANDS = {
     "uid_join_al":          (cmd_uid_join_al,           "<aid> <uid1> [uid2...]",             "加入联盟+改名"),
     "uid_members":          (cmd_uid_members,           "<aid>",                              "查看联盟成员"),
     "uid_setup":            (cmd_uid_setup,             "<alliance_key> <src_uid> <tar_uid...>", "一站式账号准备"),
+    "uid_ava_add":          (cmd_uid_ava_add,           "<lvl_id> <uid> <camp_id>",           "添加到AVA战场名单"),
+    "uid_ava_enter":        (cmd_uid_ava_enter,         "<lvl_id> <uid>",                     "进入AVA战场"),
+    "uid_ava_status":       (cmd_uid_ava_status,        "<uid>",                              "查询AVA战场状态"),
 }
 
 
