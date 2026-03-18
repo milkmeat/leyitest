@@ -17,6 +17,7 @@ from src.config.schemas import (
     ActivityConfig,
     AllianceInfo,
     AlliancesConfig,
+    AllianceSquadGroup,
     AppConfig,
     SquadEntry,
     SquadsConfig,
@@ -51,10 +52,12 @@ def config_2squads() -> AppConfig:
                 enemy=AllianceInfo(aid=200, name="Enemy"),
             ),
         ),
-        squads=SquadsConfig(squads=[
-            SquadEntry(squad_id=1, name="Alpha", leader_uid=1, member_uids=[1, 2, 3, 4, 5]),
-            SquadEntry(squad_id=2, name="Bravo", leader_uid=6, member_uids=[6, 7, 8, 9, 10]),
-        ]),
+        squads=SquadsConfig(alliances={"ours": AllianceSquadGroup(
+            aid=100, name="Ours", squads=[
+                SquadEntry(squad_id=1, name="Alpha", leader_uid=1, member_uids=[1, 2, 3, 4, 5]),
+                SquadEntry(squad_id=2, name="Bravo", leader_uid=6, member_uids=[6, 7, 8, 9, 10]),
+            ],
+        )}),
         activity=ActivityConfig(),
         system=SystemConfig(),
     )
@@ -470,9 +473,11 @@ class TestEdgeCases:
             accounts=AccountsConfig(
                 accounts=[AccountEntry(uid=1, name="p1")],
             ),
-            squads=SquadsConfig(squads=[
-                SquadEntry(squad_id=1, name="Solo", leader_uid=1, member_uids=[1]),
-            ]),
+            squads=SquadsConfig(alliances={"ours": AllianceSquadGroup(
+                aid=0, name="default", squads=[
+                    SquadEntry(squad_id=1, name="Solo", leader_uid=1, member_uids=[1]),
+                ],
+            )}),
             activity=ActivityConfig(),
             system=SystemConfig(),
         )

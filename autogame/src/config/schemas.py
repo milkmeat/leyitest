@@ -12,7 +12,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, PrivateAttr, model_validator
 
 
 # ------------------------------------------------------------------
@@ -95,20 +95,56 @@ class SquadEntry(BaseModel):
         return self
 
 
+class AllianceSquadGroup(BaseModel):
+    """单联盟的小队配置"""
+    aid: int
+    name: str = ""
+    squads: list[SquadEntry] = Field(default_factory=list)
+
+
 class SquadsConfig(BaseModel):
-    """squads.yaml 顶层"""
-    squads: list[SquadEntry]
+    """squads.yaml 顶层 — 多联盟结构
+
+    通过 alliances dict 管理多个联盟的小队，_active_key 选择当前运行联盟。
+    .squads 属性向后兼容，返回当前活跃联盟的小队列表。
+    """
+    alliances: dict[str, AllianceSquadGroup]
+    _active_key: str = PrivateAttr(default="ours")
+
+    @property
+    def squads(self) -> list[SquadEntry]:
+        """向后兼容: 返回当前活跃联盟的小队列表"""
+        return self.alliances[self._active_key].squads
+
+    @property
+    def active_alliance(self) -> AllianceSquadGroup:
+        return self.alliances[self._active_key]
+
+    def set_active(self, key: str):
+        if key not in self.alliances:
+            raise ValueError(f"未知联盟: {key}")
+        self._active_key = key
+
+    def all_squad_uids(self) -> set[int]:
+        """返回所有联盟中小队成员的 UID 集合"""
+        uids: set[int] = set()
+        for group in self.alliances.values():
+            for sq in group.squads:
+                uids.update(sq.member_uids)
+        return uids
 
     @model_validator(mode="after")
     def check_no_duplicate_members(self) -> SquadsConfig:
-        seen: set[int] = set()
-        for sq in self.squads:
-            for uid in sq.member_uids:
-                if uid in seen:
-                    raise ValueError(
-                        f"UID {uid} 出现在多个小队中"
-                    )
-                seen.add(uid)
+        """校验: 同一联盟内不可有重复成员（跨联盟允许）"""
+        for key, group in self.alliances.items():
+            seen: set[int] = set()
+            for sq in group.squads:
+                for uid in sq.member_uids:
+                    if uid in seen:
+                        raise ValueError(
+                            f"联盟 {key} 中 UID {uid} 出现在多个小队中"
+                        )
+                    seen.add(uid)
         return self
 
 
@@ -198,15 +234,23 @@ class AppConfig(BaseModel):
     activity: ActivityConfig
     system: SystemConfig
 
+    def all_known_uids(self) -> set[int]:
+        """返回所有已知 UID（accounts + enemies + reserves）"""
+        return (
+            self.accounts.all_uids()
+            | {e.uid for e in self.accounts.enemies}
+        )
+
     @model_validator(mode="after")
     def check_squad_uids_in_accounts(self) -> AppConfig:
-        """校验: 小队成员 UID 必须存在于 accounts 列表中"""
-        valid_uids = self.accounts.all_uids()
-        for sq in self.squads.squads:
-            for uid in sq.member_uids:
-                if uid not in valid_uids:
-                    raise ValueError(
-                        f"小队 {sq.squad_id} 成员 UID {uid} "
-                        f"不在 accounts 配置中"
-                    )
+        """校验: 所有联盟小队成员 UID 必须存在于 accounts/enemies 中"""
+        valid_uids = self.all_known_uids()
+        for key, group in self.squads.alliances.items():
+            for sq in group.squads:
+                for uid in sq.member_uids:
+                    if uid not in valid_uids:
+                        raise ValueError(
+                            f"联盟 {key} 小队 {sq.squad_id} 成员 UID {uid} "
+                            f"不在 accounts/enemies 配置中"
+                        )
         return self

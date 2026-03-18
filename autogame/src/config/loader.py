@@ -20,6 +20,7 @@ import yaml
 from src.config.schemas import (
     AccountsConfig,
     ActivityConfig,
+    AllianceSquadGroup,
     AppConfig,
     SquadsConfig,
     SystemConfig,
@@ -49,8 +50,25 @@ def load_accounts(path: str | Path) -> AccountsConfig:
 
 
 def load_squads(path: str | Path) -> SquadsConfig:
-    """加载 squads.yaml"""
-    return SquadsConfig(**load_yaml(path))
+    """加载 squads.yaml — 支持新旧两种格式
+
+    新格式 (alliances dict):
+        alliances:
+          ours: {aid, name, squads: [...]}
+          enemy: {aid, name, squads: [...]}
+
+    旧格式 (向后兼容):
+        squads: [...]
+    """
+    data = load_yaml(path)
+    if "alliances" in data:
+        return SquadsConfig(**data)
+    # 旧格式兼容: 包装为单联盟 "ours"
+    return SquadsConfig(alliances={
+        "ours": AllianceSquadGroup(aid=0, name="default", squads=[
+            s if isinstance(s, dict) else s for s in data.get("squads", [])
+        ]),
+    })
 
 
 def load_activity(path: str | Path) -> ActivityConfig:
@@ -88,11 +106,12 @@ _LLM_SECRET_TEMPLATE = """
 """.rstrip()
 
 
-def load_all(config_dir: str | Path = "config") -> AppConfig:
+def load_all(config_dir: str | Path = "config", alliance: str = "ours") -> AppConfig:
     """一次加载全部配置并做交叉校验
 
     Args:
         config_dir: 配置目录路径，默认为 "config"
+        alliance: 活跃联盟 key，默认 "ours"
 
     Returns:
         AppConfig 聚合对象，包含所有子配置
@@ -111,9 +130,13 @@ def load_all(config_dir: str | Path = "config") -> AppConfig:
             if key in llm_secret:
                 setattr(system.llm, key, llm_secret[key])
 
+    squads = load_squads(d / "squads.yaml")
+    if alliance in squads.alliances:
+        squads.set_active(alliance)
+
     return AppConfig(
         accounts=load_accounts(d / "accounts.yaml"),
-        squads=load_squads(d / "squads.yaml"),
+        squads=squads,
         activity=load_activity(d / "activity.yaml"),
         system=system,
     )

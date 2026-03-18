@@ -1010,6 +1010,253 @@ async def cmd_l0(*args: str, env: str = None):
 
 
 # ---------------------------------------------------------------------------
+# uid_helper 命令 — 测试环境账号准备工具
+# ---------------------------------------------------------------------------
+
+
+def _find_squad_for_uid(squads_config, uid: int, alliance_key: str = None):
+    """在 squads 配置中查找 uid 所属小队，返回 (squad, seq_index)"""
+    groups = squads_config.alliances
+    keys = [alliance_key] if alliance_key and alliance_key in groups else list(groups.keys())
+    for key in keys:
+        for sq in groups[key].squads:
+            if uid in sq.member_uids:
+                idx = sq.member_uids.index(uid)
+                return sq, idx
+    return None, 0
+
+
+async def cmd_uid_copy(src_uid_str: str, tar_uid_str: str, env: str = None):
+    """复制账号数据: uid_copy <src_uid> <tar_uid>"""
+    from src.executor.game_api import GameAPIClient
+    client = GameAPIClient(env=env)
+    try:
+        src_uid = int(src_uid_str)
+        tar_uid = int(tar_uid_str)
+        # 1) 复制
+        resp = await client.send_cmd("copy_player", src_uid,
+                                     src_uid=src_uid, src_sid=1,
+                                     tar_uid=tar_uid, tar_sid=1)
+        code = _print_ret_code(resp)
+        if code != 0:
+            print(f"[FAIL] copy_player 失败", file=sys.stderr)
+            return
+
+        # 2) 验证: 读取目标账号信息
+        src_info = await client.get_player_info(src_uid, modules=["svr_soldier"])
+        tar_info = await client.get_player_info(tar_uid, modules=["svr_soldier"])
+        src_total = sum(s.get("value", 0) for s in src_info.get("soldiers", []))
+        tar_total = sum(s.get("value", 0) for s in tar_info.get("soldiers", []))
+        print(f"复制完成: {src_uid} → {tar_uid}")
+        print(f"  源兵力: {src_total}  目标兵力: {tar_total}")
+        if src_total > 0 and tar_total == src_total:
+            print("  [OK] 兵力匹配")
+        elif src_total > 0:
+            print(f"  [warn] 兵力不匹配 (src={src_total} tar={tar_total})")
+    finally:
+        await client.close()
+
+
+async def cmd_uid_create_al(name: str, nick: str, env: str = None):
+    """创建联盟: uid_create_al <name> <nick>"""
+    from src.executor.game_api import GameAPIClient
+    from src.config.loader import load_all
+    config = load_all("config")
+    # 用第一个 accounts uid 作为创建者
+    creator_uid = config.accounts.active_uids()[0]
+    client = GameAPIClient(env=env)
+    try:
+        resp = await client.send_cmd("create_alliance", creator_uid,
+                                     name=name, nick=nick)
+        code = _print_ret_code(resp)
+        if code == 0:
+            # 解析返回的 aid
+            try:
+                items = resp["res_data"][0]["push_list"][0]["data"]
+                for item in items:
+                    if item.get("name") == "svr_alliance_create":
+                        data = _json.loads(item["data"])
+                        aid = data.get("aid", "N/A")
+                        print(f"联盟创建成功: name='{name}' nick='{nick}' aid={aid}")
+                        return
+            except (KeyError, IndexError, TypeError):
+                pass
+            print(f"联盟创建成功 (uid={creator_uid})")
+        else:
+            print("[FAIL] 创建联盟失败", file=sys.stderr)
+    finally:
+        await client.close()
+
+
+async def cmd_uid_join_al(aid_str: str, *uid_args: str, env: str = None):
+    """加入联盟并改名: uid_join_al <aid> <uid1> [uid2...]"""
+    from src.executor.game_api import GameAPIClient
+    from src.config.loader import load_all
+    if not uid_args:
+        print("用法: uid_join_al <aid> <uid1> [uid2...]", file=sys.stderr)
+        sys.exit(1)
+
+    aid = int(aid_str)
+    config = load_all("config")
+    client = GameAPIClient(env=env)
+    try:
+        for uid_str in uid_args:
+            uid = int(uid_str)
+            # 1) 加入联盟
+            resp = await client.send_cmd("join_alliance", uid, target_aid=aid)
+            code = _print_ret_code(resp)
+            if code != 0:
+                print(f"  [FAIL] uid={uid} 加入联盟失败", file=sys.stderr)
+                continue
+
+            # 2) 生成昵称
+            squad, idx = _find_squad_for_uid(config.squads, uid)
+            if squad:
+                nickname = f"{squad.name}{idx+1:03d}_{uid}"
+            else:
+                nickname = f"Member_{uid}"
+
+            # 3) 改名
+            resp = await client.send_cmd("change_name", uid, name=nickname)
+            code2 = _print_ret_code(resp)
+            if code2 == 0:
+                print(f"  uid={uid} 加入联盟 {aid}, 昵称='{nickname}'")
+            else:
+                print(f"  uid={uid} 加入联盟 {aid}, 改名失败", file=sys.stderr)
+
+        # 4) 验证: 查看成员列表
+        any_uid = int(uid_args[0])
+        resp = await client.send_cmd("get_al_members", any_uid,
+                                     header_overrides={"aid": aid})
+        try:
+            items = resp["res_data"][0]["push_list"][0]["data"]
+            for item in items:
+                if item.get("name") == "svr_al_members":
+                    data = _json.loads(item["data"])
+                    count = data.get("count", len(data.get("list", [])))
+                    print(f"\n联盟 {aid} 当前成员数: {count}")
+                    for m in data.get("list", []):
+                        print(f"  uid={m['uid']} {m.get('name', '')}")
+                    break
+        except (KeyError, IndexError, TypeError):
+            pass
+    finally:
+        await client.close()
+
+
+async def cmd_uid_members(aid_str: str, env: str = None):
+    """查看联盟成员: uid_members <aid>"""
+    from src.executor.game_api import GameAPIClient
+    from src.config.loader import load_all
+    config = load_all("config")
+    any_uid = config.accounts.active_uids()[0]
+    aid = int(aid_str)
+    client = GameAPIClient(env=env)
+    try:
+        resp = await client.send_cmd("get_al_members", any_uid,
+                                     header_overrides={"aid": aid})
+        _print_ret_code(resp)
+        try:
+            items = resp["res_data"][0]["push_list"][0]["data"]
+            for item in items:
+                if item.get("name") == "svr_al_members":
+                    data = _json.loads(item["data"])
+                    count = data.get("count", len(data.get("list", [])))
+                    print(f"联盟 {aid} 成员数: {count}")
+                    for m in data.get("list", []):
+                        print(f"  uid={m['uid']} {m.get('name', '')}")
+                    return
+        except (KeyError, IndexError, TypeError):
+            pass
+        _print_json(resp)
+    finally:
+        await client.close()
+
+
+async def cmd_uid_setup(alliance_key: str, src_uid_str: str, *uid_args: str, env: str = None):
+    """一站式账号准备: uid_setup <alliance_key> <src_uid> <tar_uid1> [tar_uid2...]
+
+    对每个 tar_uid 执行: copy_player → join_alliance → change_name
+    """
+    from src.executor.game_api import GameAPIClient
+    from src.config.loader import load_all
+    if not uid_args:
+        print("用法: uid_setup <alliance_key> <src_uid> <tar_uid1> [tar_uid2...]", file=sys.stderr)
+        sys.exit(1)
+
+    src_uid = int(src_uid_str)
+    config = load_all("config")
+    squads = config.squads
+
+    # 获取目标联盟 aid
+    if alliance_key not in squads.alliances:
+        print(f"[FAIL] 未知联盟 key: {alliance_key}", file=sys.stderr)
+        print(f"  可用: {list(squads.alliances.keys())}", file=sys.stderr)
+        sys.exit(1)
+    target_aid = squads.alliances[alliance_key].aid
+
+    client = GameAPIClient(env=env)
+    try:
+        ok_count = 0
+        fail_count = 0
+        for uid_str in uid_args:
+            tar_uid = int(uid_str)
+            print(f"\n--- {tar_uid} ---")
+
+            # 1) copy_player
+            resp = await client.send_cmd("copy_player", src_uid,
+                                         src_uid=src_uid, src_sid=1,
+                                         tar_uid=tar_uid, tar_sid=1)
+            code = _print_ret_code(resp)
+            if code != 0:
+                print(f"  [FAIL] copy_player 失败", file=sys.stderr)
+                fail_count += 1
+                continue
+
+            # 2) join_alliance
+            resp = await client.send_cmd("join_alliance", tar_uid, target_aid=target_aid)
+            code = _print_ret_code(resp)
+            if code != 0:
+                print(f"  [FAIL] join_alliance 失败", file=sys.stderr)
+                fail_count += 1
+                continue
+
+            # 3) change_name
+            squad, idx = _find_squad_for_uid(squads, tar_uid, alliance_key)
+            if squad:
+                nickname = f"{squad.name}{idx+1:03d}_{tar_uid}"
+            else:
+                nickname = f"Member_{tar_uid}"
+            resp = await client.send_cmd("change_name", tar_uid, name=nickname)
+            code = _print_ret_code(resp)
+            if code == 0:
+                print(f"  复制+加入+改名完成: 昵称='{nickname}'")
+                ok_count += 1
+            else:
+                print(f"  复制+加入完成, 改名失败", file=sys.stderr)
+                ok_count += 1
+
+        print(f"\n=== 完成: {ok_count} 成功, {fail_count} 失败 ===")
+
+        # 验证摘要
+        any_uid = int(uid_args[0])
+        resp = await client.send_cmd("get_al_members", any_uid,
+                                     header_overrides={"aid": target_aid})
+        try:
+            items = resp["res_data"][0]["push_list"][0]["data"]
+            for item in items:
+                if item.get("name") == "svr_al_members":
+                    data = _json.loads(item["data"])
+                    count = data.get("count", len(data.get("list", [])))
+                    print(f"联盟 {target_aid} 当前成员数: {count}")
+                    break
+        except (KeyError, IndexError, TypeError):
+            pass
+    finally:
+        await client.close()
+
+
+# ---------------------------------------------------------------------------
 # 命令注册
 # ---------------------------------------------------------------------------
 
@@ -1050,6 +1297,12 @@ COMMANDS = {
     "sync":                 (cmd_sync,                  "[--json] [uid]",                     "数据同步(全量/单账号)"),
     # L0 执行器
     "l0":                   (cmd_l0,                    "<ACTION|JSON> <args...>",            "L0 执行器调试"),
+    # uid_helper — 测试环境账号准备
+    "uid_copy":             (cmd_uid_copy,              "<src_uid> <tar_uid>",                "复制账号数据"),
+    "uid_create_al":        (cmd_uid_create_al,         "<name> <nick>",                      "创建联盟"),
+    "uid_join_al":          (cmd_uid_join_al,           "<aid> <uid1> [uid2...]",             "加入联盟+改名"),
+    "uid_members":          (cmd_uid_members,           "<aid>",                              "查看联盟成员"),
+    "uid_setup":            (cmd_uid_setup,             "<alliance_key> <src_uid> <tar_uid...>", "一站式账号准备"),
 }
 
 
@@ -1115,6 +1368,14 @@ def main():
         print(f"  {'l0':25s} {a:40s} {desc}")
         print("  示例: l0 MOVE_CITY 20010413 500 500")
         print("  示例: l0 '{\"action\":\"MOVE_CITY\",\"uid\":20010413,\"target_x\":500,\"target_y\":500}'")
+        print("\nuid_helper (测试环境账号准备):")
+        for name in ["uid_copy", "uid_create_al", "uid_join_al", "uid_members", "uid_setup"]:
+            _, a, desc = COMMANDS[name]
+            print(f"  {name:25s} {a:40s} {desc}")
+        print("  示例: uid_copy 20010643 20010700")
+        print("  示例: uid_create_al TestAI TSTA")
+        print("  示例: uid_join_al 12345 20010643 20010644")
+        print("  示例: uid_setup ours 20010643 20010700 20010701")
         sys.exit(1)
 
     cmd_name = args[0]

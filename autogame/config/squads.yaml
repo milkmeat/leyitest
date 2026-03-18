@@ -1,23 +1,32 @@
-# 小队分配 — 4 小队 × 5 人（我方 AI 联盟 TestSquad2026）
-# leader_uid 为队首，集结时使用队长的英雄/科技
+# 小队分配 — 按联盟分组，支持多联盟（AI vs AI 测试）
+# L2 启动时默认管理 "ours" 联盟，可通过 --alliance 参数指定其他联盟
 
-squads:
-  - squad_id: 1
-    name: "Alpha"
-    leader_uid: 20010643
-    member_uids: [20010643, 20010644, 20010645, 20010646, 20010647]
+alliances:
+  ours:
+    aid: 20000118
+    name: "TestSquad2026"
+    squads:
+      - squad_id: 1
+        name: "Alpha"
+        leader_uid: 20010643
+        member_uids: [20010643, 20010644, 20010645, 20010646, 20010647]
 
-  - squad_id: 2
-    name: "Bravo"
-    leader_uid: 20010648
-    member_uids: [20010648, 20010649, 20010650, 20010651, 20010652]
+      - squad_id: 2
+        name: "Bravo"
+        leader_uid: 20010648
+        member_uids: [20010648, 20010649, 20010650, 20010651, 20010652]
 
-  - squad_id: 3
-    name: "Charlie"
-    leader_uid: 20010653
-    member_uids: [20010653, 20010654, 20010655, 20010656, 20010657]
+      - squad_id: 3
+        name: "Charlie"
+        leader_uid: 20010653
+        member_uids: [20010653, 20010654, 20010655, 20010656, 20010657]
 
-  - squad_id: 4
-    name: "Delta"
-    leader_uid: 20010658
-    member_uids: [20010658, 20010659, 20010660, 20010661, 20010662]
+      - squad_id: 4
+        name: "Delta"
+        leader_uid: 20010658
+        member_uids: [20010658, 20010659, 20010660, 20010661, 20010662]
+
+  enemy:
+    aid: 20000119
+    name: "PhoenixRise2026"
+    squads: []  # uid_helper join 后自动填充
