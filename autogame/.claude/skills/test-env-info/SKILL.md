@@ -1,0 +1,103 @@
+---
+name: test-env-info
+description: Display information about the WestGame test environment and AVA battlefield system. Use when user asks about environment configuration, server URLs, account distribution, or AVA battlefield status.
+license: MIT
+---
+
+# WestGame 环境信息
+
+## Test 测试环境配置
+
+**位置**: `config/env_config.yaml`
+
+```yaml
+current_env: test
+
+environments:
+  test:
+    name: "测试环境"
+    url: "https://leyi-offline-game-alb.leyinetwork.com/p10-test-lc-proxy"
+
+  mock:
+    name: "本地Mock"
+    url: "http://localhost:18888/mock"
+```
+
+### 关键配置参数 (default_header)
+
+| 参数 | 值 | 说明 |
+|------|-----|------|
+| `did` | "self-system" | 设备ID |
+| `sid` | 1 | 场景ID（1=活动地图） |
+| `aid` | 20000118 | 联盟ID (TestSquad2026，我方) |
+| `ksid` | 1 | 场景key |
+| `ava_id` | 0 | AVA战场ID（0=普通地图，非0=战场副本ID） |
+| `castle_lv` | 25 | 城堡等级 |
+| `battle_type` | 0 | 战斗类型 |
+| `battle_id` | 0 | 战斗ID |
+| `chat_scene` | ",kingdom_1" | 聊天场景 |
+| `invoker_name` | "evans_test_debug" | 调用者标识 |
+
+### 请求附加信息 (extra_info)
+
+```yaml
+extra_info:
+  no_checkac: 1
+  op_cmd: 1
+```
+
+---
+
+## AVA 战场系统
+
+### 检测账号是否在AVA战场
+
+使用 `GameAPIClient.get_player_lvl_info(uid)` 方法：
+
+```python
+# 返回值
+lvl_id = await api.get_player_lvl_info(uid)
+# lvl_id = 0 → 在普通地图
+# lvl_id != 0 → 在AVA战场副本（值为战场ID）
+```
+
+**实现原理**：调用 `get_player_lvl_info` 命令字，解析响应中的 `svr_player_lvl_info` 模块的 `lvl_id` 字段。
+
+**检查脚本**: `python scripts/check_ava_accounts.py`
+
+### AVA战场专用命令字
+
+AVA战场内的命令字使用 `lvl_` 前缀，与普通地图命令字分离：
+
+| 操作 | 普通地图命令字 | AVA战场命令字 |
+|------|---------------|--------------|
+| 移城 | fixed_move_city_new | lvl_move_city |
+| 侦查玩家 | dispatch_scout | lvl_dispatch_scout_player |
+| 侦查建筑 | dispatch_scout | lvl_dispatch_scout_building |
+| 攻击玩家 | dispatch_troop | lvl_dispatch_troop |
+| 攻击建筑 | dispatch_troop | lvl_dispatch_troop_building |
+| 发起集结(玩家) | create_rally_war | lvl_create_rally_war |
+| 发起集结(建筑) | create_rally_war_building | lvl_create_rally_war_building |
+| 加入集结 | join_rally_war | lvl_join_rally_war |
+| 解散集结 | rally_dismiss | lvl_rally_dismiss |
+| 撤回集结部队 | recall_reinforce | lvl_recall_reinforce |
+| 召回普通部队 | change_troop | lvl_use_troop_return_item |
+| 从建筑召回 | - | lvl_change_troop |
+| 行军加速 | - | lvl_use_troop_speed_up_item |
+| 获取战场队伍信息 | - | lvl_battle_login_get |
+
+### 账号分布状态（2026-03-18）
+
+**当前配置** (`config/accounts.yaml`)：
+- 我方账号: 20个 (acc_01 到 acc_20, UID: 20010643-20010662)
+- 敌方账号: 20个 (enemy_01 到 enemy_20, UID: 20010668-20010687)
+- 备用账号: 21个 (reserves, UID: 20010413-20010432, 20010366, 20010373)
+
+---
+
+## 相关代码位置
+
+- **API客户端**: `src/executor/game_api.py` — 包含所有游戏命令字方法
+- **环境配置**: `config/env_config.yaml` — 服务器连接信息
+- **账号配置**: `config/accounts.yaml` — 账号列表
+- **检查脚本**: `scripts/check_ava_accounts.py` — AVA战场状态检查工具
