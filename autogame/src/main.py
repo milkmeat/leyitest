@@ -1321,6 +1321,39 @@ async def cmd_uid_ava_status(uid_str: str, env: str = None):
         await client.close()
 
 
+async def cmd_uid_ava_leave(uid_str: str, env: str = None):
+    """离开AVA战场: uid_ava_leave <uid>"""
+    from src.executor.game_api import GameAPIClient
+    client = GameAPIClient(env=env)
+    try:
+        uid = int(uid_str)
+        print(f"uid={uid} 离开 AVA 战场")
+
+        # 离开战场前先检查当前战场状态
+        before_lvl = await client.get_player_lvl_info(uid)
+        print(f"  离开前: lvl_id={before_lvl}")
+
+        if before_lvl == 0:
+            print(f"  [info] uid={uid} 当前不在任何战场，无需离开")
+            return
+
+        # 调用离开战场命令，需要在 header 中传入 lvl_id
+        resp = await client.send_cmd("ava_leave_battle", uid, header_overrides={"lvl_id": before_lvl})
+        code = _print_ret_code(resp)
+        if code == 0:
+            # 验证: 读取离开后的战场信息
+            after_lvl = await client.get_player_lvl_info(uid)
+            print(f"  离开后: lvl_id={after_lvl}")
+            if after_lvl == 0:
+                print(f"  [OK] uid={uid} 成功离开战场")
+            else:
+                print(f"  [warn] 仍在战场中 (lvl_id={after_lvl})", file=sys.stderr)
+        else:
+            print(f"  [FAIL] 离开战场失败", file=sys.stderr)
+    finally:
+        await client.close()
+
+
 # ---------------------------------------------------------------------------
 # 命令注册
 # ---------------------------------------------------------------------------
@@ -1371,6 +1404,7 @@ COMMANDS = {
     "uid_ava_add":          (cmd_uid_ava_add,           "<lvl_id> <uid> <camp_id>",           "添加到AVA战场名单"),
     "uid_ava_enter":        (cmd_uid_ava_enter,         "<lvl_id> <uid>",                     "进入AVA战场"),
     "uid_ava_status":       (cmd_uid_ava_status,        "<uid>",                              "查询AVA战场状态"),
+    "uid_ava_leave":        (cmd_uid_ava_leave,         "<uid>",                              "离开AVA战场"),
 }
 
 

@@ -336,6 +336,15 @@ commands:
     default_param: {}
     description: "进入AVA临时战场"
 
+  # --- 离开 AVA 战场 ---
+  ava_leave_battle:
+    cmd: "leave_lvl_battle"
+    extra_header:
+      lvl_id: "战场ID"  # 需要在header中额外传入战场id,例 29999
+    default_param: {}
+    description: "离开AVA临时战场"
+
+
 # ============================================================
 # 六、AVA 战场内操作 (进入战场后的实际作战指令)
 # ============================================================
