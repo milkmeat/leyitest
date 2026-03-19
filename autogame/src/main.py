@@ -613,6 +613,70 @@ async def cmd_l1_decide(*args: str, env: str = None):
         await client.close()
 
 
+async def cmd_l2_decide(*args: str, env: str = None):
+    """L2 军团指挥官决策调试"""
+    from src.executor.game_api import GameAPIClient
+    from src.config.loader import load_all
+    from src.perception.data_sync import DataSyncer
+    from src.ai.llm_client import LLMClient
+    from src.ai.l2_commander import L2Commander
+
+    remaining = [a for a in args if a not in ("--json", "--dry-run")]
+    json_mode = "--json" in args
+    dry_run = "--dry-run" in args
+
+    config = load_all("config")
+
+    # 创建 LLM 客户端
+    if not dry_run and not _check_llm_config(config):
+        sys.exit(1)
+
+    try:
+        llm = LLMClient(config.system.llm, dry_run=dry_run)
+    except (ValueError, ImportError) as e:
+        print(f"[FAIL] LLM 初始化失败: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    client = GameAPIClient(env=env)
+    syncer = DataSyncer(client, config)
+    try:
+        # 同步数据
+        snapshot = await syncer.sync(loop_id=0)
+        print(f"同步完成: {len(snapshot.accounts)} 账号, "
+              f"{len(snapshot.enemies)} 敌方, {len(snapshot.buildings)} 建筑")
+
+        # L2 决策
+        commander = L2Commander(config, llm)
+        orders = await commander.decide(snapshot)
+
+        print(f"\nL2 军团指挥官生成 {len(orders)} 条指令:")
+
+        if json_mode:
+            # 输出为 JSON 数组格式
+            orders_json = [
+                {"squad_id": sid, "order": order}
+                for sid, order in orders.items()
+            ]
+            _print_json(orders_json)
+        else:
+            for sid, order in sorted(orders.items()):
+                # 查找小队名称
+                squad_name = next(
+                    (sq.name for sq in config.squads.squads if sq.squad_id == sid),
+                    f"squad_{sid}"
+                )
+                print(f"  [小队 {sid} ({squad_name})] {order}")
+
+            # 显示未收到指令的小队
+            all_squad_ids = {sq.squad_id for sq in config.squads.squads}
+            missing = all_squad_ids - orders.keys()
+            if missing:
+                print(f"\n  [未分配指令的小队] {sorted(missing)}")
+    finally:
+        await llm.close()
+        await client.close()
+
+
 # ---------------------------------------------------------------------------
 # L1 视图命令
 # ---------------------------------------------------------------------------
@@ -1359,6 +1423,8 @@ async def cmd_uid_ava_leave(uid_str: str, env: str = None):
 # ---------------------------------------------------------------------------
 
 COMMANDS = {
+    # L2
+    "l2_decide":            (cmd_l2_decide,             "[--dry-run] [--json]",                   "L2 军团指挥官决策调试"),
     # L1
     "l1_view":              (cmd_l1_view,               "<squad_id> [--json]",                    "L1 小队局部视图"),
     "l1_decide":            (cmd_l1_decide,             "<squad_id> [--dry-run] [--json]",        "L1 单小队决策调试"),
