@@ -1,13 +1,19 @@
 """WestGame AI 全自动化团战系统 — 入口
 
 用法:
-  python src/main.py [--mock] <command> <args...>
+  python src/main.py [--mock] [--verbose|--debug] <command> <args...>
 
 主循环:
   run                                           启动 AI 主循环（无限）
   run --rounds 3                                跑 3 轮退出
   run --once                                    等价 --rounds 1
   run --loop.interval_seconds 0                 覆盖循环间隔（测试用）
+
+AI 决策调试:
+  l2_decide [--dry-run] [--json]                L2 军团指挥官决策调试
+  l1_decide <squad_id> [--dry-run] [--json]     L1 单小队决策调试
+  l1_view <squad_id> [--json]                   L1 小队局部视图
+  llm_test [--dry-run]                          测试 LLM 连通性
 
 查询命令:
   get_player_pos <uid>                          查询玩家坐标
@@ -23,12 +29,13 @@
   attack_building <uid> <building_id> <x> <y>   攻击建筑
   reinforce_building <uid> <building_id> <x> <y> 驻防建筑
   scout_player <uid> <target_uid> <x> <y>       侦察玩家
-  create_rally <uid> <target_id> [prepare_time] 发起集结
-  join_rally <uid> <rally_id>                   加入集结
+  create_rally <uid> <target_uid> <x> <y> [soldier_id count] [prepare_time]  发起集结
+  join_rally <uid> <rally_id> <rally_x> <rally_y> [soldier_id count]  加入集结
+  rally_dismiss <uid> <rally_unique_id>         解散集结 (107_xxx_1)
   recall_troop <uid> <troop_id...>              召回行军部队
-  recall_reinforce <uid> <unique_id>            召回增援/集结
+  recall_reinforce <uid> <troop_unique_id>      撤回增援部队 (101_xxx_1)
 
-查询命令(简化输出):
+简化查询命令:
   get_gem <uid>                                 查询宝石数量（纯数字）
   get_soldiers <uid> <soldier_id>               查询指定兵种数量（纯数字）
 
@@ -38,12 +45,10 @@ GM 命令:
   add_resource <uid> [op_type]                  添加资源
 
 数据同步:
-  sync                                          同步所有账号+地图（摘要输出）
-  sync --json                                   同步并输出完整 JSON
-  sync <uid>                                    仅同步单个账号（调试用）
+  sync [--json] [uid]                           数据同步(全量/单账号)
 
 L0 执行器（AI 指令调试）:
-  l0 '{"action":"MOVE_CITY","uid":123,...}'     JSON 模式（模拟 L1 输出）
+  l0 <ACTION|JSON> <args...>                    执行器调试
   l0 MOVE_CITY <uid> <x> <y>                   移城
   l0 ATTACK_TARGET <uid> <target_uid> <x> <y>  攻击玩家
   l0 ATTACK_TARGET <uid> --building <id> <x> <y> 攻击建筑
@@ -52,6 +57,19 @@ L0 执行器（AI 指令调试）:
   l0 INITIATE_RALLY <uid> <target_id> <x> <y> [prepare_time] 发起集结
   l0 JOIN_RALLY <uid> <rally_id>               加入集结
   l0 RETREAT <uid> <troop_id...>               召回部队
+
+uid_helper (测试环境账号准备):
+  uid_copy <src_uid> <tar_uid>                  复制账号数据
+  uid_create_al <name> <nick>                   创建联盟
+  uid_join_al <aid> <uid1> [uid2...]            加入联盟+改名
+  uid_members <aid>                             查看联盟成员
+  uid_setup <alliance_key> <src_uid> <tar_uid...>  一站式账号准备
+
+uid_helper (AVA 战场):
+  uid_ava_add <lvl_id> <uid> <camp_id>          添加到AVA战场名单
+  uid_ava_enter <lvl_id> <uid>                  进入AVA战场
+  uid_ava_status <uid>                          查询AVA战场状态
+  uid_ava_leave <uid>                           离开AVA战场
 """
 
 import asyncio
@@ -1501,49 +1519,60 @@ def main():
     )
 
     if len(args) < 1 or args[0] not in COMMANDS:
-        print("用法: python src/main.py [--mock] <command> <args...>\n")
+        print("用法: python src/main.py [--mock] [--verbose|--debug] <command> <args...>\n")
         print("主循环:")
         _, a, desc = COMMANDS["run"]
-        print(f"  {'run':25s} {a:40s} {desc}")
+        print(f"  {'run':25s} {a:45s} {desc}")
         print("  示例: run --once --loop.interval_seconds 0")
+        print("\nAI 决策调试:")
+        for name in ["l2_decide", "l1_decide", "l1_view", "llm_test"]:
+            _, a, desc = COMMANDS[name]
+            print(f"  {name:25s} {a:45s} {desc}")
         print("\n查询命令:")
         for name in ["get_player_pos", "get_player_info", "get_all_player_data",
                       "get_map_overview", "get_map_detail", "get_battle_report"]:
             _, a, desc = COMMANDS[name]
-            print(f"  {name:25s} {a:40s} {desc}")
+            print(f"  {name:25s} {a:45s} {desc}")
         print("\n行动命令:")
         for name in ["move_city", "attack_player", "attack_building", "reinforce_building",
                       "scout_player", "create_rally", "join_rally", "rally_dismiss",
                       "recall_troop", "recall_reinforce"]:
             _, a, desc = COMMANDS[name]
-            print(f"  {name:25s} {a:40s} {desc}")
+            print(f"  {name:25s} {a:45s} {desc}")
         print("\n简化查询命令:")
         for name in ["get_gem", "get_soldiers"]:
             _, a, desc = COMMANDS[name]
-            print(f"  {name:25s} {a:40s} {desc}")
+            print(f"  {name:25s} {a:45s} {desc}")
         print("\nGM 命令:")
         for name in ["add_gem", "add_soldiers", "add_resource"]:
             _, a, desc = COMMANDS[name]
-            print(f"  {name:25s} {a:40s} {desc}")
+            print(f"  {name:25s} {a:45s} {desc}")
         print("\n数据同步:")
         _, a, desc = COMMANDS["sync"]
-        print(f"  {'sync':25s} {a:40s} {desc}")
+        print(f"  {'sync':25s} {a:45s} {desc}")
         print("  示例: sync                  # 全量同步摘要")
         print("  示例: sync --json           # 全量同步 JSON 输出")
         print("  示例: sync 20010366         # 单账号同步")
         print("\nL0 执行器:")
         _, a, desc = COMMANDS["l0"]
-        print(f"  {'l0':25s} {a:40s} {desc}")
+        print(f"  {'l0':25s} {a:45s} {desc}")
         print("  示例: l0 MOVE_CITY 20010413 500 500")
         print("  示例: l0 '{\"action\":\"MOVE_CITY\",\"uid\":20010413,\"target_x\":500,\"target_y\":500}'")
         print("\nuid_helper (测试环境账号准备):")
         for name in ["uid_copy", "uid_create_al", "uid_join_al", "uid_members", "uid_setup"]:
             _, a, desc = COMMANDS[name]
-            print(f"  {name:25s} {a:40s} {desc}")
+            print(f"  {name:25s} {a:45s} {desc}")
         print("  示例: uid_copy 20010643 20010700")
         print("  示例: uid_create_al TestAI TSTA")
         print("  示例: uid_join_al 12345 20010643 20010644")
         print("  示例: uid_setup ours 20010643 20010700 20010701")
+        print("\nuid_helper (AVA 战场):")
+        for name in ["uid_ava_add", "uid_ava_enter", "uid_ava_status", "uid_ava_leave"]:
+            _, a, desc = COMMANDS[name]
+            print(f"  {name:25s} {a:45s} {desc}")
+        print("  示例: uid_ava_add 1 20010643 1    # 添加 uid 到 lvl_id=1 的战场, camp_id=1")
+        print("  示例: uid_ava_enter 1 20010643    # uid 进入 lvl_id=1 的战场")
+        print("  示例: uid_ava_leave 20010643      # uid 离开当前战场")
         sys.exit(1)
 
     cmd_name = args[0]
