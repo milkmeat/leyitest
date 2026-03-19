@@ -22,6 +22,7 @@ from src.config.schemas import (
     ActivityConfig,
     AllianceSquadGroup,
     AppConfig,
+    LLMProfile,
     SquadsConfig,
     SystemConfig,
 )
@@ -84,13 +85,67 @@ def load_system(path: str | Path) -> SystemConfig:
 def load_llm_secret(config_dir: str | Path = "config") -> dict | None:
     """加载 llm_secret.yaml（可选）
 
+    支持两种格式:
+    1. 旧格式（向后兼容）:
+        model: "xxx"
+        base_url: "xxx"
+        api_key: "xxx"
+
+    2. 新格式（多 profile）:
+        active_profile: "ollama"
+        profiles:
+          ollama:
+            model: "llama3.2"
+            base_url: "http://localhost:11434/v1"
+            api_key: "sk-xxx"
+          zhipu:
+            model: "GLM-4.5-Air"
+            base_url: "..."
+            api_key: "..."
+
     Returns:
-        包含 model/base_url/api_key 的 dict，文件不存在时返回 None
+        包含配置的 dict，文件不存在时返回 None
     """
     p = Path(config_dir) / "llm_secret.yaml"
     if not p.exists():
         return None
     return load_yaml(p)
+
+
+def apply_llm_config(system: SystemConfig, llm_secret: dict) -> SystemConfig:
+    """将 llm_secret 配置应用到 system.llm
+
+    优先使用 profile 模式，如果不存在则回退到直接配置模式。
+    """
+    if not llm_secret:
+        return system
+
+    # 新格式: profiles 模式
+    if "profiles" in llm_secret:
+        # 构建 profiles 字典
+        profiles = {}
+        for name, cfg in llm_secret["profiles"].items():
+            profiles[name] = LLMProfile(**cfg)
+        system.llm.profiles = profiles
+
+        # 应用 active_profile
+        active = llm_secret.get("active_profile", "default")
+        system.llm.active_profile = active
+
+        # 如果存在对应的 profile，应用其配置到顶层（向后兼容）
+        if active in profiles:
+            profile = profiles[active]
+            system.llm.model = profile.model
+            system.llm.base_url = profile.base_url
+            system.llm.api_key = profile.api_key
+
+    # 旧格式/直接配置模式（向后兼容）
+    else:
+        for key in ("model", "base_url", "api_key"):
+            if key in llm_secret:
+                setattr(system.llm, key, llm_secret[key])
+
+    return system
 
 
 _LLM_SECRET_TEMPLATE = """
@@ -125,10 +180,7 @@ def load_all(config_dir: str | Path = "config", alliance: str = "ours") -> AppCo
 
     # 合并 llm_secret.yaml 到 system.llm（可选）
     llm_secret = load_llm_secret(d)
-    if llm_secret:
-        for key in ("model", "base_url", "api_key"):
-            if key in llm_secret:
-                setattr(system.llm, key, llm_secret[key])
+    system = apply_llm_config(system, llm_secret)
 
     squads = load_squads(d / "squads.yaml")
     if alliance in squads.alliances:

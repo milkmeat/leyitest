@@ -197,12 +197,45 @@ class LoopConfig(BaseModel):
     sync_timeout: int = 5
 
 
+class LLMProfile(BaseModel):
+    """单个 LLM 配置 profile"""
+    model: str
+    base_url: str
+    api_key: str = ""
+
+
 class LLMConfig(BaseModel):
     timeout_seconds: int = 30
     max_retries: int = 1
+    # 向后兼容: 直接配置字段
     model: str = ""
     base_url: str = "https://open.bigmodel.cn/api/paas/v4"
-    api_key: str = ""  # 空串时从 ZHIPU_API_KEY 环境变量读取
+    api_key: str = ""
+    # 新增: 多 profile 支持
+    profiles: dict[str, LLMProfile] = Field(default_factory=dict)
+    active_profile: str = "default"
+
+    def switch_profile(self, name: str) -> bool:
+        """切换到指定 profile
+
+        Args:
+            name: profile 名称
+
+        Returns:
+            切换成功返回 True，profile 不存在返回 False
+        """
+        if name not in self.profiles:
+            return False
+        profile = self.profiles[name]
+        self.active_profile = name
+        self.model = profile.model
+        self.base_url = profile.base_url
+        self.api_key = profile.api_key
+        return True
+
+    def list_profiles(self) -> list[str]:
+        """返回所有可用的 profile 名称列表"""
+        return list(self.profiles.keys())
 
 
 class ConcurrencyConfig(BaseModel):
