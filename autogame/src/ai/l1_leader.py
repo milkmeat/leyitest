@@ -19,6 +19,7 @@ import os
 from typing import Any
 
 from src.ai.llm_client import LLMClient
+from src.ai.memory import L1MemoryStore
 from src.config.schemas import AppConfig, SquadEntry
 from src.executor.l0_executor import AIInstruction, ActionType
 from src.perception.data_sync import SyncSnapshot
@@ -37,19 +38,27 @@ def _load_system_prompt() -> str:
 
 
 class L1Leader:
-    """单小队 L1 队长 — 一次 decide() 调用生成该小队的全部指令"""
+    """单小队 L1 队长 — 一次 decide() 调用生成该小队的全部指令
+
+    集成 L1MemoryStore，维护小队级别的战术决策历史。
+    """
 
     def __init__(
         self,
         config: AppConfig,
         llm_client: LLMClient,
         squad: SquadEntry,
+        memory_max_entries: int = 5,
     ):
         self.config = config
         self.llm = llm_client
         self.squad = squad
         self.view_builder = L1ViewBuilder(config)
         self._system_prompt = _load_system_prompt()
+        self.memory = L1MemoryStore(
+            squad_id=squad.squad_id,
+            max_entries=memory_max_entries,
+        )
 
     async def decide(
         self,
@@ -68,8 +77,11 @@ class L1Leader:
         # 1. 构建局部视图
         view = self.view_builder.build(snapshot, self.squad, l2_order)
 
-        # 2. 生成 user prompt
+        # 2. 生成 user prompt，附加历史上下文
         user_prompt = self.view_builder.format_text(view)
+        history_text = self.memory.format_for_llm(include_loops=3)
+        if history_text and "（小队" not in history_text:
+            user_prompt = f"{history_text}\n\n## 当前态势\n\n{user_prompt}"
 
         # 3. 调用 LLM
         response = await self.llm.chat_json(
@@ -121,6 +133,41 @@ class L1Leader:
 
         return results
 
+    def save_history(
+        self,
+        loop_id: int,
+        squad_instructions: list[AIInstruction],
+        all_results: list,
+        stats: dict[str, Any] | None = None,
+    ):
+        """保存当前轮次到小队历史记录
+
+        Args:
+            loop_id: 循环编号
+            squad_instructions: 本小队的指令列表
+            all_results: 全部执行结果（会被过滤为仅本小队）
+            stats: 循环统计信息（可选）
+        """
+        from src.ai.memory import LoopHistoryEntry
+
+        squad_uids = set(self.squad.member_uids)
+        squad_results = self.memory.filter_squad_results(all_results, squad_uids)
+
+        entry = LoopHistoryEntry(
+            loop_id=loop_id,
+            situation_summary="",  # 稍后由 summarizer 填充
+            l2_orders={},  # L1 不需要 L2 指令
+            l1_instructions=squad_instructions,
+            execution_results=squad_results,
+            loop_stats=stats or {},
+        )
+        self.memory.add(entry)
+        logger.debug("L1 squad=%d 历史已保存: loop_id=%d", self.squad.squad_id, loop_id)
+
+    def get_memory(self) -> L1MemoryStore:
+        """获取记忆存储对象，供外部访问或持久化"""
+        return self.memory
+
 
 class L1Coordinator:
     """L1 并行协调器 — 管理所有小队的 L1Leader"""
@@ -168,3 +215,30 @@ class L1Coordinator:
 
         logger.info("L1 总计 %d 条指令 (来自 %d 个小队)", len(all_instructions), len(self.leaders))
         return all_instructions
+
+    def save_all_history(
+        self,
+        loop_id: int,
+        all_instructions: list[AIInstruction],
+        all_results: list,
+        stats: dict[str, Any] | None = None,
+    ):
+        """批量保存所有小队的历史记录
+
+        Args:
+            loop_id: 循环编号
+            all_instructions: 全部指令列表
+            all_results: 全部执行结果
+            stats: 循环统计信息（可选）
+        """
+        for sid, leader in self.leaders.items():
+            squad_uids = set(leader.squad.member_uids)
+            squad_instructions = [
+                instr for instr in all_instructions if instr.uid in squad_uids
+            ]
+            leader.save_history(loop_id, squad_instructions, all_results, stats)
+        logger.debug("L1 全部小队历史已保存: loop_id=%d", loop_id)
+
+    def get_all_memories(self) -> dict[int, L1MemoryStore]:
+        """获取所有小队的记忆存储对象"""
+        return {sid: leader.get_memory() for sid, leader in self.leaders.items()}

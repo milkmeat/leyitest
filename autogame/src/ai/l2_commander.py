@@ -15,6 +15,7 @@ import os
 from typing import Any
 
 from src.ai.llm_client import LLMClient
+from src.ai.memory import L2MemoryStore
 from src.config.schemas import AppConfig
 from src.perception.data_sync import SyncSnapshot
 from src.perception.l2_view import L2ViewBuilder
@@ -33,13 +34,18 @@ def _load_prompt(filename: str) -> str:
 
 
 class L2Commander:
-    """L2 军团指挥官 — 一次 decide() 调用生成全局战略指令"""
+    """L2 军团指挥官 — 一次 decide() 调用生成全局战略指令
 
-    def __init__(self, config: AppConfig, llm_client: LLMClient):
+    集成 L2MemoryStore，维护最近几轮的战略决策历史，
+    为 LLM 提供上下文，提升决策连续性。
+    """
+
+    def __init__(self, config: AppConfig, llm_client: LLMClient, memory_max_entries: int = 5):
         self.config = config
         self.llm = llm_client
         self.system_prompt = _load_prompt("l2_system.txt")
         self.view_builder = L2ViewBuilder(config)
+        self.memory = L2MemoryStore(max_entries=memory_max_entries)
 
     async def decide(self, snapshot: SyncSnapshot) -> dict[int, str]:
         """全局决策 → {squad_id: order_text}
@@ -53,8 +59,11 @@ class L2Commander:
         # 1. 构建 L2 全局视图
         view = self.view_builder.build(snapshot)
 
-        # 2. 格式化为 markdown user prompt
+        # 2. 格式化为 markdown user prompt，附加历史上下文
         user_prompt = self.view_builder.format_text(view)
+        history_text = self.memory.format_for_llm(include_loops=3)
+        if history_text and "（无历史记录）" not in history_text:
+            user_prompt = f"{history_text}\n\n## 当前态势\n\n{user_prompt}"
 
         # 3. LLM 调用
         response = await self.llm.chat_json(self.system_prompt, user_prompt)
@@ -107,3 +116,39 @@ class L2Commander:
             logger.warning("L2 缺失小队指令: %s", missing)
 
         return result
+
+    def save_history(
+        self,
+        loop_id: int,
+        snapshot: SyncSnapshot,
+        l2_orders: dict[int, str],
+        instructions: list,
+        execution_results: list,
+        stats: dict[str, Any] | None = None,
+    ):
+        """保存当前轮次到历史记录
+
+        Args:
+            loop_id: 循环编号
+            snapshot: 同步快照
+            l2_orders: L2 生成的指令
+            instructions: L1 生成的指令列表
+            execution_results: L0 执行结果列表
+            stats: 循环统计信息（可选）
+        """
+        from src.ai.memory import LoopHistoryEntry
+
+        entry = LoopHistoryEntry(
+            loop_id=loop_id,
+            situation_summary="",  # 稍后由 summarizer 填充
+            l2_orders=l2_orders,
+            l1_instructions=instructions,
+            execution_results=execution_results,
+            loop_stats=stats or {},
+        )
+        self.memory.add(entry)
+        logger.debug("L2 历史已保存: loop_id=%d", loop_id)
+
+    def get_memory(self) -> L2MemoryStore:
+        """获取记忆存储对象，供外部访问或持久化"""
+        return self.memory

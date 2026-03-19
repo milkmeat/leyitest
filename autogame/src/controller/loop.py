@@ -31,10 +31,12 @@ try:
     from src.ai.llm_client import LLMClient
     from src.ai.l1_leader import L1Coordinator
     from src.ai.l2_commander import L2Commander
+    from src.ai.memory import SituationSummarizer
 except ImportError:
     LLMClient = None  # type: ignore[misc,assignment]
     L1Coordinator = None  # type: ignore[misc,assignment]
     L2Commander = None  # type: ignore[misc,assignment]
+    SituationSummarizer = None  # type: ignore[misc,assignment]
 
 
 @dataclass
@@ -68,13 +70,16 @@ class AIController:
         self.log_dir = config.system.logging.dir
         self._stop = False
 
-        # L2 指挥官 + L1 协调器（可选 — 传入 llm_client 时启用 AI 决策）
+        # L2 指挥官 + L1 协调器 + 摘要生成器（可选 — 传入 llm_client 时启用 AI 决策）
         self.l2_commander = None
         self.l1_coordinator = None
+        self.summarizer = None
         if llm_client is not None and L1Coordinator is not None:
             self.l1_coordinator = L1Coordinator(config, llm_client)
         if llm_client is not None and L2Commander is not None:
             self.l2_commander = L2Commander(config, llm_client)
+        if llm_client is not None and SituationSummarizer is not None:
+            self.summarizer = SituationSummarizer(llm_client)
 
     async def run(self, max_rounds: int = 0):
         """启动主循环
@@ -192,6 +197,7 @@ class AIController:
         # ── Phase 4: Action ──
         t0 = time.monotonic()
         stats.instructions_count = len(instructions)
+        results: list[Any] = []
         if instructions:
             try:
                 results = await self.executor.execute_batch(
@@ -204,8 +210,77 @@ class AIController:
         stats.action_time = round(time.monotonic() - t0, 2)
         print(f"[action] {stats.instructions_count} 条指令 ({stats.action_time:.2f}s)")
 
+        # ── Phase 5: Memory (可选) ──
+        # 在有 AI 决策且有 snapshot 时，保存历史记录并生成摘要
+        if snapshot and (self.l2_commander or self.l1_coordinator):
+            await self._save_memory(
+                loop_id, snapshot, l2_orders, instructions, results, stats,
+            )
+
         stats.total_time = round(time.monotonic() - round_start, 2)
         return stats
+
+    async def _save_memory(
+        self,
+        loop_id: int,
+        snapshot,
+        l2_orders: dict[int, str],
+        instructions: list,
+        results: list,
+        stats: LoopStats,
+    ):
+        """保存历史记录到 L2 和 L1 记忆
+
+        Args:
+            loop_id: 循环编号
+            snapshot: 同步快照
+            l2_orders: L2 指令
+            instructions: L1 指令
+            results: L0 执行结果
+            stats: 循环统计
+        """
+        try:
+            # 生成态势摘要
+            situation_summary = ""
+            if self.summarizer:
+                situation_summary = await self.summarizer.summarize(
+                    snapshot, l2_orders, asdict(stats),
+                )
+
+            # 保存 L2 历史
+            if self.l2_commander:
+                self.l2_commander.save_history(
+                    loop_id=loop_id,
+                    snapshot=snapshot,
+                    l2_orders=l2_orders,
+                    instructions=instructions,
+                    execution_results=results,
+                    stats=asdict(stats),
+                )
+                # 更新摘要
+                if self.l2_commander.memory._history:
+                    latest = self.l2_commander.memory._history[-1]
+                    latest.situation_summary = situation_summary
+
+            # 保存 L1 历史（所有小队）
+            if self.l1_coordinator:
+                self.l1_coordinator.save_all_history(
+                    loop_id=loop_id,
+                    all_instructions=instructions,
+                    all_results=results,
+                    stats=asdict(stats),
+                )
+                # 更新摘要
+                for leader in self.l1_coordinator.leaders.values():
+                    if leader.memory._history:
+                        latest = leader.memory._history[-1]
+                        latest.situation_summary = situation_summary
+
+            logger.info("记忆已保存: loop_id=%d, 摘要=%s", loop_id,
+                       situation_summary[:50] if situation_summary else "(无)")
+
+        except Exception as e:
+            logger.warning("保存记忆失败: %s", e)
 
     def _write_log(self, stats: LoopStats):
         """将 LoopStats 序列化为 JSON 写入 logs/ 目录"""
