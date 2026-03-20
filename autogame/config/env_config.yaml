@@ -18,12 +18,12 @@ default_header:
   sid: 1
   aid: 20000118              # 联盟 TestSquad2026
   ksid: 1
-  ava_id: 0
+  lvl_id: 29999
   castle_lv: 25
   battle_type: 0
   battle_id: 0
   chat_scene: ",kingdom_1"
-  invoker_name: "evans_test_debug"
+  invoker_name: "ying_test_debug"
 
 # 请求附加信息（固定不变）
 extra_info:
