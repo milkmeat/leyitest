@@ -15,6 +15,7 @@ from __future__ import annotations
 import json as _json
 import logging
 import math
+import random
 from enum import Enum
 from typing import Any, Dict, Optional
 
@@ -296,6 +297,7 @@ class L0Executor:
                 logger.info("自动回填 rally_id=%s → uid=%d", last_rally_id, instr.uid)
 
             # Smart L0: LVL_ATTACK_BUILDING 预处理（距离检查 + 部队去重）
+            original_attack_instr: AIInstruction | None = None
             if instr.action == ActionType.LVL_ATTACK_BUILDING:
                 processed, skip_reason = self._preprocess_lvl_attack_building(instr)
                 if processed is None:
@@ -304,9 +306,21 @@ class L0Executor:
                         message=skip_reason,
                     ))
                     continue
+                # 记录原始攻击指令，用于移城失败重试
+                if processed.action == ActionType.LVL_MOVE_CITY:
+                    original_attack_instr = instr
                 instr = processed
 
             result = await self.execute(instr, rally_pos=last_rally_pos)
+
+            # Smart L0: 移城失败重试（随机偏移坐标）
+            if (not result.success
+                    and original_attack_instr is not None
+                    and instr.action == ActionType.LVL_MOVE_CITY):
+                result = await self._retry_move_city(
+                    instr, original_attack_instr,
+                )
+
             results.append(result)
 
             # 从 INITIATE_RALLY / LVL_INITIATE_RALLY 响应中提取 rally_id 和 pos
@@ -589,6 +603,63 @@ class L0Executor:
             "soldier": {sid: cnt},
             "over_defend": False,
         }
+
+    # 移城失败重试次数上限
+    MOVE_CITY_MAX_RETRIES = 3
+    # 随机偏移范围（在原始目标附近 ±N 格随机）
+    MOVE_CITY_RANDOM_RANGE = 5
+
+    async def _retry_move_city(
+        self,
+        failed_instr: AIInstruction,
+        original_attack_instr: AIInstruction,
+    ) -> ExecutionResult:
+        """移城失败后随机换坐标重试
+
+        在原始攻击目标附近随机取偏移坐标，最多重试 MOVE_CITY_MAX_RETRIES 次。
+
+        Args:
+            failed_instr: 已失败的 LVL_MOVE_CITY 指令
+            original_attack_instr: 原始 LVL_ATTACK_BUILDING 指令（用于取目标坐标）
+        """
+        target_x = original_attack_instr.target_x
+        target_y = original_attack_instr.target_y
+        uid = failed_instr.uid
+
+        for attempt in range(1, self.MOVE_CITY_MAX_RETRIES + 1):
+            rand_x = target_x + random.randint(-self.MOVE_CITY_RANDOM_RANGE, self.MOVE_CITY_RANDOM_RANGE)
+            rand_y = target_y + random.randint(-self.MOVE_CITY_RANDOM_RANGE, self.MOVE_CITY_RANDOM_RANGE)
+            # 夹到地图范围内
+            rand_x = max(0, min(rand_x, self.map_width - 1))
+            rand_y = max(0, min(rand_y, self.map_height - 1))
+
+            retry_instr = failed_instr.model_copy(update={
+                "target_x": rand_x,
+                "target_y": rand_y,
+                "reason": (
+                    f"移城重试 {attempt}/{self.MOVE_CITY_MAX_RETRIES}, "
+                    f"随机坐标 ({rand_x},{rand_y})"
+                ),
+            })
+            logger.info(
+                "L0 移城重试 %d/%d: uid=%d → (%d,%d)",
+                attempt, self.MOVE_CITY_MAX_RETRIES, uid, rand_x, rand_y,
+            )
+            result = await self.execute(retry_instr)
+            if result.success:
+                return result
+
+        logger.warning(
+            "L0 移城重试全部失败: uid=%d, 目标建筑 (%d,%d)",
+            uid, target_x, target_y,
+        )
+        return ExecutionResult(
+            success=False, action=ActionType.LVL_MOVE_CITY, uid=uid,
+            error=(
+                f"移城失败（已重试{self.MOVE_CITY_MAX_RETRIES}次随机坐标），"
+                f"目标建筑附近 ({target_x},{target_y})"
+            ),
+        )
 
     # 距离阈值: 超过此格数则先移城再攻打
     MOVE_CITY_DISTANCE_THRESHOLD = 20

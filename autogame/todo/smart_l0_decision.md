@@ -36,6 +36,13 @@ l0 executor增加一些智能判断逻辑，完全用python实现，不走llm
 - 文件：`src/executor/l0_executor.py`、`src/main.py`
 
 
+### 5. [已完成] 移城失败随机重试
+- 在 `execute_batch` 中，当 `_preprocess_lvl_attack_building` 将攻击转为移城后，检查执行结果
+- 若移城失败，调用 `_retry_move_city()` 在目标建筑附近 ±5 格随机取坐标重试，最多 3 次
+- 常量 `MOVE_CITY_MAX_RETRIES=3`、`MOVE_CITY_RANDOM_RANGE=5` 可调
+- 文件：`src/executor/l0_executor.py`
+
+
 ## 要求
 - 如有不明确的项目，一开始就向我询问，并更新本文件
 - 都明确后，先分解成适当的工作项，更新本文件。开始开发调试

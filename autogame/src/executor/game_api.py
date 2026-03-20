@@ -203,7 +203,7 @@ class GameAPIClient:
         result = await self._send(uid, info["cmd"], param, header_overrides=final_header_overrides)
 
         # 业务失败时打印详细信息
-        code = result.get("code", -1)
+        code = result.get("res_header", {}).get("ret_code", result.get("code", -1))
         if code != 0:
             logger.warning(
                 "[业务失败] cmd_name=%s cmd=%s uid=%s code=%s\n"
@@ -246,7 +246,7 @@ class GameAPIClient:
             try:
                 resp = await self._send(action["uid"], action["cmd"], action["param"])
                 results.append(resp)
-                code = resp.get("code", -1)
+                code = resp.get("res_header", {}).get("ret_code", resp.get("code", -1))
                 if code == 0:
                     logger.info("[成功] uid=%s %s", action["uid"], action["description"])
                 else:
