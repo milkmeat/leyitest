@@ -13,7 +13,9 @@
 
 from __future__ import annotations
 
+import logging
 import math
+import re
 
 from pydantic import BaseModel, Field
 
@@ -22,6 +24,8 @@ from src.models.player_state import PlayerState, TroopState
 from src.models.building import Building
 from src.models.enemy import Enemy
 from src.perception.data_sync import SyncSnapshot
+
+logger = logging.getLogger(__name__)
 
 
 # ------------------------------------------------------------------
@@ -156,63 +160,63 @@ class L1ViewBuilder:
         )
 
     def format_text(self, view: L1SquadView) -> str:
-        """将视图格式化为 LLM user prompt (结构化 markdown)"""
+        """Format view as LLM user prompt (structured markdown)"""
         lines: list[str] = []
 
-        lines.append(f"# 小队 {view.squad_id} ({view.squad_name}) 态势报告")
-        lines.append(f"小队中心: ({view.center_pos[0]}, {view.center_pos[1]})")
+        lines.append(f"# Squad {view.squad_id} ({view.squad_name}) Status Report")
+        lines.append(f"Squad Center: ({view.center_pos[0]}, {view.center_pos[1]})")
         lines.append("")
 
-        # L2 指令
+        # L2 Order
         if view.l2_order:
-            lines.append("## L2 战略指令")
+            lines.append("## L2 Strategic Order")
             lines.append(view.l2_order)
             lines.append("")
 
-        # 友方成员
-        lines.append(f"## 友方成员 ({len(view.members)} 人)")
+        # Friendly members
+        lines.append(f"## Friendly Members ({len(view.members)} total)")
         for m in view.members:
             lines.append(
                 f"- uid={m.uid} {m.name} "
-                f"城({m.city_pos[0]},{m.city_pos[1]}) "
-                f"战力={m.power} 兵力={m.total_soldiers} "
-                f"出征槽位={m.dispatch_slots}"
+                f"city({m.city_pos[0]},{m.city_pos[1]}) "
+                f"power={m.power} soldiers={m.total_soldiers} "
+                f"slots={m.dispatch_slots}"
             )
             for t in m.troops:
                 lines.append(
-                    f"  - 部队 {t.unique_id}: {t.state} "
-                    f"兵={t.soldier_count} 位置({t.pos[0]},{t.pos[1]}) "
-                    f"{t.target}"
+                    f"  - Troop {t.unique_id}: {t.state} "
+                    f"count={t.soldier_count} pos({t.pos[0]},{t.pos[1]}) "
+                    f"target={t.target}"
                 )
         lines.append("")
 
-        # 附近敌方
-        lines.append(f"## 附近敌方 ({len(view.enemies)} 个)")
+        # Nearby enemies
+        lines.append(f"## Nearby Enemies ({len(view.enemies)} total)")
         if view.enemies:
             for e in view.enemies:
-                fight = " [战斗中]" if e.is_fighting else ""
+                fight = " [FIGHTING]" if e.is_fighting else ""
                 lines.append(
                     f"- uid={e.uid} ({e.pos[0]},{e.pos[1]}) "
-                    f"战力={e.power} 联盟={e.alliance} "
-                    f"距离={e.distance:.0f}格 行军≈{e.march_seconds}s{fight}"
+                    f"power={e.power} alliance={e.alliance} "
+                    f"dist={e.distance:.0f} march≈{e.march_seconds}s{fight}"
                 )
         else:
-            lines.append("- (无)")
+            lines.append("- (none)")
         lines.append("")
 
-        # 附近建筑
-        lines.append(f"## 附近建筑 ({len(view.buildings)} 个)")
+        # Nearby buildings
+        lines.append(f"## Nearby Buildings ({len(view.buildings)} total)")
         if view.buildings:
             for b in view.buildings:
-                fight = " [战斗中]" if b.is_fighting else ""
+                fight = " [FIGHTING]" if b.is_fighting else ""
                 lines.append(
                     f"- {b.unique_id} type={b.obj_type} "
                     f"({b.pos[0]},{b.pos[1]}) "
-                    f"归属={b.owner_alliance} "
-                    f"距离={b.distance:.0f}格 行军≈{b.march_seconds}s{fight}"
+                    f"owner={b.owner_alliance} "
+                    f"dist={b.distance:.0f} march≈{b.march_seconds}s{fight}"
                 )
         else:
-            lines.append("- (无)")
+            lines.append("- (none)")
 
         return "\n".join(lines)
 
@@ -280,13 +284,13 @@ class L1ViewBuilder:
         buildings: list[Building],
         center: tuple[int, int],
     ) -> list[NearbyBuilding]:
-        """按距离排序，截取 top N 建筑"""
+        """Sort by distance, take top N buildings"""
         items = []
         for b in buildings:
             dist = _distance(center, b.pos)
             march_sec = int(dist * self.march_speed)
             if b.alliance_id == 0:
-                owner = "中立"
+                owner = "Neutral"
             elif b.alliance_nick:
                 owner = b.alliance_nick
             elif b.alliance_name:
@@ -305,3 +309,79 @@ class L1ViewBuilder:
             ))
         items.sort(key=lambda x: x.distance)
         return items[:self.MAX_BUILDINGS]
+
+
+# ------------------------------------------------------------------
+# 工具函数：坐标解析与建筑处理
+# ------------------------------------------------------------------
+
+def parse_target_coordinates(l2_order: str) -> tuple[int, int] | None:
+    """从 L2 指令中解析目标坐标
+
+    支持的格式:
+    - "控制 建筑 pos:( 154, 170 )" -> (154, 170)
+    - "move to (100, 200)" -> (100, 200)
+    - "attack 100,200" -> (100, 200)
+
+    Returns:
+        (x, y) 元组，解析失败时返回 None
+    """
+    # 尝试匹配 "pos:( x, y )" 格式
+    pattern = r'pos:\(\s*(\d+)\s*,\s*(\d+)\s*\)'
+    match = re.search(pattern, l2_order)
+    if match:
+        return (int(match.group(1)), int(match.group(2)))
+
+    # 尝试匹配 "(x, y)" 格式
+    pattern = r'\(\s*(\d+)\s*,\s*(\d+)\s*\)'
+    match = re.search(pattern, l2_order)
+    if match:
+        return (int(match.group(1)), int(match.group(2)))
+
+    # 尝试匹配 "x, y" 格式
+    pattern = r'(\d{1,3})\s*,\s*(\d{1,3})'
+    match = re.search(pattern, l2_order)
+    if match:
+        x, y = int(match.group(1)), int(match.group(2))
+        if 0 <= x < 1000 and 0 <= y < 1000:
+            return (x, y)
+
+    return None
+
+
+def find_building_by_pos(
+    buildings: list[Building],
+    target_pos: tuple[int, int],
+    tolerance: int = 2,
+) -> Building | None:
+    """在建筑列表中查找指定坐标附近的建筑
+
+    Args:
+        buildings: 建筑列表
+        target_pos: 目标坐标
+        tolerance: 坐标容差（格数），默认 2 格
+
+    Returns:
+        找到的建筑，未找到时返回 None
+    """
+    target_x, target_y = target_pos
+
+    for b in buildings:
+        if abs(b.pos[0] - target_x) <= tolerance and abs(b.pos[1] - target_y) <= tolerance:
+            return b
+
+    return None
+
+
+def get_building_control_status(building: Building, my_alliance_id: int) -> str:
+    """获取建筑控制状态描述
+
+    Returns:
+        "中立" / "我方" / "敌方"
+    """
+    if building.alliance_id == 0:
+        return "中立"
+    elif building.alliance_id == my_alliance_id:
+        return "我方"
+    else:
+        return "敌方"

@@ -565,12 +565,28 @@ async def cmd_l1_decide(*args: str, env: str = None):
     from src.ai.llm_client import LLMClient
     from src.ai.l1_leader import L1Leader
 
+    # 解析参数
     remaining = [a for a in args if a not in ("--json", "--dry-run")]
     json_mode = "--json" in args
     dry_run = "--dry-run" in args
+    l1_prompt = None  # type: str | None
+
+    # 检查 --l1-prompt 参数 (支持 --l1-prompt=value 和 --l1-prompt value)
+    prompt_args = [a for a in args if a.startswith("--l1-prompt")]
+    if prompt_args:
+        # Try --l1-prompt=value format first
+        parts = prompt_args[0].split("=", 1)
+        if len(parts) == 2:
+            l1_prompt = parts[1]
+        else:
+            # Try --l1-prompt value format (next arg)
+            idx = args.index(prompt_args[0])
+            if idx + 1 < len(args) and not args[idx + 1].startswith("--"):
+                l1_prompt = args[idx + 1]
+        remaining = [a for a in remaining if not a.startswith("--l1-prompt") and a != l1_prompt]
 
     if not remaining:
-        print("用法: l1_decide <squad_id> [--dry-run] [--json]", file=sys.stderr)
+        print("Usage: l1_decide <squad_id> [--dry-run] [--json] [--l1-prompt <name>]", file=sys.stderr)
         sys.exit(1)
 
     squad_id = int(remaining[0])
@@ -583,9 +599,9 @@ async def cmd_l1_decide(*args: str, env: str = None):
             squad = sq
             break
     if squad is None:
-        print(f"[FAIL] 未找到 squad_id={squad_id}", file=sys.stderr)
+        print(f"[FAIL] Squad not found: squad_id={squad_id}", file=sys.stderr)
         available = [sq.squad_id for sq in config.squads.squads]
-        print(f"  可用: {available}", file=sys.stderr)
+        print(f"  Available: {available}", file=sys.stderr)
         sys.exit(1)
 
     # 创建 LLM 客户端
@@ -595,7 +611,7 @@ async def cmd_l1_decide(*args: str, env: str = None):
     try:
         llm = LLMClient(config.system.llm, dry_run=dry_run)
     except (ValueError, ImportError) as e:
-        print(f"[FAIL] LLM 初始化失败: {e}", file=sys.stderr)
+        print(f"[FAIL] LLM init failed: {e}", file=sys.stderr)
         sys.exit(1)
 
     client = GameAPIClient(env=env)
@@ -603,14 +619,14 @@ async def cmd_l1_decide(*args: str, env: str = None):
     try:
         # 同步数据
         snapshot = await syncer.sync(loop_id=0)
-        print(f"同步完成: {len(snapshot.accounts)} 账号, "
-              f"{len(snapshot.enemies)} 敌方, {len(snapshot.buildings)} 建筑")
+        print(f"Sync complete: {len(snapshot.accounts)} accounts, "
+              f"{len(snapshot.enemies)} enemies, {len(snapshot.buildings)} buildings")
 
         # L1 决策
-        leader = L1Leader(config, llm, squad)
+        leader = L1Leader(config, llm, squad, prompt_template=l1_prompt)
         instructions = await leader.decide(snapshot)
 
-        print(f"\n小队 {squad_id} ({squad.name}) 生成 {len(instructions)} 条指令:")
+        print(f"\nSquad {squad_id} ({squad.name}) generated {len(instructions)} instructions:")
 
         if json_mode:
             _print_json([i.model_dump(mode="json") for i in instructions])
@@ -797,6 +813,9 @@ async def cmd_run(*args: str, env: str = None):
     # 解析参数
     max_rounds = 0
     dry_run = "--dry-run" in args
+    mock_l2 = None  # type: str | None
+    l1_prompt = None  # type: str | None
+    llm_timeout = None  # type: int | None
     remaining = list(args)
     i = 0
     while i < len(remaining):
@@ -811,7 +830,21 @@ async def cmd_run(*args: str, env: str = None):
         elif arg.startswith("--loop.interval_seconds") and i + 1 < len(remaining):
             config.system.loop.interval_seconds = int(remaining[i + 1])
             i += 1
+        elif arg == "--mock-l2" and i + 1 < len(remaining):
+            mock_l2 = remaining[i + 1]
+            i += 1
+        elif arg == "--l1-prompt" and i + 1 < len(remaining):
+            l1_prompt = remaining[i + 1]
+            i += 1
+        elif arg == "--llm-timeout" and i + 1 < len(remaining):
+            llm_timeout = int(remaining[i + 1])
+            config.system.llm.timeout_seconds = llm_timeout
+            i += 1
         i += 1
+
+    # 显示 LLM 配置
+    if llm_timeout is not None:
+        print(f"[config] LLM 超时已覆盖为 {llm_timeout}s")
 
     # 创建 LLM 客户端（可选）
     llm_client = None
@@ -831,7 +864,8 @@ async def cmd_run(*args: str, env: str = None):
         print("[info] L1/L2 AI 决策将被跳过，主循环仅执行 Sync 阶段")
 
     client = GameAPIClient(env=env)
-    controller = AIController(config, client, llm_client=llm_client)
+    controller = AIController(config, client, llm_client=llm_client,
+                             mock_l2=mock_l2, l1_prompt=l1_prompt)
     try:
         await controller.run(max_rounds=max_rounds)
     finally:

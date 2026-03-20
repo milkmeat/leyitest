@@ -15,6 +15,7 @@
 
 import asyncio
 import json
+import logging
 import os
 import signal
 import time
@@ -25,6 +26,8 @@ from src.config.schemas import AppConfig
 from src.executor.game_api import GameAPIClient
 from src.executor.l0_executor import L0Executor
 from src.perception.data_sync import DataSyncer
+
+logger = logging.getLogger(__name__)
 
 # 条件导入 — llm_client 可选
 try:
@@ -61,7 +64,8 @@ class LoopStats:
 class AIController:
     """主循环控制器 — 串联 Sync → L2 → L1 → Action → Sleep"""
 
-    def __init__(self, config: AppConfig, client: GameAPIClient, llm_client=None):
+    def __init__(self, config: AppConfig, client: GameAPIClient, llm_client=None,
+                 mock_l2: str | None = None, l1_prompt: str | None = None):
         self.config = config
         self.client = client
         self.syncer = DataSyncer(client, config)
@@ -69,13 +73,15 @@ class AIController:
         self.interval = config.system.loop.interval_seconds
         self.log_dir = config.system.logging.dir
         self._stop = False
+        self.mock_l2 = mock_l2  # Mock L2 指令（跳过 L2 LLM 调用）
+        self.l1_prompt = l1_prompt  # L1 prompt 模板名称
 
         # L2 指挥官 + L1 协调器 + 摘要生成器（可选 — 传入 llm_client 时启用 AI 决策）
         self.l2_commander = None
         self.l1_coordinator = None
         self.summarizer = None
         if llm_client is not None and L1Coordinator is not None:
-            self.l1_coordinator = L1Coordinator(config, llm_client)
+            self.l1_coordinator = L1Coordinator(config, llm_client, prompt_template=l1_prompt)
         if llm_client is not None and L2Commander is not None:
             self.l2_commander = L2Commander(config, llm_client)
         if llm_client is not None and SituationSummarizer is not None:
@@ -170,12 +176,16 @@ class AIController:
         t0 = time.monotonic()
         l2_orders: dict[int, str] = {}
         try:
-            if self.l2_commander and snapshot:
+            if self.mock_l2:
+                # Mock 模式：解析固定指令，跳过 LLM 调用
+                l2_orders = self._parse_mock_l2(self.mock_l2)
+                print(f"[L2]     Mock 模式: {self.mock_l2[:50]}...")
+            elif self.l2_commander and snapshot:
                 l2_orders = await self.l2_commander.decide(snapshot)
         except Exception as e:
             stats.phase_errors.append(f"l2: {e}")
         stats.l2_time = round(time.monotonic() - t0, 2)
-        if self.l2_commander:
+        if self.mock_l2 or self.l2_commander:
             print(f"[L2]     {len(l2_orders)} 条指令 ({stats.l2_time:.2f}s)")
         else:
             print(f"[L2]     跳过 (无 LLM) ({stats.l2_time:.2f}s)")
@@ -209,6 +219,10 @@ class AIController:
                 stats.phase_errors.append(f"action: {e}")
         stats.action_time = round(time.monotonic() - t0, 2)
         print(f"[action] {stats.instructions_count} 条指令 ({stats.action_time:.2f}s)")
+
+        # ── Phase 4.5: 验收日志（测试模式） ──
+        if snapshot:
+            self._print_acceptance_log(snapshot, l2_orders)
 
         # ── Phase 5: Memory (可选) ──
         # 在有 AI 决策且有 snapshot 时，保存历史记录并生成摘要
@@ -281,6 +295,92 @@ class AIController:
 
         except Exception as e:
             logger.warning("保存记忆失败: %s", e)
+
+    def _parse_mock_l2(self, mock_instruction: str) -> dict[int, str]:
+        """解析 mock L2 指令为 {squad_id: order_text} 字典
+
+        支持的格式:
+        1. "[小队 1 (Alpha)] 控制 建筑 pos:( 154, 170 )" -> {1: "控制 建筑 pos:( 154, 170 )"}
+        2. "squad_1: 控制 建筑 pos:( 154, 170 )" -> {1: "控制 建筑 pos:( 154, 170 )"}
+        3. 直接传给所有小队的通用指令
+
+        Returns:
+            {squad_id: order_text} 字典
+        """
+        import re
+
+        # 尝试解析 "[小队 N (Name)]" 格式
+        pattern = r'\[小队\s+(\d+)\s*\([^)]*\)\]\s*(.+)'
+        match = re.search(pattern, mock_instruction)
+        if match:
+            squad_id = int(match.group(1))
+            order = match.group(2).strip()
+            return {squad_id: order}
+
+        # 尝试解析 "squad_N:" 格式
+        pattern = r'squad_(\d+)\s*:\s*(.+)'
+        match = re.search(pattern, mock_instruction, re.IGNORECASE)
+        if match:
+            squad_id = int(match.group(1))
+            order = match.group(2).strip()
+            return {squad_id: order}
+
+        # 默认：将指令应用到所有小队
+        valid_squad_ids = {s.squad_id for s in self.config.squads.squads}
+        return {sid: mock_instruction.strip() for sid in valid_squad_ids}
+
+    def _print_acceptance_log(self, snapshot, l2_orders: dict[int, str]):
+        """Print acceptance log: member positions + building control status
+
+        Print each loop:
+        1. All squad members' current positions
+        2. Target building control status
+        3. Alert when building controlled by our alliance
+        """
+        from src.perception.l1_view import parse_target_coordinates, find_building_by_pos
+
+        print(f"[Accept] ---")
+
+        # 1. Print all member positions
+        print(f"[Accept] Member Positions:")
+        for uid, acct in snapshot.accounts.items():
+            total_soldiers = sum(s.value for s in acct.soldiers)
+            troop_count = len([t for t in acct.troops if t.state.name != "IDLE"])
+            print(f"[Accept]   uid={uid} ({acct.city_pos[0]},{acct.city_pos[1]}) "
+                  f"soldiers={total_soldiers} dispatched={troop_count}")
+
+        # 2. Parse target building and print control status
+        target_building = None
+        my_alliance_id = self.config.squads.active_alliance.aid
+
+        # Parse target coordinates from L2 order
+        for squad_id, order in l2_orders.items():
+            target_pos = parse_target_coordinates(order)
+            if target_pos:
+                target_building = find_building_by_pos(snapshot.buildings, target_pos)
+                break
+
+        if target_building:
+            # Print target building control status
+            owner = "Neutral" if target_building.alliance_id == 0 else f"Alliance{target_building.alliance_id}"
+            print(f"[Accept]   Target Building: {target_building.unique_id} "
+                  f"({target_building.pos[0]},{target_building.pos[1]}) "
+                  f"owner={owner}")
+
+            # Check if controlled by our alliance
+            if target_building.alliance_id == my_alliance_id:
+                print(f"[Accept]   *** BUILDING CONTROLLED BY OUR ALLIANCE ***")
+        else:
+            # Target not found, print nearby buildings
+            if snapshot.buildings:
+                print(f"[Accept]   Nearby Buildings (top 5):")
+                for b in snapshot.buildings[:5]:
+                    owner = "Neutral" if b.alliance_id == 0 else f"Alliance{b.alliance_id}"
+                    print(f"[Accept]     {b.unique_id} ({b.pos[0]},{b.pos[1]}) owner={owner}")
+            else:
+                print(f"[Accept]   (no building data)")
+
+        print(f"[Accept] ---")
 
     def _write_log(self, stats: LoopStats):
         """将 LoopStats 序列化为 JSON 写入 logs/ 目录"""

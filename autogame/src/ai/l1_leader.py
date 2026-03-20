@@ -1,11 +1,11 @@
-"""L1 小队队长 — 战术决策引擎
+"""L1 Squad Leader - Tactical Decision Engine
 
-单小队: L1Leader — 构建视图 → 调用 LLM → 解析指令
-多小队: L1Coordinator — 并行调用所有 L1Leader，异常隔离
+Single squad: L1Leader — build view → call LLM → parse instructions
+Multi squad: L1Coordinator — parallel all L1Leader with exception isolation
 
-用法:
+Usage:
     leader = L1Leader(config, llm_client, squad)
-    instructions = await leader.decide(snapshot, l2_order="进攻东部")
+    instructions = await leader.decide(snapshot, l2_order="attack east")
 
     coordinator = L1Coordinator(config, llm_client)
     all_instructions = await coordinator.decide_all(snapshot, l2_orders={})
@@ -31,16 +31,37 @@ logger = logging.getLogger(__name__)
 _PROMPT_DIR = os.path.join(os.path.dirname(__file__), "prompts")
 
 
-def _load_system_prompt() -> str:
-    path = os.path.join(_PROMPT_DIR, "l1_system.txt")
-    with open(path, "r", encoding="utf-8") as f:
-        return f.read()
+def _load_system_prompt(template_name: str | None = None) -> str:
+    """加载 L1 system prompt 模板
+
+    Args:
+        template_name: 模板名称，如 "ava"、"ava_test"。默认使用 "l1_system.txt"
+    """
+    if template_name:
+        # 查找 l1_system_{template_name}.txt
+        filename = f"l1_system_{template_name}.txt"
+    else:
+        filename = "l1_system.txt"
+
+    path = os.path.join(_PROMPT_DIR, filename)
+    logger.info(f"Loading L1 prompt template: {filename} (template_name={template_name})")
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            content = f.read()
+        logger.info(f"L1 prompt loaded successfully: {len(content)} chars")
+        return content
+    except FileNotFoundError:
+        logger.warning(f"Prompt template {filename} not found, using default")
+        # 回退到默认模板
+        default_path = os.path.join(_PROMPT_DIR, "l1_system.txt")
+        with open(default_path, "r", encoding="utf-8") as f:
+            return f.read()
 
 
 class L1Leader:
-    """单小队 L1 队长 — 一次 decide() 调用生成该小队的全部指令
+    """Single Squad L1 Leader - decide() call generates all instructions for this squad
 
-    集成 L1MemoryStore，维护小队级别的战术决策历史。
+    Integrates L1MemoryStore, maintains squad-level tactical decision history.
     """
 
     def __init__(
@@ -49,12 +70,14 @@ class L1Leader:
         llm_client: LLMClient,
         squad: SquadEntry,
         memory_max_entries: int = 5,
+        prompt_template: str | None = None,
     ):
         self.config = config
         self.llm = llm_client
         self.squad = squad
         self.view_builder = L1ViewBuilder(config)
-        self._system_prompt = _load_system_prompt()
+        self._prompt_template = prompt_template  # Save template name for logging
+        self._system_prompt = _load_system_prompt(prompt_template)
         self.memory = L1MemoryStore(
             squad_id=squad.squad_id,
             max_entries=memory_max_entries,
@@ -84,8 +107,9 @@ class L1Leader:
             user_prompt = f"{history_text}\n\n## 当前态势\n\n{user_prompt}"
 
         # 3. 调用 LLM
+        context = f"L1 squad={self.squad.squad_id} ({self.squad.name})"
         response = await self.llm.chat_json(
-            self._system_prompt, user_prompt
+            self._system_prompt, user_prompt, context=context
         )
 
         # 4. 解析响应
@@ -172,13 +196,17 @@ class L1Leader:
 class L1Coordinator:
     """L1 并行协调器 — 管理所有小队的 L1Leader"""
 
-    def __init__(self, config: AppConfig, llm_client: LLMClient):
+    def __init__(self, config: AppConfig, llm_client: LLMClient,
+                 prompt_template: str | None = None):
         self.config = config
         self.llm = llm_client
         self.leaders: dict[int, L1Leader] = {}
 
         for squad in config.squads.squads:
-            self.leaders[squad.squad_id] = L1Leader(config, llm_client, squad)
+            self.leaders[squad.squad_id] = L1Leader(
+                config, llm_client, squad,
+                prompt_template=prompt_template,
+            )
 
     async def decide_all(
         self,

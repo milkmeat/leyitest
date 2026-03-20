@@ -323,7 +323,7 @@ class SituationSummarizer:
             # 按类型分组
             by_type: dict[int, int] = {}
             for b in buildings:
-                by_type[b.type] = by_type.get(b.type, 0) + 1
+                by_type[b.obj_type] = by_type.get(b.obj_type, 0) + 1
             for btype, count in sorted(by_type.items()):
                 lines.append(f"  - 类型 {btype}: {count} 个")
 

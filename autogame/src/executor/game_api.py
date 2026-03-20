@@ -546,17 +546,19 @@ class GameAPIClient:
         """AVA 战场内攻打建筑
 
         Args:
-            target_id: 建筑唯一 ID
+            target_id: 建筑唯一 ID (如 "27_4_1")
             target_pos: 编码后的坐标
             key: 建筑 key
             march_info: 出征部队信息
         """
         overrides: Dict[str, Any] = {
+            "march_type": 15,
             "target_info": {"id": target_id, "pos": target_pos, "key": key},
+            "target_type": 10001,
         }
         if march_info:
             overrides["march_info"] = march_info
-        return await self.send_cmd("lvl_dispatch_troop_building", uid, **overrides)
+        return await self.send_cmd("lvl_dispatch_troop", uid, **overrides)
 
     async def lvl_create_rally(
         self, uid: int, target_id: str,
@@ -567,19 +569,24 @@ class GameAPIClient:
         """AVA 战场内对玩家发起集结
 
         Args:
-            target_id: 目标唯一 ID
+            target_id: 目标唯一 ID (如 "2_20010643_1")
             march_info: 队长出征部队信息
             prepare_time: 集结准备时间（默认60秒）
             tn_limit: 部队数量限制
+            timestamp: 时间戳（可选，服务器会自动生成）
         """
         overrides: Dict[str, Any] = {
+            "march_type": 13,
             "target_info": {"id": target_id},
+            "target_type": 10101,
             "prepare_time": prepare_time,
             "tn_limit": tn_limit,
-            "timestamp": timestamp,
         }
         if march_info:
             overrides["march_info"] = march_info
+        # 只在 timestamp 非空时添加
+        if timestamp:
+            overrides["timestamp"] = timestamp
         return await self.send_cmd("lvl_create_rally_war", uid, **overrides)
 
     async def lvl_create_rally_building(
@@ -588,16 +595,28 @@ class GameAPIClient:
         prepare_time: int = 60, tn_limit: int = 1,
         timestamp: str = "",
     ) -> Dict[str, Any]:
-        """AVA 战场内对建筑发起集结"""
+        """AVA 战场内对建筑发起集结
+
+        Args:
+            target_id: 建筑 unique_id (如 "27_4_1")
+            march_info: 队长出征部队信息
+            prepare_time: 集结准备时间（默认60秒）
+            tn_limit: 部队数量限制
+            timestamp: 时间戳（可选，服务器会自动生成）
+        """
         overrides: Dict[str, Any] = {
+            "march_type": 14,
             "target_info": {"id": target_id},
+            "target_type": 10001,
             "prepare_time": prepare_time,
             "tn_limit": tn_limit,
-            "timestamp": timestamp,
         }
         if march_info:
             overrides["march_info"] = march_info
-        return await self.send_cmd("lvl_create_rally_war_building", uid, **overrides)
+        # 只在 timestamp 非空时添加
+        if timestamp:
+            overrides["timestamp"] = timestamp
+        return await self.send_cmd("lvl_create_rally_war", uid, **overrides)
 
     async def lvl_rally_dismiss(self, uid: int, unique_id: str) -> Dict[str, Any]:
         """AVA 战场内解散集结 (unique_id 格式: 107_xxx)"""
