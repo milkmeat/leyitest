@@ -352,6 +352,8 @@ commands:
   # --- 战场内移城 ---
   lvl_move_city:
     cmd: "lvl_move_city"
+    extra_header:
+      lvl_id: "战场ID"     
     required_param:
       tar_pos: "目标坐标（编码后的值，x*100000000+y*100）"
     default_param:
@@ -362,6 +364,8 @@ commands:
   # --- 获取战场队伍信息 ---
   lvl_battle_login_get:
     cmd: "lvl_battle_login_get"
+    extra_header:
+      lvl_id: "战场ID"
     required_param:
       lvl_id: "战场ID"
     default_param:
@@ -371,6 +375,8 @@ commands:
   # --- 战场内侦查玩家 ---
   lvl_dispatch_scout_player:
     cmd: "lvl_dispatch_scout"
+    extra_header:
+      lvl_id: "战场ID"
     default_param:
       march_type: 101
       scout_queue_id: 8001
@@ -385,6 +391,8 @@ commands:
   # --- 战场内侦查建筑 ---
   lvl_dispatch_scout_building:
     cmd: "lvl_dispatch_scout"
+    extra_header:
+      lvl_id: "战场ID"
     default_param:
       march_type: 101
       scout_queue_id: 8001
@@ -399,6 +407,8 @@ commands:
   # --- 战场内攻打玩家 ---
   lvl_dispatch_troop:
     cmd: "lvl_dispatch_troop"
+    extra_header:
+      lvl_id: "战场ID"
     default_param:
       march_info:
         carry_lord: 1
@@ -421,6 +431,8 @@ commands:
   # --- 战场内攻打建筑 ---
   lvl_dispatch_troop_building:
     cmd: "lvl_dispatch_troop"
+    extra_header:
+      lvl_id: "战场ID"
     default_param:
       march_info:
         carry_lord: 1
@@ -438,12 +450,14 @@ commands:
         id: ""
         pos: 0
         key: 0
-      target_type: 10001
+      target_type: 10006
     description: "AVA战场内攻打建筑"
 
   # --- 战场内对玩家发起集结 ---
   lvl_create_rally_war:
     cmd: "lvl_create_rally_war"
+    extra_header:
+      lvl_id: "战场ID"
     default_param:
       march_info:
         carry_lord: 1
@@ -469,6 +483,8 @@ commands:
   # --- 战场内对建筑发起集结 ---
   lvl_create_rally_war_building:
     cmd: "lvl_create_rally_war"
+    extra_header:
+      lvl_id: "战场ID"
     default_param:
       march_info:
         carry_lord: 1
@@ -494,6 +510,8 @@ commands:
   # --- 战场内解散集结 ---
   lvl_rally_dismiss:
     cmd: "lvl_rally_dismiss"
+    extra_header:
+      lvl_id: "战场ID"
     default_param:
       unique_id: ""
     description: "AVA战场内解散集结（unique_id通过lvl_battle_login_get获取，格式107_xxx）"
@@ -501,6 +519,8 @@ commands:
   # --- 战场内参与集结 ---
   lvl_join_rally_war:
     cmd: "lvl_dispatch_troop"
+    extra_header:
+      lvl_id: "战场ID"
     default_param:
       march_info:
         carry_lord: 1
@@ -523,6 +543,8 @@ commands:
   # --- 战场内行军加速 ---
   lvl_use_troop_speed_up_item:
     cmd: "lvl_use_troop_speed_up_item"
+    extra_header:
+      lvl_id: "战场ID"
     required_param:
       unique_id: "队伍唯一ID（如 102_200106468001 或 101_1773137411106081）"
     default_param:
@@ -535,6 +557,8 @@ commands:
   # --- 战场内取消参与集结 ---
   lvl_recall_reinforce:
     cmd: "lvl_recall_reinforce"
+    extra_header:
+      lvl_id: "战场ID"
     default_param:
       unique_id: ""
     description: "AVA战场内取消参与集结（unique_id为行军队伍ID，格式101_xxx）"
@@ -542,6 +566,8 @@ commands:
   # --- 战场内召回普通队伍 ---
   lvl_use_troop_return_item:
     cmd: "lvl_use_troop_return_item"
+    extra_header:
+      lvl_id: "战场ID"
     default_param:
       cost_type: 1
       item_id: 306
@@ -552,6 +578,8 @@ commands:
   # --- 战场内从建筑召回队伍 ---
   lvl_change_troop:
     cmd: "lvl_change_troop"
+    extra_header:
+      lvl_id: "战场ID"
     default_param:
       march_info:
         ids: []

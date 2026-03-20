@@ -35,6 +35,14 @@ AI 决策调试:
   recall_troop <uid> <troop_id...>              召回行军部队
   recall_reinforce <uid> <troop_unique_id>      撤回增援部队 (101_xxx_1)
 
+AVA 战场行动:
+  lvl_move_city <uid> <lvl_id> <x> <y>          AVA移城到指定坐标
+  lvl_scout_player <uid> <lvl_id> <target_uid> <x> <y>  AVA侦查玩家
+  lvl_scout_building <uid> <lvl_id> <building_id> <x> <y>  AVA侦查建筑
+  lvl_attack_player <uid> <lvl_id> <target_uid> <x> <y>  AVA攻打玩家
+  lvl_attack_building <uid> <lvl_id> <building_id> <x> <y> [target_type] [key]  AVA攻打建筑
+  lvl_rally_dismiss <uid> <lvl_id> <unique_id>  AVA解散集结
+
 简化查询命令:
   get_gem <uid>                                 查询宝石数量（纯数字）
   get_soldiers <uid> <soldier_id>               查询指定兵种数量（纯数字）
@@ -226,6 +234,141 @@ async def cmd_move_city(uid_str: str, x_str: str, y_str: str, env: str = None):
             print(f"移城成功 → ({x},{y})")
         else:
             print(f"移城失败", file=sys.stderr)
+    finally:
+        await client.close()
+
+
+async def cmd_lvl_move_city(uid_str: str, lvl_id_str: str, x_str: str, y_str: str, env: str = None):
+    from src.executor.game_api import GameAPIClient
+    client = GameAPIClient(env=env)
+    try:
+        uid, lvl_id, x, y = int(uid_str), int(lvl_id_str), int(x_str), int(y_str)
+        resp = await client.lvl_move_city(uid, x, y, lvl_id)
+        code = _print_ret_code(resp)
+        if code == 0:
+            print(f"AVA移城成功 → lvl_id={lvl_id} ({x},{y})")
+        else:
+            print(f"AVA移城失败", file=sys.stderr)
+    finally:
+        await client.close()
+
+
+async def cmd_lvl_scout_player(uid_str: str, lvl_id_str: str, target_uid_str: str, x_str: str, y_str: str, env: str = None):
+    """AVA 战场内侦查玩家"""
+    from src.executor.game_api import GameAPIClient
+    from src.utils.coords import encode_pos
+    client = GameAPIClient(env=env)
+    try:
+        uid, lvl_id, target_uid = int(uid_str), int(lvl_id_str), int(target_uid_str)
+        x, y = int(x_str), int(y_str)
+        target_pos = encode_pos(x, y)
+        resp = await client.lvl_scout_player(uid, lvl_id, target_uid, target_pos)
+        code = _print_ret_code(resp)
+        if code == 0:
+            print(f"AVA侦查玩家成功 → uid={target_uid} ({x},{y})")
+        else:
+            print(f"AVA侦查玩家失败", file=sys.stderr)
+    finally:
+        await client.close()
+
+
+async def cmd_lvl_scout_building(uid_str: str, lvl_id_str: str, building_id_str: str, x_str: str, y_str: str, env: str = None):
+    """AVA 战场内侦查建筑"""
+    from src.executor.game_api import GameAPIClient
+    from src.utils.coords import encode_pos
+    client = GameAPIClient(env=env)
+    try:
+        uid, lvl_id, building_id = int(uid_str), int(lvl_id_str), int(building_id_str)
+        x, y = int(x_str), int(y_str)
+        building_pos = encode_pos(x, y)
+        resp = await client.lvl_scout_building(uid, lvl_id, building_id, building_pos)
+        code = _print_ret_code(resp)
+        if code == 0:
+            print(f"AVA侦查建筑成功 → building_id={building_id} ({x},{y})")
+        else:
+            print(f"AVA侦查建筑失败", file=sys.stderr)
+    finally:
+        await client.close()
+
+
+async def cmd_lvl_attack_player(uid_str: str, lvl_id_str: str, target_uid_str: str, x_str: str, y_str: str, env: str = None):
+    """AVA 战场内攻打玩家"""
+    from src.executor.game_api import GameAPIClient
+    from src.utils.coords import encode_pos
+    client = GameAPIClient(env=env)
+    try:
+        uid, lvl_id, target_uid = int(uid_str), int(lvl_id_str), int(target_uid_str)
+        x, y = int(x_str), int(y_str)
+        target_pos = encode_pos(x, y)
+        target_id = f"2_{target_uid}_1"
+        resp = await client.lvl_attack_player(uid, lvl_id, target_id, target_pos)
+        code = _print_ret_code(resp)
+        if code == 0:
+            print(f"AVA攻打玩家成功 → target_uid={target_uid} ({x},{y})")
+        else:
+            print(f"AVA攻打玩家失败", file=sys.stderr)
+    finally:
+        await client.close()
+
+
+async def cmd_lvl_attack_building(uid_str: str, lvl_id_str: str, building_id_str: str, x_str: str, y_str: str, *extra, env: str = None):
+    """AVA 战场内攻打建筑
+
+    用法: lvl_attack_building <uid> <lvl_id> <building_id> <x> <y> [target_type] [key]
+    - target_type: 默认从 building_id 提取（如 "10006_xxx" → 10006）
+    - key: 默认为 0
+    """
+    from src.executor.game_api import GameAPIClient
+    from src.utils.coords import encode_pos
+    client = GameAPIClient(env=env)
+    try:
+        uid, lvl_id = int(uid_str), int(lvl_id_str)
+        building_id = building_id_str  # 建筑ID格式如 "10006_1773137411102403" 或 "27_4_1"
+        x, y = int(x_str), int(y_str)
+
+        # 解析可选参数
+        target_type = None
+        key = 0
+        if len(extra) == 1:
+            # 可能是 target_type
+            target_type = int(extra[0])
+        elif len(extra) >= 2:
+            # target_type + key
+            target_type = int(extra[0])
+            key = int(extra[1])
+
+        # 从 building_id 中提取 target_type（第一段）
+        if target_type is None:
+            parts = building_id.split("_")
+            if parts and parts[0].isdigit():
+                target_type = int(parts[0])
+            else:
+                target_type = 10001
+
+        building_pos = encode_pos(x, y)
+        resp = await client.lvl_attack_building(uid, lvl_id, building_id, building_pos, key=key, target_type=target_type)
+        code = _print_ret_code(resp)
+        if code == 0:
+            print(f"AVA攻打建筑成功 → building_id={building_id} type={target_type} key={key} ({x},{y})")
+        else:
+            print(f"AVA攻打建筑失败", file=sys.stderr)
+    finally:
+        await client.close()
+
+
+async def cmd_lvl_rally_dismiss(uid_str: str, lvl_id_str: str, unique_id_str: str, env: str = None):
+    """AVA 战场内解散集结"""
+    from src.executor.game_api import GameAPIClient
+    client = GameAPIClient(env=env)
+    try:
+        uid, lvl_id = int(uid_str), int(lvl_id_str)
+        unique_id = unique_id_str  # 格式如 "107_xxx"
+        resp = await client.lvl_rally_dismiss(uid, lvl_id, unique_id)
+        code = _print_ret_code(resp)
+        if code == 0:
+            print(f"AVA解散集结成功 → unique_id={unique_id}")
+        else:
+            print(f"AVA解散集结失败", file=sys.stderr)
     finally:
         await client.close()
 
@@ -1493,6 +1636,12 @@ COMMANDS = {
     "get_battle_report":    (cmd_get_battle_report,     "<uid> <report_id>",                  "查询战报"),
     # 行动
     "move_city":            (cmd_move_city,             "<uid> <x> <y>",                      "移城到指定坐标"),
+    "lvl_move_city":        (cmd_lvl_move_city,         "<uid> <lvl_id> <x> <y>",             "AVA移城到指定坐标"),
+    "lvl_scout_player":     (cmd_lvl_scout_player,      "<uid> <lvl_id> <target_uid> <x> <y>", "AVA侦查玩家"),
+    "lvl_scout_building":   (cmd_lvl_scout_building,    "<uid> <lvl_id> <building_id> <x> <y>", "AVA侦查建筑"),
+    "lvl_attack_player":    (cmd_lvl_attack_player,     "<uid> <lvl_id> <target_uid> <x> <y>", "AVA攻打玩家"),
+    "lvl_attack_building":  (cmd_lvl_attack_building,   "<uid> <lvl_id> <building_id> <x> <y> [target_type] [key]", "AVA攻打建筑"),
+    "lvl_rally_dismiss":    (cmd_lvl_rally_dismiss,     "<uid> <lvl_id> <unique_id>",         "AVA解散集结"),
     "attack_player":        (cmd_attack_player,         "<uid> <target_uid> <x> <y> [soldier_id count]", "攻击玩家"),
     "attack_building":      (cmd_attack_building,       "<uid> <building_id> <x> <y>",        "攻击建筑"),
     "reinforce_building":   (cmd_reinforce_building,    "<uid> <building_id> <x> <y>",        "驻防建筑"),
@@ -1571,6 +1720,11 @@ def main():
         for name in ["move_city", "attack_player", "attack_building", "reinforce_building",
                       "scout_player", "create_rally", "join_rally", "rally_dismiss",
                       "recall_troop", "recall_reinforce"]:
+            _, a, desc = COMMANDS[name]
+            print(f"  {name:25s} {a:45s} {desc}")
+        print("\nAVA 战场行动:")
+        for name in ["lvl_move_city", "lvl_scout_player", "lvl_scout_building",
+                      "lvl_attack_player", "lvl_attack_building", "lvl_rally_dismiss"]:
             _, a, desc = COMMANDS[name]
             print(f"  {name:25s} {a:45s} {desc}")
         print("\n简化查询命令:")

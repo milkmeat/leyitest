@@ -124,11 +124,25 @@ class GameAPIClient:
         }
 
         url = f"{self.base_url}?{json.dumps(body, separators=(',', ':'), ensure_ascii=False)}"
-        async with session.get(url, timeout=aiohttp.ClientTimeout(total=15)) as resp:
-            resp.raise_for_status()
-            result = await resp.json()
-            logger.debug("cmd=%s uid=%s resp_keys=%s", cmd, uid, list(result.keys()))
-            return result
+        try:
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                resp.raise_for_status()
+                result = await resp.json()
+                logger.debug("cmd=%s uid=%s resp_keys=%s", cmd, uid, list(result.keys()))
+                return result
+        except aiohttp.ClientError as e:
+            # 请求失败时打印完整的请求信息
+            logger.error(
+                "【请求失败】cmd=%s uid=%s error=%s\n"
+                "Header: %s\n"
+                "Request: %s\n"
+                "URL: %s",
+                cmd, uid, type(e).__name__,
+                json.dumps(header, ensure_ascii=False),
+                json.dumps({"cmd": cmd, "param": param}, ensure_ascii=False),
+                url[:200] + "..." if len(url) > 200 else url,
+            )
+            raise
 
     # ------------------------------------------------------------------
     # 通用命令发送（基于 cmd_config.yaml）
@@ -158,7 +172,7 @@ class GameAPIClient:
             uid: 玩家 UID（header 中的调用者身份）
             param_overrides: 协议参数覆盖（dict 形式），用于协议字段名与
                              Python 关键字冲突的场景（如字段名也叫 "uid"）
-            header_overrides: 覆盖请求头字段（如 aid 用于切换联盟视角）
+            header_overrides: 覆盖请求头字段（如 aid 用于切换联盟视角、lvl_id 等）
             **overrides: 覆盖 default_param 中的参数（便捷写法）
 
         Returns:
@@ -168,7 +182,41 @@ class GameAPIClient:
         all_overrides = dict(param_overrides or {})
         all_overrides.update(overrides)
         param = self.build_param(cmd_name, **all_overrides)
-        return await self._send(uid, info["cmd"], param, header_overrides=header_overrides)
+
+        # 合并 extra_header：从配置中获取需要的额外 header 字段
+        final_header_overrides = dict(header_overrides or {})
+        extra_header_config = info.get("extra_header", {})
+        if extra_header_config:
+            # 检查必需的 extra_header 字段是否已提供
+            for key, desc in extra_header_config.items():
+                if key not in final_header_overrides:
+                    logger.warning(
+                        "cmd=%s 缺少 extra_header 字段: %s (描述: %s)，可能导致请求失败",
+                        cmd_name, key, desc
+                    )
+
+        # 构建请求用于日志
+        header = dict(self.default_header)
+        header["uid"] = uid
+        header.update(final_header_overrides)
+
+        result = await self._send(uid, info["cmd"], param, header_overrides=final_header_overrides)
+
+        # 业务失败时打印详细信息
+        code = result.get("code", -1)
+        if code != 0:
+            logger.warning(
+                "[业务失败] cmd_name=%s cmd=%s uid=%s code=%s\n"
+                "Header: %s\n"
+                "Param: %s\n"
+                "Response: %s",
+                cmd_name, info["cmd"], uid, code,
+                json.dumps(header, ensure_ascii=False),
+                json.dumps(param, ensure_ascii=False),
+                json.dumps(result, ensure_ascii=False)[:500]
+            )
+
+        return result
 
     def queue_cmd(self, cmd_name: str, uid: int,
                   param_overrides: Optional[Dict[str, Any]] = None,
@@ -202,8 +250,15 @@ class GameAPIClient:
                 if code == 0:
                     logger.info("[成功] uid=%s %s", action["uid"], action["description"])
                 else:
-                    logger.warning("[失败] uid=%s %s code=%s", action["uid"], action["description"], code)
+                    # 业务失败：打印请求详情
+                    logger.warning(
+                        "[失败] uid=%s %s code=%s\n"
+                        "Request: cmd=%s param=%s",
+                        action["uid"], action["description"], code,
+                        action["cmd"], json.dumps(action["param"], ensure_ascii=False)
+                    )
             except Exception as e:
+                # 网络异常：_send 已打印详细信息，这里只记录摘要
                 logger.error("[异常] uid=%s %s: %s", action["uid"], action["description"], e)
                 results.append({"code": -1, "msg": str(e), "data": None})
         self._queue.clear()
@@ -476,20 +531,28 @@ class GameAPIClient:
     # AVA 战场内操作
     # ------------------------------------------------------------------
 
-    async def lvl_move_city(self, uid: int, x: int, y: int) -> Dict[str, Any]:
-        """AVA 战场内移城到 (x, y)"""
-        return await self.send_cmd("lvl_move_city", uid, tar_pos=encode_pos(x, y))
+    async def lvl_move_city(self, uid: int, x: int, y: int, lvl_id: int) -> Dict[str, Any]:
+        """AVA 战场内移城到 (x, y)
+
+        Args:
+            uid: 玩家 UID
+            x: 目标坐标 X
+            y: 目标坐标 Y
+            lvl_id: 战场 ID（必须传入，用于 header 验证）
+        """
+        return await self.send_cmd("lvl_move_city", uid, tar_pos=encode_pos(x, y), header_overrides={"lvl_id": lvl_id})
 
     async def lvl_battle_login_get(self, uid: int, lvl_id: int) -> Dict[str, Any]:
         """获取 AVA 战场队伍信息"""
-        return await self.send_cmd("lvl_battle_login_get", uid, lvl_id=lvl_id)
+        return await self.send_cmd("lvl_battle_login_get", uid, lvl_id=lvl_id, header_overrides={"lvl_id": lvl_id})
 
     async def lvl_scout_player(
-        self, uid: int, target_uid: int, target_pos: int,
+        self, uid: int, lvl_id: int, target_uid: int, target_pos: int,
     ) -> Dict[str, Any]:
         """AVA 战场内侦查玩家
 
         Args:
+            lvl_id: 战场 ID
             target_uid: 目标玩家 UID
             target_pos: 编码后的坐标（x*100000000+y*100）
         """
@@ -500,14 +563,15 @@ class GameAPIClient:
             "unique_id": "",
             "lv": 20,
         }
-        return await self.send_cmd("lvl_dispatch_scout_player", uid, target_info=target_info)
+        return await self.send_cmd("lvl_dispatch_scout_player", uid, target_info=target_info, header_overrides={"lvl_id": lvl_id})
 
     async def lvl_scout_building(
-        self, uid: int, building_id: int, building_pos: int, key: int = 0,
+        self, uid: int, lvl_id: int, building_id: int, building_pos: int, key: int = 0,
     ) -> Dict[str, Any]:
         """AVA 战场内侦查建筑
 
         Args:
+            lvl_id: 战场 ID
             building_id: 建筑 ID
             building_pos: 编码后的坐标
             key: 建筑 key
@@ -519,15 +583,16 @@ class GameAPIClient:
             "unique_id": "",
             "key": key,
         }
-        return await self.send_cmd("lvl_dispatch_scout_building", uid, target_info=target_info)
+        return await self.send_cmd("lvl_dispatch_scout_building", uid, target_info=target_info, header_overrides={"lvl_id": lvl_id})
 
     async def lvl_attack_player(
-        self, uid: int, target_id: str, target_pos: int,
+        self, uid: int, lvl_id: int, target_id: str, target_pos: int,
         march_info: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """AVA 战场内攻打玩家
 
         Args:
+            lvl_id: 战场 ID
             target_id: 目标唯一 ID
             target_pos: 编码后的坐标
             march_info: 出征部队信息（可选，为 None 时使用 YAML 默认值）
@@ -537,31 +602,33 @@ class GameAPIClient:
         }
         if march_info:
             overrides["march_info"] = march_info
-        return await self.send_cmd("lvl_dispatch_troop", uid, **overrides)
+        return await self.send_cmd("lvl_dispatch_troop", uid, header_overrides={"lvl_id": lvl_id}, **overrides)
 
     async def lvl_attack_building(
-        self, uid: int, target_id: str, target_pos: int, key: int = 0,
-        march_info: Optional[Dict[str, Any]] = None,
+        self, uid: int, lvl_id: int, target_id: str, target_pos: int, key: int = 0,
+        target_type: int = 10001, march_info: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """AVA 战场内攻打建筑
 
         Args:
+            lvl_id: 战场 ID
             target_id: 建筑唯一 ID (如 "27_4_1")
             target_pos: 编码后的坐标
             key: 建筑 key
+            target_type: 目标类型（默认10001，可设为10006等）
             march_info: 出征部队信息
         """
         overrides: Dict[str, Any] = {
             "march_type": 15,
             "target_info": {"id": target_id, "pos": target_pos, "key": key},
-            "target_type": 10001,
+            "target_type": target_type,
         }
         if march_info:
             overrides["march_info"] = march_info
-        return await self.send_cmd("lvl_dispatch_troop", uid, **overrides)
+        return await self.send_cmd("lvl_dispatch_troop", uid, header_overrides={"lvl_id": lvl_id}, **overrides)
 
     async def lvl_create_rally(
-        self, uid: int, target_id: str,
+        self, uid: int, lvl_id: int, target_id: str,
         march_info: Optional[Dict[str, Any]] = None,
         prepare_time: int = 60, tn_limit: int = 1,
         timestamp: str = "",
@@ -569,6 +636,7 @@ class GameAPIClient:
         """AVA 战场内对玩家发起集结
 
         Args:
+            lvl_id: 战场 ID
             target_id: 目标唯一 ID (如 "2_20010643_1")
             march_info: 队长出征部队信息
             prepare_time: 集结准备时间（默认60秒）
@@ -587,10 +655,10 @@ class GameAPIClient:
         # 只在 timestamp 非空时添加
         if timestamp:
             overrides["timestamp"] = timestamp
-        return await self.send_cmd("lvl_create_rally_war", uid, **overrides)
+        return await self.send_cmd("lvl_create_rally_war", uid, header_overrides={"lvl_id": lvl_id}, **overrides)
 
     async def lvl_create_rally_building(
-        self, uid: int, target_id: str,
+        self, uid: int, lvl_id: int, target_id: str,
         march_info: Optional[Dict[str, Any]] = None,
         prepare_time: int = 60, tn_limit: int = 1,
         timestamp: str = "",
@@ -598,6 +666,7 @@ class GameAPIClient:
         """AVA 战场内对建筑发起集结
 
         Args:
+            lvl_id: 战场 ID
             target_id: 建筑 unique_id (如 "27_4_1")
             march_info: 队长出征部队信息
             prepare_time: 集结准备时间（默认60秒）
@@ -616,19 +685,20 @@ class GameAPIClient:
         # 只在 timestamp 非空时添加
         if timestamp:
             overrides["timestamp"] = timestamp
-        return await self.send_cmd("lvl_create_rally_war", uid, **overrides)
+        return await self.send_cmd("lvl_create_rally_war", uid, header_overrides={"lvl_id": lvl_id}, **overrides)
 
-    async def lvl_rally_dismiss(self, uid: int, unique_id: str) -> Dict[str, Any]:
+    async def lvl_rally_dismiss(self, uid: int, lvl_id: int, unique_id: str) -> Dict[str, Any]:
         """AVA 战场内解散集结 (unique_id 格式: 107_xxx)"""
-        return await self.send_cmd("lvl_rally_dismiss", uid, unique_id=unique_id)
+        return await self.send_cmd("lvl_rally_dismiss", uid, unique_id=unique_id, header_overrides={"lvl_id": lvl_id})
 
     async def lvl_join_rally(
-        self, uid: int, target_id: str, target_pos: int = 0,
+        self, uid: int, lvl_id: int, target_id: str, target_pos: int = 0,
         march_info: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """AVA 战场内参与集结
 
         Args:
+            lvl_id: 战场 ID
             target_id: 集结唯一 ID
             target_pos: 集结目标编码坐标
             march_info: 队员出征部队信息
@@ -638,31 +708,32 @@ class GameAPIClient:
         }
         if march_info:
             overrides["march_info"] = march_info
-        return await self.send_cmd("lvl_join_rally_war", uid, **overrides)
+        return await self.send_cmd("lvl_join_rally_war", uid, header_overrides={"lvl_id": lvl_id}, **overrides)
 
-    async def lvl_speed_up_troop(self, uid: int, unique_id: str) -> Dict[str, Any]:
+    async def lvl_speed_up_troop(self, uid: int, lvl_id: int, unique_id: str) -> Dict[str, Any]:
         """AVA 战场内行军加速 (unique_id 如 102_xxx 或 101_xxx)"""
-        return await self.send_cmd("lvl_use_troop_speed_up_item", uid, unique_id=unique_id)
+        return await self.send_cmd("lvl_use_troop_speed_up_item", uid, unique_id=unique_id, header_overrides={"lvl_id": lvl_id})
 
-    async def lvl_recall_reinforce(self, uid: int, unique_id: str) -> Dict[str, Any]:
+    async def lvl_recall_reinforce(self, uid: int, lvl_id: int, unique_id: str) -> Dict[str, Any]:
         """AVA 战场内取消参与集结 (unique_id 格式: 101_xxx)"""
-        return await self.send_cmd("lvl_recall_reinforce", uid, unique_id=unique_id)
+        return await self.send_cmd("lvl_recall_reinforce", uid, unique_id=unique_id, header_overrides={"lvl_id": lvl_id})
 
-    async def lvl_recall_troop(self, uid: int, unique_id: str) -> Dict[str, Any]:
+    async def lvl_recall_troop(self, uid: int, lvl_id: int, unique_id: str) -> Dict[str, Any]:
         """AVA 战场内召回普通队伍 (unique_id 格式: 101_xxx)"""
-        return await self.send_cmd("lvl_use_troop_return_item", uid, unique_id=unique_id)
+        return await self.send_cmd("lvl_use_troop_return_item", uid, unique_id=unique_id, header_overrides={"lvl_id": lvl_id})
 
     async def lvl_recall_from_building(
-        self, uid: int, troop_ids: List[str], pos: int = 0,
+        self, uid: int, lvl_id: int, troop_ids: List[str], pos: int = 0,
     ) -> Dict[str, Any]:
         """AVA 战场内从建筑中召回队伍
 
         Args:
+            lvl_id: 战场 ID
             troop_ids: 队伍 ID 列表
             pos: 队伍当前位置（编码坐标）
         """
         return await self.send_cmd(
-            "lvl_change_troop", uid,
+            "lvl_change_troop", uid, header_overrides={"lvl_id": lvl_id},
             march_info={"ids": troop_ids},
             target_info={"pos": pos},
         )
