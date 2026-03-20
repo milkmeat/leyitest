@@ -66,6 +66,10 @@ L0 执行器（AI 指令调试）:
   l0 JOIN_RALLY <uid> <rally_id>               加入集结
   l0 RETREAT <uid> <troop_id...>               召回部队
 
+  所有 l0 指令支持可选参数 --soldier <soldier_id> <count>:
+    手动指定出征兵种和数量（不指定则自动选择数量最多的兵种，默认5000）
+    示例: l0 LVL_ATTACK_BUILDING <uid> <bid> <x> <y> --soldier 204 3000
+
 uid_helper (测试环境账号准备):
   uid_copy <src_uid> <tar_uid>                  复制账号数据
   uid_create_al <name> <nick>                   创建联盟
@@ -1124,7 +1128,16 @@ def _parse_l0_shorthand(args: list[str]):
 
     action = args[0].upper()
     uid = int(args[1])
-    rest = args[2:]
+    # 过滤掉 --soldier 及其参数，避免干扰位置参数解析
+    raw_rest = args[2:]
+    rest = []
+    i = 0
+    while i < len(raw_rest):
+        if raw_rest[i] == "--soldier":
+            i += 3  # 跳过 --soldier <id> <count>
+        else:
+            rest.append(raw_rest[i])
+            i += 1
     data: dict = {"action": action, "uid": uid}
 
     if action == "MOVE_CITY":
@@ -1195,11 +1208,125 @@ def _parse_l0_shorthand(args: list[str]):
             sys.exit(1)
         data["troop_ids"] = list(rest)
 
+    # --- AVA 战场指令 ---
+    elif action == "LVL_MOVE_CITY":
+        if len(rest) < 2:
+            print("用法: l0 LVL_MOVE_CITY <uid> <x> <y>", file=sys.stderr)
+            sys.exit(1)
+        data["target_x"] = int(rest[0])
+        data["target_y"] = int(rest[1])
+
+    elif action == "LVL_ATTACK_BUILDING":
+        if len(rest) < 3:
+            print("用法: l0 LVL_ATTACK_BUILDING <uid> <building_id> <x> <y> [building_key]", file=sys.stderr)
+            sys.exit(1)
+        data["building_id"] = rest[0]
+        data["target_x"] = int(rest[1])
+        data["target_y"] = int(rest[2])
+        if len(rest) > 3:
+            data["building_key"] = int(rest[3])
+
+    elif action == "LVL_ATTACK_PLAYER":
+        if len(rest) < 3:
+            print("用法: l0 LVL_ATTACK_PLAYER <uid> <target_uid> <x> <y>", file=sys.stderr)
+            sys.exit(1)
+        data["target_uid"] = int(rest[0])
+        data["target_x"] = int(rest[1])
+        data["target_y"] = int(rest[2])
+
+    elif action == "LVL_SCOUT_PLAYER":
+        if len(rest) < 3:
+            print("用法: l0 LVL_SCOUT_PLAYER <uid> <target_uid> <x> <y>", file=sys.stderr)
+            sys.exit(1)
+        data["target_uid"] = int(rest[0])
+        data["target_x"] = int(rest[1])
+        data["target_y"] = int(rest[2])
+
+    elif action == "LVL_SCOUT_BUILDING":
+        if len(rest) < 3:
+            print("用法: l0 LVL_SCOUT_BUILDING <uid> <building_id> <x> <y> [building_key]", file=sys.stderr)
+            sys.exit(1)
+        data["building_id"] = rest[0]
+        data["target_x"] = int(rest[1])
+        data["target_y"] = int(rest[2])
+        if len(rest) > 3:
+            data["building_key"] = int(rest[3])
+
+    elif action == "LVL_INITIATE_RALLY":
+        if len(rest) < 3:
+            print("用法: l0 LVL_INITIATE_RALLY <uid> <target_uid> <x> <y> [prepare_time]", file=sys.stderr)
+            sys.exit(1)
+        data["target_uid"] = int(rest[0])
+        data["target_x"] = int(rest[1])
+        data["target_y"] = int(rest[2])
+        if len(rest) > 3:
+            data["prepare_time"] = int(rest[3])
+
+    elif action == "LVL_INITIATE_RALLY_BUILDING":
+        if len(rest) < 3:
+            print("用法: l0 LVL_INITIATE_RALLY_BUILDING <uid> <building_id> <x> <y> [prepare_time]", file=sys.stderr)
+            sys.exit(1)
+        data["building_id"] = rest[0]
+        data["target_x"] = int(rest[1])
+        data["target_y"] = int(rest[2])
+        if len(rest) > 3:
+            data["prepare_time"] = int(rest[3])
+
+    elif action == "LVL_JOIN_RALLY":
+        if len(rest) < 1:
+            print("用法: l0 LVL_JOIN_RALLY <uid> <rally_id> [x] [y]", file=sys.stderr)
+            sys.exit(1)
+        data["rally_id"] = rest[0]
+        if len(rest) > 2:
+            data["target_x"] = int(rest[1])
+            data["target_y"] = int(rest[2])
+
+    elif action == "LVL_RALLY_DISMISS":
+        if len(rest) < 1:
+            print("用法: l0 LVL_RALLY_DISMISS <uid> <rally_id>", file=sys.stderr)
+            sys.exit(1)
+        data["rally_id"] = rest[0]
+
+    elif action == "LVL_RECALL_TROOP":
+        if len(rest) < 1:
+            print("用法: l0 LVL_RECALL_TROOP <uid> <troop_unique_id>", file=sys.stderr)
+            sys.exit(1)
+        data["troop_unique_id"] = rest[0]
+
+    elif action == "LVL_RECALL_REINFORCE":
+        if len(rest) < 1:
+            print("用法: l0 LVL_RECALL_REINFORCE <uid> <troop_unique_id>", file=sys.stderr)
+            sys.exit(1)
+        data["troop_unique_id"] = rest[0]
+
+    elif action == "LVL_SPEED_UP":
+        if len(rest) < 1:
+            print("用法: l0 LVL_SPEED_UP <uid> <troop_unique_id>", file=sys.stderr)
+            sys.exit(1)
+        data["troop_unique_id"] = rest[0]
+
+    elif action == "LVL_RECALL_FROM_BUILDING":
+        if len(rest) < 1:
+            print("用法: l0 LVL_RECALL_FROM_BUILDING <uid> <troop_id...> [x] [y]", file=sys.stderr)
+            sys.exit(1)
+        # 最后两个参数如果是数字，可能是坐标
+        data["troop_ids"] = list(rest)
+
     else:
+        _all_actions = [e.value for e in __import__('src.executor.l0_executor', fromlist=['ActionType']).ActionType]
         print(f"未知 action: {action}", file=sys.stderr)
-        print("支持: MOVE_CITY, ATTACK_TARGET, SCOUT, GARRISON_BUILDING, "
-              "INITIATE_RALLY, JOIN_RALLY, RETREAT", file=sys.stderr)
+        print(f"支持: {', '.join(_all_actions)}", file=sys.stderr)
         sys.exit(1)
+
+    # 统一解析 --soldier <id> <count>（所有 action 通用）
+    if "--soldier" in args:
+        idx = args.index("--soldier")
+        if idx + 2 < len(args):
+            data["soldier_id"] = int(args[idx + 1])
+            data["soldier_count"] = int(args[idx + 2])
+        else:
+            print("用法: --soldier <soldier_id> <count>", file=sys.stderr)
+            sys.exit(1)
 
     return data
 
@@ -1255,9 +1382,23 @@ async def cmd_l0(*args: str, env: str = None):
             print(f" rally={instr.rally_id}", end="")
         if instr.troop_ids:
             print(f" troops={instr.troop_ids}", end="")
+        if instr.soldier_id:
+            print(f" soldier_id={instr.soldier_id} count={instr.soldier_count}", end="")
         print()
 
-        result = await executor.execute(instr)
+        # 拉取玩家状态用于 Smart L0 预处理（距离检查 + 部队去重）
+        accounts: dict[int, "PlayerState"] = {}
+        try:
+            from src.models.player_state import PlayerState
+            info = await client.get_player_info(instr.uid)
+            ps = PlayerState.from_sync_info(info)
+            accounts[instr.uid] = ps
+            print(f"[L0] 已加载玩家状态: city_pos={ps.city_pos}, troops={len(ps.troops)}")
+        except Exception as e:
+            print(f"[L0] 加载玩家状态失败（跳过预处理）: {e}")
+
+        results = await executor.execute_batch([instr], accounts=accounts)
+        result = results[0]
         if result.success:
             print(f"[OK] {result.message}")
         else:
@@ -1746,6 +1887,8 @@ def main():
         print(f"  {'l0':25s} {a:45s} {desc}")
         print("  示例: l0 MOVE_CITY 20010413 500 500")
         print("  示例: l0 '{\"action\":\"MOVE_CITY\",\"uid\":20010413,\"target_x\":500,\"target_y\":500}'")
+        print("  所有 l0 指令支持 --soldier <soldier_id> <count> 手动指定兵种/数量:")
+        print("  示例: l0 LVL_ATTACK_BUILDING 20010644 10006_xxx 154 170 --soldier 204 3000")
         print("\nuid_helper (测试环境账号准备):")
         for name in ["uid_copy", "uid_create_al", "uid_join_al", "uid_members", "uid_setup"]:
             _, a, desc = COMMANDS[name]

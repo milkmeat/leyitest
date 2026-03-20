@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json as _json
 import logging
+import math
 from enum import Enum
 from typing import Any, Dict, Optional
 
@@ -21,7 +22,7 @@ from pydantic import BaseModel
 
 from src.executor.game_api import GameAPIClient
 from src.config.schemas import AppConfig
-from src.models.player_state import PlayerState
+from src.models.player_state import PlayerState, TroopState
 from src.utils.coords import encode_pos
 
 logger = logging.getLogger(__name__)
@@ -75,6 +76,8 @@ class AIInstruction(BaseModel):
     reinforce_id: str = ""             # 增援部队 unique_id（RECALL_REINFORCE 用）
     troop_unique_id: str = ""          # 队伍唯一 ID（LVL_SPEED_UP / LVL_RECALL_TROOP / LVL_RECALL_REINFORCE）
     building_key: int = 0              # 建筑 key（LVL 战场建筑操作用）
+    soldier_id: int = 0                # 手动指定兵种ID（0=自动选择）
+    soldier_count: int = 0             # 手动指定出征数量（0=默认）
     reason: str = ""                   # L1 决策理由（日志用）
 
 
@@ -292,6 +295,17 @@ class L0Executor:
                 instr = instr.model_copy(update={"rally_id": last_rally_id})
                 logger.info("自动回填 rally_id=%s → uid=%d", last_rally_id, instr.uid)
 
+            # Smart L0: LVL_ATTACK_BUILDING 预处理（距离检查 + 部队去重）
+            if instr.action == ActionType.LVL_ATTACK_BUILDING:
+                processed, skip_reason = self._preprocess_lvl_attack_building(instr)
+                if processed is None:
+                    results.append(ExecutionResult(
+                        success=True, action=instr.action, uid=instr.uid,
+                        message=skip_reason,
+                    ))
+                    continue
+                instr = processed
+
             result = await self.execute(instr, rally_pos=last_rally_pos)
             results.append(result)
 
@@ -327,7 +341,8 @@ class L0Executor:
     async def _dispatch(self, instr: AIInstruction, rally_pos: str = "") -> Dict[str, Any]:
         """根据 action 类型分发到对应的 game_api 方法"""
         action = instr.action
-        march = self._build_march_info(instr.uid, needs_hero=(action != ActionType.JOIN_RALLY))
+        march = self._build_march_info(instr.uid, needs_hero=(action != ActionType.JOIN_RALLY),
+                                         soldier_id=instr.soldier_id, soldier_count=instr.soldier_count)
 
         if action == ActionType.MOVE_CITY:
             return await self.client.move_city(instr.uid, instr.target_x, instr.target_y)
@@ -393,65 +408,80 @@ class L0Executor:
 
         # --- AVA 战场指令 ---
         elif action == ActionType.LVL_MOVE_CITY:
-            return await self.client.lvl_move_city(instr.uid, instr.target_x, instr.target_y)
+            lvl_id = self.client.default_header.get("lvl_id", 0)
+            return await self.client.lvl_move_city(instr.uid, instr.target_x, instr.target_y, lvl_id)
 
         elif action == ActionType.LVL_ATTACK_PLAYER:
+            lvl_id = self.client.default_header.get("lvl_id", 0)
             target_id = f"2_{instr.target_uid}_1"
             target_pos = encode_pos(instr.target_x, instr.target_y)
-            return await self.client.lvl_attack_player(instr.uid, target_id, target_pos, march)
+            return await self.client.lvl_attack_player(instr.uid, lvl_id, target_id, target_pos, march)
 
         elif action == ActionType.LVL_ATTACK_BUILDING:
+            lvl_id = self.client.default_header.get("lvl_id", 0)
             target_pos = encode_pos(instr.target_x, instr.target_y)
+            # 从 building_id 提取 target_type（格式: {type}_{id}_{...}）
+            target_type = int(instr.building_id.split("_")[0]) if "_" in instr.building_id else 10001
             return await self.client.lvl_attack_building(
-                instr.uid, instr.building_id, target_pos,
-                key=instr.building_key, march_info=march,
+                instr.uid, lvl_id, instr.building_id, target_pos,
+                key=instr.building_key, target_type=target_type, march_info=march,
             )
 
         elif action == ActionType.LVL_SCOUT_PLAYER:
+            lvl_id = self.client.default_header.get("lvl_id", 0)
             target_pos = encode_pos(instr.target_x, instr.target_y)
-            return await self.client.lvl_scout_player(instr.uid, instr.target_uid, target_pos)
+            return await self.client.lvl_scout_player(instr.uid, lvl_id, instr.target_uid, target_pos)
 
         elif action == ActionType.LVL_SCOUT_BUILDING:
+            lvl_id = self.client.default_header.get("lvl_id", 0)
             target_pos = encode_pos(instr.target_x, instr.target_y)
             return await self.client.lvl_scout_building(
-                instr.uid, int(instr.building_id) if instr.building_id.isdigit() else 0,
+                instr.uid, lvl_id, int(instr.building_id) if instr.building_id.isdigit() else 0,
                 target_pos, key=instr.building_key,
             )
 
         elif action == ActionType.LVL_INITIATE_RALLY:
+            lvl_id = self.client.default_header.get("lvl_id", 0)
             target_id = f"2_{instr.target_uid}_1"
             prepare = instr.prepare_time if instr.prepare_time != 300 else 60
             return await self.client.lvl_create_rally(
-                instr.uid, target_id, march, prepare_time=prepare,
+                instr.uid, lvl_id, target_id, march, prepare_time=prepare,
             )
 
         elif action == ActionType.LVL_INITIATE_RALLY_BUILDING:
+            lvl_id = self.client.default_header.get("lvl_id", 0)
             prepare = instr.prepare_time if instr.prepare_time != 300 else 60
             return await self.client.lvl_create_rally_building(
-                instr.uid, instr.building_id, march, prepare_time=prepare,
+                instr.uid, lvl_id, instr.building_id, march, prepare_time=prepare,
             )
 
         elif action == ActionType.LVL_JOIN_RALLY:
+            lvl_id = self.client.default_header.get("lvl_id", 0)
             target_pos = encode_pos(instr.target_x, instr.target_y) if (instr.target_x or instr.target_y) else 0
             if rally_pos:
                 target_pos = int(rally_pos)
-            return await self.client.lvl_join_rally(instr.uid, instr.rally_id, target_pos, march)
+            return await self.client.lvl_join_rally(instr.uid, lvl_id, instr.rally_id, target_pos, march)
 
         elif action == ActionType.LVL_RALLY_DISMISS:
-            return await self.client.lvl_rally_dismiss(instr.uid, instr.rally_id)
+            lvl_id = self.client.default_header.get("lvl_id", 0)
+            return await self.client.lvl_rally_dismiss(instr.uid, lvl_id, instr.rally_id)
 
         elif action == ActionType.LVL_RECALL_REINFORCE:
-            return await self.client.lvl_recall_reinforce(instr.uid, instr.troop_unique_id)
+            lvl_id = self.client.default_header.get("lvl_id", 0)
+            return await self.client.lvl_recall_reinforce(instr.uid, lvl_id, instr.troop_unique_id)
 
         elif action == ActionType.LVL_RECALL_TROOP:
-            return await self.client.lvl_recall_troop(instr.uid, instr.troop_unique_id)
+            lvl_id = self.client.default_header.get("lvl_id", 0)
+            return await self.client.lvl_recall_troop(instr.uid, lvl_id, instr.troop_unique_id)
 
         elif action == ActionType.LVL_SPEED_UP:
-            return await self.client.lvl_speed_up_troop(instr.uid, instr.troop_unique_id)
+            lvl_id = self.client.default_header.get("lvl_id", 0)
+            return await self.client.lvl_speed_up_troop(instr.uid, lvl_id, instr.troop_unique_id)
 
         elif action == ActionType.LVL_RECALL_FROM_BUILDING:
+            lvl_id = self.client.default_header.get("lvl_id", 0)
             pos = encode_pos(instr.target_x, instr.target_y) if (instr.target_x or instr.target_y) else 0
-            return await self.client.lvl_recall_from_building(instr.uid, instr.troop_ids, pos)
+            return await self.client.lvl_recall_from_building(instr.uid, lvl_id, instr.troop_ids, pos)
 
         else:
             raise ValueError(f"未知 action: {action}")
@@ -513,7 +543,8 @@ class L0Executor:
     # 默认出征兵力上限（每支部队，测试服实测 5000 可用，10000 被拒）
     DEFAULT_MARCH_SIZE = 5000
 
-    def _build_march_info(self, uid: int, needs_hero: bool = True) -> Dict[str, Any]:
+    def _build_march_info(self, uid: int, needs_hero: bool = True,
+                          soldier_id: int = 0, soldier_count: int = 0) -> Dict[str, Any]:
         """根据账号数据自动构建完整 march_info
 
         服务器要求的完整格式:
@@ -524,19 +555,22 @@ class L0Executor:
         Args:
             uid: 执行账号 UID
             needs_hero: 是否需要英雄（JOIN_RALLY 队员不需要 leader）
+            soldier_id: 手动指定兵种ID（>0 跳过自动选择）
+            soldier_count: 手动指定出征数量（>0 使用该值，仍受 DEFAULT_MARCH_SIZE 上限）
         """
         acct = getattr(self, "_accounts", {}).get(uid)
         if not acct:
             return {}
 
-        # 兵种：选数量最多的，限制出征兵力
-        soldier_id = "204"  # 默认弓兵
-        soldier_count = self.DEFAULT_MARCH_SIZE
-        if acct.soldiers:
+        # 兵种：手动指定 > 自动选数量最多的，限制出征兵力
+        sid = str(soldier_id) if soldier_id > 0 else "204"  # 默认弓兵
+        cnt = min(soldier_count, self.DEFAULT_MARCH_SIZE) if soldier_count > 0 else self.DEFAULT_MARCH_SIZE
+        if soldier_id <= 0 and acct.soldiers:
             best = max(acct.soldiers, key=lambda s: s.value)
             if best.value > 0:
-                soldier_id = str(best.id)
-                soldier_count = min(best.value, self.DEFAULT_MARCH_SIZE)
+                sid = str(best.id)
+                if soldier_count <= 0:
+                    cnt = min(best.value, self.DEFAULT_MARCH_SIZE)
 
         # 英雄：选等级最高的空闲英雄（无英雄数据时用默认 id=21）
         hero_id = 21  # 默认英雄，服务器不校验拥有关系
@@ -549,12 +583,80 @@ class L0Executor:
             "hero": {"main": hero_id, "vice": []},
             "carry_lord": 1,
             "leader": 1 if needs_hero else 0,
-            "soldier_total_num": soldier_count,
+            "soldier_total_num": cnt,
             "heros": {},
             "queue_id": 6001,
-            "soldier": {soldier_id: soldier_count},
+            "soldier": {sid: cnt},
             "over_defend": False,
         }
+
+    # 距离阈值: 超过此格数则先移城再攻打
+    MOVE_CITY_DISTANCE_THRESHOLD = 20
+    # 移城坐标偏移量（建筑有宽度，避免重叠）
+    MOVE_CITY_OFFSET = 2
+
+    def _preprocess_lvl_attack_building(
+        self, instr: AIInstruction,
+    ) -> tuple[AIInstruction | None, str]:
+        """LVL_ATTACK_BUILDING 预处理: 部队去重 + 距离检查
+
+        Returns:
+            (None, reason)          — 跳过此指令
+            (new_instr, "")         — 替换为新指令（可能是 LVL_MOVE_CITY）
+            (instr, "")             — 原样放行
+        """
+        acct = self._accounts.get(instr.uid)
+        if not acct:
+            return instr, ""
+
+        # 1. 部队去重: 已有部队正在前往或驻守该建筑
+        _active_states = {
+            TroopState.MARCHING,
+            TroopState.STATIONED,
+            TroopState.FIGHTING,
+            TroopState.GARRISON,
+        }
+        for troop in acct.troops:
+            if (troop.target_unique_id == instr.building_id
+                    and troop.state in _active_states):
+                reason = (
+                    f"SKIP: uid={instr.uid} 已有部队 {troop.unique_id} "
+                    f"(state={troop.state.name}) 前往建筑 {instr.building_id}"
+                )
+                logger.info("L0 预处理跳过: %s", reason)
+                return None, reason
+
+        # 2. 距离检查: 超过阈值则转换为移城指令
+        cx, cy = acct.city_pos
+        dx = instr.target_x - cx
+        dy = instr.target_y - cy
+        dist = math.hypot(dx, dy)
+
+        if dist > self.MOVE_CITY_DISTANCE_THRESHOLD:
+            # 移城到建筑附近（偏移 ±2 避免重叠）
+            offset_x = self.MOVE_CITY_OFFSET if dx >= 0 else -self.MOVE_CITY_OFFSET
+            offset_y = self.MOVE_CITY_OFFSET if dy >= 0 else -self.MOVE_CITY_OFFSET
+            move_x = max(0, min(instr.target_x + offset_x, self.map_width - 1))
+            move_y = max(0, min(instr.target_y + offset_y, self.map_height - 1))
+
+            new_instr = instr.model_copy(update={
+                "action": ActionType.LVL_MOVE_CITY,
+                "target_x": move_x,
+                "target_y": move_y,
+                "reason": (
+                    f"距离={dist:.0f}>{self.MOVE_CITY_DISTANCE_THRESHOLD}, "
+                    f"转移城 ({cx},{cy})→({move_x},{move_y})"
+                ),
+            })
+            logger.info(
+                "L0 预处理转换: uid=%d LVL_ATTACK_BUILDING→LVL_MOVE_CITY "
+                "dist=%.0f (%d,%d)→(%d,%d)",
+                instr.uid, dist, cx, cy, move_x, move_y,
+            )
+            return new_instr, ""
+
+        # 3. 通过
+        return instr, ""
 
     @staticmethod
     def _extract_rally_info(resp: Dict[str, Any]) -> tuple[str, str]:
