@@ -78,6 +78,7 @@ class LLMClient:
         system_prompt: str,
         user_prompt: str,
         temperature: float = 0.7,
+        context: str = "",
     ) -> dict[str, Any]:
         """发送 chat 请求并解析 JSON 响应
 
@@ -85,6 +86,7 @@ class LLMClient:
             system_prompt: 系统提示词
             user_prompt: 用户提示词
             temperature: 生成温度
+            context: 调用上下文（用于日志，如 "L1 squad=1"）
 
         Returns:
             解析后的 JSON dict
@@ -100,10 +102,16 @@ class LLMClient:
         last_error = None
         attempts = 1 + self.config.max_retries
 
+        # 构建上下文信息用于日志
+        ctx_prefix = f"[{context}] " if context else ""
+
         for attempt in range(attempts):
             try:
+                logger.info("%s开始 LLM 调用 (attempt %d/%d, timeout=%ds)",
+                           ctx_prefix, attempt + 1, attempts, self.config.timeout_seconds)
+
                 result = await asyncio.wait_for(
-                    self._call_api(system_prompt, user_prompt, temperature),
+                    self._call_api(system_prompt, user_prompt, temperature, ctx_prefix),
                     timeout=self.config.timeout_seconds,
                 )
                 return result
@@ -111,8 +119,15 @@ class LLMClient:
                 last_error = asyncio.TimeoutError(
                     f"LLM 调用超时 ({self.config.timeout_seconds}s)"
                 )
+                # 超时时显示请求摘要
+                user_preview = user_prompt[:200] + "..." if len(user_prompt) > 200 else user_prompt
                 logger.warning(
-                    "LLM 超时 (attempt %d/%d)", attempt + 1, attempts
+                    "%sLLM 超时 (attempt %d/%d, timeout=%ds)\n"
+                    "  发送内容摘要:\n"
+                    "    system_prompt: %d chars\n"
+                    "    user_prompt: %s",
+                    ctx_prefix, attempt + 1, attempts, self.config.timeout_seconds,
+                    len(system_prompt), user_preview,
                 )
             except Exception as e:
                 last_error = e
@@ -120,8 +135,8 @@ class LLMClient:
                 is_rate_limit = "429" in str(e) or "rate" in str(e).lower()
                 backoff = (2 ** attempt) * (3 if is_rate_limit else 1)
                 logger.warning(
-                    "LLM 调用失败 (attempt %d/%d): %s — 等待 %ds",
-                    attempt + 1, attempts, e, backoff,
+                    "%sLLM 调用失败 (attempt %d/%d): %s — 等待 %ds",
+                    ctx_prefix, attempt + 1, attempts, e, backoff,
                 )
                 if attempt < attempts - 1:
                     await asyncio.sleep(backoff)
@@ -133,45 +148,93 @@ class LLMClient:
         system_prompt: str,
         user_prompt: str,
         temperature: float,
+        ctx_prefix: str = "",
     ) -> dict[str, Any]:
         """实际 API 调用"""
         assert self._client is not None
 
+        import time
+        start_time = time.time()
+
         # 记录输入
         logger.info(
-            "=== LLM 请求 ===\n"
-            "[system_prompt] (%d chars):\n%s\n\n"
-            "[user_prompt] (%d chars):\n%s",
-            len(system_prompt), system_prompt,
-            len(user_prompt), user_prompt,
+            "%s=== LLM 请求开始 ===\n"
+            "  [system_prompt] (%d chars)\n"
+            "  [user_prompt] (%d chars)\n"
+            "  [model] %s\n"
+            "  [temperature] %.1f",
+            ctx_prefix,
+            len(system_prompt),
+            len(user_prompt),
+            self.config.model,
+            temperature,
         )
+        logger.debug("%ssystem_prompt:\n%s", ctx_prefix, system_prompt)
+        logger.debug("%suser_prompt:\n%s", ctx_prefix, user_prompt)
 
-        response = await self._client.chat.completions.create(
-            model=self.config.model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            temperature=temperature,
-        )
+        try:
+            response = await self._client.chat.completions.create(
+                model=self.config.model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=temperature,
+            )
+        except Exception as e:
+            elapsed = time.time() - start_time
+            error_type = type(e).__name__
+            error_detail = str(e)
 
+            # 提取有用的错误信息
+            if "timeout" in error_detail.lower() or "timed out" in error_detail.lower():
+                error_hint = "请求超时，可能是网络问题或 API 响应慢"
+            elif "connection" in error_detail.lower():
+                error_hint = "连接失败，请检查网络或 base_url 配置"
+            elif "api_key" in error_detail.lower() or "auth" in error_detail.lower():
+                error_hint = "API 密钥问题，请检查 llm_secret.yaml"
+            elif "rate" in error_detail.lower() or "429" in error_detail:
+                error_hint = "请求过于频繁，触发速率限制"
+            else:
+                error_hint = "未知错误"
+
+            logger.error(
+                "%s=== LLM API 异常 ===\n"
+                "  [耗时] %.2fs\n"
+                "  [错误类型] %s\n"
+                "  [错误详情] %s\n"
+                "  [提示] %s\n"
+                "  [base_url] %s\n"
+                "  [model] %s",
+                ctx_prefix, elapsed, error_type, error_detail, error_hint,
+                self.config.base_url, self.config.model,
+            )
+            raise
+
+        elapsed = time.time() - start_time
         content = response.choices[0].message.content
         if not content:
             raise ValueError("LLM 返回空内容")
 
-        # 记录原始输出
+        # 记录响应
         usage = response.usage
         usage_str = ""
         if usage:
             usage_str = (
-                f" (tokens: prompt={usage.prompt_tokens}, "
+                f" tokens: prompt={usage.prompt_tokens}, "
                 f"completion={usage.completion_tokens}, "
-                f"total={usage.total_tokens})"
+                f"total={usage.total_tokens}"
             )
+
         logger.info(
-            "=== LLM 响应 ===%s\n%s",
-            usage_str, content,
+            "%s=== LLM 响应成功 ===\n"
+            "  [耗时] %.2fs\n"
+            "  [%s]\n"
+            "  [内容预览] %s",
+            ctx_prefix, elapsed, usage_str,
+            (content[:200] + "..." if len(content) > 200 else content),
         )
+        logger.debug("%s完整响应内容:\n%s", ctx_prefix, content)
 
         return self._extract_json(content)
 

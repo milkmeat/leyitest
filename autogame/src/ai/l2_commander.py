@@ -66,7 +66,9 @@ class L2Commander:
             user_prompt = f"{history_text}\n\n## 当前态势\n\n{user_prompt}"
 
         # 3. LLM 调用
-        response = await self.llm.chat_json(self.system_prompt, user_prompt)
+        response = await self.llm.chat_json(
+            self.system_prompt, user_prompt, context="L2"
+        )
 
         # 记录 LLM 思考过程
         thinking = response.get("thinking", "")
