@@ -118,6 +118,11 @@ def _make_element_action(
             pos = fingertip
 
     x, y = pos[0], pos[1]
+
+    # Special offset for green_check icon
+    if rule_type == "icon" and elem.get("name") == "green_check":
+        x = x - 60
+
     reason = _build_reason(rule, elem)
 
     return {

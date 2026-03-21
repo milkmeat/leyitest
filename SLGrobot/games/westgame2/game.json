@@ -87,7 +87,7 @@
     "loading": [],
     "main_city": [
       {"type": "finger", "action": "tap_fingertip"},
-      {"type": "green_check", "action": "tap"},
+      {"type": "icon", "name": "green_check", "action": "tap"},
       {"type": "red_dot", "action": "tap"}
     ],
     "world_map": [

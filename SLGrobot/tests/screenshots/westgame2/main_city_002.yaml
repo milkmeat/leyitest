@@ -1,0 +1,28 @@
+scene: main_city
+required_elements:
+- type: icon
+  name: upgrade_arrow
+- type: button
+  text_match: 1,260
+- type: red_dot
+- type: red_dot
+- type: red_dot
+- type: icon
+  name: green_check
+- type: button
+- type: red_dot
+- type: red_dot
+- type: red_dot
+- type: red_dot
+- type: red_dot
+- type: red_dot
+- type: red_dot
+- type: red_dot
+- type: red_dot
+- type: red_dot
+- type: icon
+  name: world
+- type: button
+auto_action:
+  type: tap
+  reason_match: priority:tap:icon:green_check
