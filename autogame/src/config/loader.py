@@ -13,9 +13,12 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import yaml
+
+logger = logging.getLogger(__name__)
 
 from src.config.schemas import (
     AccountsConfig,
@@ -138,6 +141,13 @@ def apply_llm_config(system: SystemConfig, llm_secret: dict) -> SystemConfig:
             system.llm.model = profile.model
             system.llm.base_url = profile.base_url
             system.llm.api_key = profile.api_key
+        else:
+            available = ", ".join(profiles.keys())
+            logger.warning(
+                "active_profile '%s' 不存在于 profiles 中 (可用: %s)，"
+                "LLM 配置可能不完整",
+                active, available,
+            )
 
     # 旧格式/直接配置模式（向后兼容）
     else:

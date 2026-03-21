@@ -272,8 +272,8 @@ class AIController:
                     stats=asdict(stats),
                 )
                 # 更新摘要
-                if self.l2_commander.memory._history:
-                    latest = self.l2_commander.memory._history[-1]
+                latest = self.l2_commander.memory.get_latest()
+                if latest:
                     latest.situation_summary = situation_summary
 
             # 保存 L1 历史（所有小队）
@@ -286,8 +286,8 @@ class AIController:
                 )
                 # 更新摘要
                 for leader in self.l1_coordinator.leaders.values():
-                    if leader.memory._history:
-                        latest = leader.memory._history[-1]
+                    latest = leader.memory.get_latest()
+                    if latest:
                         latest.situation_summary = situation_summary
 
             logger.info("记忆已保存: loop_id=%d, 摘要=%s", loop_id,

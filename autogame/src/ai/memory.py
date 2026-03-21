@@ -13,8 +13,6 @@ from collections import deque
 from dataclasses import dataclass, field
 from typing import Any
 
-from pydantic import BaseModel
-
 from src.executor.l0_executor import AIInstruction, ExecutionResult, ActionType
 from src.perception.data_sync import SyncSnapshot
 
@@ -267,7 +265,7 @@ class SituationSummarizer:
 3. 使用简洁的军事术语
 4. 不要提及具体 UID，用"我方/敌方"替代
 
-输出格式：直接输出摘要文本，不要有引号或其他标记。"""
+输出格式：JSON 对象，例如 {"summary": "我方50人集结北部据点，敌方30人防守中..."}"""
 
     async def summarize(
         self,
