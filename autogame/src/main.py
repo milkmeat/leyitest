@@ -706,6 +706,7 @@ async def cmd_add_resource(uid_str: str, *extra: str, env: str = None):
 
 async def cmd_l1_decide(*args: str, env: str = None):
     """单小队 L1 决策调试"""
+    import re as _re
     from src.executor.game_api import GameAPIClient
     from src.config.loader import load_all
     from src.perception.data_sync import DataSyncer
@@ -713,27 +714,57 @@ async def cmd_l1_decide(*args: str, env: str = None):
     from src.ai.l1_leader import L1Leader
 
     # 解析参数
-    remaining = [a for a in args if a not in ("--json", "--dry-run")]
+    remaining = list(args)
     json_mode = "--json" in args
     dry_run = "--dry-run" in args
     l1_prompt = None  # type: str | None
+    mock_l2 = None  # type: str | None
 
     # 检查 --l1-prompt 参数 (支持 --l1-prompt=value 和 --l1-prompt value)
     prompt_args = [a for a in args if a.startswith("--l1-prompt")]
     if prompt_args:
-        # Try --l1-prompt=value format first
         parts = prompt_args[0].split("=", 1)
         if len(parts) == 2:
             l1_prompt = parts[1]
         else:
-            # Try --l1-prompt value format (next arg)
             idx = args.index(prompt_args[0])
             if idx + 1 < len(args) and not args[idx + 1].startswith("--"):
                 l1_prompt = args[idx + 1]
-        remaining = [a for a in remaining if not a.startswith("--l1-prompt") and a != l1_prompt]
+
+    # 检查 --mock-l2 参数 (支持 --mock-l2=value 和 --mock-l2 value)
+    mock_l2_args = [a for a in args if a.startswith("--mock-l2")]
+    if mock_l2_args:
+        parts = mock_l2_args[0].split("=", 1)
+        if len(parts) == 2:
+            mock_l2 = parts[1]
+        else:
+            idx = args.index(mock_l2_args[0])
+            if idx + 1 < len(args) and not args[idx + 1].startswith("--"):
+                mock_l2 = args[idx + 1]
+
+    # 清理 remaining：移除所有已知 flag 和它们的值
+    remaining = []
+    skip_next = False
+    lvl_id = 0  # AVA 战场 ID
+    for i, a in enumerate(args):
+        if skip_next:
+            skip_next = False
+            continue
+        if a in ("--json", "--dry-run"):
+            continue
+        if a.startswith("--l1-prompt") or a.startswith("--mock-l2"):
+            if "=" not in a:
+                skip_next = True
+            continue
+        if a == "--ava":
+            skip_next = True
+            if i + 1 < len(args):
+                lvl_id = int(args[i + 1])
+            continue
+        remaining.append(a)
 
     if not remaining:
-        print("Usage: l1_decide <squad_id> [--dry-run] [--json] [--l1-prompt <name>]", file=sys.stderr)
+        print("Usage: l1_decide <squad_id> [--dry-run] [--json] [--l1-prompt <name>] [--mock-l2 <order>]", file=sys.stderr)
         sys.exit(1)
 
     squad_id = int(remaining[0])
@@ -765,13 +796,30 @@ async def cmd_l1_decide(*args: str, env: str = None):
     syncer = DataSyncer(client, config)
     try:
         # 同步数据
-        snapshot = await syncer.sync(loop_id=0)
+        snapshot = await syncer.sync(loop_id=0, lvl_id=lvl_id)
         print(f"Sync complete: {len(snapshot.accounts)} accounts, "
-              f"{len(snapshot.enemies)} enemies, {len(snapshot.buildings)} buildings")
+              f"{len(snapshot.enemies)} enemies, {len(snapshot.buildings)} buildings"
+              + (f" (AVA lvl_id={lvl_id})" if lvl_id else ""))
+
+        # 解析 mock L2 指令（提取本小队的 order）
+        l2_order = ""
+        if mock_l2:
+            # 支持 "[小队 N (Name)] ..." 格式
+            m = _re.search(r'\[小队\s+(\d+)\s*\([^)]*\)\]\s*(.+)', mock_l2)
+            if m:
+                if int(m.group(1)) == squad_id:
+                    l2_order = m.group(2).strip()
+                else:
+                    print(f"[warn] mock-l2 指定的小队 {m.group(1)} 与当前小队 {squad_id} 不匹配，忽略")
+            else:
+                # 无小队前缀，直接作为通用指令
+                l2_order = mock_l2.strip()
+            if l2_order:
+                print(f"L2 order: {l2_order}")
 
         # L1 决策
         leader = L1Leader(config, llm, squad, prompt_template=l1_prompt)
-        instructions = await leader.decide(snapshot)
+        instructions = await leader.decide(snapshot, l2_order=l2_order)
 
         print(f"\nSquad {squad_id} ({squad.name}) generated {len(instructions)} instructions:")
 
@@ -873,8 +921,18 @@ async def cmd_l1_view(*args: str, env: str = None):
     remaining = [a for a in args if a not in ("--json",)]
     json_mode = "--json" in args
 
+    # 解析 --ava <lvl_id>
+    lvl_id = 0
+    if "--ava" in remaining:
+        ava_idx = remaining.index("--ava")
+        if ava_idx + 1 < len(remaining):
+            lvl_id = int(remaining[ava_idx + 1])
+            remaining = remaining[:ava_idx] + remaining[ava_idx + 2:]
+        else:
+            remaining = remaining[:ava_idx]
+
     if not remaining:
-        print("用法: l1_view <squad_id> [--json]", file=sys.stderr)
+        print("用法: l1_view <squad_id> [--json] [--ava <lvl_id>]", file=sys.stderr)
         sys.exit(1)
 
     squad_id = int(remaining[0])
@@ -895,7 +953,7 @@ async def cmd_l1_view(*args: str, env: str = None):
     client = GameAPIClient(env=env)
     syncer = DataSyncer(client, config)
     try:
-        snapshot = await syncer.sync(loop_id=0)
+        snapshot = await syncer.sync(loop_id=0, lvl_id=lvl_id)
         builder = L1ViewBuilder(config)
         view = builder.build(snapshot, squad)
 
@@ -963,6 +1021,7 @@ async def cmd_run(*args: str, env: str = None):
     mock_l2 = None  # type: str | None
     l1_prompt = None  # type: str | None
     llm_timeout = None  # type: int | None
+    lvl_id = 0  # AVA 战场 ID
     remaining = list(args)
     i = 0
     while i < len(remaining):
@@ -986,6 +1045,9 @@ async def cmd_run(*args: str, env: str = None):
         elif arg == "--llm-timeout" and i + 1 < len(remaining):
             llm_timeout = int(remaining[i + 1])
             config.system.llm.timeout_seconds = llm_timeout
+            i += 1
+        elif arg == "--ava" and i + 1 < len(remaining):
+            lvl_id = int(remaining[i + 1])
             i += 1
         i += 1
 
@@ -1012,7 +1074,8 @@ async def cmd_run(*args: str, env: str = None):
 
     client = GameAPIClient(env=env)
     controller = AIController(config, client, llm_client=llm_client,
-                             mock_l2=mock_l2, l1_prompt=l1_prompt)
+                             mock_l2=mock_l2, l1_prompt=l1_prompt,
+                             lvl_id=lvl_id)
     try:
         await controller.run(max_rounds=max_rounds)
     finally:
@@ -1037,9 +1100,19 @@ async def cmd_sync(*args: str, env: str = None):
     syncer = DataSyncer(client, config)
 
     try:
-        # 判断模式: sync --json / sync <uid> / sync
+        # 判断模式: sync --json / sync --ava <lvl_id> / sync <uid> / sync
         json_mode = "--json" in args
         remaining = [a for a in args if a != "--json"]
+
+        # 解析 --ava <lvl_id>
+        lvl_id = 0
+        if "--ava" in remaining:
+            ava_idx = remaining.index("--ava")
+            if ava_idx + 1 < len(remaining):
+                lvl_id = int(remaining[ava_idx + 1])
+                remaining = remaining[:ava_idx] + remaining[ava_idx + 2:]
+            else:
+                remaining = remaining[:ava_idx]
 
         if remaining:
             # 单账号模式
@@ -1062,7 +1135,7 @@ async def cmd_sync(*args: str, env: str = None):
             return
 
         # 全量同步
-        snapshot = await syncer.sync(loop_id=0)
+        snapshot = await syncer.sync(loop_id=0, lvl_id=lvl_id)
 
         if json_mode:
             _print_json(snapshot.model_dump(mode="json"))

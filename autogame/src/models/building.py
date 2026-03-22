@@ -76,13 +76,19 @@ class Building(BaseModel):
     def from_brief_obj(cls, obj: dict) -> Building:
         """从 svr_map_brief_objs.briefList 中的单个对象构建
 
+        兼容两种格式:
+        - 普通地图: {"uniqueId": "27_4_1", "objBasic": {type, pos, key, aid, ...}}
+        - AVA 战场: 扁平结构 {type, id, pos, camp, uniqueId, ...}（无 objBasic 嵌套）
+
         Args:
-            obj: briefList 中的一个元素, 结构:
-                 {"uniqueId": "27_4_1", "objBasic": {type, pos, key, aid, ...}}
+            obj: briefList/briefObjs 中的一个元素
         """
-        basic = obj.get("objBasic", {})
+        basic = obj.get("objBasic", obj)  # AVA 扁平结构回退到 obj 自身
         raw_pos = basic.get("pos")
         pos = decode_pos(int(raw_pos)) if raw_pos else (0, 0)
+
+        # alliance_id: 普通地图用 aid，AVA 用 camp 字段
+        alliance_id = int(basic.get("aid", 0)) or int(basic.get("camp", 0))
 
         return cls(
             unique_id=obj.get("uniqueId", ""),
@@ -90,7 +96,7 @@ class Building(BaseModel):
             key=basic.get("key", 0),
             pos=pos,
             sid=basic.get("sid", 1),
-            alliance_id=int(basic.get("aid", 0)),
+            alliance_id=alliance_id,
             alliance_name=basic.get("alName", ""),
             alliance_nick=basic.get("alNick", ""),
             alliance_flag=basic.get("alFlag", 0),

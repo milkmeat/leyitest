@@ -65,7 +65,8 @@ class AIController:
     """主循环控制器 — 串联 Sync → L2 → L1 → Action → Sleep"""
 
     def __init__(self, config: AppConfig, client: GameAPIClient, llm_client=None,
-                 mock_l2: str | None = None, l1_prompt: str | None = None):
+                 mock_l2: str | None = None, l1_prompt: str | None = None,
+                 lvl_id: int = 0):
         self.config = config
         self.client = client
         self.syncer = DataSyncer(client, config)
@@ -75,6 +76,7 @@ class AIController:
         self._stop = False
         self.mock_l2 = mock_l2  # Mock L2 指令（跳过 L2 LLM 调用）
         self.l1_prompt = l1_prompt  # L1 prompt 模板名称
+        self.lvl_id = lvl_id  # AVA 战场 ID（0=普通地图）
 
         # L2 指挥官 + L1 协调器 + 摘要生成器（可选 — 传入 llm_client 时启用 AI 决策）
         self.l2_commander = None
@@ -161,7 +163,7 @@ class AIController:
         t0 = time.monotonic()
         snapshot = None
         try:
-            snapshot = await self.syncer.sync(loop_id=loop_id)
+            snapshot = await self.syncer.sync(loop_id=loop_id, lvl_id=self.lvl_id)
             stats.account_count = len(snapshot.accounts)
             stats.building_count = len(snapshot.buildings)
             stats.enemy_count = len(snapshot.enemies)

@@ -45,18 +45,26 @@ class Enemy(BaseModel):
     def from_brief_obj(cls, obj: dict) -> Enemy:
         """从 svr_map_brief_objs.briefList 中 type=2 城市对象构建
 
+        兼容两种格式:
+        - 普通地图: {"uniqueId": "2_uid_1", "objBasic": {type:2, pos, uid, aid, ...}}
+        - AVA 战场: 扁平结构 {type:10101, pos, uid, camp, ...}（无 objBasic 嵌套）
+
         Args:
-            obj: {"uniqueId": "2_uid_1", "objBasic": {type:2, pos, uid, aid, ...}}
+            obj: briefList/briefObjs 中的一个元素
         """
-        basic = obj.get("objBasic", {})
+        basic = obj.get("objBasic", obj)  # AVA 扁平结构回退到 obj 自身
         raw_pos = basic.get("pos")
         pos = decode_pos(int(raw_pos)) if raw_pos else (0, 0)
-        uid = int(basic.get("uid", 0))
+        # uid: 普通地图在 objBasic.uid，AVA 扁平结构在 id 字段
+        uid = int(basic.get("uid", 0)) or int(basic.get("id", 0))
+
+        # alliance_id: 普通地图用 aid，AVA 用 camp 字段
+        alliance_id = int(basic.get("aid", 0)) or int(basic.get("camp", 0))
 
         return cls(
             uid=uid,
             city_pos=pos,
-            alliance_id=int(basic.get("aid", 0)),
+            alliance_id=alliance_id,
             fight_flag=basic.get("fightFlag", 0),
         )
 

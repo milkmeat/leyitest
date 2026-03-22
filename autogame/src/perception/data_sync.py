@@ -30,8 +30,13 @@ from src.models.enemy import Enemy
 
 logger = logging.getLogger(__name__)
 
-# 可作为建筑解析的 type 集合
+# 可作为建筑解析的 type 集合（普通地图）
 BUILDING_TYPES = {27, 48, 64, 156}
+
+# AVA 战场类型常量
+AVA_PLAYER_TYPE = 10101          # AVA 玩家城市
+AVA_BUILDING_TYPES = {10000, 10001, 10002, 10006, 10103, 10104}  # AVA 据点/建筑
+AVA_RESOURCE_TYPES = {10300}     # AVA 资源点（暂忽略）
 
 
 # ------------------------------------------------------------------
@@ -79,11 +84,12 @@ class DataSyncer:
             for uid in sq.member_uids:
                 self._uid_to_squad[uid] = sq.squad_id
 
-    async def sync(self, loop_id: int = 0) -> SyncSnapshot:
+    async def sync(self, loop_id: int = 0, lvl_id: int = 0) -> SyncSnapshot:
         """执行一轮完整同步
 
         Args:
             loop_id: 当前主循环编号
+            lvl_id: AVA 战场 ID，非 0 时使用 AVA 地图 API
 
         Returns:
             SyncSnapshot 包含所有账号、建筑、敌方、错误信息
@@ -93,7 +99,7 @@ class DataSyncer:
 
         try:
             snapshot = await asyncio.wait_for(
-                self._do_sync(loop_id), timeout=timeout
+                self._do_sync(loop_id, lvl_id=lvl_id), timeout=timeout
             )
         except asyncio.TimeoutError:
             logger.error("sync timeout after %ds (loop=%d)", timeout, loop_id)
@@ -105,7 +111,7 @@ class DataSyncer:
         snapshot.sync_time = round(time.monotonic() - t0, 3)
         return snapshot
 
-    async def _do_sync(self, loop_id: int) -> SyncSnapshot:
+    async def _do_sync(self, loop_id: int, lvl_id: int = 0) -> SyncSnapshot:
         """内部同步逻辑（无超时包装）"""
         errors: list[SyncError] = []
 
@@ -114,13 +120,15 @@ class DataSyncer:
         errors.extend(acct_errors)
 
         # 2) 同步地图 — 用第一个成功账号的 uid
-        #    分别用我方/敌方 aid 请求地图 brief，获取双方玩家+建筑
         buildings: list[Building] = []
         enemies: list[Enemy] = []
         if accounts:
             first_uid = next(iter(accounts))
             try:
-                buildings, enemies = await self._sync_map_both_sides(first_uid)
+                if lvl_id != 0:
+                    buildings, enemies = await self._sync_map_ava(first_uid, lvl_id)
+                else:
+                    buildings, enemies = await self._sync_map_both_sides(first_uid)
             except Exception as e:
                 logger.error("map sync failed: %s", e)
                 errors.append(SyncError(uid=first_uid, step="map", message=str(e)))
@@ -164,6 +172,74 @@ class DataSyncer:
                 return PlayerState.from_sync_info(info, group_id=group_id)
             except Exception as e:
                 return SyncError(uid=uid, step="account", message=str(e))
+
+    async def _sync_map_ava(
+        self, uid: int, lvl_id: int,
+    ) -> Tuple[list[Building], list[Enemy]]:
+        """AVA 战场地图同步 — 使用 lvl_battle_login_get API
+
+        AVA 地图返回结构与普通地图不同:
+        - 数据在 svr_lvl_brief_objs.briefObjs（不是 briefList）
+        - 对象是扁平结构（无 objBasic 嵌套），字段直接在顶层
+        - 类型体系: 10101=玩家城市, 10000-10006=据点/建筑, 10300=资源点
+
+        Args:
+            uid: 用于发起查询的账号 UID
+            lvl_id: AVA 战场 ID
+        """
+        async with self._semaphore:
+            resp = await self.client.lvl_battle_login_get(uid, lvl_id)
+
+        buildings: list[Building] = []
+        enemies: list[Enemy] = []
+
+        # 提取 data items — AVA 响应可能有多个 push_list 项，数据不一定在 [0]
+        items: list[dict] = []
+        try:
+            for push in resp["res_data"][0]["push_list"]:
+                items.extend(push.get("data", []))
+        except (KeyError, IndexError, TypeError):
+            logger.warning("AVA 地图响应结构异常")
+            return buildings, enemies
+
+        # 找到 svr_lvl_brief_objs 数据
+        brief_data = None
+        for item in items:
+            name = item.get("name", "")
+            if "svr_lvl_brief_objs" in name:
+                raw = item.get("data", "")
+                try:
+                    brief_data = json.loads(raw) if isinstance(raw, str) else raw
+                except (json.JSONDecodeError, TypeError):
+                    continue
+                break
+
+        if not brief_data:
+            logger.warning("未找到 svr_lvl_brief_objs 数据")
+            return buildings, enemies
+
+        # AVA 用 briefObjs 而不是 briefList
+        brief_list = brief_data.get("briefObjs", brief_data.get("briefList", []))
+        my_uids = set(self.config.accounts.all_uids())
+
+        for obj in brief_list:
+            # AVA 对象是扁平结构，type 直接在顶层
+            obj_type = obj.get("type", 0)
+
+            if obj_type == AVA_PLAYER_TYPE:
+                # 玩家城市 — 排除我方
+                # AVA 对象 uid 字段为 0，实际 UID 在 id 字段中
+                obj_uid = int(obj.get("uid", 0)) or int(obj.get("id", 0))
+                if obj_uid not in my_uids:
+                    enemies.append(Enemy.from_brief_obj(obj))
+
+            elif obj_type in AVA_BUILDING_TYPES:
+                buildings.append(Building.from_brief_obj(obj))
+            # type=10300 资源点暂时忽略
+
+        logger.info("AVA map sync (lvl_id=%d): %d buildings, %d enemies",
+                     lvl_id, len(buildings), len(enemies))
+        return buildings, enemies
 
     async def _sync_map_both_sides(
         self, uid: int,
