@@ -324,14 +324,54 @@ class L0Executor:
             results.append(result)
 
             # 从 INITIATE_RALLY / LVL_INITIATE_RALLY 响应中提取 rally_id 和 pos
-            if (result.success and instr.action in _initiate_actions):
+            if result.success and instr.action in _initiate_actions:
+                # 先尝试从响应中直接提取（Mock 服务器）
                 rid, rpos = self._extract_rally_info(result.server_response)
+                # 真实服务器不在 HTTP 响应中返回 rally_id，需要主动查询
+                if not rid and instr.action in {
+                    ActionType.LVL_INITIATE_RALLY,
+                    ActionType.LVL_INITIATE_RALLY_BUILDING,
+                }:
+                    rid, rpos = await self._query_rally_id(instr.uid)
                 if rid:
                     last_rally_id = rid
                     last_rally_pos = rpos
-                    logger.info("提取 rally_id=%s pos=%s from %s uid=%d", rid, rpos, instr.action.value, instr.uid)
+                    logger.info("提取 rally_id=%s pos=%s from %s uid=%d",
+                                rid, rpos, instr.action.value, instr.uid)
 
         return results
+
+    async def _query_rally_id(self, uid: int) -> tuple[str, str]:
+        """通过 lvl_battle_login_get 查询当前用户发起的集结 rally_id
+
+        从 svr_lvl_user_objs 中找 type=107 的集结对象，提取 uniqueId 和 pos。
+
+        Returns:
+            (rally_unique_id, rally_pos_encoded) — 失败时返回 ("", "")
+        """
+        lvl_id = self.client.default_header.get("lvl_id", 0)
+        if not lvl_id:
+            return "", ""
+        try:
+            resp = await self.client.lvl_battle_login_get(uid, lvl_id)
+            for res in resp.get("res_data", []):
+                for push in res.get("push_list", []):
+                    for item in push.get("data", []):
+                        name = item.get("name", "")
+                        if "svr_lvl_user_objs" not in name:
+                            continue
+                        raw = item.get("data", "")
+                        data = _json.loads(raw) if isinstance(raw, str) else raw
+                        for obj in data.get("objs", []):
+                            basic = obj.get("objBasic", {})
+                            if basic.get("type") == 107:
+                                rid = obj.get("uniqueId", "")
+                                rpos = str(basic.get("pos", ""))
+                                logger.info("lvl_battle_login_get 查到 rally: %s pos=%s", rid, rpos)
+                                return rid, rpos
+        except Exception as e:
+            logger.warning("查询 rally_id 失败: %s", e)
+        return "", ""
 
     @staticmethod
     def _extract_rally_id(resp: Dict[str, Any]) -> str:
@@ -355,7 +395,8 @@ class L0Executor:
     async def _dispatch(self, instr: AIInstruction, rally_pos: str = "") -> Dict[str, Any]:
         """根据 action 类型分发到对应的 game_api 方法"""
         action = instr.action
-        march = self._build_march_info(instr.uid, needs_hero=(action != ActionType.JOIN_RALLY),
+        march = self._build_march_info(instr.uid,
+                                         needs_hero=(action not in {ActionType.JOIN_RALLY, ActionType.LVL_JOIN_RALLY}),
                                          soldier_id=instr.soldier_id, soldier_count=instr.soldier_count)
 
         if action == ActionType.MOVE_CITY:

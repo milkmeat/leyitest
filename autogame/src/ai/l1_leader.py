@@ -227,7 +227,13 @@ class L1Coordinator:
 
         tasks = []
         squad_ids = []
-        for sid, leader in self.leaders.items():
+        # 如果 l2_orders 非空，只处理有指令的小队（用于 mock 测试场景）
+        target_leaders = (
+            {sid: self.leaders[sid] for sid in l2_orders if sid in self.leaders}
+            if l2_orders
+            else self.leaders
+        )
+        for sid, leader in target_leaders.items():
             order = l2_orders.get(sid, "")
             tasks.append(leader.decide(snapshot, l2_order=order))
             squad_ids.append(sid)

@@ -476,7 +476,7 @@ commands:
       target_info:
         id: ""
       target_type: 10101
-      timestamp: ""
+      timestamp: 0
       tn_limit: 1
     description: "AVA战场内对玩家发起集结"
 
@@ -503,7 +503,7 @@ commands:
       target_info:
         id: ""
       target_type: 10001
-      timestamp: ""
+      timestamp: 0
       tn_limit: 1
     description: "AVA战场内对建筑发起集结"
 

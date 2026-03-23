@@ -41,6 +41,8 @@ AVA 战场行动:
   lvl_scout_building <uid> <lvl_id> <building_id> <x> <y>  AVA侦查建筑
   lvl_attack_player <uid> <lvl_id> <target_uid> <x> <y>  AVA攻打玩家
   lvl_attack_building <uid> <lvl_id> <building_id> <x> <y> [target_type] [key]  AVA攻打建筑
+  lvl_create_rally <uid> <lvl_id> <target_id> <x> <y> [prepare_time]  AVA发起集结(建筑/玩家)
+  lvl_battle_login_get <uid> <lvl_id>                    AVA战场登录数据查询
   lvl_rally_dismiss <uid> <lvl_id> <unique_id>  AVA解散集结
 
 简化查询命令:
@@ -389,6 +391,84 @@ async def cmd_lvl_rally_dismiss(uid_str: str, lvl_id_str: str, unique_id_str: st
             print(f"AVA解散集结成功 → unique_id={unique_id}")
         else:
             print(f"AVA解散集结失败", file=sys.stderr)
+    finally:
+        await client.close()
+
+
+async def cmd_lvl_battle_login_get(uid_str: str, lvl_id_str: str, env: str = None):
+    """AVA 战场登录数据查询（含部队、集结、建筑等完整信息）"""
+    from src.executor.game_api import GameAPIClient
+    client = GameAPIClient(env=env)
+    try:
+        uid, lvl_id = int(uid_str), int(lvl_id_str)
+        resp = await client.lvl_battle_login_get(uid, lvl_id)
+        code = _print_ret_code(resp)
+        # 解析并打印每个 push data 的 name + 摘要
+        try:
+            for res_idx, res in enumerate(resp.get("res_data", [])):
+                for push in res.get("push_list", []):
+                    for item in push.get("data", []):
+                        name = item.get("name", "?")
+                        raw = item.get("data", "")
+                        parsed = _json.loads(raw) if isinstance(raw, str) and raw else raw
+                        # 摘要：大对象只打印 key 和数组长度
+                        if isinstance(parsed, dict):
+                            summary = {}
+                            for k, v in parsed.items():
+                                if isinstance(v, list):
+                                    summary[k] = f"[{len(v)} items]"
+                                elif isinstance(v, dict):
+                                    summary[k] = f"{{...{len(v)} keys}}"
+                                else:
+                                    summary[k] = v
+                            print(f"\n[{name}] {_json.dumps(summary, ensure_ascii=False)}")
+                        else:
+                            print(f"\n[{name}] {str(parsed)[:200]}")
+                        # 对关键数据打印完整内容
+                        if any(k in name for k in ("objs", "troop", "rally")):
+                            _print_json(parsed)
+        except (KeyError, IndexError, TypeError, _json.JSONDecodeError) as e:
+            print(f"[warn] 解析异常: {e}")
+            _print_json(resp)
+    finally:
+        await client.close()
+
+
+async def cmd_lvl_create_rally(uid_str: str, lvl_id_str: str, target_id_str: str, x_str: str, y_str: str, *extra: str, env: str = None):
+    """AVA 战场内发起集结（对建筑或玩家）
+
+    用法:
+      lvl_create_rally <uid> <lvl_id> <building_id> <x> <y> [prepare_time]
+      lvl_create_rally <uid> <lvl_id> <target_uid> <x> <y> [prepare_time]
+
+    target_id 为纯数字时视为玩家 UID，否则视为建筑 unique_id。
+    """
+    from src.executor.game_api import GameAPIClient
+    client = GameAPIClient(env=env)
+    try:
+        uid, lvl_id = int(uid_str), int(lvl_id_str)
+        x, y = int(x_str), int(y_str)
+        prepare_time = int(extra[0]) if extra else 60
+
+        # 判断目标类型：纯数字=玩家，否则=建筑
+        is_player = target_id_str.isdigit()
+        if is_player:
+            target_uid = int(target_id_str)
+            target_id = f"2_{target_uid}_1"
+            print(f"AVA发起集结(玩家) uid={uid} → target_uid={target_uid} ({x},{y}) prepare={prepare_time}s")
+            resp = await client.lvl_create_rally(uid, lvl_id, target_id, prepare_time=prepare_time)
+        else:
+            building_id = target_id_str
+            print(f"AVA发起集结(建筑) uid={uid} → building={building_id} ({x},{y}) prepare={prepare_time}s")
+            resp = await client.lvl_create_rally_building(uid, lvl_id, building_id, prepare_time=prepare_time)
+
+        code = _print_ret_code(resp)
+        if code == 0:
+            print(f"AVA集结发起成功")
+        else:
+            print(f"AVA集结发起失败", file=sys.stderr)
+        # 打印完整响应（调试用）
+        _print_json(resp)
     finally:
         await client.close()
 
@@ -1884,6 +1964,8 @@ COMMANDS = {
     "lvl_scout_building":   (cmd_lvl_scout_building,    "<uid> <lvl_id> <building_id> <x> <y>", "AVA侦查建筑"),
     "lvl_attack_player":    (cmd_lvl_attack_player,     "<uid> <lvl_id> <target_uid> <x> <y>", "AVA攻打玩家"),
     "lvl_attack_building":  (cmd_lvl_attack_building,   "<uid> <lvl_id> <building_id> <x> <y> [target_type] [key]", "AVA攻打建筑"),
+    "lvl_battle_login_get": (cmd_lvl_battle_login_get,   "<uid> <lvl_id>",                     "AVA战场登录数据查询"),
+    "lvl_create_rally":     (cmd_lvl_create_rally,      "<uid> <lvl_id> <target_id> <x> <y> [prepare_time]", "AVA发起集结(建筑/玩家)"),
     "lvl_rally_dismiss":    (cmd_lvl_rally_dismiss,     "<uid> <lvl_id> <unique_id>",         "AVA解散集结"),
     "attack_player":        (cmd_attack_player,         "<uid> <target_uid> <x> <y> [soldier_id count]", "攻击玩家"),
     "attack_building":      (cmd_attack_building,       "<uid> <building_id> <x> <y>",        "攻击建筑"),

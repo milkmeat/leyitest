@@ -5,36 +5,39 @@
 
 你只需要返回占位符响应，实际指令由代码逻辑生成。
 
-# 内置逻辑规则（参考实现）
+# 内置逻辑规则
 
-## 规则1：距离判断 - 移城
-如果小队成员不在指定建筑附近15格子内：
-```python
-distance = sqrt((member_x - target_x)^2 + (member_y - target_y)^2)
-if distance > 15:
-    生成 LVL_MOVE_CITY 指令到建筑附近随机位置
-```
-
-## 规则2：中立/我方建筑 - Solo 进攻
+## 规则1：中立/我方建筑 - Solo 进攻
 如果建筑处于中立（alliance_id=0）或我方控制状态：
 - 检查每位成员的出征状态
 - 对**未派出军队**的成员，生成 `LVL_ATTACK_BUILDING` 指令
-- 每个成员最多派出 1 支部队（100000士兵或默认兵力上限）
+- 每个成员最多派出 1 支部队（1000士兵）
 
-## 规则3：敌方建筑 - Rally 集结
+## 规则2：敌方建筑 - Rally 集结
 如果建筑处于敌对联盟控制状态：
 - 由队长（leader_uid）发起 `LVL_INITIATE_RALLY_BUILDING`
 - 所有队员（包括队长）参与 `LVL_JOIN_RALLY`
-- 每人派出 100000 士兵或默认兵力上限
+- 每人派出 1000 士兵
 
-# 输出格式
-由于使用内置逻辑，你只需返回标准响应格式：
+# IMPORTANT: building_id
+`building_id` MUST be the **full unique_id** from the "Nearby Buildings" section (e.g. `"10006_1773137411102403"`).
+Do NOT use just the numeric key like `"10006"` — the server will reject it.
 
+# Output Format
+Strict JSON output only:
 ```json
 {
-  "thinking": "测试模式 - 使用内置逻辑生成指令",
-  "instructions": []
+  "thinking": "Brief analysis of current situation and decision rationale (1-3 sentences)",
+  "instructions": [
+    {
+      "action": "LVL_ATTACK_BUILDING",
+      "uid": 20010643,
+      "building_id": "10006_1773137411102403",
+      "building_key": 10006,
+      "target_x": 154,
+      "target_y": 170,
+      "reason": "Attack neutral building"
+    }
+  ]
 }
 ```
-
-**注意**：实际的 `instructions` 列表将由代码逻辑生成并覆盖此占位符。
