@@ -47,12 +47,11 @@ class IndicatorDetector:
         results: list[IndicatorElement] = []
 
         results.extend(self._detect_red_dots(hsv))
-        results.extend(self._detect_green_checks(hsv))
+        # Green checks are now detected by template matching only, not HSV
 
         logger.debug(
             f"Indicators detected: {len(results)} "
-            f"({sum(1 for r in results if r.type == 'red_dot')} red dots, "
-            f"{sum(1 for r in results if r.type == 'green_check')} green checks)"
+            f"({sum(1 for r in results if r.type == 'red_dot')} red dots)"
         )
         return results
 

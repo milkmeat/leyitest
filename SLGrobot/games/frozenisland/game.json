@@ -74,8 +74,7 @@
     "loading": [],
     "main_city": [
       {"type": "finger", "action": "tap_fingertip"},
-      {"type": "green_check", "action": "tap"},
-      {"type": "red_dot", "action": "tap"}
+      {"type": "green_check", "action": "tap"}
     ],
     "world_map": [
       {"type": "finger", "action": "tap_fingertip"}
