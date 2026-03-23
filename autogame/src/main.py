@@ -1,7 +1,7 @@
 """WestGame AI 全自动化团战系统 — 入口
 
 用法:
-  python src/main.py [--mock] [--verbose|--debug] <command> <args...>
+  python src/main.py [--mock] [--verbose|--debug] [--llm <profile>] <command> <args...>
 
 主循环:
   run                                           启动 AI 主循环（无限）
@@ -94,6 +94,22 @@ import sys
 _project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
+
+# 模块级变量：由 main() 解析 --llm 参数后设置
+_llm_profile: str | None = None
+
+
+def _load_config(config_dir: str = "config") -> "AppConfig":
+    """加载配置并应用 --llm profile 切换"""
+    from src.config.loader import load_all
+    config = load_all(config_dir)
+    if _llm_profile:
+        if not config.system.llm.switch_profile(_llm_profile):
+            available = ", ".join(config.system.llm.profiles.keys()) or "(无)"
+            print(f"[warn] LLM profile '{_llm_profile}' 不存在 (可用: {available})", file=sys.stderr)
+        else:
+            print(f"[config] LLM profile: {_llm_profile} → {config.system.llm.model}")
+    return config
 
 
 def _check_llm_config(config) -> bool:
@@ -708,7 +724,6 @@ async def cmd_l1_decide(*args: str, env: str = None):
     """单小队 L1 决策调试"""
     import re as _re
     from src.executor.game_api import GameAPIClient
-    from src.config.loader import load_all
     from src.perception.data_sync import DataSyncer
     from src.ai.llm_client import LLMClient
     from src.ai.l1_leader import L1Leader
@@ -768,7 +783,7 @@ async def cmd_l1_decide(*args: str, env: str = None):
         sys.exit(1)
 
     squad_id = int(remaining[0])
-    config = load_all("config")
+    config = _load_config()
 
     # 查找小队
     squad = None
@@ -791,6 +806,15 @@ async def cmd_l1_decide(*args: str, env: str = None):
     except (ValueError, ImportError) as e:
         print(f"[FAIL] LLM init failed: {e}", file=sys.stderr)
         sys.exit(1)
+
+    # 调试命令：启用 AI 模块完整日志（打印 prompt 和 response 全文）
+    ai_logger = logging.getLogger("src.ai")
+    ai_logger.setLevel(logging.DEBUG)
+    if not ai_logger.handlers:
+        _h = logging.StreamHandler()
+        _h.setFormatter(logging.Formatter("%(asctime)s [%(name)s] %(levelname)s: %(message)s", datefmt="%H:%M:%S"))
+        ai_logger.addHandler(_h)
+        ai_logger.propagate = False
 
     client = GameAPIClient(env=env)
     syncer = DataSyncer(client, config)
@@ -845,7 +869,6 @@ async def cmd_l1_decide(*args: str, env: str = None):
 async def cmd_l2_decide(*args: str, env: str = None):
     """L2 军团指挥官决策调试"""
     from src.executor.game_api import GameAPIClient
-    from src.config.loader import load_all
     from src.perception.data_sync import DataSyncer
     from src.ai.llm_client import LLMClient
     from src.ai.l2_commander import L2Commander
@@ -854,7 +877,7 @@ async def cmd_l2_decide(*args: str, env: str = None):
     json_mode = "--json" in args
     dry_run = "--dry-run" in args
 
-    config = load_all("config")
+    config = _load_config()
 
     # 创建 LLM 客户端
     if not dry_run and not _check_llm_config(config):
@@ -865,6 +888,15 @@ async def cmd_l2_decide(*args: str, env: str = None):
     except (ValueError, ImportError) as e:
         print(f"[FAIL] LLM 初始化失败: {e}", file=sys.stderr)
         sys.exit(1)
+
+    # 调试命令：启用 AI 模块完整日志（打印 prompt 和 response 全文）
+    ai_logger = logging.getLogger("src.ai")
+    ai_logger.setLevel(logging.DEBUG)
+    if not ai_logger.handlers:
+        _h = logging.StreamHandler()
+        _h.setFormatter(logging.Formatter("%(asctime)s [%(name)s] %(levelname)s: %(message)s", datefmt="%H:%M:%S"))
+        ai_logger.addHandler(_h)
+        ai_logger.propagate = False
 
     client = GameAPIClient(env=env)
     syncer = DataSyncer(client, config)
@@ -914,7 +946,6 @@ async def cmd_l2_decide(*args: str, env: str = None):
 async def cmd_l1_view(*args: str, env: str = None):
     """构建并显示 L1 小队局部视图"""
     from src.executor.game_api import GameAPIClient
-    from src.config.loader import load_all
     from src.perception.data_sync import DataSyncer
     from src.perception.l1_view import L1ViewBuilder
 
@@ -936,7 +967,7 @@ async def cmd_l1_view(*args: str, env: str = None):
         sys.exit(1)
 
     squad_id = int(remaining[0])
-    config = load_all("config")
+    config = _load_config()
 
     # 查找小队
     squad = None
@@ -973,10 +1004,9 @@ async def cmd_l1_view(*args: str, env: str = None):
 
 async def cmd_llm_test(*args: str, env: str = None):
     """测试 LLM 连通性"""
-    from src.config.loader import load_all
     from src.ai.llm_client import LLMClient
 
-    config = load_all("config")
+    config = _load_config()
     dry_run = "--dry-run" in args
 
     if not dry_run and not _check_llm_config(config):
@@ -1010,10 +1040,9 @@ async def cmd_llm_test(*args: str, env: str = None):
 async def cmd_run(*args: str, env: str = None):
     """启动 AI 主循环"""
     from src.executor.game_api import GameAPIClient
-    from src.config.loader import load_all
     from src.controller.loop import AIController
 
-    config = load_all("config")
+    config = _load_config()
 
     # 解析参数
     max_rounds = 0
@@ -1898,6 +1927,16 @@ def main():
         env = "mock"
         args.remove("--mock")
 
+    # 解析 --llm <profile> 参数（全局 LLM profile 切换）
+    llm_profile = None
+    if "--llm" in args:
+        idx = args.index("--llm")
+        if idx + 1 < len(args):
+            llm_profile = args[idx + 1]
+            args = args[:idx] + args[idx + 2:]
+        else:
+            args = args[:idx]
+
     # 解析 --verbose / -v 参数，控制日志级别
     log_level = logging.WARNING  # 默认只显示警告
     if "--verbose" in args or "-v" in args:
@@ -1916,71 +1955,33 @@ def main():
     )
 
     if len(args) < 1 or args[0] not in COMMANDS:
-        print("用法: python src/main.py [--mock] [--verbose|--debug] <command> <args...>\n")
-        print("主循环:")
-        _, a, desc = COMMANDS["run"]
-        print(f"  {'run':25s} {a:45s} {desc}")
-        print("  示例: run --once --loop.interval_seconds 0")
-        print("\nAI 决策调试:")
-        for name in ["l2_decide", "l1_decide", "l1_view", "llm_test"]:
-            _, a, desc = COMMANDS[name]
-            print(f"  {name:25s} {a:45s} {desc}")
-        print("\n查询命令:")
-        for name in ["get_player_pos", "get_player_info", "get_all_player_data",
-                      "get_map_overview", "get_map_detail", "get_battle_report"]:
-            _, a, desc = COMMANDS[name]
-            print(f"  {name:25s} {a:45s} {desc}")
-        print("\n行动命令:")
-        for name in ["move_city", "attack_player", "attack_building", "reinforce_building",
-                      "scout_player", "create_rally", "join_rally", "rally_dismiss",
-                      "recall_troop", "recall_reinforce"]:
-            _, a, desc = COMMANDS[name]
-            print(f"  {name:25s} {a:45s} {desc}")
-        print("\nAVA 战场行动:")
-        for name in ["lvl_move_city", "lvl_scout_player", "lvl_scout_building",
-                      "lvl_attack_player", "lvl_attack_building", "lvl_rally_dismiss"]:
-            _, a, desc = COMMANDS[name]
-            print(f"  {name:25s} {a:45s} {desc}")
-        print("\n简化查询命令:")
-        for name in ["get_gem", "get_soldiers"]:
-            _, a, desc = COMMANDS[name]
-            print(f"  {name:25s} {a:45s} {desc}")
-        print("\nGM 命令:")
-        for name in ["add_gem", "add_soldiers", "add_resource"]:
-            _, a, desc = COMMANDS[name]
-            print(f"  {name:25s} {a:45s} {desc}")
-        print("\n数据同步:")
-        _, a, desc = COMMANDS["sync"]
-        print(f"  {'sync':25s} {a:45s} {desc}")
-        print("  示例: sync                  # 全量同步摘要")
-        print("  示例: sync --json           # 全量同步 JSON 输出")
-        print("  示例: sync 20010366         # 单账号同步")
-        print("\nL0 执行器:")
-        _, a, desc = COMMANDS["l0"]
-        print(f"  {'l0':25s} {a:45s} {desc}")
-        print("  示例: l0 MOVE_CITY 20010413 500 500")
-        print("  示例: l0 '{\"action\":\"MOVE_CITY\",\"uid\":20010413,\"target_x\":500,\"target_y\":500}'")
-        print("  所有 l0 指令支持 --soldier <soldier_id> <count> 手动指定兵种/数量:")
-        print("  示例: l0 LVL_ATTACK_BUILDING 20010644 10006_xxx 154 170 --soldier 204 3000")
-        print("\nuid_helper (测试环境账号准备):")
-        for name in ["uid_copy", "uid_create_al", "uid_join_al", "uid_members", "uid_setup"]:
-            _, a, desc = COMMANDS[name]
-            print(f"  {name:25s} {a:45s} {desc}")
-        print("  示例: uid_copy 20010643 20010700")
-        print("  示例: uid_create_al TestAI TSTA")
-        print("  示例: uid_join_al 12345 20010643 20010644")
-        print("  示例: uid_setup ours 20010643 20010700 20010701")
-        print("\nuid_helper (AVA 战场):")
-        for name in ["uid_ava_add", "uid_ava_enter", "uid_ava_status", "uid_ava_leave"]:
-            _, a, desc = COMMANDS[name]
-            print(f"  {name:25s} {a:45s} {desc}")
-        print("  示例: uid_ava_add 1 20010643 1    # 添加 uid 到 lvl_id=1 的战场, camp_id=1")
-        print("  示例: uid_ava_enter 1 20010643    # uid 进入 lvl_id=1 的战场")
-        print("  示例: uid_ava_leave 20010643      # uid 离开当前战场")
+        # 打印模块 docstring 作为主帮助信息
+        print(__doc__)
+        print("全局参数:")
+        print("  --mock                  使用 mock server")
+        print("  --verbose / -v          INFO 级别日志")
+        print("  --debug                 DEBUG 级别日志")
+        print("  --llm <profile>         切换 LLM profile (如: zhipu / ollama)")
+        print()
+        print("AI 决策调试 (l1_decide / l2_decide 自动打印完整 prompt 和 LLM 响应):")
+        print("  l1_decide 参数:  <squad_id> [--ava <lvl_id>] [--mock-l2 \"<指令>\"] [--l1-prompt <name>] [--dry-run] [--json]")
+        print("  run 额外参数:    [--ava <lvl_id>] [--mock-l2 \"<指令>\"] [--l1-prompt <name>] [--llm-timeout N] [--dry-run]")
+        print()
+        print("示例:")
+        print("  python src/main.py sync --ava 29999")
+        print("  python src/main.py l1_view 1 --ava 29999")
+        print("  python src/main.py l1_decide 1 --ava 29999 --mock-l2 \"[小队 1 (Alpha)] 控制 建筑 pos:( 154, 170 )\" --l1-prompt ava")
+        print("  python src/main.py --llm ollama l1_decide 1 --dry-run")
+        print("  python src/main.py run --once --ava 29999 --mock-l2 \"...\" --l1-prompt ava --loop.interval_seconds 0")
         sys.exit(1)
 
     cmd_name = args[0]
     func, _, _ = COMMANDS[cmd_name]
+
+    # 将 llm_profile 存入模块级变量，供 cmd_* 函数中 load_all 后切换
+    global _llm_profile
+    _llm_profile = llm_profile
+
     asyncio.run(func(*args[1:], env=env))
 
 

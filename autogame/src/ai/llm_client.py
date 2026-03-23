@@ -172,15 +172,51 @@ class LLMClient:
         logger.debug("%ssystem_prompt:\n%s", ctx_prefix, system_prompt)
         logger.debug("%suser_prompt:\n%s", ctx_prefix, user_prompt)
 
+        # Ollama 检测
+        is_ollama = "localhost" in (self.config.base_url or "") or "11434" in (self.config.base_url or "")
+
         try:
-            response = await self._client.chat.completions.create(
-                model=self.config.model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                temperature=temperature,
+            import sys as _sys
+
+            if is_ollama:
+                # Ollama: 使用原生 /api/chat（支持 think:false），不走 OpenAI 兼容端点
+                content = await self._call_ollama_native(
+                    system_prompt, user_prompt, temperature, ctx_prefix,
+                )
+            else:
+                # 云端 API (zhipu/openai/deepseek): OpenAI SDK 流式调用
+                stream = await self._client.chat.completions.create(
+                    model=self.config.model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    temperature=temperature,
+                    stream=True,
+                )
+                chunks = []
+                _sys.stderr.write(f"{ctx_prefix}[stream] ")
+                async for chunk in stream:
+                    delta = chunk.choices[0].delta if chunk.choices[0].delta else None
+                    if delta and delta.content:
+                        chunks.append(delta.content)
+                        _sys.stderr.write(delta.content)
+                        _sys.stderr.flush()
+                _sys.stderr.write("\n")
+                content = "".join(chunks)
+
+            elapsed = time.time() - start_time
+            if not content:
+                raise ValueError("LLM 返回空内容")
+
+            logger.info(
+                "%s=== LLM 响应成功 ===\n"
+                "  [耗时] %.2fs\n"
+                "  [内容长度] %d chars",
+                ctx_prefix, elapsed, len(content),
             )
+            logger.debug("%s完整响应内容:\n%s", ctx_prefix, content)
+            return self._extract_json(content)
         except Exception as e:
             elapsed = time.time() - start_time
             error_type = type(e).__name__
@@ -211,32 +247,65 @@ class LLMClient:
             )
             raise
 
-        elapsed = time.time() - start_time
-        content = response.choices[0].message.content
-        if not content:
-            raise ValueError("LLM 返回空内容")
+    async def _call_ollama_native(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        temperature: float,
+        ctx_prefix: str = "",
+    ) -> str:
+        """Ollama 原生 API 调用（/api/chat），支持 think:false 禁用 thinking
 
-        # 记录响应
-        usage = response.usage
-        usage_str = ""
-        if usage:
-            usage_str = (
-                f" tokens: prompt={usage.prompt_tokens}, "
-                f"completion={usage.completion_tokens}, "
-                f"total={usage.total_tokens}"
-            )
+        不走 OpenAI 兼容端点，因为 /v1/ 不转发 think 参数。
+        使用 aiohttp 直接调用，流式输出到 stderr。
+        """
+        import sys as _sys
+        import aiohttp
+        import json as _json
 
-        logger.info(
-            "%s=== LLM 响应成功 ===\n"
-            "  [耗时] %.2fs\n"
-            "  [%s]\n"
-            "  [内容预览] %s",
-            ctx_prefix, elapsed, usage_str,
-            (content[:200] + "..." if len(content) > 200 else content),
-        )
-        logger.debug("%s完整响应内容:\n%s", ctx_prefix, content)
+        # 从 base_url 提取 Ollama host（去掉 /v1 后缀）
+        base = (self.config.base_url or "").rstrip("/")
+        if base.endswith("/v1"):
+            base = base[:-3]
+        url = f"{base}/api/chat"
 
-        return self._extract_json(content)
+        payload = {
+            "model": self.config.model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            "stream": True,
+            "think": False,
+            "options": {
+                "temperature": temperature,
+                "num_ctx": 16384,
+            },
+        }
+
+        chunks = []
+        _sys.stderr.write(f"{ctx_prefix}[ollama stream] ")
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=payload) as resp:
+                resp.raise_for_status()
+                async for line in resp.content:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        data = _json.loads(line)
+                    except _json.JSONDecodeError:
+                        continue
+                    msg = data.get("message", {})
+                    content = msg.get("content", "")
+                    if content:
+                        chunks.append(content)
+                        _sys.stderr.write(content)
+                        _sys.stderr.flush()
+                    if data.get("done"):
+                        break
+        _sys.stderr.write("\n")
+        return "".join(chunks)
 
     @staticmethod
     def _extract_json(text: str) -> dict[str, Any]:
