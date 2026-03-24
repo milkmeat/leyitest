@@ -92,9 +92,11 @@ enemies:
 alliances:
   ours:
     aid: 20000118
+    lvl_aid: 1
     name: "TestSquad2026"
   enemy:
     aid: 20000119
+    lvl_aid: 2
     name: "PhoenixRise2026"
 
 # 备用账号（旧批次）

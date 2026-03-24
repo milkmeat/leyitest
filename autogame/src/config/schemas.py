@@ -33,6 +33,7 @@ class ReserveEntry(BaseModel):
 class AllianceInfo(BaseModel):
     """联盟元信息"""
     aid: int
+    lvl_aid: int = 0    # AVA(LVL)战场中简化联盟ID: 1=我方, 2=敌方
     name: str = ""
 
 

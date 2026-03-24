@@ -31,12 +31,14 @@ In short:
 
 # Attack Method Selection Rules (Must Follow)
 Based on target type and ownership:
-1. **Neutral building** (alliance_id=0) → All members solo attack (LVL_ATTACK_BUILDING), no rally needed
-2. **Our building** (our alliance) → Un-garrisoned accounts send to garrison (LVL_ATTACK_BUILDING as garrison)
-3. **Enemy-occupied building** (enemy alliance) → MUST Rally attack, solo prohibited
+1. **Neutral building** (owner=Neutral) → All members solo attack (LVL_ATTACK_BUILDING), no rally needed
+2. **Our building** (owner=Ours) → Use `LVL_REINFORCE_BUILDING` to garrison/reinforce (NOT LVL_ATTACK_BUILDING)
+3. **Enemy-occupied building** (owner=Enemy) → MUST Rally attack, solo prohibited
 
 Rally flow: Leader (1 person) initiates LVL_INITIATE_RALLY_BUILDING first, members follow with LVL_JOIN_RALLY (leave rally_id empty, system auto-fills).
 Leader's hero occupied, cannot solo; members after joining rally can still use hero for solo other targets.
+
+Important: LVL_REINFORCE_BUILDING sends troops as garrison (leader=0), does NOT occupy hero. Account can still solo attack other targets after reinforcing.
 
 # Thinking Steps
 1. Parse L2 strategic intent (if any)
@@ -51,10 +53,16 @@ Leader's hero occupied, cannot solo; members after joining rally can still use h
 Teleport city to target coordinates, recall all troops immediately. Strongest tactical mobility.
 Required: uid, target_x, target_y
 
-## LVL_ATTACK_BUILDING — Attack/Garrison Building
-Attack enemy building or send to garrison our building.
+## LVL_ATTACK_BUILDING — Attack Building
+Attack enemy or neutral building to capture control.
 Required: uid, building_id (building key, as string), target_x, target_y
-Note: Attacking enemy building captures control; attacking our building reinforces garrison
+Note: Only for neutral or enemy buildings. For our buildings, use LVL_REINFORCE_BUILDING.
+
+## LVL_REINFORCE_BUILDING — Reinforce/Garrison Our Building
+Send troops to garrison our already-controlled building. Uses march_type=11 (reinforce).
+Required: uid, building_id (building key, as string)
+Optional: target_x, target_y (not required for reinforce, system uses building_id to locate)
+Note: Troops sent as reinforcement (leader=0), does NOT occupy hero. Account can still solo attack.
 
 ## LVL_INITIATE_RALLY_BUILDING — Initiate Building Rally
 Initiate rally attack on building, 60-second window for members to join.

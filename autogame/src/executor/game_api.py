@@ -626,6 +626,43 @@ class GameAPIClient:
             overrides["march_info"] = march_info
         return await self.send_cmd("lvl_dispatch_troop", uid, header_overrides={"lvl_id": lvl_id}, **overrides)
 
+    async def lvl_reinforce_building(
+        self, uid: int, lvl_id: int, target_id: str, key: int = 0,
+        target_type: int = 10006, march_info: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """AVA 战场内驻防/增援我方建筑
+
+        与 lvl_attack_building 的区别:
+        - march_type=11 (驻防) 而非 15 (攻打)
+        - leader=0 (援军身份，不占主帅)
+        - target_info.pos="nil" (只需建筑 ID 定位)
+
+        Args:
+            lvl_id: 战场 ID
+            target_id: 建筑唯一 ID (如 "10006_1773137411102403")
+            key: 建筑 key
+            target_type: 目标类型（默认10006）
+            march_info: 出征部队信息
+        """
+        # 驻防用 leader=0（援军身份，不占主帅英雄）
+        # 需要保留 default_param 中 march_info 的完整结构（soldier/hero 等），仅覆盖 leader
+        if march_info:
+            march_info = {**march_info, "leader": 0}
+        else:
+            # CLI 直接调用时无 march_info，从 default_param 获取并 patch leader
+            default_march = copy.deepcopy(
+                self.get_cmd_info("lvl_dispatch_troop").get("default_param", {}).get("march_info", {})
+            )
+            default_march["leader"] = 0
+            march_info = default_march
+        overrides: Dict[str, Any] = {
+            "march_type": 11,
+            "target_info": {"id": target_id, "pos": "nil", "key": key},
+            "target_type": target_type,
+            "march_info": march_info,
+        }
+        return await self.send_cmd("lvl_dispatch_troop", uid, header_overrides={"lvl_id": lvl_id}, **overrides)
+
     async def lvl_create_rally(
         self, uid: int, lvl_id: int, target_id: str,
         march_info: Optional[Dict[str, Any]] = None,

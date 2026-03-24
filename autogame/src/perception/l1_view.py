@@ -105,6 +105,14 @@ class L1ViewBuilder:
     def __init__(self, config: AppConfig):
         self.config = config
         self.march_speed = config.activity.march.speed  # 秒/格
+        # AVA 战场用 lvl_aid (1/2) 判断建筑归属；主世界用完整 aid
+        alliances = config.accounts.alliances
+        if alliances and alliances.ours.lvl_aid:
+            self._my_alliance_id = alliances.ours.lvl_aid
+        elif alliances:
+            self._my_alliance_id = alliances.ours.aid
+        else:
+            self._my_alliance_id = 0
 
     def build(
         self,
@@ -291,6 +299,10 @@ class L1ViewBuilder:
             march_sec = int(dist * self.march_speed)
             if b.alliance_id == 0:
                 owner = "Neutral"
+            elif self._my_alliance_id and b.alliance_id == self._my_alliance_id:
+                owner = "Ours"
+            elif b.alliance_id != 0:
+                owner = "Enemy"
             elif b.alliance_nick:
                 owner = b.alliance_nick
             elif b.alliance_name:

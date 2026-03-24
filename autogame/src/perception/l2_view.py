@@ -117,10 +117,11 @@ class L2ViewBuilder:
     def __init__(self, config: AppConfig):
         self.config = config
         self.march_speed = config.activity.march.speed  # 秒/格
-        self._my_alliance_id = (
-            config.accounts.alliances.ours.aid
-            if config.accounts.alliances else 0
-        )
+        self._my_alliance_id = 0
+        alliances = config.accounts.alliances
+        if alliances:
+            # AVA 战场用 lvl_aid (1/2)；主世界用完整 aid
+            self._my_alliance_id = alliances.ours.lvl_aid or alliances.ours.aid
 
     def build(self, snapshot: SyncSnapshot) -> L2GlobalView:
         """构建全局视图

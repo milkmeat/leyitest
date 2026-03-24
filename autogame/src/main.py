@@ -40,7 +40,8 @@ AVA 战场行动:
   lvl_scout_player <uid> <lvl_id> <target_uid> <x> <y>  AVA侦查玩家
   lvl_scout_building <uid> <lvl_id> <building_id> <x> <y>  AVA侦查建筑
   lvl_attack_player <uid> <lvl_id> <target_uid> <x> <y>  AVA攻打玩家
-  lvl_attack_building <uid> <lvl_id> <building_id> <x> <y> [target_type] [key]  AVA攻打建筑
+  lvl_attack_building <uid> <lvl_id> <building_id> <x> <y>  AVA攻打建筑
+  lvl_reinforce_building <uid> <lvl_id> <building_id>      AVA驻防/增援我方建筑
   lvl_create_rally <uid> <lvl_id> <target_id> <x> <y> [prepare_time]  AVA发起集结(建筑/玩家)
   lvl_battle_login_get <uid> <lvl_id>                    AVA战场登录数据查询
   lvl_rally_dismiss <uid> <lvl_id> <unique_id>  AVA解散集结
@@ -333,47 +334,56 @@ async def cmd_lvl_attack_player(uid_str: str, lvl_id_str: str, target_uid_str: s
         await client.close()
 
 
-async def cmd_lvl_attack_building(uid_str: str, lvl_id_str: str, building_id_str: str, x_str: str, y_str: str, *extra, env: str = None):
+async def cmd_lvl_attack_building(uid_str: str, lvl_id_str: str, building_id_str: str, x_str: str, y_str: str, env: str = None):
     """AVA 战场内攻打建筑
 
-    用法: lvl_attack_building <uid> <lvl_id> <building_id> <x> <y> [target_type] [key]
-    - target_type: 默认从 building_id 提取（如 "10006_xxx" → 10006）
-    - key: 默认为 0
+    用法: lvl_attack_building <uid> <lvl_id> <building_id> <x> <y>
+    - target_type 自动从 building_id 提取（如 "10006_xxx" → 10006）
     """
     from src.executor.game_api import GameAPIClient
     from src.utils.coords import encode_pos
     client = GameAPIClient(env=env)
     try:
         uid, lvl_id = int(uid_str), int(lvl_id_str)
-        building_id = building_id_str  # 建筑ID格式如 "10006_1773137411102403" 或 "27_4_1"
+        building_id = building_id_str
         x, y = int(x_str), int(y_str)
 
-        # 解析可选参数
-        target_type = None
-        key = 0
-        if len(extra) == 1:
-            # 可能是 target_type
-            target_type = int(extra[0])
-        elif len(extra) >= 2:
-            # target_type + key
-            target_type = int(extra[0])
-            key = int(extra[1])
-
-        # 从 building_id 中提取 target_type（第一段）
-        if target_type is None:
-            parts = building_id.split("_")
-            if parts and parts[0].isdigit():
-                target_type = int(parts[0])
-            else:
-                target_type = 10001
+        parts = building_id.split("_")
+        target_type = int(parts[0]) if parts and parts[0].isdigit() else 10001
 
         building_pos = encode_pos(x, y)
-        resp = await client.lvl_attack_building(uid, lvl_id, building_id, building_pos, key=key, target_type=target_type)
+        resp = await client.lvl_attack_building(uid, lvl_id, building_id, building_pos, target_type=target_type)
         code = _print_ret_code(resp)
         if code == 0:
-            print(f"AVA攻打建筑成功 → building_id={building_id} type={target_type} key={key} ({x},{y})")
+            print(f"AVA攻打建筑成功 → building_id={building_id} type={target_type} ({x},{y})")
         else:
             print(f"AVA攻打建筑失败", file=sys.stderr)
+    finally:
+        await client.close()
+
+
+async def cmd_lvl_reinforce_building(uid_str: str, lvl_id_str: str, building_id_str: str, env: str = None):
+    """AVA 战场内驻防/增援我方建筑 (march_type=11, leader=0)
+
+    用法: lvl_reinforce_building <uid> <lvl_id> <building_id>
+    - target_type 自动从 building_id 提取（如 "10006_xxx" → 10006）
+    - 驻防不需要坐标，target_info.pos 固定为 "nil"
+    """
+    from src.executor.game_api import GameAPIClient
+    client = GameAPIClient(env=env)
+    try:
+        uid, lvl_id = int(uid_str), int(lvl_id_str)
+        building_id = building_id_str
+
+        parts = building_id.split("_")
+        target_type = int(parts[0]) if parts and parts[0].isdigit() else 10006
+
+        resp = await client.lvl_reinforce_building(uid, lvl_id, building_id, target_type=target_type)
+        code = _print_ret_code(resp)
+        if code == 0:
+            print(f"AVA驻防建筑成功 → building_id={building_id} type={target_type}")
+        else:
+            print(f"AVA驻防建筑失败", file=sys.stderr)
     finally:
         await client.close()
 
@@ -1408,6 +1418,14 @@ def _parse_l0_shorthand(args: list[str]):
         if len(rest) > 3:
             data["building_key"] = int(rest[3])
 
+    elif action == "LVL_REINFORCE_BUILDING":
+        if len(rest) < 1:
+            print("用法: l0 LVL_REINFORCE_BUILDING <uid> <building_id> [building_key]", file=sys.stderr)
+            sys.exit(1)
+        data["building_id"] = rest[0]
+        if len(rest) > 1:
+            data["building_key"] = int(rest[1])
+
     elif action == "LVL_ATTACK_PLAYER":
         if len(rest) < 3:
             print("用法: l0 LVL_ATTACK_PLAYER <uid> <target_uid> <x> <y>", file=sys.stderr)
@@ -1963,7 +1981,8 @@ COMMANDS = {
     "lvl_scout_player":     (cmd_lvl_scout_player,      "<uid> <lvl_id> <target_uid> <x> <y>", "AVA侦查玩家"),
     "lvl_scout_building":   (cmd_lvl_scout_building,    "<uid> <lvl_id> <building_id> <x> <y>", "AVA侦查建筑"),
     "lvl_attack_player":    (cmd_lvl_attack_player,     "<uid> <lvl_id> <target_uid> <x> <y>", "AVA攻打玩家"),
-    "lvl_attack_building":  (cmd_lvl_attack_building,   "<uid> <lvl_id> <building_id> <x> <y> [target_type] [key]", "AVA攻打建筑"),
+    "lvl_attack_building":    (cmd_lvl_attack_building,     "<uid> <lvl_id> <building_id> <x> <y>", "AVA攻打建筑"),
+    "lvl_reinforce_building": (cmd_lvl_reinforce_building,  "<uid> <lvl_id> <building_id>",         "AVA驻防/增援我方建筑"),
     "lvl_battle_login_get": (cmd_lvl_battle_login_get,   "<uid> <lvl_id>",                     "AVA战场登录数据查询"),
     "lvl_create_rally":     (cmd_lvl_create_rally,      "<uid> <lvl_id> <target_id> <x> <y> [prepare_time]", "AVA发起集结(建筑/玩家)"),
     "lvl_rally_dismiss":    (cmd_lvl_rally_dismiss,     "<uid> <lvl_id> <unique_id>",         "AVA解散集结"),

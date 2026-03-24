@@ -48,6 +48,7 @@ class ActionType(str, Enum):
     LVL_MOVE_CITY = "LVL_MOVE_CITY"
     LVL_ATTACK_PLAYER = "LVL_ATTACK_PLAYER"
     LVL_ATTACK_BUILDING = "LVL_ATTACK_BUILDING"
+    LVL_REINFORCE_BUILDING = "LVL_REINFORCE_BUILDING"
     LVL_SCOUT_PLAYER = "LVL_SCOUT_PLAYER"
     LVL_SCOUT_BUILDING = "LVL_SCOUT_BUILDING"
     LVL_INITIATE_RALLY = "LVL_INITIATE_RALLY"
@@ -181,6 +182,10 @@ class L0Executor:
             if not instr.building_id:
                 return False, "LVL_ATTACK_BUILDING 需要 building_id 非空"
 
+        elif instr.action == ActionType.LVL_REINFORCE_BUILDING:
+            if not instr.building_id:
+                return False, "LVL_REINFORCE_BUILDING 需要 building_id 非空"
+
         elif instr.action == ActionType.LVL_SCOUT_PLAYER:
             if instr.target_uid <= 0:
                 return False, "LVL_SCOUT_PLAYER 需要 target_uid > 0"
@@ -296,9 +301,9 @@ class L0Executor:
                 instr = instr.model_copy(update={"rally_id": last_rally_id})
                 logger.info("自动回填 rally_id=%s → uid=%d", last_rally_id, instr.uid)
 
-            # Smart L0: LVL_ATTACK_BUILDING 预处理（距离检查 + 部队去重）
+            # Smart L0: LVL_ATTACK_BUILDING / LVL_REINFORCE_BUILDING 预处理（距离检查 + 部队去重）
             original_attack_instr: AIInstruction | None = None
-            if instr.action == ActionType.LVL_ATTACK_BUILDING:
+            if instr.action in (ActionType.LVL_ATTACK_BUILDING, ActionType.LVL_REINFORCE_BUILDING):
                 processed, skip_reason = self._preprocess_lvl_attack_building(instr)
                 if processed is None:
                     results.append(ExecutionResult(
@@ -479,6 +484,14 @@ class L0Executor:
             target_type = int(instr.building_id.split("_")[0]) if "_" in instr.building_id else 10001
             return await self.client.lvl_attack_building(
                 instr.uid, lvl_id, instr.building_id, target_pos,
+                key=instr.building_key, target_type=target_type, march_info=march,
+            )
+
+        elif action == ActionType.LVL_REINFORCE_BUILDING:
+            lvl_id = self.client.default_header.get("lvl_id", 0)
+            target_type = int(instr.building_id.split("_")[0]) if "_" in instr.building_id else 10006
+            return await self.client.lvl_reinforce_building(
+                instr.uid, lvl_id, instr.building_id,
                 key=instr.building_key, target_type=target_type, march_info=march,
             )
 

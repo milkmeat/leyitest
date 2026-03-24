@@ -354,6 +354,10 @@ class AIController:
         # 2. Parse target building and print control status
         target_building = None
         my_alliance_id = self.config.squads.active_alliance.aid
+        # AVA 战场用 lvl_aid 匹配建筑归属
+        alliances = self.config.accounts.alliances
+        if alliances and alliances.ours.lvl_aid:
+            my_alliance_id = alliances.ours.lvl_aid
 
         # Parse target coordinates from L2 order
         for squad_id, order in l2_orders.items():
