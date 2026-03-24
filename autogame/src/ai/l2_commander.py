@@ -65,8 +65,8 @@ class L2Commander:
         if history_text and "（无历史记录）" not in history_text:
             user_prompt = f"{history_text}\n\n## 当前态势\n\n{user_prompt}"
 
-        # 3. LLM 调用
-        response = await self.llm.chat_json(
+        # 3. LLM 调用 (YAML 格式节省 30-40% output tokens)
+        response = await self.llm.chat_yaml(
             self.system_prompt, user_prompt, context="L2"
         )
 

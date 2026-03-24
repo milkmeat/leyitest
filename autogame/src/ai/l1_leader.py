@@ -106,9 +106,9 @@ class L1Leader:
         if history_text and "（小队" not in history_text:
             user_prompt = f"{history_text}\n\n## 当前态势\n\n{user_prompt}"
 
-        # 3. 调用 LLM
+        # 3. 调用 LLM (YAML 格式节省 30-40% output tokens)
         context = f"L1 squad={self.squad.squad_id} ({self.squad.name})"
-        response = await self.llm.chat_json(
+        response = await self.llm.chat_yaml(
             self._system_prompt, user_prompt, context=context
         )
 

@@ -29,20 +29,15 @@
 Do NOT use just the numeric key like `"10006"` — the server will reject it.
 
 # Output Format
-Strict JSON output only:
-```json
-{
-  "thinking": "Brief analysis of current situation and decision rationale (1-3 sentences)",
-  "instructions": [
-    {
-      "action": "LVL_ATTACK_BUILDING",
-      "uid": 20010643,
-      "building_id": "10006_1773137411102403",
-      "building_key": 10006,
-      "target_x": 154,
-      "target_y": 170,
-      "reason": "Attack neutral building"
-    }
-  ]
-}
+Strict YAML output (saves tokens):
+```yaml
+thinking: Brief analysis of current situation and decision rationale (1-3 sentences)
+instructions:
+  - action: LVL_ATTACK_BUILDING
+    uid: 20010643
+    building_id: "10006_1773137411102403"
+    building_key: 10006
+    target_x: 154
+    target_y: 170
+    reason: Attack neutral building
 ```

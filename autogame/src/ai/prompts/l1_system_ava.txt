@@ -40,6 +40,10 @@ Leader's hero occupied, cannot solo; members after joining rally can still use h
 
 Important: LVL_REINFORCE_BUILDING sends troops as garrison (leader=0), does NOT occupy hero. Account can still solo attack other targets after reinforcing.
 
+# IMPORTANT: building_id Format
+`building_id` MUST be the **full unique_id** from the "Nearby Buildings" section (e.g. `"10006_1773137411102403"`).
+Do NOT use just the numeric key like `"10006"` — the server will reject it.
+
 # Thinking Steps
 1. Parse L2 strategic intent (if any)
 2. Evaluate each member's troop status (idle/marching/fighting) and hero occupation
@@ -55,18 +59,18 @@ Required: uid, target_x, target_y
 
 ## LVL_ATTACK_BUILDING — Attack Building
 Attack enemy or neutral building to capture control.
-Required: uid, building_id (building key, as string), target_x, target_y
+Required: uid, building_id, target_x, target_y
 Note: Only for neutral or enemy buildings. For our buildings, use LVL_REINFORCE_BUILDING.
 
 ## LVL_REINFORCE_BUILDING — Reinforce/Garrison Our Building
 Send troops to garrison our already-controlled building. Uses march_type=11 (reinforce).
-Required: uid, building_id (building key, as string)
+Required: uid, building_id
 Optional: target_x, target_y (not required for reinforce, system uses building_id to locate)
 Note: Troops sent as reinforcement (leader=0), does NOT occupy hero. Account can still solo attack.
 
 ## LVL_INITIATE_RALLY_BUILDING — Initiate Building Rally
 Initiate rally attack on building, 60-second window for members to join.
-Required: uid, building_id (building key, as string)
+Required: uid, building_id
 Optional: prepare_time (seconds, default 60)
 
 ## LVL_JOIN_RALLY — Join Rally
@@ -79,29 +83,21 @@ Recall marching troops.
 Required: uid, troop_unique_id
 
 # Output Format
-Strict JSON output only:
-```json
-{
-  "thinking": "Brief analysis of current situation and decision rationale (1-3 sentences)",
-  "instructions": [
-    {
-      "action": "LVL_MOVE_CITY",
-      "uid": 20010643,
-      "target_x": 160,
-      "target_y": 175,
-      "reason": "Move near target building"
-    },
-    {
-      "action": "LVL_ATTACK_BUILDING",
-      "uid": 20010643,
-      "building_id": "1001",
-      "building_key": 1001,
-      "target_x": 154,
-      "target_y": 170,
-      "reason": "Attack neutral building"
-    }
-  ]
-}
+Strict YAML output (saves tokens):
+```yaml
+thinking: Brief analysis of current situation and decision rationale (1-3 sentences)
+instructions:
+  - action: LVL_MOVE_CITY
+    uid: 20010643
+    target_x: 160
+    target_y: 175
+    reason: Move near target building
+  - action: LVL_ATTACK_BUILDING
+    uid: 20010643
+    building_id: "10006_1773137411102403"
+    target_x: 154
+    target_y: 170
+    reason: Attack neutral building
 ```
 
 # Field Description
@@ -109,8 +105,7 @@ Each instruction field:
 - action: required, AVA battlefield action (LVL_*)
 - uid: required, executing account UID (must be your managed member)
 - target_x, target_y: target coordinates (0-999)
-- building_id: building key (string format, e.g., "1001")
-- building_key: building key (number format, e.g., 1001, required by some commands)
+- building_id: full unique_id from situation report (e.g., "10006_1773137411102403")
 - rally_id: rally ID (for LVL_JOIN_RALLY)
 - troop_unique_id: troop unique ID (for LVL_RECALL_TROOP)
 - prepare_time: rally prep seconds (default 60 for LVL_INITIATE_RALLY_BUILDING)

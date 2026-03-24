@@ -27,24 +27,17 @@
 # 输出要求
 - 必须为每个小组生成一条指令（不可遗漏）
 - 只分配区域/任务类型，不指定具体UID
-- 输出合法JSON，格式如下:
+- 输出合法 YAML（节省 token），格式如下:
 
-```json
-{
-  "thinking": "简要分析当前态势和决策理由",
-  "orders": [
-    {
-      "squad_id": 1,
-      "order": "进攻区域(200,300)附近的敌方集群，优先攻击战力较低的目标",
-      "priority": "high"
-    },
-    {
-      "squad_id": 2,
-      "order": "防守据点27_4_1，阻止敌方夺取",
-      "priority": "medium"
-    }
-  ]
-}
+```yaml
+thinking: 简要分析当前态势和决策理由
+orders:
+  - squad_id: 1
+    order: 进攻区域(200,300)附近的敌方集群，优先攻击战力较低的目标
+    priority: high
+  - squad_id: 2
+    order: 防守据点27_4_1，阻止敌方夺取
+    priority: medium
 ```
 
 字段说明:

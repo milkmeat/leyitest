@@ -21,6 +21,8 @@ import logging
 import os
 from typing import Any
 
+import yaml
+
 from src.config.schemas import LLMConfig
 
 logger = logging.getLogger(__name__)
@@ -111,7 +113,7 @@ class LLMClient:
                            ctx_prefix, attempt + 1, attempts, self.config.timeout_seconds)
 
                 result = await asyncio.wait_for(
-                    self._call_api(system_prompt, user_prompt, temperature, ctx_prefix),
+                    self._call_api(system_prompt, user_prompt, temperature, ctx_prefix, output_format="json"),
                     timeout=self.config.timeout_seconds,
                 )
                 return result
@@ -143,14 +145,87 @@ class LLMClient:
 
         raise last_error  # type: ignore[misc]
 
+    async def chat_yaml(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        temperature: float = 0.7,
+        context: str = "",
+    ) -> dict[str, Any]:
+        """发送 chat 请求并解析 YAML 响应（比 JSON 节省 30-40% output tokens）
+
+        Args:
+            system_prompt: 系统提示词
+            user_prompt: 用户提示词
+            temperature: 生成温度
+            context: 调用上下文（用于日志，如 "L1 squad=1"）
+
+        Returns:
+            解析后的 dict
+
+        Raises:
+            asyncio.TimeoutError: 超时
+            ValueError: YAML 解析失败
+        """
+        if self.dry_run:
+            logger.info("[dry_run] 返回预设 YAML")
+            return _DRY_RUN_RESPONSE
+
+        last_error = None
+        attempts = 1 + self.config.max_retries
+
+        # 构建上下文信息用于日志
+        ctx_prefix = f"[{context}] " if context else ""
+
+        for attempt in range(attempts):
+            try:
+                logger.info("%s开始 LLM 调用 (attempt %d/%d, timeout=%ds)",
+                           ctx_prefix, attempt + 1, attempts, self.config.timeout_seconds)
+
+                result = await asyncio.wait_for(
+                    self._call_api(system_prompt, user_prompt, temperature, ctx_prefix, output_format="yaml"),
+                    timeout=self.config.timeout_seconds,
+                )
+                return result
+            except asyncio.TimeoutError:
+                last_error = asyncio.TimeoutError(
+                    f"LLM 调用超时 ({self.config.timeout_seconds}s)"
+                )
+                user_preview = user_prompt[:200] + "..." if len(user_prompt) > 200 else user_prompt
+                logger.warning(
+                    "%sLLM 超时 (attempt %d/%d, timeout=%ds)\n"
+                    "  发送内容摘要:\n"
+                    "    system_prompt: %d chars\n"
+                    "    user_prompt: %s",
+                    ctx_prefix, attempt + 1, attempts, self.config.timeout_seconds,
+                    len(system_prompt), user_preview,
+                )
+            except Exception as e:
+                last_error = e
+                is_rate_limit = "429" in str(e) or "rate" in str(e).lower()
+                backoff = (2 ** attempt) * (3 if is_rate_limit else 1)
+                logger.warning(
+                    "%sLLM 调用失败 (attempt %d/%d): %s — 等待 %ds",
+                    ctx_prefix, attempt + 1, attempts, e, backoff,
+                )
+                if attempt < attempts - 1:
+                    await asyncio.sleep(backoff)
+
+        raise last_error  # type: ignore[misc]
+
     async def _call_api(
         self,
         system_prompt: str,
         user_prompt: str,
         temperature: float,
         ctx_prefix: str = "",
+        output_format: str = "json",
     ) -> dict[str, Any]:
-        """实际 API 调用"""
+        """实际 API 调用
+
+        Args:
+            output_format: "json" 或 "yaml"，决定解析方式
+        """
         assert self._client is not None
 
         import time
@@ -162,12 +237,14 @@ class LLMClient:
             "  [system_prompt] (%d chars)\n"
             "  [user_prompt] (%d chars)\n"
             "  [model] %s\n"
-            "  [temperature] %.1f",
+            "  [temperature] %.1f\n"
+            "  [output_format] %s",
             ctx_prefix,
             len(system_prompt),
             len(user_prompt),
             self.config.model,
             temperature,
+            output_format,
         )
         logger.debug("%ssystem_prompt:\n%s", ctx_prefix, system_prompt)
         logger.debug("%suser_prompt:\n%s", ctx_prefix, user_prompt)
@@ -216,7 +293,11 @@ class LLMClient:
                 ctx_prefix, elapsed, len(content),
             )
             logger.debug("%s完整响应内容:\n%s", ctx_prefix, content)
-            return self._extract_json(content)
+
+            if output_format == "yaml":
+                return self._extract_yaml(content)
+            else:
+                return self._extract_json(content)
         except Exception as e:
             elapsed = time.time() - start_time
             error_type = type(e).__name__
@@ -352,6 +433,66 @@ class LLMClient:
 
         logger.error("JSON 提取失败，原始内容: %s", stripped[:500])
         raise ValueError(f"无法从 LLM 响应中提取 JSON")
+
+    @staticmethod
+    def _extract_yaml(text: str) -> dict[str, Any]:
+        """从 LLM 文本响应中提取 YAML
+
+        支持三种格式：
+        1. 纯 YAML 文本（以 thinking: 或 instructions: 开头）
+        2. ```yaml ... ``` 代码块
+        3. 混合文本中的第一个完整 YAML 结构
+        """
+        import re
+
+        stripped = text.strip()
+
+        # 1) ```yaml ... ``` 代码块
+        m = re.search(r"```(?:yaml|yml)?\s*\n?(.*?)\n?```", stripped, re.DOTALL)
+        if m:
+            try:
+                result = yaml.safe_load(m.group(1).strip())
+                if isinstance(result, dict):
+                    return result
+            except yaml.YAMLError:
+                pass
+
+        # 2) 纯 YAML（以常见 key 开头）
+        yaml_keys = ["thinking:", "instructions:", "action:"]
+        for key in yaml_keys:
+            if stripped.startswith(key):
+                try:
+                    result = yaml.safe_load(stripped)
+                    if isinstance(result, dict):
+                        return result
+                except yaml.YAMLError:
+                    break
+
+        # 3) 查找第一个 YAML 块（从 thinking: 或 instructions: 开始）
+        for key in ["thinking:", "instructions:"]:
+            start = stripped.find(key)
+            if start >= 0:
+                # 尝试解析从该位置到末尾的内容
+                yaml_content = stripped[start:]
+                try:
+                    result = yaml.safe_load(yaml_content)
+                    if isinstance(result, dict):
+                        return result
+                except yaml.YAMLError:
+                    # 尝试截断到下一个 Markdown 标记
+                    end_patterns = ["\n\n# ", "\n\n---", "```"]
+                    for pattern in end_patterns:
+                        end = yaml_content.find(pattern)
+                        if end > 0:
+                            try:
+                                result = yaml.safe_load(yaml_content[:end])
+                                if isinstance(result, dict):
+                                    return result
+                            except yaml.YAMLError:
+                                continue
+
+        logger.error("YAML 提取失败，原始内容: %s", stripped[:500])
+        raise ValueError(f"无法从 LLM 响应中提取 YAML")
 
     async def close(self):
         """关闭底层 HTTP 客户端"""
