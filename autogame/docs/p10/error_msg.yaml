@@ -1,0 +1,1614 @@
+# WestGame Error Codes
+# Sources: document_english.json (doc_err_info) + service_key.h (ETshpErrCode)
+# [SVC] prefix = from service_key.h (server-side enum, no client text in doc_err_info)
+# Total: 1601 entries
+#  1. 两个数据源互补：doc_err_info（1369条）是客户端显示文本，ETshpErrCode（838条）是服务端枚举。两者有大量重叠（606条共
+#  有），最终合并为 1601 条唯一错误码
+#  2. [SVC] 前缀标识来源：从 service_key.h 补充的 232 条用 [SVC] 前缀标注，便于区分——这些是服务端内部错误，在
+#  doc_err_info 中没有对应的客户端友好文本
+#  3. 错误码段落分区：枚举按模块分段（10000+ 客户端、20000+ 服务端业务、30000+ 服务器内部、32000-37000+
+#  各子模块、50000-60000 需重载），理解这个分区有助于快速定位错误类别
+
+0: Are you sure you want to block this player?
+1: Are you sure you want to report this player?
+2: Please set up your mail account first.
+3: Are you sure you want to ignore this player?
+5: Connect with Facebook to get Gem! Invite your friends to join the adventure!
+6: Are you sure you want to demolish this building?
+7: You will need to use item to demolish this building immediately.
+8: Are you sure to delete the message(s)?
+9: Do you want to move your Haven to ($NUMBER$0$, $NUMBER$1$)?
+10: Have you decided to dismiss these units?
+100: '[SVC] User data currently in use.'
+200: '[SVC] AWS operation successful.'
+201: '[SVC] AWS returned null.'
+1000: Unexpected error. Please try it later.
+10000: "Network error! \r\nPlease check your network."
+10001: You already have Troop in queue for training. Please wait until the progress is complete.
+10002: ''
+10003: You have a scout task in progress now. Please wait until it finishes.
+10004: The March Queues have reached the maximum. You can upgrade the Beacon to increase its upper limit.
+10005: Overloaded! Please send more Troops to carry these resources.
+10006: The coordinate number must be between 1 and 800.
+10007: To research technologies, you need to build an Laboratory first.
+10008: Invalid character (space) in name. Please check and retry.
+10009: Please choose your Troop.
+10010: Please tap Ok to restart.
+10011: The target has been marked already.
+10012: The bookmark list is full. You can edit your bookmarks and make some room for the new ones.
+10013: Please choose the Warden to lead your army.
+10014: 'Failed to get Gem! Please check the network and retry. Or contact us at: icehaven_support@leyinetwork.com with your Charging ID.'
+10015: Please research in your Laboratory first to scout.
+10016: You cannot send any more Troops on this march. Please upgrade your Beacon to dispatch more Troops.
+10017: Upgrade your Beacon to enlarge the march size.
+10018: You need to build the STRING0 to complete this task.
+10019: Please build the Embassy to join an Alliance.
+10020: You can't send a mail without contents.
+10021: You're under Beginner's Protection, so you can't use any peace shield item.
+10022: The new version is a lot more fun. Let's update now.
+10023: The new version is a lot more fun. Let's update now.
+10024: The game is currently under maintenance. It will end at about UTC $MAINTAIN_TIME$.
+10025: Attention! The game maintenance will start in about UTC $MAINTAIN_TIME$. Sorry for any inconvenience.
+10026: Are you sure you want to leave the Alliance and give up all the privileges?
+10027: Please enter the number of resources first.
+10028: You haven't chosen any Soldier. Please choose some Troops first.
+10031: Please choose some resources first.
+10032: The name has been taken. Please enter a different name.
+10033: Are you sure you want to add this player into your Blacklist?
+10034: Are you sure you want to ignore this player?
+10035: Your Blacklist is full.
+10036: You can only mail to 5 players at most at a time.
+10037: Failed to access to In-App Purchase. Please reload the game and try again.
+10038: Failed to purchase. Please try again.
+10039: Please enter 3 to 15 characters (without special characters).
+10040: Please build or upgrade the Water Plant first.
+10041: Are you sure you want to reset the Warden Skill Points?
+10042: Are you sure you want to give up the Reviving task?
+10043: There are many Wounded Troops waiting to be healed now. You can enlarge the healing capacity first.
+10044: Invalid request! Please enter the number of the resources.
+10045: Invalid request! Please enter the number of the Troop.
+10046: Boss! Satisfaction in your Haven is low since you've left the Haven for more than 7 days. Welcome back! Your return will recover Satisfaction.
+10047: You can only dispatch one team to join the Rally War.
+10048: The number of your Reinforcement Troop exceeds your ally's Embassy Capacity.
+10049: ''
+10050: The number of march queues you sent exceeds its maximum. You can use an item to enlarge your current March Queues.
+10051: The amount of Troop you sent exceeds its maximum. You can use an item to enlarge your current March Size.
+10052: The amount of Troop you sent exceeds its maximum.
+10055: Please build or upgrade Beacon so that you can send more Troops to camp outside.
+10056: Invalid position. You cannot camp here.
+10057: The load capacity is not enough! Please send more Troops to load the Gem.
+10058: ''
+10059: ''
+10060: Please enter the number of Troop you want to abandon.
+10061: ''
+10062: You have no Equipment of this part. Please go to craft one.
+10063: ''
+10064: ''
+10065: ''
+10066: ''
+10067: ''
+10068: The March Queues have reached the maximum. You can upgrade the Beacon to increase its upper limit.
+10069: The March Queues have reached the maximum.
+10070: The number of Troop you can camp outside has reached the upper limit.
+10071: ''
+10072: The Rally Field is at its max level, and the Rally Capacity has reached the maximum.
+10073: New resources found…please restart the game.
+10074: You haven't built STRING0 yet!
+10075: ''
+10076: The research on STRING0 is in progress. Please be patient.
+10077: The STRING0 is being demolished. Please be patient.
+10078: The STRING0 is under construction. Please be patient.
+10083: ''
+10084: ''
+10085: ''
+10086: Your Hero and his/her skills have reached the highest level!
+10087: You can use the digits only.
+10088: ''
+10089: ''
+10090: ''
+10091: ''
+10092: ''
+10093: ''
+10094: ''
+10095: ''
+10096: Your device doesn't have enough space to download this game.
+10097: Please choose a Haven first.
+10098: ''
+10099: ''
+10100: ''
+10101: ''
+10102: Please configure in-app purchase in your device first.
+10103: Failed to configure in-app purchase. Please try again.
+10104: Failed to purchase. Please reload the game and try again.
+10105: You don't need this item anymore.
+10106: ''
+10107: The March Queues have reached the maximum.
+10108: The Troop you dispatch have exceeded current March Size.
+10109: This player is not in your Alliance anymore.
+10110: This mail has unidentified characters. Please check it before you send.
+10111: Please select your Warden.
+10112: Overload! Please send more Troops to carry these resources.
+10113: This building has been demolished already.
+10114: Please choose some resources first.
+10115: Overload! Please upgrade your building first.
+10116: Please enter the user name.
+10117: No equipment meets the requirements.
+10118: Please upgrade your Beacon to increase your march queues.
+10119: ''
+10120: No Equipment meets the requirements.
+10121: You don't have any Materials or Crystals yet.
+10122: You don't have any Crystals yet.
+10123: Please enter 3 to 15 characters (without special characters).
+10124: You can only mail to five players at most at a time.
+10125: ''
+10126: There's no Equipment yet.
+10127: ''
+10128: ''
+10129: You can only get half of the resources back if you cancel the task now. Are you sure you want to cancel it?
+10130: Unexpected error!
+10131: ''
+10132: The healing queues have reached its maximum.
+10133: The March Queues have reached the maximum. You can upgrade the Beacon to increase its upper limit.
+10134: Are you sure you want cancel it?
+10135: You'll lose all these Troop if you abandon them. Are you sure you want to do this?
+10136: Excellent! Our Haven is advancing from <color=#982d2dff>STRING0</color> to <color=#982d2dff>STRING1</color>. Let's embrace new age together!
+10137: If you leave now, the unsaved changes will be lost. Are you sure to leave?
+10138: This message has been locked.
+10139: Please join an Alliance first.
+10140: Are you sure to delete this message?
+10141: You don't have Equipment that can be enhanced.
+10142: It's coming soon. Please be patient.
+10143: Please enter Alliance Name and Nickname first.
+10144: You've already sent request to this Alliance.
+10145: ''
+10146: Please claim your mail rewards first.
+10147: Failed to delete. There are unclaimed rewards or locked mails.
+10148: Please enter at least 3 valid characters.
+10149: If you assign the Chief position to someone else, you'll become a common member and lose all the privileges as the Alliance Chief. Are you sure to do that？
+10150: ''
+10151: This request has expired.
+10152: The number of STRING0 has reached the maximum.
+10153: You have already unlocked a Personal Rally Slot or sent Troop to join this Rally War.
+10154: ''
+10155: Coordinate for R doesn't exist.
+10156: Please join an Alliance first. Then you can take part in a Rally War!
+10157: Please join an Alliance first. Then you can partake the Alliance Event.
+10158: ''
+10159: STRING0 is not available in this Age.
+10160: No Resource Depot can be found to use this item.
+10161: ''
+10162: You cannot occupy this Depot in the current Age.
+10163: The amount of Reinforce Queues or Reinforcement Troop has reached the limit.
+10164: You can't teleport your Haven to another Sector when you don't have the teleport item or your Haven is at Lv.5 or above.
+10165: You can only start a rally war against the player whose Beacon is Lv.10 or above.
+10166: Please join an Alliance first.
+10167: You need to recall your Troop before moving to another Sector.
+10168: You can't move to another Sector when your allies are reinforcing you.
+10169: ''
+10170: ''
+10171: Please enter at least 1 character.
+10172: The target has moved to another Sector.
+10173: Please select enough Troops.
+10174: This Alliance has started a rally war against you. You can't join it right now.
+10175: This player has already been entitled or is not in this Sector.
+10176: Invalid coordinates! Coordinate R must be between STRING0 and STRING1.
+10177: Your VIP has reached max level.
+10178: Your Warden Exp has reached max level.
+10179: Your Warden Stamina is full.
+10180: ''
+10181: ''
+10182: ''
+10183: You can't move to another Sector when you are in an Alliance.
+10184: Please join an Alliance first.
+10185: You have reached the max march distance.
+10186: Please build the Laboratory to conduct various research.
+10187: ''
+10188: ''
+10189: This item can only be used to move your Haven to another Sector.
+10190: Invalid coordinates! Coordinate R must be STRING0.
+10191: Invalid coordinates! Coordinate R must be STRING0.
+10192: The Embassy is necessary to send reinforcement Troop.
+10193: ''
+10194: The number of March Queues has reached the maximum. You can upgrade the Beacon to increase its upper limit.
+10195: This march doesn't exist.
+10196: Embassy is necessary to start a rally war.
+10197: ''
+10198: Are you sure you want to leave the Alliance and join a new one?
+10199: The Blacklist is full. Please manage the list in the More section first.
+10200: You can only post 5 messages at a time.
+10201: Please enter your content first.
+10202: You can't block yourself.
+10203: ''
+10204: ''
+10205: Invalid operation. You're too far away from this ally now.
+10206: You need a Warden to lead your Troop.
+10207: ''
+10208: Your Warden Exp has reached its limit.
+10209: Please unlock your Warden first.
+10210: ''
+10211: Please go to the Sector Capitol to donate resources to help complete Sector Research.
+10212: Only when your Beacon reaches Lv.5 or above will you be able to speed up the Sector Research.
+10213: ''
+10214: ''
+10215: Please perform this function in your Haven interface.
+10216: ''
+10217: You have no available transport queues.
+10218: ''
+10219: Your resources supply is insufficient.
+10220: ''
+10221: ''
+10222: You can't move your Haven when you are in a Rally War.
+10223: Please enter no more than 400 characters.
+10224: Please enter no more than 25 lines.
+10225: Your Warden is on the mission.
+10226: ''
+10227: ''
+10228: Please unlock your Warden first.
+10229: Please build a Embassy before sending reinforcement Troop.
+10230: Please build a Rally Field before sending reinforcement Troop.
+10231: "Please note that:\r\n1. All marches get slowed on the Tundra Area;\r\n2. You can't have Peace Shield on if you move there;\r\n3. If there are enemies marching towards your Haven, they will arrive\
+  \ at once before you move."
+10232: You can't move your Haven here as you are under Beginner Protection.
+10233: Be warned, if there are enemies marching towards your Haven now, they will arrive at once before you move. Are you sure to teleport now?
+10234: There is a rally queue already. Please wait until the current rally completes first.
+10235: Your Haven is under Beginner Protection. You can't reinforce others now.
+10236: The Reinforce Queues in your ally's Embassy have reached the maximum.
+10237: Please join an Alliance first.
+10238: This Alliance has been dismissed.
+10239: Are you sure to randomly relocate your Haven?
+10240: The amount of Reinforce Queues or Reinforcement Troop has reached the maximum.
+10241: You've already sent one reinforcement queue to reinforce this ally.
+10242: You've already sent one reinforcement queue to reinforce the Sector Capitol.
+10243: Data error. Please restart your device and reload the game.
+10244: The amount of VIP Points has reached the maximum.
+10245: You need to unlock the VIP of next level first.
+10246: You can't give points to your Alliance Members in this event.
+10247: You can't give points to the Alliance members who haven't participated in this event.
+10248: You joined this Alliance during the event, and therefore you can't donate points to any member of your current Alliance.
+10249: The points you give have outnumbered your current Extra Points amount.
+10250: You can only give points to Alliance members during the event.
+10251: You need to build a building first.
+10252: Your Warden Exp has reached the maximum, therefore, Exp. Boost items may not be used to add experience.
+10253: ''
+10254: ''
+10255: The Sector is under protection.
+10256: You have a Troop training task in progress. Would you like to instantly finish it?
+10257: You have a healing task in progress. Would you like to instantly finish it?
+10258: You have a traps building task in progress. Would you like to instantly finish it?
+10259: You have a traps repairing task in progress. Would you like to instantly finish it?
+10260: Are you sure to use Gem to instantly complete the training task?
+10261: Are you sure to use Gem to instantly complete the healing task?
+10262: Are you sure to use Gem to instantly complete the building task?
+10263: Are you sure to use Gem to instantly complete the repairing task?
+10264: You have a building under construction now. Would you like to instantly finish it and start a new one?
+10270: The number of Traps you have has reached the maximum of your current Trap Capacity. There's no room for new Traps.
+10271: The Warden will provide many bonuses for your Army. Are you sure you want to march without your Warden？
+10272: Are you sure you want to recall your Troop?
+10273: Are you sure you want to recall your Warden?
+10274: You don't have enough resources for scouting. Go and get some first.
+10275: Are you sure you want to get and use this item?
+10276: You can only transport resources to your Alliance members.
+10277: You've already sent one transport queue to this ally.
+10278: You can only reinforce the players in your Alliance.
+10279: Are you sure to you want to dismiss the Warden?
+10280: Are you sure to cancel the Rally War?
+10281: Are you sure to dismiss the Alliance members' reinforcement Troop?
+10282: Are you sure to you want to give up the current boost and use the new one?
+10283: Do you want to get this item?
+10284: You need to join an Alliance to get this item.
+10285: The Troop you dispatch have exceeded its maximum. Please dispatch less Troop or use a march boost item to enlarge current March Size.
+10286: Leaving now will lose the unsaved changes. Do you want to leave and delete this draft?
+10287: This Sector is currently under maintenance.
+10288: You can only perform the action within the your Haven.
+10289: You need to choose your Team member(s) first.
+10290: You can't change your Alliance Territory to this position.
+10300: You changed the Alliance once during the event, so you can't donate points to the members of this Alliance.
+10301: The member changed the Alliance once during the event, so he can't receive points from others.
+10302: Construction requirements not met.
+10303: Only the Alliance Chief or Seniors can construct Alliance Buildings.
+10304: There's an Alliance Building under construction. Please wait until it's completed.
+10305: Please choose the item you want.
+10306: You'll need to demolish all Alliance buildings before you dismiss the Alliance.
+10307: To transport resources to/from Alliance Storehouse, you'll need to build the Market first.
+10308: You're still in an Alliance, so you can't use Permanent Sector Teleport item.
+10309: Your Force Rank in target Sector changes, so does the cost of Teleport items.
+10310: The Battle Fever is active, so you can't use Permanent Sector Teleport item now.
+10311: Are you sure to replace the current Skin in use? <color=#f01c2b>(You will lose the current time-limited Skin if you replace it)</color>
+10312: Are you sure to demolish it? Demolishing the Alliance Building is irreversible. All the Alliance Territory will disappear, and all the garrisoning Troop will be repatriated.
+10313: Are you sure to invite the player into our Alliance?
+10314: Your Warden is returning to the Haven and will <color=#f01c2b>instantly</color> return if you move your Haven. Are you sure to continue?
+10315: Demolishing the Alliance Center will make all the current Territory Boost expire. The Reinforcement Troop here will also return to their Haven. Are you sure to continue?
+10316: The queue has returned to the Haven.
+10317: The survey is completed, you can not fill in the questionnaire now.
+10318: Please remove this Hero from Teleport Queue first (check Teleport queue on the right-side column).
+10319: Please remove this Hero from March Queue first (check March queue on the right-side column).
+10320: No Dice yet. Please complete Chapter Tasks to get some.
+10321: ''
+10322: ''
+10323: ''
+10324: ''
+10325: ''
+10326: ''
+10327: ''
+10328: ''
+10329: ''
+10330: ''
+10331: ''
+10332: ''
+10333: ''
+10334: ''
+10335: ''
+11000: ''
+11001: ''
+11002: ''
+11003: ''
+11004: ''
+11005: ''
+11006: ''
+11007: ''
+11008: It is not open yet.
+11009: ''
+11010: Your energy is not enough, please add some or get some in the store.
+11011: ''
+11012: ''
+11013: ''
+11014: ''
+11015: ''
+11016: ''
+11017: ''
+11018: ''
+11019: ''
+11020: ''
+11021: ''
+11022: ''
+11023: ''
+11024: ''
+11025: ''
+11026: ''
+11027: ''
+11028: ''
+11029: ''
+11030: ''
+11031: ''
+11032: ''
+11033: ''
+11034: This new cool feature will be available soon. Please stay tuned.
+11035: ''
+11036: Please upgrade your Beacon to Lv.STRING0 to transport resources.
+11037: Please upgrade your Beacon to Lv.STRING0 to reinforce.
+11038: The ally's Beacon level doesn't meet the requirement. You can't reinforce this ally.
+11039: Please upgrade your Beacon to Lv.STRING0 for rally reinforcement.
+11040: The ally's Beacon level doesn't meet the requirement. You can't receive this ally's reinforcement Troop.
+11041: Please upgrade your Beacon to Lv.STRING0 to request resources.
+11042: The Beginner's Protection will end when your Beacon reaches Lv.STRING0.
+11043: Coming Soon. Please stay tuned.
+11044: ''
+11045: Please upgrade STRING0 to Lv.STRING1 to unlock this building.
+11046: ''
+11047: ''
+11048: ''
+11049: ''
+11050: ''
+11051: ''
+11052: ''
+11053: ''
+11054: ''
+11055: ''
+11056: ''
+11057: ''
+11058: ''
+11059: ''
+11060: ''
+11061: ''
+11062: ''
+11063: Please upgrade your Beacon to Lv.STRING0 first.
+11064: Please clear STRING0 first.
+11065: The Hero has reached the Max Level of the current Star.
+11066: The Hero's Battle Skills have all reached the Max Level.
+11067: The permanent buff of this item is in effect and will not be doubled. Are you sure to use the item?
+11068: Please research STRING0 to Lv.STRING1 first.
+11069: ''
+11070: ''
+11071: You need to join an Alliance to scout/attack Sector Capitol.
+11072: No Hero meets the requirement. Please change the filter and try again.
+11100: ''
+11101: ''
+11102: ''
+11103: You don't have enough Gem. Please get some first.
+11104: ''
+11105: It'll be an uphill battle if you don't take more Heroes with you. Are you sure to battle now?
+11106: The selected Heroes' force are not strong enough to guarantee a victory. Are you sure to battle now?
+12000: ''
+12001: ''
+12003: You need at least STRING0 Lv.STRING1 Heroes to attack.
+12004: ''
+12005: ''
+12006: ''
+12007: ''
+12008: ''
+12009: ''
+12010: ''
+12011: ''
+12012: Would you like to view the details of this player?
+12013: ''
+12014: ''
+12015: ''
+12016: ''
+12017: ''
+12018: ''
+12019: ''
+12020: ''
+12021: ''
+12022: ''
+12023: ''
+12024: ''
+12025: ''
+12026: ''
+12027: ''
+12028: ''
+12029: ''
+12030: Invalid Rally War.
+12031: ''
+12032: ''
+12033: ''
+12034: Not enough space to construct new buildings.
+12035: ''
+12036: ''
+12037: ''
+12038: ''
+12039: ''
+12040: The enemy's force outweighs ours, and it'll be a tough fight. Do you want to continue?
+12041: No quota. Would you like to level up you VIP to increase Purchase Quota?
+12042: STRING0/STRING1 Challenge Quota Used Up! Would you like to level up you VIP to increase Challenge Quota?
+12043: Please go back to Haven to perform this function.
+12045: You have already purchased this pack. Please contact Customer Service for more info.
+12046: The Hero has been deployed in another lineup already.
+12047: The Hero deployment has reached the maximum.
+12048: ''
+12049: ''
+12050: ''
+12051: ''
+12052: ''
+12053: ''
+12054: ''
+12055: You can only send gifts to the Alliance members whose force is lower than yours.
+12056: The Gold Badge is locked. Would you like to activate it now?
+12057: Stage-STRING0 Battle Pass has ended.
+12058: Failed to star up the Skin.
+12059: You've got this Permanent Haven Skin. Would you like to exchange this skin item for Gem?
+12060: The Skin fuction will be unlocked when your Beacon reaches a certain level.
+12074: You cannot donate points to the Ally who has achieved the highest Goal.
+12075: Please unlock the function of Ally Gifts first.
+12076: The gifts you send exceed the upper limit.
+12077: Insufficient Dead Troops.
+12078: The Reviving Queue has reached its maximum.
+12079: The Reviving Queue doesn't exist.
+12080: You can't use Peace Shield when the Battle Fever is active.
+12081: The Group name has been used.
+12082: The Group doesn't exist anymore.
+12083: The player has joined another Group.
+12084: The player is not the Group member.
+12085: The number of Groups has reached its maximum.
+12086: You don't have the authorization.
+12087: ''
+12091: ''
+12108: ''
+16009: You haven't built the Beacon.
+17000: STRING1 unlocks after Beacon reaches Lv.STRING0
+17001: The Hero is out for mission or in Guarding position.
+17002: You need a Lv.STRING0 Beacon first to keep leveling up the position.
+17003: Insufficient material. You cannot level the Position up.
+17004: Insufficient Energy.
+17005: You need a Lv.STRING0 Beacon first to star up the Hero.
+17006: You've selected enough Medals.
+17007: You don't have more Medals.
+17008: Insufficient STRING0. Please get more first.
+17009: You haven't built the Beacon.
+17010: You will get all of the resources spent back if you cancel the ongoing Construction task. Do you want to continue?
+17011: You will get all of the resources spent back if you cancel the ongoing healing task. Do you want to continue?
+17012: You will get all of the resources spent back if you cancel the ongoing training task. Do you want to continue?
+17013: You will get all of the resources spent back if you cancel the ongoing Advancing task. Do you want to continue?
+17014: You can only get half of the resources and items spent back if you cancel the ongoing Researching task. Do you want to continue?
+17015: Are you sure to clear all the claimed and expired Gifts?
+17016: You're now the Alliance Chief. Please transfer the position to another member first.
+17017: You don't have the permission to replenish the Inventory.
+17018: You can't promote this member to the same Rank with you or above.
+17019: Only the Alliance Chief has the authorization.
+17020: Only Alliance Chief and Alliance Seniors have the authorization.
+17021: ''
+17022: You don't have enough Loyalty Points to purchase items from Alliance Store.
+17023: Your Alliance doesn't have enough Alliance Funds to replenish the Alliance Store.
+17024: The current queue is full.
+17025: Are you sure to delete this Crafting Queue?
+17026: No more available space around.
+17027: The Training Queue of this building is full.
+17028: ''
+17029: Are you sure to dismiss <color=#f47e00>STRING0</color> <color=#f47e00>STRING1</color>?
+17030: You don't have the building to train any Soldier. Please build one first.
+17031: Troop amount changed. Please check again before you dismiss them.
+17032: 'Troop Capacity maxed. '
+17033: Please research "STRING0" first.
+17034: Are you sure to delete this building?
+17035: You won't get any resources back after canceling the task. Are you sure to continue?
+17036: You won't get any resources back after canceling the task. Are you sure to continue?
+17037: ''
+17038: You haven't selected any Soldier. Please select some Troops first.
+17039: ''
+17040: ''
+17041: ''
+17042: You won't get any resources back after demolishing this building. Continue?
+17043: You won't get any resources back after deleting this Commander. Continue?
+17044: Are you sure to quit the battle?
+17045: You don't have the Hospital yet. Please build one first.
+17046: Are you sure to replace the current Formation Plan STRING0?
+17047: Are you sure to delete the current Formation Plan STRING0?
+17048: Please select the recipient.
+17049: Please enter the message title.
+17050: Please enter the message content.
+17051: The recipient does not exist.
+17052: You cannot send mails to yourself.
+17053: Are you sure to delete all the mails read of this type?
+17054: "Are you sure to switch the Garrison Warden?\r\nAll the boosts will be from the new Warden after the switch."
+17055: The rally you are joining will take you <color=#f47e00>STRING0</color> to get there. Do you still want to join it?
+17056: ''
+17057: Name too short/includes invalid character. Please check and retry.
+17058: Name too short. Please enter at least 3 characters.
+17059: Are you sure to withdraw the Title of STRING1 from STRING0?
+17060: ''
+17061: You cannot scout the target because you haven't built the Embassy. Built it now?
+17062: You cannot scout the target because you haven't completed the related research. Research it now?
+17063: ''
+17064: ''
+17065: ''
+17066: ''
+17067: ''
+17100: ''
+17101: Upgrade your Beacon to Lv.STRING0 to train Troops.
+17102: ''
+17103: The current queue is full. Please upgrade your Beacon to Lv.STRING0 to unlock the Queue No.STRING1, or upgrade your VIP level to unlock more queues.
+17104: The Redemption Gifts have been refreshed. You can re-enter the gift store to see the change.
+17105: The Hero has been upgraded to the max level. Please upgrade the Recruit Hall first to continue upgrading your Hero.
+17106: The event has ended.
+17107: It requires STRING1 Urgent Call Order to recall STRING0 march queues back. Continue?
+17108: The player has deleted the account.
+17109: Are you sure to delete this Alliance Center?
+17110: Are you sure to abandon <color=#f47e00>STRING0</color> <color=#f47e00>STRING1</color>?
+17112: Leaving the battle will result in a failed challenge, but your used Stamina will be returned. Do you want to leave now?
+17113: The target does not border the Alliance Territory.
+20000: This action only works when the target is your Alliance members.
+20001: This action only works when the target is your enemies' Haven, Beast/Horror, Sector Capitol, or occupied Resource Depots.
+20002: This action only works when the target is your own Haven.
+20003: This action only works when the target is your Alliance member.
+20004: You can't move your Haven here. Please check if there is enough space for your Haven.
+20005: The Hero you choose is not available.
+20006: The username has been taken. Please try another one.
+20007: This target's Haven is shielded up. You can't attack or scout it now.
+20008: You don't have enough resources.
+20009: Insufficient Gem.
+20010: You haven't deployed any Soldier for the march yet.
+20011: This username doesn't exist. Please check again.
+20012: Your account has been logged in on another device.
+20013: ''
+20014: Please make sure you have this item on your Item Inventory.
+20015: The username has been taken. Please try another one.
+20016: Your Haven is shielded up. You can't scout, attack or reinforce others now.
+20017: The username has been taken. Please try another one.
+20018: Before you leave, you need to assign the Chief position to another member first.
+20019: Boss, your Haven's Population has already reached its limit.
+20020: The number of Alliance members has reached the upper limit.
+20021: My Hero, your Haven's Satisfaction has already reached its limit.
+20022: Boss, your Warden Exp has already reached its limit.
+20023: You need the item to demolish this building immediately.
+20024: This username is unavailable in this game.
+20025: If you attack, scout or reinforce others, your Peace Shield will be off. Are you sure you want to do it?
+20026: You've been removed from the Alliance!
+20027: The player is not in the Alliance!
+20028: The Alliance doesn't exist anymore.
+20029: The player has joined an Alliance already!
+20040: ''
+20041: Your friends haven't accepted your invitation or they haven't upgraded the Beacon to Lv.7.
+20042: ''
+20043: ''
+20044: The Warden has reached current max level.
+20045: ''
+20050: You can only occupy Resource Depots which haven't been occupied by other players.
+20051: You are not allowed to demolish this building temporarily.
+20054: ''
+20060: Data error. Please reload the game.
+20079: ''
+20080: The ally hasn't built the Embassy yet. You can't reinforce him now.
+20101: You don't have enough items.
+20102: Your ally hasn't built the Embassy yet.
+20103: Please build the building first.
+20104: Please build building or upgrade it to higher level first.
+20105: Only when your Warden reaches Lv.10 will you be able to create an Alliance.
+20106: ''
+20107: Invalid operation! You are in a Rally War now.
+20108: The player has joined the Alliance. You cannot start a rally war against him.
+20109: You cannot reinforce now.
+20110: You can't rally war against the player who hasn't joined an Alliance or has the Beacon below Lv.15.
+20111: You can only dispatch one Reinforcement Queue to join a Rally War.
+20112: ''
+20113: The Rally War begins, and you can't dispatch the reinforcement Troop now.
+20114: The Alliance has started a Rally War against you. You can't join the Alliance now.
+20115: There is a rally queue already.
+20116: Are you sure you want to give up the current boost and use the new one?
+20117: This Alliance is full.
+20118: The Rally War you started hasn't ended yet. You can't move your Haven now.
+20119: ''
+20120: ''
+20121: ''
+20122: ''
+20123: ''
+20124: ''
+20125: The item doesn't exist anymore.
+20126: Please upgrade your building to sell more goods at a time.
+20127: You cannot sell any more goods now.
+20128: ''
+20129: ''
+20130: ''
+20131: ''
+20132: There're no more recommended Alliances. Tap More to find some.
+20133: You do not have permission.
+20152: ''
+20154: ''
+20157: You can't leave Alliance when Rally War is still ongoing.
+20161: This function is not available yet. Please stay tuned.
+20162: ''
+20163: ''
+20164: ''
+20165: ''
+20166: Settlement is still in progress and you cannot reserve at this time.
+20167: ''
+20168: ''
+20169: ''
+20170: ''
+20171: The Hero is wearing this Equipment. You can't disassemble it now.
+20172: ''
+20173: ''
+20174: You do not meet the requirements of the player's anti-harassment setting.
+20175: ''
+20176: ''
+20177: You need to build a Rally Field first.
+20178: ''
+20179: The vote has concluded.
+20180: ''
+20181: Invalid action! The Hero is outside the Haven.
+20182: ''
+20183: ''
+20184: ''
+20185: ''
+20186: Invalid action. The position has already been taken.
+20187: Please upgrade your building to make more deals.
+20188: You cannot sell any more goods now.
+20189: ''
+20190: Requirements not met. You can't move your home Haven here.
+20191: ''
+20192: The coordinates you've entered have been taken.
+20193: Your operation has been terminated for unknown error. Please try again.
+20194: You're under Beginner's Protection and can't use any Peace Shield item now.
+20195: Failed to join this Alliance. Please try again later.
+20196: No relevant buildings to produce this type of resources! Build its production building first before you use this buff item.
+20197: ''
+20198: ''
+20199: ''
+20200: ''
+20201: ''
+20202: ''
+20203: ''
+20204: ''
+20205: ''
+20206: ''
+20207: ''
+20208: You can only post one Alliance Request and one Alliance Sharing at a time.
+20209: ''
+20210: ''
+20211: You have already inlaid a Crystal in this slot.
+20212: You don't have enough Crystals.
+20213: You have taken off the Crystal.
+20214: The Equipment Slots have reached the maximum.
+20215: You don't have enough Crystals.
+20216: You don't have enough Materials.
+20217: Please build the Embassy first.
+20218: You cannot dismantle the invalid Equipment.
+20219: ''
+20220: The request is invalid.
+20221: The task no longer exists.
+20222: ''
+20223: ''
+20224: The Building Teams are all busy.
+20225: Insufficient Energy. Please fill up first.
+20226: ''
+20501: ''
+20502: You can't move the Haven to another place when you're being attacked, reinforced or transported.
+20503: You can't enter "westgameII", "support", "system" or start with "player_" for this name. Please enter another one.
+20504: You can't demolish the last building of any kind until your Beacon reach Lv.10 or above.
+20505: ''
+20506: You haven't built the Embassy yet.
+20507: ''
+20508: ''
+20509: This Alliance name has been used. Please enter a new one.
+20510: This Alliance Nickname has been used. Please enter a new one.
+20511: You need to complete the research on STRING0 before you attack Lv.STRING1 target.
+20512: You need to recall all your marching Troop first.
+20513: ''
+20514: ''
+20515: Rally Preparation ended. You can't join the Rally War anymore.
+20516: The reinforment Troop in your ally's Embassy have reached the maximum.
+20517: There is no available rally slot.
+20518: ''
+20519: ''
+20520: ''
+20521: ''
+20522: ''
+20523: You don't have enough Troops.
+20524: You can't entitle a player of another Sector.
+20525: Before you move to another Sector, you need to dismiss the reinforcement Troop in your Embassy, recall your Warden and Troop outside the Haven (if there's any).
+20526: The ally's Haven is shielded up. You can't dispatch reinforcements to it.
+20527: You can only invite the same player once within 24 hours.
+20528: This player has joined an Alliance already.
+20529: ''
+20530: ''
+20531: This player has left the Alliance.
+20532: This delegation has left your Haven.
+20533: This player has moved to another Sector.
+20534: The Alliance is not in your Sector.
+20535: This player has received the maximum amount of invitation. Please invite him/her later.
+20536: The Haven has moved to another place.
+20537: ''
+20538: This notice has been deleted. Please re-enter the Notice Board to check latest post.
+20539: The Alliance Fund is insufficient.
+20540: You're the Alliance Chief, so you can't accept invitation from other Alliances.
+20541: This player has left your Alliance or moved to another Sector.
+20542: ''
+20543: This task has been completed.
+20544: You can't enter "player", or start with "town_" or "boss_" for this name. Please enter another one.
+20545: You can't enter "Ice Haven", "support", or "system". Please enter another one.
+20546: ''
+20550: You can't use any Peace Shield item as you still have marching queues (scout, attack or reinforce) outside.
+20551: Your ally has already started a Rally War against this player.
+20552: You can't use Peace Shield items when you are in the Tundra Area.
+20553: ''
+20554: ''
+20555: You have already reinforced this ally.
+20556: ''
+20557: ''
+20558: The number of Reinforced Queues or Reinforcement Troop has reached the maximum.
+20559: ''
+20560: This position is not available for camping now. Please choose a new one.
+20561: The number of your Reinforcement Troop has reached the maximum.
+20562: Your Haven has been relocated automatically after being fiercely attacked in the Tundra Area.
+20563: You can't move your Haven while it's being attacked.
+20564: ''
+20565: You can't appoint the ally as the President when he is in peacetime.
+20566: You can't use the Peace Shield items when you're the President.
+20567: The Sector Capitol has been occupied by another Alliance. You cannot dispatch reinforcement Troop now.
+20568: The Decors in the Haven have reached the maximum.
+20569: The player has moved the Haven to another place.
+20570: ''
+20571: You're already in your Home Sector.
+20572: The Sector is no longer available for a new Haven to teleport in.
+20573: You can only teleport your Haven to this Sector during the Sector Event.
+20574: "The Loyalty Points can be used to get items from the Loyalty Store. You may get Loyalty Points in the following ways: \r\n* Purchase Special Packs\r\n* Provide Alliance Helps\r\n* Complete Alliance/Haven\
+  \ Quests\r\n* Participate in Events"
+20575: You don't have enough Loyalty Points. Please collect more through Alliance tasks or other ways.
+20576: Your Warden Stamina has reached the upper limit.
+20577: ''
+20578: ''
+20579: ''
+20580: ''
+20581: ''
+20582: ''
+20583: ''
+20584: ''
+20585: ''
+20586: ''
+20587: ''
+20588: ''
+20589: ''
+20590: The chosen Hero is on the mission now.
+20591: ''
+20592: ''
+20593: ''
+20594: ''
+20595: You don't have enough Warden Stamina.
+20596: ''
+20597: '[SVC] Rune upgrade failed.'
+20598: '[SVC] Card energy already full.'
+20599: '[SVC] Card already has rune equipped.'
+20660: '[SVC] Rune suit position duplicated.'
+20661: ''
+20662: '[SVC] Summon stone piece storage full.'
+20663: ''
+20664: ''
+20665: The rewards have been collected.
+20666: ''
+20667: ''
+20668: ''
+20669: ''
+20670: You don't have enough Warden Stamina to defeat the target.
+20671: Not enough Sweeping Energy.
+20672: ''
+20673: ''
+20674: ''
+20675: ''
+20676: ''
+20677: ''
+20678: ''
+20679: ''
+20680: ''
+20681: ''
+20682: ''
+20683: Please unlock the Advanced Mode first.
+20684: Insufficient Stamina. Please refill some first.
+20685: Invalid coordinates. Please enter a right one.
+20686: ''
+20687: ''
+20688: You cannot reinforce the Sector Capitol during the Peacetime.
+20689: ''
+20690: ''
+20691: ''
+20692: ''
+20693: ''
+20694: ''
+20695: The Hero March Amount has reached the upper limit. You can upgrade the Beacon to increase it.
+20696: Out of purchase quota.
+20697: The discount has ended.
+20698: ''
+20699: ''
+20700: ''
+20701: ''
+20702: ''
+20703: ''
+20704: ''
+20705: ''
+20706: ''
+20707: ''
+20708: ''
+20709: ''
+20710: ''
+20711: ''
+20712: ''
+20713: ''
+20714: ''
+20715: ''
+20716: Your Alliance establishment time doesn't meet the requirement, so you can't join this event.
+20717: Your Alliance Force didn't enter the rank list of top 20, so you can't join this event.
+20718: The number of participants has reached the maximum. You can't add any member now.
+20719: The previous purchase process hasn't completed yet. Please restart your game or refresh to complete it first.
+20720: The event result hasn't released yet.
+20721: You haven't participated in this event.
+20722: You have claimed the rewards already.
+20723: The event doesn't exist anymore.
+20724: ''
+20725: ''
+20726: ''
+20727: The notification of Alliance Vote is in cooldown.
+20728: Before you enter battlefield, please dismiss the reinforcement Troop in your Embassy first.
+20729: There're enemy's Troop marching towards your Haven, and you can't enter Battlefield now.
+20730: Before you leave battlefield, please dismiss the reinforcement Troop in your Embassy first.
+20731: There're enemy's Troop marching towards your Haven, and you can't leave Battlefield now.
+20732: The amount of messages on the Diplomatic Board has reached its maximum.
+20733: You're not in the participant list, and can't enter Battlefield.
+20734: You can only enter battlefield during the event.
+20735: You're in the battlefield already.
+20736: The Teleport Times have been used up.
+20737: Inadequate Dead Troops.
+20738: The number of Reviving Queues has reached its maximum.
+20739: The Reviving Queue doesn't exist anymore.
+20740: ''
+20741: ''
+20742: ''
+20743: ''
+20744: ''
+20745: You don't have the authorization.
+20746: The number of Presets has reach its maximum.
+20747: You haven't unlock the preset yet.
+20748: ''
+20749: ''
+20750: ''
+20751: Cannot activate Peacetime now.
+20752: You can't use Supreme Teleport item when Battle Fever is active.
+20753: You can't use Cross Sector Teleport item when Battle Fever is active.
+20754: There are no War Supplies.
+20755: You can only build the Alliance Territory within your Sector.
+20756: This player is already in the Leading Member list.
+20757: This player is not in the Leading Members list.
+20758: The Hero doesn't exist.
+20759: The Hero has been recruited.
+20760: The Hero hasn't been recruited yet.
+20761: ''
+20762: ''
+20763: ''
+20764: The Hero Skill has already reached the max level.
+20765: The number of ads watching today has reached the upper limit.
+20766: Only when your cumulative watching reaches the required amount can you claim the rewards.
+20767: You've claimed the cumulative watching rewards already.
+20768: You've run out of chances.
+20769: ''
+20770: ''
+20771: ''
+20772: ''
+20773: ''
+20774: ''
+20775: ''
+20776: ''
+20777: ''
+20778: ''
+20779: ''
+20780: ''
+20781: ''
+20782: ''
+20783: ''
+20784: ''
+20785: ''
+20786: The building is invalid.
+20787: Invalid land. Please make sure there's enough space for construction.
+20788: ''
+20789: ''
+20790: ''
+20791: ''
+20792: ''
+20793: ''
+20794: ''
+20795: ''
+20796: ''
+20797: ''
+20798: ''
+20799: ''
+20800: ''
+20801: ''
+20802: ''
+20803: ''
+20804: ''
+20805: ''
+20806: ''
+20807: ''
+20808: ''
+20809: ''
+20810: ''
+20811: ''
+20812: ''
+20813: ''
+20814: ''
+20815: ''
+20816: ''
+20817: Failed to access to your Force Rank info. Please refresh the game.
+20818: Your Force Rank in target Sector changes, and so does the cost of Teleport items.
+20819: The resources you own have exceeded the upper limit of the Conveyable Resources. So, you can't move to the target Sector permanently.
+20820: You're in an Alliance, so you can't move to the target Sector permanently.
+20821: There's a RVR Event ongoing, so you can't move to the target Sector permanently.
+20822: ''
+20823: You're not the Alliance Chief or Seniors.
+20824: Please occupy the Adjacent Building first.
+20825: This building does not belong to your Legion.
+20826: You are not in the Legion Battlefield.
+20827: You can't teleport your Haven to the target position.
+20828: You can't teleport your Haven before Teleport Cooldown is over.
+20829: You can't attack this Haven.
+20830: You can't dismiss the Legion during the Legion War.
+20831: Only the Chief can dismiss the Legion.
+20832: You can only dismiss the Legion before you register for the Legion War or after the battle is over.
+20833: The Legion War has already started, and you can't make any change on the Legion members now.
+20834: The amount of Legion members has reached the maximum.
+20835: There's a Legion Supervisor already.
+20836: Only the Alliance Chief and Seniors can recruit or remove the Legion members.
+20837: This ally belongs to another Legion.
+20838: The registration has ended already.
+20839: The Legion War has already started, and you can't leave your Alliance now.
+20840: The translation for this language is not available.
+20841: This name has already been used by another Legion. Please change another one.
+20842: The registration period has ended, and you can't rename your Legion now.
+20843: You are not a member of the Legion.
+20844: There're no Legion battle rewards to be claimed.
+20845: If you want to remove this ally from the Legion, you'll need to have his Supervisor position unassigned first.
+20846: Please choose the Warden or Heroes before you send Troop out.
+20847: There's an ongoing March Queue already.
+20848: The Commander can't use Peace Shield item during the AVA/Legion War Event.
+20849: The ally is in the Legion Battlefield already, and you can't kick him out now.
+20850: ''
+20851: ''
+20852: This Adventure Mode hasn't been unlocked yet.
+20853: Your Beacon level is not high enough to unlock this mode.
+20854: ''
+20855: ''
+20856: ''
+20857: ''
+20858: ''
+20859: ''
+20860: The Adventure Mode is invalid.
+20861: The Battlefield is full, please try again later.
+20862: ''
+20863: ''
+20864: The event has ended.
+20865: ''
+20866: ''
+20867: ''
+20868: ''
+20869: The item doesn't exist.
+20870: The exchange amount has reached maximum.
+20871: You don't have enough Exchange Tokens.
+20872: You don't have enough Gem.
+20873: You don't have enough items.
+20874: ''
+20875: ''
+20876: ''
+20877: ''
+20878: You can't reinforce this building, because it belongs to another Alliance.
+20879: You can't reinforce this building during its peace time.
+20880: ''
+20881: This title has been granted for another player.
+20882: ''
+20883: ''
+20884: ''
+20885: ''
+20886: ''
+20887: You can't teleport to the Battlefield until the Battle Period.
+20888: You can't teleport to the Battlefield because your Beacon level does not meet the requirement.
+20889: You can't teleport to the Battlefield permanently.
+20890: You can't exercise entitlement when you are not in your home Sector.
+20891: ''
+20892: ''
+20893: ''
+20894: ''
+20895: ''
+20896: ''
+20897: ''
+20898: ''
+20899: ''
+20900: ''
+20901: ''
+20902: ''
+20903: ''
+20904: ''
+20905: ''
+20906: ''
+20907: ''
+20908: ''
+20909: ''
+20910: ''
+20911: You've already claimed this reward.
+20912: Your Starred friend amount has reached the maximum.
+20913: The amount of Friend who can send you offline messages has reached the upper limit.
+20914: This Group does not exist anymore.
+20915: Fail to invite friends into Group Chat! Please confirm with your friend if his group chat has reached the upper limit.
+20916: You are the Group Owner, so you can't leave the Group Chat.
+20917: The amount of Group Chat you starred has reached the upper limit.
+20918: The amount of Group Chat from which you can receive offline messages has reached the upper limit.
+20919: The Group has been full!
+20920: Sorry, you have been blocked by the player.
+20921: The player is in your Blacklist.
+20922: The Group Invitation/Friend Request has been expired.
+20923: You two are friends already.
+20924: This player is no longer in this group chat.
+20925: You two are not friends yet.
+20926: Only the Group Owner can remove group members.
+20927: You may not add yourself as a friend or chat with yourself.
+20928: Your Friend Amount has reached the upper limit.
+20929: Your Group Chat Amount has reached the upper limit.
+20930: This player's Friend amount has reached the upper limit.
+20931: This player's Group amount has reached the upper limit.
+20932: The words you entered may contain potentially sensitive content.
+20933: You need to collect more permanent skins to earn this reward.
+20934: You've already claimed this reward.
+20935: ''
+20936: ''
+20937: The queue has returned to the Haven.
+20938: The history of this vote has been deleted already.
+20939: The number of Alliance Votes has reached the limit, and you cannot initiate a new one.
+20940: ''
+20941: ''
+20942: ''
+20943: Someone in STRING0 has reached their max number of group chats to join.
+20944: STRING0 has reached his/her max number of group chats to join.
+21000: The applicants to this Alliance have reached the limit. Please try it later.
+21001: You have sent an invitation to the player already.
+21002: The number of members in the Alliance have reached the limit.
+21003: Your Haven is under attack, and you cannot dispatch Troop now.
+21004: Today's purchase times of invitation have reached the limit. Please come back tomorrow.
+21100: The Arena is not available at the moment.
+21101: The Current Season is over. The New Season will open soon. Stay tuned.
+21102: You've already claimed the rewards.
+21103: The battle is invalid.
+21104: You cannot move your Haven to the invalid location.
+21105: Please move your Haven to an open space.
+21106: You cannot move your Haven to this territory.
+21107: Please occupy the Bridge along the way first before moving to another province.
+21108: The battle does not exist.
+21109: The target doesn't exist.
+21110: ''
+21111: ''
+21112: Invalid location. Please choose another spot.
+21113: Insufficient Warden Stamina. Please fill up first.
+21114: You cannot use this name. Please enter another one.
+21115: Insufficient Leading Members. Please recruit more Leading Members from your Alliance.
+21116: The current Leading Members have exceeded the limit.
+21117: The current Backup Members have exceeded the limit.
+21118: Please register Steamworks Standoff during the registration period.
+21119: Insufficient Leading Members. Please make sure you have at least 15 eligible Leading Members.
+21120: Steamworks Standoff is coming soon, please stay tuned!
+21121: You cannot enter the battlefield, for the battlefield is full.
+21122: Sorry, you are not one of the battle Participants.
+21123: Steamworks Standoff has ended. Please stay tuned for the next event!
+21124: Insufficient Leading Members or Alliance Seniors. Please recruit at least 10 Leading Members with at least one Alliance Senior included.
+21125: ''
+21126: You cannot claim more Commander Recruit Badges, for the Badges you own have reached the max limit.
+21127: You cannot join the Alliance for your Beacon is under Lv.8
+21128: Sorry, the player does not belong to your Alliance.
+21129: You have no idle Transportation Queue.
+21130: Your Troop are in the middle of a battle, and they cannot participate in this one.
+21131: The target is dead already.
+21132: Your Haven is under attack, and you cannot heal the Wounded Troops in the Hospital now.
+21133: The event is crowded for now.
+21134: The Boss does not belong to this Sector, and you cannot entitle this player.
+21135: Invitation Failed. You do not belong to the Alliance anymore.
+21138: '[SVC] No nearby village for material protection.'
+21139: '[SVC] No available village nearby for material protection.'
+21150: You cannot get to the place.
+21151: You cannot enter or move out of the Sector when you have Reinforced Troop in your Haven.
+21152: The rewards have expired.
+21153: Insufficient rewards left.
+21154: Invalid operation. The task has already been accepted or removed.
+21155: You cannot join the Battle while your Haven is under attack.
+21156: You cannot edit the Battle Skills STRING0 minutes before the Battlefield opens.
+21157: The number of your reinforcement Troop have exceeded the reinforcement capacity.
+25000: '[SVC] Suspicious activity detected (hacker).'
+26004: No more free chances.
+27000: The Hero is out for mission or in Guarding position.
+27001: ''
+27002: ''
+27003: ''
+27004: Another Hero Skill is leveling up right now. You cannot upgrade a new one at the moment.
+27005: Another Position is leveling up right now. You cannot upgrade a new one at the moment.
+27006: Inadequate Beacon level. You need to upgrade the Beacon first to promote the Hero.
+27007: You cannot join the Rally during the Waiting Period.
+27008: ''
+27009: ''
+27010: The account you use is not bound yet. If you start a new game, the history will be lost. Are you sure to continue?
+27011: The account you use is not bound yet. If you log in your Leyi Account, the history will be lost. Are you sure to log in?
+27012: A login problem? Contact us!
+27013: Invalid Email Address
+27014: Invalid Password
+27015: Are you sure to switch the account? You will be logged out after clicking "Login". You can reload the game and input your credentials to log in to the Ice Haven.
+27016: The Hospital is under construction, and you cannot heal the Wounded Troops now.
+27017: The President's Privilege is cooling down for now. Please wait till the CD time ends.
+27018: The Stormwing Squall event is still ongoing, and you cannot make this operation.
+27019: No one in the Alliance can participate in the event for now.
+27020: The Clue Rewards Pool has not opened yet. Please stay tuned.
+27021: The Clue Rewards are not available to claim now.
+27022: You cannot demolish the Chapel of Purification now.
+27023: The player does not belong to your Alliance.
+27024: No tile can spawn the event building for now.
+27025: There is no appropriate destination around your Beacon.
+27026: You don't have this building in your Haven.
+27027: You've been muted by the Alliance.
+27030: The status of the Captured Warden has changed, and you cannot execute instantly.
+27031: Your Alliance hasn't set up the Leading Members yet.
+27032: You cannot enter the battlefield when there are Troop outside the Haven.
+27033: You cannot enter the battlefield when there are still Wounded Troops in the Hospital.
+27034: You cannot enter the Battlefield when the Battle Fever is activated.
+27035: You cannot enter the battlefield when your Wounded Troops are being healed in the Hospital.
+27036: You cannot enter the Battlefield, for the Battlefield is full.
+27037: You cannot enter the Battlefield, for you are not on the Leading Member list.
+27038: The Force of your Alliance is not in the Top 20 of the Sector.
+27039: The Registration Period has ended, and you cannot change it.
+27040: The Battle time slot is full. Please select another one.
+27041: The Warm-Up battle is still cooling down. Please wait till the cooldown time ends.
+27042: 'The battle has already ended. '
+27043: ''
+27044: ''
+27045: You cannot teleport to another Sector when you have Troop outside the Haven.
+27046: You have teleported to another Sector already.
+27047: You are teleporting to another Sector. Please try it later.
+27049: '[SVC] Cannot dismiss alliance during KvK.'
+27050: This item is only available for Members in the winning Legions.
+27051: You are already in League of Legions Battlefield.
+27052: Operation invalid. Currently you don't have relevant permission.
+27053: The League of Legion battle is ongoing and this function is not available now.
+27054: 'Please meet the qualifications for participation first. '
+27055: 'Please make sure your Legion is qualified for the event registration first. '
+27056: The Time Slot is full. Please choose again.
+27057: The Member is not in the list of this Legion now.
+28001: The Clue belongs to another player, and you cannot go for other player's Intel Tasks.
+28002: You've already had Troop on the way to attack the target.
+28003: The target is your ally.
+28004: You've attacked this Haven before.
+28005: There is no available tile nearby for Icehorn's Trap now. Please wait a moment.
+28006: You can't dispatch your Warden as your Haven is under attack now.
+29000: The Haven is under attack!
+29001: No target of this type have been found outside the Haven.
+29002: The task has timed out.
+29003: Available soon.
+29004: 'You don''t have the permission to search for Resource Depot. Please contact the Chief (R5) or Alliance Seniors (R4) to continue. '
+29005: Research under preparation. Please retry after it cools down.
+29006: 'You don''t have the permission to abandon it. Please contact the Chief (R5) or Alliance Seniors (R4) to continue. '
+29007: You've run out of Site-abandonment chances. Please retry later.
+29008: Operation failed because the Facility occupied by your Alliance have reached the upper limit.
+29009: This Facility no longer belongs to your Alliance.
+29010: This rally queue is already on the march.
+29011: Not enough Energy.
+29012: The Foreman has left your Haven.
+29013: The claimable production hasn't accumulated to STRING0 yet. Please try again later.
+29014: Requirements not met. Hero upgrade failed.
+29015: Failed to enter the Steamworks Standoff battlefield because your Haven is under attack.
+29016: This area has already been recaptured.
+29017: Failed to choose challenge mode. Please retry later.
+29018: Failed to search Plaguebound Raider. Please retry later.
+29019: Not enough Assault Invitation item. Please get more and retry.
+29020: Failed to start the Plaguebound Kingpin challenge. Please retry later.
+29021: Failed to search Plaguebound Kingpin. Please retry later.
+29022: This Plaguebound Raider belongs to another Alliance, so you cannot attack it.
+29023: This Plaguebound Raider is another player's target, so you cannot attack it.
+29024: This Plaguebound Kingpin belongs to another Alliance, so you cannot attack it.
+29025: There's already an existing Plaguebound Kingpin. Please find and defeat it first.
+29026: This Plaguebound Kingpin has already disappeared.
+29027: No available collecting queue now. Please retry later.
+29028: This member's lane has been changed.
+29029: Troop data expired. Please try again.
+29030: This building has been upgraded already. Please restart the game.
+29031: Requirement not met.
+29032: You've already cleared this stage.
+29033: There's no vacant slot in this event. Please stay tuned to register for future rounds.
+29034: Building amount has reached the limit, so you cannot build more.
+29035: Your account has been suspended.
+29036: The Core Site replacement is still cooling down. Please retry later.
+29040: Insufficient Hero Pieces. Please get more and retry.
+29041: 'You can only dispatch one queue to join the Sector Capitol or Turret battles. '
+29042: Banquet building not built.
+29043: Chief relocated. Try again later.
+29044: Invitation expired.
+29045: Alliance invite limit reached.
+29046: Multiple Alliances have invited this player.
+29047: Your Alliance already invited this player.
+29048: The player has not unlock the Alliance yet.
+29049: Application expired.
+29050: This member already has this boost. Please select someone else.
+29051: Maximum buildings reached.
+29052: Invalid placement location.
+29053: Clear all the trees from your island before retrieving Lumber Shed.
+29054: Insufficient Pieces.
+29055: Island unavailable now.
+29056: Unlocks at Gambing Hall Lv.19
+29057: Data error detected.
+29058: The expired rewards have been sent via email.
+29059: Cannot deploy Mercenaries in this area.
+30000: '[SVC] Invalid command.'
+30001: Invalid operation. Please restart the game and try again.
+30002: '[SVC] Account already used.'
+30003: '[SVC] Account already linked.'
+30004: '[SVC] Package length overflow.'
+30005: '[SVC] Session acquisition timeout.'
+30006: '[SVC] Package parse error.'
+30007: '[SVC] Request timeout.'
+30008: '[SVC] No valid downstream service.'
+30009: '[SVC] Request send failed.'
+30010: '[SVC] MySQL connection failed.'
+30011: '[SVC] MySQL query failed.'
+30012: '[SVC] Command processing error.'
+30013: '[SVC] Map data fetch failed.'
+30014: '[SVC] User info incomplete.'
+30015: '[SVC] Data incomplete.'
+30016: It doesn't exist anymore. Please refresh the game.
+30017: '[SVC] Timing incorrect.'
+30018: There's a research task in progress now. Please wait a moment.
+30019: There's a building task in progress now. Please wait a moment.
+30020: The status has changed, and the target is not in your enemy side.
+30021: The Friendly Alliance list is full already.
+30022: Server Overload.
+30023: Unexpected error. Please reload the game.
+30024: The target is not here anymore. Please refresh the game.
+30025: '[SVC] Insufficient plains.'
+30026: '[SVC] Account blacklisted.'
+30027: '[SVC] Data change failed.'
+30028: '[SVC] Composing in progress.'
+30029: '[SVC] User data cannot be cleared (legacy).'
+30030: '[SVC] User recovery failed.'
+30031: '[SVC] Item not visible.'
+30032: '[SVC] IAP fetch failed.'
+30033: '[SVC] Report ID fetch failed.'
+30040: During building Event, you can't invade other players' Havens.
+30041: The event is not available right now. Please try it later.
+30042: Data error. Please refresh the game and try again.
+30043: You've been removed from the Alliance.
+30044: Your purchases of this week have reached the maximum.
+30045: You've reached the maximum of 5 sticky posts.
+30046: Data error. Please refresh the game and try again.
+30047: '[SVC] Event history fetch failed.'
+30048: '[SVC] Cache package parse error.'
+30049: '[SVC] Cache request send error.'
+30050: '[SVC] Data center request failed.'
+30051: '[SVC] Data center package parse error.'
+30052: '[SVC] Data center format error.'
+30053: The Sector is currently under protection. Please try on other Sectors.
+30054: '[SVC] Server merge temporary state.'
+30055: '[SVC] IAP server request failed.'
+30056: '[SVC] IAP server package parse error.'
+30057: '[SVC] IAP server format error.'
+30060: You can't create a new Alliance as you are already in an Alliance.
+30061: '[SVC] Action parameter invalid.'
+30062: '[SVC] Sweep cannot generate object.'
+30063: '[SVC] Cache reset error.'
+30100: '[SVC] Network operation failed.'
+30101: '[SVC] Lock acquisition failed.'
+30102: '[SVC] Downstream service unavailable.'
+30103: '[SVC] Network type error.'
+30104: '[SVC] Downstream service timeout.'
+30105: '[SVC] Downstream package length overflow.'
+30106: '[SVC] Downstream package parse error.'
+30107: '[SVC] Request parse failed.'
+30108: '[SVC] Service type error.'
+30109: '[SVC] Service session missing.'
+30110: '[SVC] Service not available.'
+30111: '[SVC] Downstream message generation failed.'
+30112: '[SVC] Downstream data key fetch failed.'
+30113: '[SVC] Downstream response parse failed.'
+30114: '[SVC] Lua script crash.'
+30115: You cannot dismiss the Alliance when your Alliance Building is under attack.
+30116: '[SVC] User does not exist.'
+30118: You cannot send gift to the player because his/her force is higher than yours.
+30119: You cannot send gift to the player because he/she does not belong to your Clan.
+30120: The League does not exist.
+31000: Network error. Please try again.
+31001: '[SVC] No map available for random relocation.'
+31002: '[SVC] Not the king.'
+31003: This player has been assigned to another position or has already left your Alliance.
+31004: Please check if you have built the building or unlocked your Warden.
+31005: '[SVC] Trial not in normal mode.'
+31006: '[SVC] Trial not in rage mode.'
+31007: '[SVC] Insufficient trial attack time.'
+31008: '[SVC] No trial gift available.'
+31009: '[SVC] Purchase verification failed.'
+31010: '[SVC] Production system data fetch failed.'
+31011: '[SVC] Account server change failed.'
+31012: '[SVC] Purchase check failed, retry needed.'
+31100: '[SVC] IAP subscription error.'
+31101: '[SVC] IAP subscription error (1).'
+31102: '[SVC] IAP subscription error (2).'
+31103: '[SVC] IAP subscription error (3).'
+31104: '[SVC] IAP subscription error (4).'
+31105: '[SVC] IAP subscription error (5).'
+31106: '[SVC] IAP subscription error (6).'
+31107: '[SVC] IAP subscription error (7).'
+31108: '[SVC] IAP subscription error (8).'
+31109: '[SVC] IAP subscription error (9).'
+31110: '[SVC] IAP subscription error (10).'
+31200: '[SVC] IAP subscription error range end.'
+32000: '[SVC] User linker module error range begin.'
+32001: '[SVC] User linker: package parse error.'
+32002: '[SVC] User linker: UID fetch error.'
+32003: '[SVC] User linker: response buffer error.'
+32004: '[SVC] Push service: list size fetch failed.'
+32005: '[SVC] Push service: list fetch failed.'
+32006: '[SVC] Push service: type error.'
+32007: '[SVC] Push service: key error.'
+32010: '[SVC] User linker: handle error.'
+32011: '[SVC] User linker: request header error.'
+32012: '[SVC] User linker: request extra info error.'
+32013: '[SVC] User linker: request count too large.'
+32014: '[SVC] User linker: key error.'
+32999: '[SVC] User linker module error range end.'
+33000: '[SVC] Chat module error range begin.'
+33001: '[SVC] Chat: cache update error.'
+33002: '[SVC] Chat: cache lookup error.'
+33003: '[SVC] Chat: user blacklisted.'
+33004: '[SVC] Chat module error range end.'
+34000: '[SVC] Push notification error range begin.'
+34001: '[SVC] Push notification: invalid target UID.'
+34002: '[SVC] Push notification: invalid target AID.'
+34003: '[SVC] Push notification: invalid target type.'
+34004: '[SVC] Push notification: invalid target token.'
+34005: '[SVC] Push notification: invalid platform.'
+34006: '[SVC] Push notification: switch error.'
+34007: '[SVC] Push notification: invalid IDFA.'
+34008: '[SVC] Push notification: invalid language.'
+34009: '[SVC] Push notification error range end.'
+35000: '[SVC] Lock acquisition error.'
+35001: '[SVC] Lock release error.'
+35002: '[SVC] Data retrieval error.'
+35003: '[SVC] Data update error.'
+35004: The Server is under maintenance. Please try it later.
+35005: '[SVC] User data needs compatibility update.'
+35006: '[SVC] Permission denied.'
+35007: '[SVC] Command sequence sync error.'
+35020: This province has been crowded with people.
+36000: '[SVC] Data D1 module error range begin.'
+36001: '[SVC] D1: request preprocessing error.'
+36002: '[SVC] D1: procedure handling error.'
+36010: '[SVC] D1: pre-command processing error.'
+36011: '[SVC] D1: command processing error.'
+36012: '[SVC] D1: data retrieval error.'
+36013: '[SVC] D1: database update error.'
+36020: '[SVC] D1: request unpack error.'
+36021: '[SVC] D1: server has stopped.'
+36022: '[SVC] D1: virtual node fetch failed.'
+36023: '[SVC] D1: command table analysis error.'
+36024: '[SVC] D1: request DB data check error.'
+36025: '[SVC] D1: no valid downstream request.'
+36026: '[SVC] D1: downstream request count exceeded threshold.'
+36027: '[SVC] D1: downstream node fetch error.'
+36028: '[SVC] D1: task group send error.'
+36029: '[SVC] D1: response JSON parse error.'
+36030: '[SVC] D1: data response error.'
+36031: '[SVC] D1: server overloaded.'
+36032: '[SVC] D1: delayed request push failed.'
+36033: '[SVC] D1: search I/O timeout.'
+36034: '[SVC] D1: response package length overflow.'
+36035: '[SVC] D1: response package parse error.'
+36036: '[SVC] D1: downstream node return code error.'
+36037: '[SVC] D1: response send failed.'
+36999: '[SVC] Data D1 module error range end.'
+37000: '[SVC] Data D2 module error range begin.'
+37001: '[SVC] D2: service type error.'
+37002: '[SVC] D2: parameter error.'
+37003: '[SVC] D2: processing error.'
+37004: '[SVC] D2: Redis write failed.'
+37005: '[SVC] D2: Redis request send failed.'
+37006: '[SVC] D2: DynamoDB read error.'
+37007: '[SVC] D2: DynamoDB request send error.'
+37008: '[SVC] D2: DynamoDB connector error.'
+37009: '[SVC] D2: disk queue error.'
+37010: '[SVC] D2: Sentinel abnormal.'
+37011: '[SVC] D2: Sentinel connection error.'
+37012: '[SVC] D2: Sentinel request send failed.'
+37013: '[SVC] D2: Sentinel read error.'
+37014: '[SVC] D2: Redis flush failed.'
+37099: '[SVC] Data D2 module error range end.'
+37100: '[SVC] IAP no-retry error range begin.'
+37101: '[SVC] IAP: request parameter error (no retry).'
+37102: The Gem you add to your account has reached the maximum.
+37103: '[SVC] IAP: purchase check failed (no retry).'
+37104: '[SVC] IAP: not whitelisted but using sandbox.'
+37105: '[SVC] IAP: duplicate gem recharge.'
+37106: '[SVC] IAP: suspicious activity (no retry).'
+37107: '[SVC] Web IAP: invalid parameter.'
+37108: '[SVC] Web IAP: invalid user.'
+37109: '[SVC] Web IAP: SKU not in config.'
+37110: '[SVC] Web IAP: price mismatch.'
+37111: '[SVC] Web IAP: invalid transaction ID.'
+37112: '[SVC] Web IAP: refund reason not eligible.'
+37113: '[SVC] Web IAP: coupon already used.'
+37114: '[SVC] Web IAP: order already refunded.'
+37115: '[SVC] Web IAP: invalid access token.'
+37198: Please contact the person in charge to add your account to the White List first.
+37199: '[SVC] IAP no-retry error range end.'
+37200: '[SVC] IAP manual handling range begin.'
+37201: '[SVC] IAP manual: add reward failed.'
+37202: '[SVC] IAP manual: platform changed.'
+37203: '[SVC] IAP manual: platform account changed.'
+37204: '[SVC] IAP manual: account mismatch.'
+37205: '[SVC] IAP manual: purchase mismatch.'
+37206: '[SVC] IAP manual: subscription error.'
+37299: '[SVC] IAP manual handling range end.'
+37300: '[SVC] Purchase token verification error.'
+37301: '[SVC] Token refresh error.'
+37302: '[SVC] Server has stopped.'
+37303: '[SVC] Position not available.'
+37304: The Alliance name or nickname has been taken. Please enter a different name.
+37305: The opponent's formation has changed. Please restart the challenge.
+37306: Invalid Operation. Currently you do not belong to the Alliance anymore.
+37307: You've already cleared this stage.
+37308: Insufficient Alliance member. Please get more allies first.
+37309: The amount of registered Alliances has reached the max limit. See you in future rounds!
+37311: '[SVC] LVL battle server user limit reached.'
+37600: The rewards will be delivered to you after the payment completes.
+37601: You are not in the same Alliance with the player.
+38101: '[SVC] Account delete: seed verification failed.'
+38102: '[SVC] Account delete: condition check failed.'
+38103: '[SVC] Account deletion in progress.'
+38199: '[SVC] Web account delete error range end.'
+40000: System error! Please try it later.
+40001: Data error. Please try again later.
+40002: There's no gaming progress bound to this account.
+40003: The game progress has been bound to your Leyi Account.
+40004: Invalid Mail Registration.
+40005: This email address has already been registered.
+40006: This email address hasn't been registered as Leyi Account.
+40007: Your username or password is incorrect. Please try again.
+40008: Invalid Login.
+40009: Your account hasn't bound with any gaming progress.
+40010: Your account hasn't bound with the current progress.
+40011: Request has expired.
+40012: Invalid Request.
+40013: This mail account has already bound with another progress of this game.
+40014: Passwords do not match. Please check and try again.
+40015: Please enter a valid email.
+40016: You've reset your password successfully. For your account security, please log into the game with your new password.
+40017: Your account has logged in on another device.
+40018: Please enter 6 to 15 characters (without special characters or underline).
+40019: ''
+40020: ''
+40021: Verification failed. Identity could not be confirmed to be the account owner.
+40022: Please provide your In-App Purchase screenshots to our Support Team. The deletion process will continue once the screenshots are verified.
+40023: 'Sorry, your account can''t be deleted due to these possible conditions:'
+41000: '[SVC] Login center error range begin.'
+41002: '[SVC] Login center: parameter error.'
+41003: '[SVC] Login center: send failed.'
+41005: '[SVC] Login center: package length overflow.'
+41006: '[SVC] Login center: AWS package parse error.'
+41007: '[SVC] Login center: HU package parse error.'
+41011: '[SVC] Login center: lock acquisition failed.'
+42001: '[SVC] Login center: status error.'
+42004: '[SVC] Login center: password changed.'
+42005: '[SVC] Login center: account blacklisted.'
+42006: '[SVC] Login center: account info invalid.'
+42007: '[SVC] Login center: account has no game data.'
+42008: '[SVC] Login center: multiple emails linked.'
+42009: '[SVC] Login center: email linked to multiple games.'
+42010: '[SVC] Login center: production info invalid.'
+42011: This UID doesn't exist or it is not the main UID. You cannot log in with this UID.
+42020: '[SVC] Login center: session ID error.'
+42021: '[SVC] Login center: user ID error.'
+42022: '[SVC] Login center: fatal error.'
+42023: '[SVC] Login center: static file error.'
+42030: '[SVC] Login center: product limit reached.'
+42031: '[SVC] Login center: player info invalid.'
+42032: '[SVC] Login center: sign-off info invalid.'
+42033: '[SVC] Login center: logged in on another device.'
+42034: '[SVC] Login center: account package parse failed.'
+42999: '[SVC] Login center error range end.'
+43000: You can't dismiss the Alliance during the Sector Capitol contest!
+44000: This social account has already bound another game account.
+44001: Social account not existed.
+44002: Invalid UID.
+44003: The UID you bind is not your main account.
+44004: The UID has already been bound when you create the account already exists.
+50000: '[SVC] Client reload required (range begin).'
+50001: '[SVC] Session ID error, reload required.'
+50002: '[SVC] Deleted player cannot login.'
+50003: '[SVC] Player must merge to another server.'
+50004: Boss, welcome back. Since you're back now, the game will be auto-reloaded in order to turn off the Peace Shield (added by the system during maintenance).
+50005: Service restarted. Please reload the game.
+50006: ''
+50007: ''
+60000: '[SVC] Client reload required (range end).'
+100001: Alliance vote notification is in cooldown.
+100002: The vote history has been deleted.
+100003: The total number of vote has reached the limit, and you cannot initiate a new one.
+100004: Your alliance members are rallying against this target already, and you cannot switch the target now.
+100005: The Departure Record that you shared has expired.
+100006: The Conductor has been appointed already.
+100007: The info of this Express has expired.
+100008: The Regular Express train runs have reached the limit.
+100009: The Chartered Express train runs have reached the limit.
+100010: There is still Alliance Member on board, and you cannot make this operation.
+100011: You can only access the Express trains when your Haven is in this Sector.
+100012: Plundering is not allowed for this player.
+100013: The conditions for joining the Alliance have changed. You currently do not meet the requirements.
+100014: This Hero is occupied. Please select another one.
+100015: Operation failed because this player is on the event battlefield. Please select another one.
+100016: Event data error.
+100017: The player has moved to another Sector.
+100018: Data refreshed. Please try again.
+100019: Unexpected error. Please reload the game and try again.
+100020: This sled has no plunderable chance left. Please find another target.
+100021: This sled has arrived at its destination. Please find another target.
+100022: Unexpected error. Please try it later.
+100023: Unexpected error. Please try it later.
+100024: Unexpected error. Please try it later.
+100025: Operation failed. Alliance rank requirement not met.
+100026: This player has reached the max number of group chats to join.
+100027: The rewards here has already been claimed. Try another one!
+100028: Please upgrade Beacon to higher levels to unlock it.
+100029: Failed to assist reward claiming. The player has left the Alliance.
+100030: Unexpected error. Please try it later.
+100031: You can send Alliance Notices 2 days after joining the Alliance.
+100032: Someone has already sent ingredients to this ally.
+100033: This player is no longer in your Alliance.
+100034: Unexpected error. Please try it later.
+100035: Failed to send ingredients. Please check and retry.
+100036: Your Alliance position is not high enough to send group messages.
+100037: None of these players are in your Alliance.
+100038: This task is still ongoing and cannot be plundered yet.
+100039: Appointment max limit reached.
+100040: Reservation list is full.
+100041: Only the President can activate the skills.
+100042: This player is not in your Sector.
+100043: Operation failed as this player's Beacon level is below requirement.
+100044: Insufficient items. Please get more first.
+100045: Not connected with Alliance Territory.
+100046: Scheduling failed.
+100047: No enemy-held buildings.
+100048: Friend request already sent.
+100050: '[SVC] No bound email, cannot deactivate account.'
+100051: '[SVC] Challenge target no longer on server.'
+100060: '[SVC] Ceasefire active, cannot attack.'
