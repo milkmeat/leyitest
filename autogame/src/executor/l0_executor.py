@@ -28,6 +28,33 @@ from src.utils.coords import encode_pos
 
 logger = logging.getLogger(__name__)
 
+# 惰性加载的错误码表 (ret_code → message)
+_error_msg_cache: Optional[Dict[int, str]] = None
+
+
+def _load_error_msgs() -> Dict[int, str]:
+    """加载 error_msg.yaml 错误码表（只加载一次）"""
+    global _error_msg_cache
+    if _error_msg_cache is not None:
+        return _error_msg_cache
+    import yaml
+    from pathlib import Path
+    yaml_path = Path(__file__).parent.parent.parent / "docs" / "p10" / "error_msg.yaml"
+    if yaml_path.exists():
+        with open(yaml_path, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+        _error_msg_cache = {int(k): str(v) for k, v in data.items()} if isinstance(data, dict) else {}
+    else:
+        _error_msg_cache = {}
+    return _error_msg_cache
+
+
+def _lookup_error(ret_code: int) -> str:
+    """查表翻译 ret_code 为可读消息"""
+    msgs = _load_error_msgs()
+    msg = msgs.get(ret_code, "")
+    return f" ({msg})" if msg else ""
+
 
 # ------------------------------------------------------------------
 # AI 指令数据结构（L1 LLM 输出 JSON 直接反序列化）
@@ -257,7 +284,8 @@ class L0Executor:
                 )
             else:
                 err = resp.get("res_header", {}).get("err_msg", f"ret_code={ret_code}")
-                logger.warning("L0 服务器返回错误: %s uid=%s — %s", instr.action.value, instr.uid, err)
+                err_detail = _lookup_error(ret_code)
+                logger.warning("L0 服务器返回错误: %s uid=%s — %s%s", instr.action.value, instr.uid, err, err_detail)
                 return ExecutionResult(
                     success=False, action=instr.action, uid=instr.uid,
                     error=err, server_response=resp,
@@ -397,9 +425,34 @@ class L0Executor:
     # 内部方法
     # ------------------------------------------------------------------
 
+    # 通用 action → AVA lvl_ action 映射（当 lvl_id != 0 时自动转换）
+    _AVA_ACTION_MAP: Dict[ActionType, ActionType] = {
+        ActionType.MOVE_CITY: ActionType.LVL_MOVE_CITY,
+        ActionType.ATTACK_TARGET: ActionType.LVL_ATTACK_PLAYER,
+        ActionType.SCOUT: ActionType.LVL_SCOUT_PLAYER,
+        ActionType.GARRISON_BUILDING: ActionType.LVL_REINFORCE_BUILDING,
+        ActionType.INITIATE_RALLY: ActionType.LVL_INITIATE_RALLY,
+        ActionType.JOIN_RALLY: ActionType.LVL_JOIN_RALLY,
+        ActionType.RETREAT: ActionType.LVL_RECALL_TROOP,
+        ActionType.RALLY_DISMISS: ActionType.LVL_RALLY_DISMISS,
+        ActionType.RECALL_REINFORCE: ActionType.LVL_RECALL_REINFORCE,
+    }
+
     async def _dispatch(self, instr: AIInstruction, rally_pos: str = "") -> Dict[str, Any]:
         """根据 action 类型分发到对应的 game_api 方法"""
+        lvl_id = self.client.default_header.get("lvl_id", 0)
+
+        # AVA 模式：自动将通用 action 映射为 lvl_ 前缀 action
         action = instr.action
+        if lvl_id and action in self._AVA_ACTION_MAP:
+            original = action
+            action = self._AVA_ACTION_MAP[action]
+            logger.debug("AVA 模式 action 映射: %s → %s (lvl_id=%s)", original.value, action.value, lvl_id)
+
+        # ATTACK_TARGET 攻击建筑时，AVA 模式需映射为 LVL_ATTACK_BUILDING
+        if lvl_id and action == ActionType.LVL_ATTACK_PLAYER and instr.building_id:
+            action = ActionType.LVL_ATTACK_BUILDING
+
         march = self._build_march_info(instr.uid,
                                          needs_hero=(action not in {ActionType.JOIN_RALLY, ActionType.LVL_JOIN_RALLY}),
                                          soldier_id=instr.soldier_id, soldier_count=instr.soldier_count)

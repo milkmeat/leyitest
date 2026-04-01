@@ -74,6 +74,10 @@ class AIController:
         self.interval = config.system.loop.interval_seconds
         self.log_dir = config.system.logging.dir
         self._stop = False
+
+        # AVA 模式：将 lvl_id 写入 client default_header，L0 据此自动选择 lvl_ 命令字
+        if lvl_id:
+            self.client.default_header["lvl_id"] = lvl_id
         self.mock_l2 = mock_l2  # Mock L2 指令（跳过 L2 LLM 调用）
         self.l1_prompt = l1_prompt  # L1 prompt 模板名称
         self.lvl_id = lvl_id  # AVA 战场 ID（0=普通地图）
