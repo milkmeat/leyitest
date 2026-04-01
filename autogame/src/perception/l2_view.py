@@ -175,10 +175,8 @@ class L2ViewBuilder:
         # 总体态势
         lines.append("## 总体态势")
         lines.append(
-            f"- 我方总战力: {view.total_power:,} | "
-            f"总兵力: {view.total_soldiers:,}"
+            f"- 我方总兵力: {view.total_soldiers:,}"
         )
-        lines.append(f"- 敌方可见总战力: {view.total_enemy_power:,}")
         lines.append(
             f"- 全军中心: ({view.army_center[0]}, {view.army_center[1]})"
         )
@@ -193,17 +191,16 @@ class L2ViewBuilder:
         # 小队状态
         lines.append(f"## 小队状态 ({len(view.squads)}个)")
         lines.append(
-            "| 小队 | 人数 | 战力 | 兵力 | 中心 | 空闲槽 | 在外部队 | 受攻击 |"
+            "| 小队 | 人数 | 兵力 | 中心 | 空闲槽 | 在外部队 | 受攻击 |"
         )
         lines.append(
-            "|------|------|------|------|------|--------|----------|--------|"
+            "|------|------|------|------|--------|----------|--------|"
         )
         for s in view.squads:
             attack_flag = "是" if s.is_under_attack else ""
             lines.append(
                 f"| {s.squad_id}-{s.name} "
                 f"| {s.member_count} "
-                f"| {s.total_power:,} "
                 f"| {s.total_soldiers:,} "
                 f"| ({s.center_pos[0]},{s.center_pos[1]}) "
                 f"| {s.available_slots} "
@@ -226,7 +223,6 @@ class L2ViewBuilder:
                 )
                 lines.append(
                     f"- 集群{c.cluster_id}: {c.enemy_count}人 "
-                    f"战力{c.total_power:,} "
                     f"区域({c.bbox[0]}-{c.bbox[2]}, "
                     f"{c.bbox[1]}-{c.bbox[3]}) "
                     f"最近→{c.nearest_squad_id}号队"

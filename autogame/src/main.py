@@ -967,6 +967,16 @@ async def cmd_l2_decide(*args: str, env: str = None):
     json_mode = "--json" in args
     dry_run = "--dry-run" in args
 
+    # 解析 --ava <lvl_id>
+    lvl_id = 0
+    if "--ava" in remaining:
+        ava_idx = remaining.index("--ava")
+        if ava_idx + 1 < len(remaining):
+            lvl_id = int(remaining[ava_idx + 1])
+            remaining = remaining[:ava_idx] + remaining[ava_idx + 2:]
+        else:
+            remaining = remaining[:ava_idx]
+
     config = _load_config()
 
     # 创建 LLM 客户端
@@ -992,9 +1002,10 @@ async def cmd_l2_decide(*args: str, env: str = None):
     syncer = DataSyncer(client, config)
     try:
         # 同步数据
-        snapshot = await syncer.sync(loop_id=0)
+        snapshot = await syncer.sync(loop_id=0, lvl_id=lvl_id)
         print(f"同步完成: {len(snapshot.accounts)} 账号, "
-              f"{len(snapshot.enemies)} 敌方, {len(snapshot.buildings)} 建筑")
+              f"{len(snapshot.enemies)} 敌方, {len(snapshot.buildings)} 建筑"
+              + (f" (AVA lvl_id={lvl_id})" if lvl_id else ""))
 
         # L2 决策
         commander = L2Commander(config, llm)

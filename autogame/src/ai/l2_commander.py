@@ -102,6 +102,13 @@ class L2Commander:
             sid = item.get("squad_id")
             order = item.get("order", "")
 
+            # 容错: 提取 squad_id 中的数字部分 (如 "1-Alpha" → 1, "2" → 2)
+            if sid is not None and not isinstance(sid, int):
+                import re as _re
+                m = _re.match(r"(\d+)", str(sid))
+                if m:
+                    sid = int(m.group(1))
+
             if sid not in valid_squad_ids:
                 logger.warning("L2 指令 #%d squad_id=%s 无效，跳过", i, sid)
                 continue

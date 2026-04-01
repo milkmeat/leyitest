@@ -16,17 +16,16 @@ alliances:
         leader_uid: 20010648
         member_uids: [20010648, 20010649, 20010650, 20010651, 20010652]
 
-      - squad_id: 3
-        name: "Charlie"
-        leader_uid: 20010653
-        member_uids: [20010653, 20010654, 20010655, 20010656, 20010657]
-
-      - squad_id: 4
-        name: "Delta"
-        leader_uid: 20010658
-        member_uids: [20010658, 20010659, 20010660, 20010661, 20010662]
-
   enemy:
     aid: 20000119
     name: "PhoenixRise2026"
-    squads: []  # uid_helper join 后自动填充
+    squads:
+      - squad_id: 1
+        name: "Red-A"
+        leader_uid: 20010668
+        member_uids: [20010668, 20010669, 20010670, 20010671, 20010672]
+
+      - squad_id: 2
+        name: "Red-B"
+        leader_uid: 20010673
+        member_uids: [20010673, 20010674, 20010675, 20010676, 20010677]

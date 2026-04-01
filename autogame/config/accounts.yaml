@@ -1,4 +1,4 @@
-# 账号配置 — 40 个测试账号，分属两个联盟
+# 账号配置 — 双方各 10 个活跃账号，其余在后备名单
 # 运行时详细信息（战力、兵种、英雄等）从服务器同步获取，此处只存最小标识
 
 # 源账号: 20010646
@@ -24,26 +24,6 @@ accounts:
     name: "acc_09"
   - uid: 20010652
     name: "acc_10"
-  - uid: 20010653
-    name: "acc_11"
-  - uid: 20010654
-    name: "acc_12"
-  - uid: 20010655
-    name: "acc_13"
-  - uid: 20010656
-    name: "acc_14"
-  - uid: 20010657
-    name: "acc_15"
-  - uid: 20010658
-    name: "acc_16"
-  - uid: 20010659
-    name: "acc_17"
-  - uid: 20010660
-    name: "acc_18"
-  - uid: 20010661
-    name: "acc_19"
-  - uid: 20010662
-    name: "acc_20"
 
 # --- 联盟 B: PhoenixRise2026 (aid=20000119) — 对手方 ---
 enemies:
@@ -67,26 +47,6 @@ enemies:
     name: "enemy_09"
   - uid: 20010677
     name: "enemy_10"
-  - uid: 20010678
-    name: "enemy_11"
-  - uid: 20010679
-    name: "enemy_12"
-  - uid: 20010680
-    name: "enemy_13"
-  - uid: 20010681
-    name: "enemy_14"
-  - uid: 20010682
-    name: "enemy_15"
-  - uid: 20010683
-    name: "enemy_16"
-  - uid: 20010684
-    name: "enemy_17"
-  - uid: 20010685
-    name: "enemy_18"
-  - uid: 20010686
-    name: "enemy_19"
-  - uid: 20010687
-    name: "enemy_20"
 
 # 联盟元信息（供代码引用）
 alliances:
@@ -99,8 +59,31 @@ alliances:
     lvl_aid: 2
     name: "PhoenixRise2026"
 
-# 备用账号（旧批次）
+# 后备名单（活跃名单外的账号，需要时可直接移回上方）
 reserves:
+  # 我方后备 (原 Charlie/Delta 小队)
+  - uid: 20010653
+  - uid: 20010654
+  - uid: 20010655
+  - uid: 20010656
+  - uid: 20010657
+  - uid: 20010658
+  - uid: 20010659
+  - uid: 20010660
+  - uid: 20010661
+  - uid: 20010662
+  # 敌方后备 (原 enemy_11~enemy_20)
+  - uid: 20010678
+  - uid: 20010679
+  - uid: 20010680
+  - uid: 20010681
+  - uid: 20010682
+  - uid: 20010683
+  - uid: 20010684
+  - uid: 20010685
+  - uid: 20010686
+  - uid: 20010687
+  # 旧批次备用账号
   - uid: 20010413
   - uid: 20010414
   - uid: 20010415
