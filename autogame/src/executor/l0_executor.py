@@ -360,10 +360,8 @@ class L0Executor:
                 # 先尝试从响应中直接提取（Mock 服务器）
                 rid, rpos = self._extract_rally_info(result.server_response)
                 # 真实服务器不在 HTTP 响应中返回 rally_id，需要主动查询
-                if not rid and instr.action in {
-                    ActionType.LVL_INITIATE_RALLY,
-                    ActionType.LVL_INITIATE_RALLY_BUILDING,
-                }:
+                lvl_id = self.client.default_header.get("lvl_id", 0)
+                if not rid and lvl_id:
                     rid, rpos = await self._query_rally_id(instr.uid)
                 if rid:
                     last_rally_id = rid
@@ -376,7 +374,8 @@ class L0Executor:
     async def _query_rally_id(self, uid: int) -> tuple[str, str]:
         """通过 lvl_battle_login_get 查询当前用户发起的集结 rally_id
 
-        从 svr_lvl_user_objs 中找 type=107 的集结对象，提取 uniqueId 和 pos。
+        优先从 svr_lvl_rally（rally brief）中查找 ownerUid 匹配的集结。
+        回退到 svr_lvl_user_objs 的 cityInfo.mainTroopUniqueId。
 
         Returns:
             (rally_unique_id, rally_pos_encoded) — 失败时返回 ("", "")
@@ -390,17 +389,30 @@ class L0Executor:
                 for push in res.get("push_list", []):
                     for item in push.get("data", []):
                         name = item.get("name", "")
-                        if "svr_lvl_user_objs" not in name:
-                            continue
                         raw = item.get("data", "")
-                        data = _json.loads(raw) if isinstance(raw, str) else raw
-                        for obj in data.get("objs", []):
-                            basic = obj.get("objBasic", {})
-                            if basic.get("type") == 107:
-                                rid = obj.get("uniqueId", "")
-                                rpos = str(basic.get("pos", ""))
-                                logger.info("lvl_battle_login_get 查到 rally: %s pos=%s", rid, rpos)
-                                return rid, rpos
+
+                        # 优先: svr_lvl_rally → brief[].ownerUid 匹配
+                        if "svr_lvl_rally" in name:
+                            data = _json.loads(raw) if isinstance(raw, str) else raw
+                            for brief in data.get("brief", []):
+                                if str(brief.get("ownerUid")) == str(uid):
+                                    rid = brief.get("uniqueId", "")
+                                    rpos = str(brief.get("pos", ""))
+                                    logger.info("从 svr_lvl_rally 查到 rally: %s pos=%s", rid, rpos)
+                                    return rid, rpos
+
+                        # 回退: svr_lvl_user_objs → cityInfo.mainTroopUniqueId
+                        if "svr_lvl_user_objs" in name:
+                            data = _json.loads(raw) if isinstance(raw, str) else raw
+                            for obj in data.get("objs", []):
+                                basic = obj.get("objBasic", {})
+                                if basic.get("type") == 10101 and str(basic.get("id")) == str(uid):
+                                    city = obj.get("cityInfo", {})
+                                    main_troop = city.get("mainTroopUniqueId", "")
+                                    if main_troop:
+                                        rpos = str(basic.get("pos", ""))
+                                        logger.info("从 user_objs 查到 rally troop: %s pos=%s", main_troop, rpos)
+                                        return main_troop, rpos
         except Exception as e:
             logger.warning("查询 rally_id 失败: %s", e)
         return "", ""
