@@ -98,20 +98,48 @@ _project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
-# 模块级变量：由 main() 解析 --llm 参数后设置
+# 模块级变量：由 main() 解析全局参数后设置
 _llm_profile: str | None = None
+_team: int = 1  # 1=我方(accounts), 2=敌方(enemies)
+
+
+def _apply_team_swap(config: "AppConfig") -> None:
+    """Team=2 模式下交换 accounts/enemies 和 alliances 配置
+
+    交换后:
+      - active_uids() 返回敌方 UID
+      - enemy_uids() 返回原我方 UID
+      - alliances.ours 指向原 alliances.enemy (lvl_aid=2)
+      - squads.squads 返回敌方小队（由 load_all 已设置）
+    """
+    # 交换账号列表
+    config.accounts.accounts, config.accounts.enemies = (
+        config.accounts.enemies, config.accounts.accounts
+    )
+    # 交换联盟信息
+    if config.accounts.alliances:
+        config.accounts.alliances.ours, config.accounts.alliances.enemy = (
+            config.accounts.alliances.enemy, config.accounts.alliances.ours
+        )
+    alliance_name = config.accounts.alliances.ours.name if config.accounts.alliances else "?"
+    print(f"[config] Team 2 模式: 管理敌方联盟 {alliance_name} "
+          f"(camp_id={config.accounts.alliances.ours.lvl_aid if config.accounts.alliances else '?'})")
 
 
 def _load_config(config_dir: str = "config") -> "AppConfig":
-    """加载配置并应用 --llm profile 切换"""
+    """加载配置并应用 --llm profile 和 --team 切换"""
     from src.config.loader import load_all
-    config = load_all(config_dir)
+    alliance = "ours" if _team == 1 else "enemy"
+    config = load_all(config_dir, alliance=alliance)
     if _llm_profile:
         if not config.system.llm.switch_profile(_llm_profile):
             available = ", ".join(config.system.llm.profiles.keys()) or "(无)"
             print(f"[warn] LLM profile '{_llm_profile}' 不存在 (可用: {available})", file=sys.stderr)
         else:
             print(f"[config] LLM profile: {_llm_profile} → {config.system.llm.model}")
+    # Team=2 时交换配置视角
+    if _team == 2:
+        _apply_team_swap(config)
     return config
 
 
@@ -1222,10 +1250,9 @@ async def cmd_run(*args: str, env: str = None):
 async def cmd_sync(*args: str, env: str = None):
     """数据同步 — 并发获取所有账号 + 地图数据"""
     from src.executor.game_api import GameAPIClient
-    from src.config.loader import load_all
     from src.perception.data_sync import DataSyncer
 
-    config = load_all("config")
+    config = _load_config()
     client = GameAPIClient(env=env)
     syncer = DataSyncer(client, config)
 
@@ -1546,7 +1573,6 @@ async def cmd_l0(*args: str, env: str = None):
     """L0 执行器 — 支持 JSON 模式和简写模式"""
     from src.executor.game_api import GameAPIClient
     from src.executor.l0_executor import AIInstruction, L0Executor
-    from src.config.loader import load_all
 
     if not args:
         print("用法:", file=sys.stderr)
@@ -1577,7 +1603,7 @@ async def cmd_l0(*args: str, env: str = None):
             sys.exit(1)
 
     # 加载配置 + 创建执行器
-    config = load_all("config")
+    config = _load_config()
     client = GameAPIClient(env=env)
     executor = L0Executor(client, config)
     try:
@@ -1671,8 +1697,7 @@ async def cmd_uid_copy(src_uid_str: str, tar_uid_str: str, env: str = None):
 async def cmd_uid_create_al(name: str, nick: str, env: str = None):
     """创建联盟: uid_create_al <name> <nick>"""
     from src.executor.game_api import GameAPIClient
-    from src.config.loader import load_all
-    config = load_all("config")
+    config = _load_config()
     # 用第一个 accounts uid 作为创建者
     creator_uid = config.accounts.active_uids()[0]
     client = GameAPIClient(env=env)
@@ -1702,13 +1727,12 @@ async def cmd_uid_create_al(name: str, nick: str, env: str = None):
 async def cmd_uid_join_al(aid_str: str, *uid_args: str, env: str = None):
     """加入联盟并改名: uid_join_al <aid> <uid1> [uid2...]"""
     from src.executor.game_api import GameAPIClient
-    from src.config.loader import load_all
     if not uid_args:
         print("用法: uid_join_al <aid> <uid1> [uid2...]", file=sys.stderr)
         sys.exit(1)
 
     aid = int(aid_str)
-    config = load_all("config")
+    config = _load_config()
     client = GameAPIClient(env=env)
     try:
         for uid_str in uid_args:
@@ -1758,8 +1782,7 @@ async def cmd_uid_join_al(aid_str: str, *uid_args: str, env: str = None):
 async def cmd_uid_members(aid_str: str, env: str = None):
     """查看联盟成员: uid_members <aid>"""
     from src.executor.game_api import GameAPIClient
-    from src.config.loader import load_all
-    config = load_all("config")
+    config = _load_config()
     any_uid = config.accounts.active_uids()[0]
     aid = int(aid_str)
     client = GameAPIClient(env=env)
@@ -1790,13 +1813,12 @@ async def cmd_uid_setup(alliance_key: str, src_uid_str: str, *uid_args: str, env
     对每个 tar_uid 执行: copy_player → join_alliance → change_name
     """
     from src.executor.game_api import GameAPIClient
-    from src.config.loader import load_all
     if not uid_args:
         print("用法: uid_setup <alliance_key> <src_uid> <tar_uid1> [tar_uid2...]", file=sys.stderr)
         sys.exit(1)
 
     src_uid = int(src_uid_str)
-    config = load_all("config")
+    config = _load_config()
     squads = config.squads
 
     # 获取目标联盟 aid
@@ -2049,6 +2071,20 @@ def main():
         else:
             args = args[:idx]
 
+    # 解析 --team <1|2> 参数（全局队伍切换）
+    if "--team" in args:
+        idx = args.index("--team")
+        if idx + 1 < len(args):
+            team_val = args[idx + 1]
+            if team_val not in ("1", "2"):
+                print(f"Error: --team 必须为 1 或 2, 收到 '{team_val}'", file=sys.stderr)
+                sys.exit(1)
+            global _team
+            _team = int(team_val)
+            args = args[:idx] + args[idx + 2:]
+        else:
+            args = args[:idx]
+
     # 解析 --verbose / -v 参数，控制日志级别
     log_level = logging.WARNING  # 默认只显示警告
     if "--verbose" in args or "-v" in args:
@@ -2074,6 +2110,7 @@ def main():
         print("  --verbose / -v          INFO 级别日志")
         print("  --debug                 DEBUG 级别日志")
         print("  --llm <profile>         切换 LLM profile (如: zhipu / ollama)")
+        print("  --team <1|2>            管理指定方 (1=我方, 2=敌方, 默认=1)")
         print()
         print("AI 决策调试 (l1_decide / l2_decide 自动打印完整 prompt 和 LLM 响应):")
         print("  l1_decide 参数:  <squad_id> [--ava <lvl_id>] [--mock-l2 \"<指令>\"] [--l1-prompt <name>] [--dry-run] [--json]")
