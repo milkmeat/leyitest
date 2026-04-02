@@ -666,23 +666,26 @@ class GameAPIClient:
     async def lvl_create_rally(
         self, uid: int, lvl_id: int, target_id: str,
         march_info: Optional[Dict[str, Any]] = None,
-        prepare_time: int = 60, tn_limit: int = 15,
+        prepare_time: int = 60, tn_limit: int = 1,
     ) -> Dict[str, Any]:
         """AVA 战场内对玩家发起集结
 
         Args:
             lvl_id: 战场 ID
-            target_id: 目标唯一 ID (如 "2_20010643_1")
+            target_id: 目标唯一 ID (如 "10101_20010669")
             march_info: 队长出征部队信息
             prepare_time: 集结准备时间（默认60秒）
             tn_limit: 部队数量限制
         """
+        import time as _time
+        timestamp = str(int(_time.time() * 1_000_000))
         overrides: Dict[str, Any] = {
             "march_type": 13,
             "target_info": {"id": target_id},
             "target_type": 10101,
             "prepare_time": prepare_time,
             "tn_limit": tn_limit,
+            "timestamp": timestamp,
         }
         if march_info:
             overrides["march_info"] = march_info
@@ -704,12 +707,15 @@ class GameAPIClient:
         """
         # 从 target_id 提取 target_type（格式: "{type}_{id}_{...}"）
         target_type = int(target_id.split("_")[0]) if "_" in target_id else 10001
+        import time as _time
+        timestamp = str(int(_time.time() * 1_000_000))
         overrides: Dict[str, Any] = {
             "march_type": 14,
             "target_info": {"id": target_id},
             "target_type": target_type,
             "prepare_time": prepare_time,
             "tn_limit": tn_limit,
+            "timestamp": timestamp,
         }
         if march_info:
             overrides["march_info"] = march_info

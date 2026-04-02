@@ -348,10 +348,9 @@ class L0Executor:
 
             # Smart L0: 移城失败重试（随机偏移坐标）
             if (not result.success
-                    and original_attack_instr is not None
                     and instr.action == ActionType.LVL_MOVE_CITY):
                 result = await self._retry_move_city(
-                    instr, original_attack_instr,
+                    instr, original_attack_instr or instr,
                 )
 
             results.append(result)
@@ -563,7 +562,7 @@ class L0Executor:
 
         elif action == ActionType.LVL_INITIATE_RALLY:
             lvl_id = self.client.default_header.get("lvl_id", 0)
-            target_id = f"2_{instr.target_uid}_1"
+            target_id = f"10101_{instr.target_uid}"
             prepare = instr.prepare_time if instr.prepare_time != 300 else 60
             return await self.client.lvl_create_rally(
                 instr.uid, lvl_id, target_id, march, prepare_time=prepare,
