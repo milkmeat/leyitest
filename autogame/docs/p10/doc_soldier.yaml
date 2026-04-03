@@ -1,0 +1,1864 @@
+doc_soldier:
+- id: 1
+  title: Slugger
+  name: T1 Slugger Basher
+  desc: 'Basher Type: A former civilian wielding a simple baseball bat, aiming for
+    home runs on zombie heads.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 2
+  title: Brawler
+  name: T2 Brawler Basher
+  desc: 'Basher Type: Toughened by street fights, he uses an aluminum bat and improvised
+    padding to survive.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 3
+  title: 'Crusher '
+  name: T3 Crusher  Basher
+  desc: 'Basher Type: He modified his weapon with rusty nails to smash through the
+    frozen skulls of the infected.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 4
+  title: Riot Guard
+  name: T4 Riot Guard Basher
+  desc: 'Basher Type: Equipped with standard police gear to hold the line against
+    chaotic waves of enemies.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 5
+  title: 'Enforcer '
+  name: T5 Enforcer  Basher
+  desc: 'Basher Type: Wearing standard-issue combat fatigues, he maintains shelter
+    order with a riot shield and unyielding discipline.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 6
+  title: Pacifier
+  name: T6 Pacifier Basher
+  desc: 'Basher Type: Specialized in crowd control, he uses a high-voltage baton to
+    subdue frenzied infected without lethal chaos.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 7
+  title: Polar Sentry
+  name: T7 Polar Sentry Basher
+  desc: 'Basher Type: Dressed in thermal ops gear, he stands watch in the blizzard
+    where others would freeze.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 8
+  title: Bulwark
+  name: T8 Bulwark Basher
+  desc: 'Basher Type: Clad in insulated hazmat gear and heaving a massive alloy shield,
+    he acts as a mobile wall against toxic threats.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 9
+  title: Heavy Breacher
+  name: T9 Heavy Breacher Basher
+  desc: 'Basher Type: A heavily armored elite soldier specialized in breaking enemy
+    formations with kinetic force.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 10
+  title: Praetorian
+  name: T10 Praetorian Basher
+  desc: 'Basher Type: The absolute elite of humanity''s forces, clad in power armor
+    to guard the last hope of civilization.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 11
+  title: Juggernaut
+  name: Juggernaut Basher
+  desc: 'Basher Type: Forged from desert dust and steel, the Piercers march as unyielding
+    sentinels of the frontier.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 12
+  title: Slugger
+  name: Slugger Basher
+  desc: 'Basher Type: A former civilian wielding a simple baseball bat, aiming for
+    home runs on zombie heads.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 13
+  title: Brawler
+  name: Brawler Basher
+  desc: 'Basher Type: Toughened by street fights, he uses an aluminum bat and improvised
+    padding to survive.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 14
+  title: 'Crusher '
+  name: Crusher  Basher
+  desc: 'Basher Type: He modified his weapon with rusty nails to smash through the
+    frozen skulls of the infected.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 15
+  title: Riot Guard
+  name: Riot Guard Basher
+  desc: 'Basher Type: Equipped with standard police gear to hold the line against
+    chaotic waves of enemies.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 16
+  title: 'Enforcer '
+  name: Enforcer  Basher
+  desc: 'Basher Type: Wearing standard-issue combat fatigues, he maintains shelter
+    order with a riot shield and unyielding discipline.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 17
+  title: Pacifier
+  name: Pacifier Basher
+  desc: 'Basher Type: Specialized in crowd control, he uses a high-voltage baton to
+    subdue frenzied infected without lethal chaos.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 18
+  title: Polar Sentry
+  name: Polar Sentry Basher
+  desc: 'Basher Type: Dressed in thermal ops gear, he stands watch in the blizzard
+    where others would freeze.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 19
+  title: Bulwark
+  name: Bulwark Basher
+  desc: 'Basher Type: Clad in insulated hazmat gear and heaving a massive alloy shield,
+    he acts as a mobile wall against toxic threats.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 20
+  title: Heavy Breacher
+  name: Heavy Breacher Basher
+  desc: 'Basher Type: A heavily armored elite soldier specialized in breaking enemy
+    formations with kinetic force.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 21
+  title: Praetorian
+  name: Praetorian Basher
+  desc: 'Basher Type: The absolute elite of humanity''s forces, clad in power armor
+    to guard the last hope of civilization.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 22
+  title: Juggernaut
+  name: Juggernaut Basher
+  desc: 'Basher Type: Forged from desert dust and steel, the Piercers march as unyielding
+    sentinels of the frontier.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 23
+  title: Slugger
+  name: Slugger Basher
+  desc: 'Basher Type: A former civilian wielding a simple baseball bat, aiming for
+    home runs on zombie heads.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 24
+  title: Brawler
+  name: Brawler Basher
+  desc: 'Basher Type: Toughened by street fights, he uses an aluminum bat and improvised
+    padding to survive.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 25
+  title: 'Crusher '
+  name: Crusher  Basher
+  desc: 'Basher Type: He modified his weapon with rusty nails to smash through the
+    frozen skulls of the infected.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 26
+  title: Riot Guard
+  name: Riot Guard Basher
+  desc: 'Basher Type: Equipped with standard police gear to hold the line against
+    chaotic waves of enemies.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 27
+  title: 'Enforcer '
+  name: Enforcer  Basher
+  desc: 'Basher Type: Wearing standard-issue combat fatigues, he maintains shelter
+    order with a riot shield and unyielding discipline.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 28
+  title: Pacifier
+  name: Pacifier Basher
+  desc: 'Basher Type: Specialized in crowd control, he uses a high-voltage baton to
+    subdue frenzied infected without lethal chaos.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 29
+  title: Polar Sentry
+  name: Polar Sentry Basher
+  desc: 'Basher Type: Dressed in thermal ops gear, he stands watch in the blizzard
+    where others would freeze.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 30
+  title: Bulwark
+  name: Bulwark Basher
+  desc: 'Basher Type: Clad in insulated hazmat gear and heaving a massive alloy shield,
+    he acts as a mobile wall against toxic threats.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 31
+  title: Heavy Breacher
+  name: Heavy Breacher Basher
+  desc: 'Basher Type: A heavily armored elite soldier specialized in breaking enemy
+    formations with kinetic force.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 32
+  title: Praetorian
+  name: Praetorian Basher
+  desc: 'Basher Type: The absolute elite of humanity''s forces, clad in power armor
+    to guard the last hope of civilization.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 33
+  title: Juggernaut
+  name: Juggernaut Basher
+  desc: 'Basher Type: Forged from desert dust and steel, the Piercers march as unyielding
+    sentinels of the frontier.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 34
+  title: Slugger
+  name: Slugger Basher
+  desc: 'Basher Type: A former civilian wielding a simple baseball bat, aiming for
+    home runs on zombie heads.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 35
+  title: Brawler
+  name: Brawler Basher
+  desc: 'Basher Type: Toughened by street fights, he uses an aluminum bat and improvised
+    padding to survive.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 36
+  title: 'Crusher '
+  name: Crusher  Basher
+  desc: 'Basher Type: He modified his weapon with rusty nails to smash through the
+    frozen skulls of the infected.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 37
+  title: Riot Guard
+  name: Riot Guard Basher
+  desc: 'Basher Type: Equipped with standard police gear to hold the line against
+    chaotic waves of enemies.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 38
+  title: 'Enforcer '
+  name: Enforcer  Basher
+  desc: 'Basher Type: Wearing standard-issue combat fatigues, he maintains shelter
+    order with a riot shield and unyielding discipline.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 39
+  title: Pacifier
+  name: Pacifier Basher
+  desc: 'Basher Type: Specialized in crowd control, he uses a high-voltage baton to
+    subdue frenzied infected without lethal chaos.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 40
+  title: Polar Sentry
+  name: Polar Sentry Basher
+  desc: 'Basher Type: Dressed in thermal ops gear, he stands watch in the blizzard
+    where others would freeze.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 41
+  title: Bulwark
+  name: Bulwark Basher
+  desc: 'Basher Type: Clad in insulated hazmat gear and heaving a massive alloy shield,
+    he acts as a mobile wall against toxic threats.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 42
+  title: Heavy Breacher
+  name: Heavy Breacher Basher
+  desc: 'Basher Type: A heavily armored elite soldier specialized in breaking enemy
+    formations with kinetic force.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 43
+  title: Praetorian
+  name: Praetorian Basher
+  desc: 'Basher Type: The absolute elite of humanity''s forces, clad in power armor
+    to guard the last hope of civilization.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 44
+  title: Juggernaut
+  name: Juggernaut Basher
+  desc: 'Basher Type: Forged from desert dust and steel, the Piercers march as unyielding
+    sentinels of the frontier.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 101
+  title: 'Lookout '
+  name: T1 Lookout  Shooter
+  desc: 'Shooter Type: Perched on rooftops, she uses a silent scavenged crossbow to
+    spot incoming dangers.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 102
+  title: Stalker
+  name: T2 Stalker Shooter
+  desc: 'Shooter Type: Moves silently through the ruins, using a sturdy metal crossbow
+    to hunt without attracting hordes.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 103
+  title: Bolt Hunter
+  name: T3 Bolt Hunter Shooter
+  desc: 'Shooter Type: Master of the compound crossbow, capable of piercing thick
+    winter coats and zombie flesh.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 104
+  title: Arbalist
+  name: T4 Arbalist Shooter
+  desc: 'Shooter Type: She winds up a heavy-duty siege crossbow designed to punch
+    bolts through the thickest frozen armor.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 105
+  title: Blaster
+  name: T5 Blaster Shooter
+  desc: 'Shooter Type: Armed with a modified short-range cannon, she blasts large
+    holes through the zombie frontline.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 106
+  title: Rifleman
+  name: T6 Rifleman Shooter
+  desc: 'Shooter Type: Marking the return of industrial firepower, she cuts down enemies
+    with controlled bursts from her assault rifle.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 107
+  title: Frost Sniper
+  name: T7 Frost Sniper Shooter
+  desc: 'Shooter Type: Blends perfectly into the snow, taking out high-value targets
+    before they get close.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 108
+  title: Sharpshooter
+  name: T8 Sharpshooter Shooter
+  desc: 'Shooter Type: Her modified heavy rifle allows for extreme accuracy even during
+    gale-force winds.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 109
+  title: Spec-Ops
+  name: T9 Spec-Ops Shooter
+  desc: 'Shooter Type: An elite operative using advanced tech to execute missions
+    with surgical precision.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 110
+  title: Railgunner
+  name: T10 Railgunner Shooter
+  desc: 'Shooter Type: Wields a prototype energy weapon that evaporates enemies instantly
+    with a beam of light.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 111
+  title: Crackshot
+  name: Crackshot Shooter
+  desc: 'Shooter Type: With pinpoint precision, the Gunslinger unleash devastating
+    long-range assaults from the ridge above.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 112
+  title: 'Lookout '
+  name: Lookout  Shooter
+  desc: 'Shooter Type: Perched on rooftops, she uses a silent scavenged crossbow to
+    spot incoming dangers.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 113
+  title: Stalker
+  name: Stalker Shooter
+  desc: 'Shooter Type: Moves silently through the ruins, using a sturdy metal crossbow
+    to hunt without attracting hordes.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 114
+  title: Bolt Hunter
+  name: Bolt Hunter Shooter
+  desc: 'Shooter Type: Master of the compound crossbow, capable of piercing thick
+    winter coats and zombie flesh.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 115
+  title: Arbalist
+  name: Arbalist Shooter
+  desc: 'Shooter Type: She winds up a heavy-duty siege crossbow designed to punch
+    bolts through the thickest frozen armor.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 116
+  title: Blaster
+  name: Blaster Shooter
+  desc: 'Shooter Type: Armed with a modified short-range cannon, she blasts large
+    holes through the zombie frontline.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 117
+  title: Rifleman
+  name: Rifleman Shooter
+  desc: 'Shooter Type: Marking the return of industrial firepower, she cuts down enemies
+    with controlled bursts from her assault rifle.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 118
+  title: Frost Sniper
+  name: Frost Sniper Shooter
+  desc: 'Shooter Type: Blends perfectly into the snow, taking out high-value targets
+    before they get close.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 119
+  title: Sharpshooter
+  name: Sharpshooter Shooter
+  desc: 'Shooter Type: Her modified heavy rifle allows for extreme accuracy even during
+    gale-force winds.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 120
+  title: Spec-Ops
+  name: Spec-Ops Shooter
+  desc: 'Shooter Type: An elite operative using advanced tech to execute missions
+    with surgical precision.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 121
+  title: Railgunner
+  name: Railgunner Shooter
+  desc: 'Shooter Type: Wields a prototype energy weapon that evaporates enemies instantly
+    with a beam of light.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 122
+  title: Crackshot
+  name: Crackshot Shooter
+  desc: 'Shooter Type: With pinpoint precision, the Gunslinger unleash devastating
+    long-range assaults from the ridge above.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 123
+  title: 'Lookout '
+  name: Lookout  Shooter
+  desc: 'Shooter Type: Perched on rooftops, she uses a silent scavenged crossbow to
+    spot incoming dangers.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 124
+  title: Stalker
+  name: Stalker Shooter
+  desc: 'Shooter Type: Moves silently through the ruins, using a sturdy metal crossbow
+    to hunt without attracting hordes.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 125
+  title: Bolt Hunter
+  name: Bolt Hunter Shooter
+  desc: 'Shooter Type: Master of the compound crossbow, capable of piercing thick
+    winter coats and zombie flesh.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 126
+  title: Arbalist
+  name: Arbalist Shooter
+  desc: 'Shooter Type: She winds up a heavy-duty siege crossbow designed to punch
+    bolts through the thickest frozen armor.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 127
+  title: Blaster
+  name: Blaster Shooter
+  desc: 'Shooter Type: Armed with a modified short-range cannon, she blasts large
+    holes through the zombie frontline.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 128
+  title: Rifleman
+  name: Rifleman Shooter
+  desc: 'Shooter Type: Marking the return of industrial firepower, she cuts down enemies
+    with controlled bursts from her assault rifle.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 129
+  title: Frost Sniper
+  name: Frost Sniper Shooter
+  desc: 'Shooter Type: Blends perfectly into the snow, taking out high-value targets
+    before they get close.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 130
+  title: Sharpshooter
+  name: Sharpshooter Shooter
+  desc: 'Shooter Type: Her modified heavy rifle allows for extreme accuracy even during
+    gale-force winds.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 131
+  title: Spec-Ops
+  name: Spec-Ops Shooter
+  desc: 'Shooter Type: An elite operative using advanced tech to execute missions
+    with surgical precision.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 132
+  title: Railgunner
+  name: Railgunner Shooter
+  desc: 'Shooter Type: Wields a prototype energy weapon that evaporates enemies instantly
+    with a beam of light.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 133
+  title: Crackshot
+  name: Crackshot Shooter
+  desc: 'Shooter Type: With pinpoint precision, the Gunslinger unleash devastating
+    long-range assaults from the ridge above.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 134
+  title: 'Lookout '
+  name: Lookout  Shooter
+  desc: 'Shooter Type: Perched on rooftops, she uses a silent scavenged crossbow to
+    spot incoming dangers.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 135
+  title: Stalker
+  name: Stalker Shooter
+  desc: 'Shooter Type: Moves silently through the ruins, using a sturdy metal crossbow
+    to hunt without attracting hordes.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 136
+  title: Bolt Hunter
+  name: Bolt Hunter Shooter
+  desc: 'Shooter Type: Master of the compound crossbow, capable of piercing thick
+    winter coats and zombie flesh.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 137
+  title: Arbalist
+  name: Arbalist Shooter
+  desc: 'Shooter Type: She winds up a heavy-duty siege crossbow designed to punch
+    bolts through the thickest frozen armor.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 138
+  title: Blaster
+  name: Blaster Shooter
+  desc: 'Shooter Type: Armed with a modified short-range cannon, she blasts large
+    holes through the zombie frontline.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 139
+  title: Rifleman
+  name: Rifleman Shooter
+  desc: 'Shooter Type: Marking the return of industrial firepower, she cuts down enemies
+    with controlled bursts from her assault rifle.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 140
+  title: Frost Sniper
+  name: Frost Sniper Shooter
+  desc: 'Shooter Type: Blends perfectly into the snow, taking out high-value targets
+    before they get close.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 141
+  title: Sharpshooter
+  name: Sharpshooter Shooter
+  desc: 'Shooter Type: Her modified heavy rifle allows for extreme accuracy even during
+    gale-force winds.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 142
+  title: Spec-Ops
+  name: Spec-Ops Shooter
+  desc: 'Shooter Type: An elite operative using advanced tech to execute missions
+    with surgical precision.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 143
+  title: Railgunner
+  name: Railgunner Shooter
+  desc: 'Shooter Type: Wields a prototype energy weapon that evaporates enemies instantly
+    with a beam of light.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 144
+  title: Crackshot
+  name: Crackshot Shooter
+  desc: 'Shooter Type: With pinpoint precision, the Gunslinger unleash devastating
+    long-range assaults from the ridge above.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 201
+  title: Militia
+  name: T1 Militia Piercer
+  desc: 'Piercer Type: A fresh recruit armed with a sharpened stake, taking his first
+    brave stand in the war for survival.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 202
+  title: Sentry
+  name: T2 Sentry Piercer
+  desc: 'Piercer Type: Upgraded with a blade-tipped pole, he patrols the icy perimeter
+    to spot and intercept incoming dangers.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 203
+  title: Impaler
+  name: T3 Impaler Piercer
+  desc: 'Piercer Type: His weapon is fitted with a solid metal spike, designed to
+    pierce deep into vital organs with a clean, direct thrust.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 204
+  title: Pikeman
+  name: T4 Pikeman Piercer
+  desc: 'Piercer Type: Part of a disciplined formation used to stop rushing zombies
+    in their tracks.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 205
+  title: Interceptor
+  name: T5 Interceptor Piercer
+  desc: 'Piercer Type: A disciplined soldier using a modified alloy spear to intercept
+    and halt fast-moving targets before they breach the line.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 206
+  title: 'Striker '
+  name: T6 Striker Piercer
+  desc: 'Piercer Type: Light on his feet, he uses a modern alloy lance for quick hit-and-run
+    tactics.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 207
+  title: Arctic Lancer
+  name: T7 Arctic Lancer Piercer
+  desc: 'Piercer Type: Equipped for deep snow combat, minimizing friction to charge
+    swiftly across the ice.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 208
+  title: 'Vanguard '
+  name: T8 Vanguard Piercer
+  desc: 'Piercer Type: Clad in heavy impact armor, he is the first to pierce the heart
+    of the zombie swarm.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 209
+  title: Duelist
+  name: T9 Duelist Piercer
+  desc: 'Piercer Type: Uses a high-frequency vibrating spear tip to penetrate the
+    toughest mutations known to man.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 210
+  title: Justicar
+  name: T10 Justicar Piercer
+  desc: 'Piercer Type: A judge of the frost land carrying a plasma-edged glaive to
+    cleanse the infected.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 211
+  title: Stampeder
+  name: Stampeder Piercer
+  desc: 'Piercer Type: Shielded in blazing gunfire, they stand as the last bulwark
+    against the endless wasteland.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 212
+  title: Militia
+  name: Militia Piercer
+  desc: 'Piercer Type: A fresh recruit armed with a sharpened stake, taking his first
+    brave stand in the war for survival.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 213
+  title: Sentry
+  name: Sentry Piercer
+  desc: 'Piercer Type: Upgraded with a blade-tipped pole, he patrols the icy perimeter
+    to spot and intercept incoming dangers.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 214
+  title: Impaler
+  name: Impaler Piercer
+  desc: 'Piercer Type: His weapon is fitted with a solid metal spike, designed to
+    pierce deep into vital organs with a clean, direct thrust.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 215
+  title: Pikeman
+  name: Pikeman Piercer
+  desc: 'Piercer Type: Part of a disciplined formation used to stop rushing zombies
+    in their tracks.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 216
+  title: Interceptor
+  name: Interceptor Piercer
+  desc: 'Piercer Type: A disciplined soldier using a modified alloy spear to intercept
+    and halt fast-moving targets before they breach the line.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 217
+  title: 'Striker '
+  name: Striker  Piercer
+  desc: 'Piercer Type: Light on his feet, he uses a modern alloy lance for quick hit-and-run
+    tactics.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 218
+  title: Arctic Lancer
+  name: Arctic Lancer Piercer
+  desc: 'Piercer Type: Equipped for deep snow combat, minimizing friction to charge
+    swiftly across the ice.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 219
+  title: 'Vanguard '
+  name: Vanguard  Piercer
+  desc: 'Piercer Type: Clad in heavy impact armor, he is the first to pierce the heart
+    of the zombie swarm.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 220
+  title: Duelist
+  name: Duelist Piercer
+  desc: 'Piercer Type: Uses a high-frequency vibrating spear tip to penetrate the
+    toughest mutations known to man.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 221
+  title: Justicar
+  name: Justicar Piercer
+  desc: 'Piercer Type: A judge of the frost land carrying a plasma-edged glaive to
+    cleanse the infected.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 222
+  title: Stampeder
+  name: Stampeder Piercer
+  desc: 'Piercer Type: Shielded in blazing gunfire, they stand as the last bulwark
+    against the endless wasteland.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 223
+  title: Militia
+  name: Militia Piercer
+  desc: 'Piercer Type: A fresh recruit armed with a sharpened stake, taking his first
+    brave stand in the war for survival.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 224
+  title: Sentry
+  name: Sentry Piercer
+  desc: 'Piercer Type: Upgraded with a blade-tipped pole, he patrols the icy perimeter
+    to spot and intercept incoming dangers.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 225
+  title: Impaler
+  name: Impaler Piercer
+  desc: 'Piercer Type: His weapon is fitted with a solid metal spike, designed to
+    pierce deep into vital organs with a clean, direct thrust.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 226
+  title: Pikeman
+  name: Pikeman Piercer
+  desc: 'Piercer Type: Part of a disciplined formation used to stop rushing zombies
+    in their tracks.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 227
+  title: Interceptor
+  name: Interceptor Piercer
+  desc: 'Piercer Type: A disciplined soldier using a modified alloy spear to intercept
+    and halt fast-moving targets before they breach the line.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 228
+  title: 'Striker '
+  name: Striker  Piercer
+  desc: 'Piercer Type: Light on his feet, he uses a modern alloy lance for quick hit-and-run
+    tactics.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 229
+  title: Arctic Lancer
+  name: Arctic Lancer Piercer
+  desc: 'Piercer Type: Equipped for deep snow combat, minimizing friction to charge
+    swiftly across the ice.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 230
+  title: 'Vanguard '
+  name: Vanguard  Piercer
+  desc: 'Piercer Type: Clad in heavy impact armor, he is the first to pierce the heart
+    of the zombie swarm.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 231
+  title: Duelist
+  name: Duelist Piercer
+  desc: 'Piercer Type: Uses a high-frequency vibrating spear tip to penetrate the
+    toughest mutations known to man.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 232
+  title: Justicar
+  name: Justicar Piercer
+  desc: 'Piercer Type: A judge of the frost land carrying a plasma-edged glaive to
+    cleanse the infected.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 233
+  title: Stampeder
+  name: Stampeder Piercer
+  desc: 'Piercer Type: Shielded in blazing gunfire, they stand as the last bulwark
+    against the endless wasteland.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 234
+  title: Militia
+  name: Militia Piercer
+  desc: 'Piercer Type: A fresh recruit armed with a sharpened stake, taking his first
+    brave stand in the war for survival.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 235
+  title: Sentry
+  name: Sentry Piercer
+  desc: 'Piercer Type: Upgraded with a blade-tipped pole, he patrols the icy perimeter
+    to spot and intercept incoming dangers.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 236
+  title: Impaler
+  name: Impaler Piercer
+  desc: 'Piercer Type: His weapon is fitted with a solid metal spike, designed to
+    pierce deep into vital organs with a clean, direct thrust.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 237
+  title: Pikeman
+  name: Pikeman Piercer
+  desc: 'Piercer Type: Part of a disciplined formation used to stop rushing zombies
+    in their tracks.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 238
+  title: Interceptor
+  name: Interceptor Piercer
+  desc: 'Piercer Type: A disciplined soldier using a modified alloy spear to intercept
+    and halt fast-moving targets before they breach the line.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 239
+  title: 'Striker '
+  name: Striker  Piercer
+  desc: 'Piercer Type: Light on his feet, he uses a modern alloy lance for quick hit-and-run
+    tactics.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 240
+  title: Arctic Lancer
+  name: Arctic Lancer Piercer
+  desc: 'Piercer Type: Equipped for deep snow combat, minimizing friction to charge
+    swiftly across the ice.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 241
+  title: 'Vanguard '
+  name: Vanguard  Piercer
+  desc: 'Piercer Type: Clad in heavy impact armor, he is the first to pierce the heart
+    of the zombie swarm.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 242
+  title: Duelist
+  name: Duelist Piercer
+  desc: 'Piercer Type: Uses a high-frequency vibrating spear tip to penetrate the
+    toughest mutations known to man.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 243
+  title: Justicar
+  name: Justicar Piercer
+  desc: 'Piercer Type: A judge of the frost land carrying a plasma-edged glaive to
+    cleanse the infected.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 244
+  title: Stampeder
+  name: Stampeder Piercer
+  desc: 'Piercer Type: Shielded in blazing gunfire, they stand as the last bulwark
+    against the endless wasteland.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 601
+  title: Slave Zombie
+  name: Slave Zombie
+  desc: A member of the Zombie, a notorious gang in the wasteland that finds joy in
+    killings and tortures.
+  info: ''
+- id: 602
+  title: Buttonman Zombie
+  name: Buttonman Zombie
+  desc: A member of the Zombie, a notorious gang in the wasteland that finds joy in
+    killings and tortures.
+  info: ''
+- id: 603
+  title: Henchman Zombie
+  name: Henchman Zombie
+  desc: A member of the Zombie, a notorious gang in the wasteland that finds joy in
+    killings and tortures.
+  info: ''
+- id: 604
+  title: Rookie Zombie
+  name: Rookie Zombie
+  desc: A member of the Zombie, a notorious gang in the wasteland that finds joy in
+    killings and tortures.
+  info: ''
+- id: 605
+  title: Fighter Zombie
+  name: Fighter Zombie
+  desc: A member of the Zombie, a notorious gang in the wasteland that finds joy in
+    killings and tortures.
+  info: ''
+- id: 606
+  title: Warrior Zombie
+  name: Warrior Zombie
+  desc: A member of the Zombie, a notorious gang in the wasteland that finds joy in
+    killings and tortures.
+  info: ''
+- id: 607
+  title: Elite Zombie
+  name: Elite Zombie
+  desc: A member of the Zombie, a notorious gang in the wasteland that finds joy in
+    killings and tortures.
+  info: ''
+- id: 608
+  title: Underboss Zombie
+  name: Underboss Zombie
+  desc: A member of the Zombie, a notorious gang in the wasteland that finds joy in
+    killings and tortures.
+  info: ''
+- id: 609
+  title: Boss Zombie
+  name: Boss Zombie
+  desc: A member of the Zombie, a notorious gang in the wasteland that finds joy in
+    killings and tortures.
+  info: ''
+- id: 610
+  title: Berserk Boss Zombie
+  name: Berserk Boss Zombie
+  desc: A member of the Zombie, a notorious gang in the wasteland that finds joy in
+    killings and tortures.
+  info: ''
+- id: 1401
+  title: Junior Nightclaw
+  name: Junior Nightclaw
+  desc: During the event, killing Beast will grant you the opportunity to meet Junior
+    Nightclaw. Defeat her, and you'll win her amazing gifts!
+  info: ''
+- id: 1402
+  title: Master Nightclaw
+  name: Master Nightclaw
+  desc: During the event, killing Beast will grant you the opportunity to meet Master
+    Nightclaw. Defeat her, and you'll win her amazing gifts!
+  info: ''
+- id: 10001
+  title: <b>Night Footman</b>
+  name: <b>Lv.1 Night Footman</b>
+  desc: 'Basher Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 10002
+  title: <b>Lurker Footman</b>
+  name: <b>Lv.2 Lurker Footman</b>
+  desc: 'Basher Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 10003
+  title: <b>Slugger Footman</b>
+  name: <b>Lv.3 Slugger Footman</b>
+  desc: 'Basher Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 10004
+  title: <b>Trapper Footman</b>
+  name: <b>Lv.4 Trapper Footman</b>
+  desc: 'Basher Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 10005
+  title: <b>Snakeshoe Footman</b>
+  name: <b>Lv.5 Snakeshoe Footman</b>
+  desc: 'Basher Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 10006
+  title: <b>Pikejaw Footman</b>
+  name: <b>Lv.6 Pikejaw Footman</b>
+  desc: 'Basher Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 10007
+  title: <b>Bonejack Footman</b>
+  name: <b>Lv.7 Bonejack Footman</b>
+  desc: 'Basher Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 10008
+  title: <b>Shatter Footman</b>
+  name: <b>Lv.8 Shatter Footman</b>
+  desc: 'Basher Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 10009
+  title: <b>Stumpcrack Footman</b>
+  name: <b>Lv.9 Stumpcrack Footman</b>
+  desc: 'Basher Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 10010
+  title: <b>Ironhead Footman</b>
+  name: <b>Lv.9 Ironhead  Footman</b>
+  desc: 'Basher Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 10011
+  title: <b>Tyrant Footman</b>
+  name: <b>Lv.10 Tyrant Footman</b>
+  desc: 'Basher Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 10101
+  title: <b>Recluse Marksman</b>
+  name: <b>Lv.1 Recluse Marksman</b>
+  desc: 'Shooter Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 10102
+  title: <b>Prowler Marksman</b>
+  name: <b>Lv.2 Prowler Marksman</b>
+  desc: 'Shooter Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 10103
+  title: <b>Striker Marksman</b>
+  name: <b>Lv.3 Striker Marksman</b>
+  desc: 'Shooter Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 10104
+  title: <b>Slayer Marksman</b>
+  name: <b>Lv.4 Slayer Marksman</b>
+  desc: 'Shooter Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 10105
+  title: <b>Dustcloak Marksman</b>
+  name: <b>Lv.5 Dustcloak Marksman</b>
+  desc: 'Shooter Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 10106
+  title: <b>Bloodstorm Marksman</b>
+  name: <b>Lv.6 Bloodstorm Marksman</b>
+  desc: 'Shooter Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 10107
+  title: <b>Mutineer Marksman</b>
+  name: <b>Lv.7 Mutineer Marksman</b>
+  desc: 'Shooter Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 10108
+  title: <b>Marauder Marksman</b>
+  name: <b>Lv.8 Marauder Marksman</b>
+  desc: 'Shooter Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 10109
+  title: <b>Crowflight Marksman</b>
+  name: <b>Lv.9 Crowflight Marksman</b>
+  desc: 'Shooter Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 10110
+  title: <b>Condor Marksman</b>
+  name: <b>Lv.9 Condor Marksman</b>
+  desc: 'Shooter Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 10111
+  title: <b>Plaguewing Marksman</b>
+  name: <b>Lv.10 Plaguewing Marksman</b>
+  desc: 'Shooter Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 10201
+  title: <b>Screamer Chaser</b>
+  name: <b>Lv.1 Screamer Chaser</b>
+  desc: 'Piercer Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 10202
+  title: <b>Creeper Chaser</b>
+  name: <b>Lv.2 Creeper Chaser</b>
+  desc: 'Piercer Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 10203
+  title: <b>Reaper Chaser</b>
+  name: <b>Lv.3 Reaper Chaser</b>
+  desc: 'Piercer Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 10204
+  title: <b>Ironjack Chaser</b>
+  name: <b>Lv.4 Ironjack Chaser</b>
+  desc: 'Piercer Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 10205
+  title: <b>Firekick Chaser</b>
+  name: <b>Lv.5 Firekick Chaser</b>
+  desc: 'Piercer Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 10206
+  title: <b>Cleaverjack Chaser</b>
+  name: <b>Lv.6 Cleaverjack Chaser</b>
+  desc: 'Piercer Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 10207
+  title: <b>Bloodtracker Chaser</b>
+  name: <b>Lv.7 Bloodtracker Chaser</b>
+  desc: 'Piercer Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 10208
+  title: <b>Gulchrider Chaser</b>
+  name: <b>Lv.8 Gulchrider Chaser</b>
+  desc: 'Piercer Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 10209
+  title: <b>Landboss Chaser</b>
+  name: <b>Lv.9 Landboss Chaser</b>
+  desc: 'Piercer Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 10210
+  title: <b>Canyonlord Chaser</b>
+  name: <b>Lv.9 Canyonlord Chaser</b>
+  desc: 'Piercer Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 10211
+  title: <b>Dustlash Chaser</b>
+  name: <b>Lv.10 Dustlash Chaser</b>
+  desc: 'Piercer Type: They are the type of enemies that you do not want to encounter.'
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 11001
+  title: Dustveil Gangster (Basher)
+  name: T1 Dustveil Gangster (Basher)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 11002
+  title: Dustveil Gangster (Basher)
+  name: T2 Dustveil Gangster (Basher)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 11003
+  title: Dustveil Gangster (Basher)
+  name: T3 Dustveil Gangster (Basher)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 11004
+  title: Dustveil Gangster (Basher)
+  name: T4 Dustveil Gangster (Basher)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 11005
+  title: Dustveil Gangster (Basher)
+  name: T5 Dustveil Gangster (Basher)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 11006
+  title: Dustveil Gangster (Basher)
+  name: T6 Dustveil Gangster (Basher)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 11007
+  title: Dustveil Gangster (Basher)
+  name: T7 Dustveil Gangster (Basher)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 11008
+  title: Dustveil Gangster (Basher)
+  name: T8 Dustveil Gangster (Basher)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 11009
+  title: Dustveil Gangster (Basher)
+  name: T9 Dustveil Gangster (Basher)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 11010
+  title: Dustveil Gangster (Basher)
+  name: T10 Dustveil Gangster (Basher)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 11011
+  title: Dustveil Gangster (Basher)
+  name: T11 Dustveil Gangster (Basher)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Piercer.</color>\r\n<color=#f01c2b>Weak against\
+    \ Shooter.</color>"
+- id: 11101
+  title: Dustveil Gangster (Shooter)
+  name: T1 Dustveil Gangster (Shooter)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 11102
+  title: Dustveil Gangster (Shooter)
+  name: T2 Dustveil Gangster (Shooter)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 11103
+  title: Dustveil Gangster (Shooter)
+  name: T3 Dustveil Gangster (Shooter)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 11104
+  title: Dustveil Gangster (Shooter)
+  name: T4 Dustveil Gangster (Shooter)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 11105
+  title: Dustveil Gangster (Shooter)
+  name: T5 Dustveil Gangster (Shooter)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 11106
+  title: Dustveil Gangster (Shooter)
+  name: T6 Dustveil Gangster (Shooter)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 11107
+  title: Dustveil Gangster (Shooter)
+  name: T7 Dustveil Gangster (Shooter)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 11108
+  title: Dustveil Gangster (Shooter)
+  name: T8 Dustveil Gangster (Shooter)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 11109
+  title: Dustveil Gangster (Shooter)
+  name: T9 Dustveil Gangster (Shooter)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 11110
+  title: Dustveil Gangster (Shooter)
+  name: T10 Dustveil Gangster (Shooter)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 11111
+  title: Dustveil Gangster (Shooter)
+  name: T11 Dustveil Gangster (Shooter)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Basher.</color>\r\n<color=#f01c2b>Weak against\
+    \ Piercer.</color>"
+- id: 11201
+  title: Dustveil Gangster (Piercer)
+  name: T1 Dustveil Gangster (Piercer)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 11202
+  title: Dustveil Gangster (Piercer)
+  name: T2 Dustveil Gangster (Piercer)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 11203
+  title: Dustveil Gangster (Piercer)
+  name: T3 Dustveil Gangster (Piercer)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 11204
+  title: Dustveil Gangster (Piercer)
+  name: T4 Dustveil Gangster (Piercer)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 11205
+  title: Dustveil Gangster (Piercer)
+  name: T5 Dustveil Gangster (Piercer)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 11206
+  title: Dustveil Gangster (Piercer)
+  name: T6 Dustveil Gangster (Piercer)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 11207
+  title: Dustveil Gangster (Piercer)
+  name: T7 Dustveil Gangster (Piercer)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 11208
+  title: Dustveil Gangster (Piercer)
+  name: T8 Dustveil Gangster (Piercer)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 11209
+  title: Dustveil Gangster (Piercer)
+  name: T9 Dustveil Gangster (Piercer)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 11210
+  title: Dustveil Gangster (Piercer)
+  name: T10 Dustveil Gangster (Piercer)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+- id: 11211
+  title: Dustveil Gangster (Piercer)
+  name: T11 Dustveil Gangster (Piercer)
+  desc: Fierce creatures inhabit the Starcore area. Defeat them to advance your adventure.
+  info: "<color=#299108>Strong against Shooter.</color>\r\n<color=#f01c2b>Weak against\
+    \ Basher.</color>"
+doc_soldier_grade:
+- id: 0
+  name_raw: T0
+  name: T0
+- id: 1
+  name_raw: <b><color=#85d626>T1</color></b>
+  name: T1
+- id: 2
+  name_raw: <b><color=#85d626>T1</color></b>
+  name: T1
+- id: 3
+  name_raw: <b><color=#85d626>T1</color></b>
+  name: T1
+- id: 4
+  name_raw: <b><color=#1da8e2>T2</color></b>
+  name: T2
+- id: 5
+  name_raw: <b><color=#1da8e2>T2</color></b>
+  name: T2
+- id: 6
+  name_raw: <b><color=#1da8e2>T2</color></b>
+  name: T2
+- id: 7
+  name_raw: <b><color=#d943e6>T3</color></b>
+  name: T3
+- id: 8
+  name_raw: <b><color=#d943e6>T3</color></b>
+  name: T3
+- id: 9
+  name_raw: <b><color=#d943e6>T3</color></b>
+  name: T3
+- id: 10
+  name_raw: <b><color=#d943e6>T3</color></b>
+  name: T3
+- id: 11
+  name_raw: <b><color=#f77e6a>T4</color></b>
+  name: T4
+doc_soldier_quality:
+- id: 1
+  name: T1 Lv.1
+- id: 2
+  name: T1 Lv.2
+- id: 3
+  name: T1 Lv.3
+- id: 4
+  name: T2 Lv.1
+- id: 5
+  name: T2 Lv.2
+- id: 6
+  name: T2 Lv.3
+- id: 7
+  name: T3 Lv.1
+- id: 8
+  name: T3 Lv.2
+- id: 9
+  name: T3 Lv.3
+- id: 10
+  name: T3 Lv.4
+- id: 11
+  name: T4
+doc_soldier_status:
+- id: 1
+  name: Total Troop
+  desc: No Soldier yet
+- id: 2
+  name: Wounded Troops
+  desc: No Wounded Troops yet
+- id: 3
+  name: Dead Troops
+  desc: No Dead Troops yet
+- id: 4
+  name: Reserve Troop
+  desc: No Reserve Troop yet
+doc_soldier_tier:
+- id: 0
+  name: T0
+  name_cap: T0
+- id: 1
+  name: T1 Lv.1
+  name_cap: T1 LV.1
+- id: 2
+  name: T1 Lv.2
+  name_cap: T1 LV.2
+- id: 3
+  name: T1 Lv.3
+  name_cap: T1 LV.3
+- id: 4
+  name: T2 Lv.1
+  name_cap: T2 LV.1
+- id: 5
+  name: T2 Lv.2
+  name_cap: T2 LV.2
+- id: 6
+  name: T2 Lv.3
+  name_cap: T2 LV.3
+- id: 7
+  name: T3 Lv.1
+  name_cap: T3 LV.1
+- id: 8
+  name: T3 Lv.2
+  name_cap: T3 LV.2
+- id: 9
+  name: T3 Lv.3
+  name_cap: T3 LV.3
+- id: 10
+  name: T3 Lv.4
+  name_cap: T3 Lv.4
+- id: 11
+  name: T4
+  name_cap: T4
+doc_soldier_enemy:
+- id: 1
+  name: Zombie Hitter
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Piercer and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Shooter.</color>"
+- id: 2
+  name: Zombie Breaker
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Piercer and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Shooter.</color>"
+- id: 3
+  name: Zombie Smasher
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Piercer and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Shooter.</color>"
+- id: 4
+  name: Zombie Basher
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Piercer and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Shooter.</color>"
+- id: 5
+  name: Zombie Wrecker
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Piercer and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Shooter.</color>"
+- id: 6
+  name: Zombie Punisher
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Piercer and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Shooter.</color>"
+- id: 7
+  name: Zombie Beatdown
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Piercer and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Shooter.</color>"
+- id: 8
+  name: Zombie Tough Bull
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Piercer and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Shooter.</color>"
+- id: 9
+  name: Zombie Gorilla
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Piercer and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Shooter.</color>"
+- id: 10
+  name: Zombie Berserk Gorilla
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Piercer and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Shooter.</color>"
+- id: 101
+  name: Zombie Archer
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Basher and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Piercer.</color>"
+- id: 102
+  name: Zombie Crossbower
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Basher and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Piercer.</color>"
+- id: 103
+  name: Zombie Sagittary
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Basher and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Piercer.</color>"
+- id: 104
+  name: Zombie Gunner
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Basher and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Piercer.</color>"
+- id: 105
+  name: Zombie Assaulter
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Basher and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Piercer.</color>"
+- id: 106
+  name: Zombie Headhunter
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Basher and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Piercer.</color>"
+- id: 107
+  name: Zombie Markswoman
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Basher and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Piercer.</color>"
+- id: 108
+  name: Zombie Scarecrow
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Basher and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Piercer.</color>"
+- id: 109
+  name: Zombie Deadshot
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Basher and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Piercer.</color>"
+- id: 110
+  name: Zombie Berserk Deadshot
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Basher and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Piercer.</color>"
+- id: 201
+  name: Zombie Hound
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Shooter and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Basher.</color>"
+- id: 202
+  name: Zombie Tracker
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Shooter and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Basher.</color>"
+- id: 203
+  name: Zombie Jockey
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Shooter and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Basher.</color>"
+- id: 204
+  name: Zombie Racer
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Shooter and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Basher.</color>"
+- id: 205
+  name: Zombie Chaser
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Shooter and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Basher.</color>"
+- id: 206
+  name: Zombie Intercepter
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Shooter and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Basher.</color>"
+- id: 207
+  name: Zombie Pronghorn
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Shooter and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Basher.</color>"
+- id: 208
+  name: Redclaw Fire
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Shooter and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Basher.</color>"
+- id: 209
+  name: Zombie Shadowstrike
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Shooter and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Basher.</color>"
+- id: 210
+  name: Zombie Berserk Shadowstrike
+  desc: They could be a hard nut to crack in battles.
+  info: "<color=#299108>Strong against Shooter and Carriers.</color>\r\n<color=#f01c2b>Weak\
+    \ against Basher.</color>"
+- id: 301
+  name: Slave Zombie
+  desc: A member of the Zombie, a notorious gang in the wasteland that finds joy in
+    killings and tortures.
+  info: ''
+- id: 302
+  name: Buttonman Zombie
+  desc: A member of the Zombie, a notorious gang in the wasteland that finds joy in
+    killings and tortures.
+  info: ''
+- id: 303
+  name: Henchman Zombie
+  desc: A member of the Zombie, a notorious gang in the wasteland that finds joy in
+    killings and tortures.
+  info: ''
+- id: 304
+  name: Rookie Zombie
+  desc: A member of the Zombie, a notorious gang in the wasteland that finds joy in
+    killings and tortures.
+  info: ''
+- id: 305
+  name: Fighter Zombie
+  desc: A member of the Zombie, a notorious gang in the wasteland that finds joy in
+    killings and tortures.
+  info: ''
+- id: 306
+  name: Warrior Zombie
+  desc: A member of the Zombie, a notorious gang in the wasteland that finds joy in
+    killings and tortures.
+  info: ''
+- id: 307
+  name: Elite Zombie
+  desc: A member of the Zombie, a notorious gang in the wasteland that finds joy in
+    killings and tortures.
+  info: ''
+- id: 308
+  name: Underboss Zombie
+  desc: A member of the Zombie, a notorious gang in the wasteland that finds joy in
+    killings and tortures.
+  info: ''
+- id: 309
+  name: Boss Zombie
+  desc: A member of the Zombie, a notorious gang in the wasteland that finds joy in
+    killings and tortures.
+  info: ''
+- id: 310
+  name: Berserker Boss Zombie
+  desc: A member of the Zombie, a notorious gang in the wasteland that finds joy in
+    killings and tortures.
+  info: ''
+- id: 601
+  name: Slave Zombie
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 602
+  name: Buttonman Zombie
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 603
+  name: 'Henchman Zombie '
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 604
+  name: Rookie Zombie
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 605
+  name: Fighter Zombie
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 606
+  name: 'Warrior Zombie '
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 607
+  name: 'Elite Zombie '
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 608
+  name: Underboss Zombie
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 609
+  name: Boss Zombie
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 610
+  name: Berserker Boss Zombie
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 701
+  name: Slave Zombie Warthog
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 702
+  name: Buttonman Zombie Warthog
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 703
+  name: Henchman Zombie Warthog
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 704
+  name: Rookie Zombie Warthog
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 705
+  name: Fighter Zombie Warthog
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 706
+  name: Warrior Zombie Warthog
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 707
+  name: Elite Zombie Warthog
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 708
+  name: Underboss Zombie Warthog
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 709
+  name: Boss Zombie Warthog
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 710
+  name: Berserk Boss Zombie Warthog
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 801
+  name: Slave Zombie Badger
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 802
+  name: Buttonman Zombie Badger
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 803
+  name: Henchman Zombie Badger
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 804
+  name: Rookie Zombie Badger
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 805
+  name: Fighter Zombie Badger
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 806
+  name: Warrior Zombie Badger
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 807
+  name: Elite Zombie Badger
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 808
+  name: Underboss Zombie Badger
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 809
+  name: Boss Zombie Badger
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 810
+  name: Berserker Boss Zombie Badger
+  desc: A member of the Zombie, a bunch of gruesome bandits that dream of taking the
+    whole wasteland under their dictation.
+  info: ''
+- id: 1401
+  name: Junior Nightclaw
+  desc: During the event, killing Beast will grant you the opportunity to meet Junior
+    Nightclaw. Defeat her, and you'll win her amazing gifts!
+  info: ''
+- id: 1402
+  name: Master Nightclaw
+  desc: During the event, killing Beast will grant you the opportunity to meet Master
+    Nightclaw. Defeat her, and you'll win her amazing gifts!
+  info: ''
