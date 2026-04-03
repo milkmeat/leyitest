@@ -100,7 +100,7 @@ if _project_root not in sys.path:
 
 # 模块级变量：由 main() 解析全局参数后设置
 _llm_profile: str | None = None
-_team: int = 1  # 1=我方(accounts), 2=敌方(enemies)
+_team: int = 1  # 1=我方(accounts), 2=敌方(enemies)  NOTE: 模块级可变状态，不支持多 team 并行
 
 
 def _apply_team_swap(config: "AppConfig") -> None:
@@ -121,9 +121,10 @@ def _apply_team_swap(config: "AppConfig") -> None:
         config.accounts.alliances.ours, config.accounts.alliances.enemy = (
             config.accounts.alliances.enemy, config.accounts.alliances.ours
         )
-    alliance_name = config.accounts.alliances.ours.name if config.accounts.alliances else "?"
-    print(f"[config] Team 2 模式: 管理敌方联盟 {alliance_name} "
-          f"(camp_id={config.accounts.alliances.ours.lvl_aid if config.accounts.alliances else '?'})")
+    ally = config.accounts.alliances
+    alliance_name = ally.ours.name if ally else "?"
+    camp_id = ally.ours.lvl_aid if ally else "?"
+    print(f"[config] Team 2 模式: 管理敌方联盟 {alliance_name} (camp_id={camp_id})")
 
 
 def _load_config(config_dir: str = "config") -> "AppConfig":
