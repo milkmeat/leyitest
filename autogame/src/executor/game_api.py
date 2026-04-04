@@ -493,9 +493,48 @@ class GameAPIClient:
             "get_map_overview", uid, sid=sid, header_overrides=header_overrides,
         )
 
-    async def get_map_detail(self, uid: int, sid: int = 0, bid_list: List = None) -> Dict[str, Any]:
-        """获取地图详细信息"""
-        return await self.send_cmd("get_map_detail", uid, sid=sid, bid_list=bid_list or [])
+    async def get_map_detail(self, uid: int, sid: int = 1, bid_list: List = None) -> Dict[str, Any]:
+        """获取普通地图详细信息（非 AVA 战场）"""
+        return await self.send_cmd(
+            "get_map_detail", uid, sid=sid, bid_list=bid_list or [],
+            header_overrides={"lvl_id": 0},
+        )
+
+    async def get_map_area(
+        self, uid: int,
+        center_x: int, center_y: int, size: int = 10, sid: int = 1,
+    ) -> List[Dict[str, Any]]:
+        """获取指定区域的地块详细内容（自动计算 bid_list）
+
+        Args:
+            uid: 查询账号 UID
+            center_x, center_y: 中心像素坐标
+            size: 范围边长（以地块为单位，默认 10x10=100 块）
+            sid: 服务器 ID（默认 0）
+
+        Returns:
+            mapBidObjs 列表，每项含 bid 和 objs；失败返回空列表
+        """
+        bid_list = make_bid_list(center_x, center_y, size)
+        resp = await self.get_map_detail(uid, sid=sid, bid_list=bid_list)
+
+        try:
+            data_list = resp["res_data"][0]["push_list"][0]["data"]
+            for item in data_list:
+                if item.get("name") == "svr_map_objs_new":
+                    raw = item.get("data", "{}")
+                    parsed = json.loads(raw) if isinstance(raw, str) else raw
+                    map_objs = parsed.get("mapBidObjs", [])
+                    obj_count = sum(len(b.get("objs", [])) for b in map_objs)
+                    logger.info(
+                        "get_map_area: size=%d, blocks=%d, objects=%d",
+                        size, len(map_objs), obj_count,
+                    )
+                    return map_objs
+        except (KeyError, IndexError, TypeError, json.JSONDecodeError) as e:
+            logger.warning("get_map_area 响应解析失败 uid=%s: %s", uid, e)
+
+        return []
 
     async def get_battle_report(self, uid: int, report_id: str) -> Dict[str, Any]:
         """获取战报"""

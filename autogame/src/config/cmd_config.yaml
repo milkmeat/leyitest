@@ -169,9 +169,9 @@ commands:
   get_map_detail:
     cmd: "game_svr_map_get"
     default_param:
-      sid: 0                  # 服务器id
+      sid: 1                  # 服务器id
       bid_list: []            # 需要查询的bid列表
-    description: "获取地图指定区块的详细信息"
+    description: "获取普通地图指定区块的详细信息（非AVA战场）"
 
   # --- 查询战报 ---
   get_battle_report:

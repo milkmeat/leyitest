@@ -245,15 +245,66 @@ async def cmd_get_map_overview(uid_str: str, env: str = None):
         await client.close()
 
 
-async def cmd_get_map_detail(uid_str: str, *bid_args: str, env: str = None):
+async def cmd_get_map_detail(uid_str: str, x_str: str, y_str: str, *extra: str, env: str = None):
+    """普通地图地块详情查询（以 x,y 为中心，默认 10x10 范围）
+
+    用法:
+      get_map_detail <uid> <center_x> <center_y> [size]
+      get_map_detail 20001946 154 170       # 默认 10x10
+      get_map_detail 20001946 154 170 3     # 3x3
+
+    返回 mapBidObjs: 每个地块含玩家城/建筑/行军等详细对象。
+    """
     from src.executor.game_api import GameAPIClient
     client = GameAPIClient(env=env)
     try:
         uid = int(uid_str)
-        bid_list = [int(b) for b in bid_args] if bid_args else []
-        resp = await client.get_map_detail(uid, bid_list=bid_list)
-        _print_ret_code(resp)
-        _print_json(resp)
+        x, y = int(x_str), int(y_str)
+        size = int(extra[0]) if extra else 10
+
+        map_objs = await client.get_map_area(uid, x, y, size)
+
+        if not map_objs:
+            print("[无数据] 未获取到地块内容")
+            return
+
+        # 统计
+        type_names = {2: '玩家城', 6: '资源点', 12: '联盟资源点'}
+        total_objs = 0
+        for block in map_objs:
+            total_objs += len(block.get("objs", []))
+        empty = sum(1 for b in map_objs if not b.get("objs"))
+        print(f"范围={size}x{size}, 地块={len(map_objs)}, 有对象={total_objs}, 空地块={empty}\n")
+
+        # 逐地块打印
+        for block in map_objs:
+            objs = block.get("objs", [])
+            if not objs:
+                continue
+            bid = block["bid"]
+            for obj in objs:
+                basic = obj.get("objBasic", {})
+                obj_type = basic.get("type", 0)
+                uid_val = basic.get("uid", "0")
+                pos_val = basic.get("pos", "0")
+                obj_id = basic.get("id", "")
+                type_name = type_names.get(obj_type, f"type={obj_type}")
+
+                detail = ""
+                if obj_type == 2:
+                    city = obj.get("cityInfo", {})
+                    detail = (f" 等级={city.get('level', '?')} 战力={city.get('force', 0)}"
+                              f" {city.get('uname', '')}")
+                elif obj_type == 6:
+                    res = obj.get("resourceInfo", {})
+                    detail = f" key={basic.get('key', '?')} 资源={res.get('resourceCount', 0)}"
+                elif obj_type == 12:
+                    al = obj.get("alResourcePointInfo", {})
+                    al_name = al.get("alNick") or al.get("alName") or "无"
+                    detail = f" key={basic.get('key', '?')} 联盟={al_name}"
+
+                print(f"  bid={bid} {type_name} uid={uid_val} pos={pos_val} id={obj_id}{detail}")
+
     finally:
         await client.close()
 
@@ -2070,7 +2121,7 @@ COMMANDS = {
     "get_player_info":      (cmd_get_player_info,      "<uid>",                              "查询玩家完整信息"),
     "get_all_player_data":  (cmd_get_all_player_data,  "<uid>",                              "查询玩家全量数据"),
     "get_map_overview":     (cmd_get_map_overview,      "<uid>",                              "查询地图缩略信息"),
-    "get_map_detail":       (cmd_get_map_detail,        "<uid> [bid...]",                     "查询地图详细信息"),
+    "get_map_detail":       (cmd_get_map_detail,        "<uid> <x> <y> [size]",               "普通地图地块详情查询"),
     "get_battle_report":    (cmd_get_battle_report,     "<uid> <report_id>",                  "查询战报"),
     # 行动
     "move_city":            (cmd_move_city,             "<uid> <x> <y>",                      "移城到指定坐标"),
