@@ -27,6 +27,7 @@ from src.executor.game_api import GameAPIClient
 from src.models.player_state import PlayerState
 from src.models.building import Building
 from src.models.enemy import Enemy
+from src.utils.coords import make_bid_list
 
 logger = logging.getLogger(__name__)
 
@@ -357,3 +358,54 @@ class DataSyncer:
             return PlayerState.from_sync_info(info, group_id=group_id)
         except Exception as e:
             return SyncError(uid=uid, step="account", message=str(e))
+
+    async def _sync_map_ava_detail(
+        self, uid: int, lvl_id: int,
+        center_x: int, center_y: int, size: int = 10,
+    ) -> Tuple[list[Building], list[Enemy]]:
+        """AVA 战场详细地图同步 — 使用 lvl_svr_map_get API
+
+        与 _sync_map_ava (lvl_battle_login_get, brief view) 的区别:
+        - brief: 全局概要，扁平列表，只有基础字段
+        - detail: 按 bid 分块，含丰富信息（城市等级/兵力/camp，建筑驻军数，行军类型）
+
+        适用场景:
+        - 需要精确驻军数据（判断建筑防御力）
+        - 需要玩家兵力/camp 信息（判断敌我阵营）
+        - 需要活跃行军信息（侦测敌方调动）
+
+        Args:
+            uid: 查询账号 UID
+            lvl_id: 战场 ID
+            center_x, center_y: 查询中心坐标（像素）
+            size: 范围边长（地块数，默认 10x10）
+        """
+        my_uids = set(self.config.accounts.all_uids())
+
+        async with self._semaphore:
+            map_objs = await self.client.lvl_get_map_area(
+                uid, lvl_id, center_x, center_y, size,
+            )
+
+        buildings: list[Building] = []
+        enemies: list[Enemy] = []
+
+        for block in map_objs:
+            for obj in block.get("objs", []):
+                basic = obj.get("objBasic", {})
+                obj_type = basic.get("type", 0)
+
+                if obj_type == AVA_PLAYER_TYPE:
+                    obj_uid = int(basic.get("uid", 0)) or int(basic.get("id", 0))
+                    if obj_uid not in my_uids:
+                        enemies.append(Enemy.from_brief_obj(obj))
+
+                elif obj_type in AVA_BUILDING_TYPES:
+                    buildings.append(Building.from_brief_obj(obj))
+                # type=101 (行军) 和 type=10300 (资源点) 暂时忽略
+
+        logger.info(
+            "AVA detail map sync (lvl_id=%d, center=%d,%d, size=%d): %d buildings, %d enemies",
+            lvl_id, center_x, center_y, size, len(buildings), len(enemies),
+        )
+        return buildings, enemies

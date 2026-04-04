@@ -473,6 +473,69 @@ async def cmd_lvl_battle_login_get(uid_str: str, lvl_id_str: str, env: str = Non
         await client.close()
 
 
+async def cmd_lvl_svr_map_get(uid_str: str, lvl_id_str: str, x_str: str, y_str: str, *extra: str, env: str = None):
+    """AVA 战场地块详情查询（以 x,y 为中心，默认 10x10 范围）
+
+    用法:
+      lvl_svr_map_get <uid> <lvl_id> <center_x> <center_y> [size]
+      lvl_svr_map_get 20010366 29999 154 170       # 默认 10x10
+      lvl_svr_map_get 20010366 29999 154 170 3     # 3x3
+
+    返回 mapBidObjs: 每个地块含玩家城/建筑/行军等详细对象。
+    """
+    from src.executor.game_api import GameAPIClient
+    client = GameAPIClient(env=env)
+    try:
+        uid, lvl_id = int(uid_str), int(lvl_id_str)
+        x, y = int(x_str), int(y_str)
+        size = int(extra[0]) if extra else 10
+
+        map_objs = await client.lvl_get_map_area(uid, lvl_id, x, y, size)
+
+        if not map_objs:
+            print("[无数据] 未获取到地块内容")
+            return
+
+        # 统计
+        type_names = {10101: '玩家城', 10001: '建筑', 101: '行军队伍'}
+        total_objs = 0
+        for block in map_objs:
+            total_objs += len(block.get("objs", []))
+        empty = sum(1 for b in map_objs if not b.get("objs"))
+        print(f"范围={size}x{size}, 地块={len(map_objs)}, 有对象={total_objs}, 空地块={empty}\n")
+
+        # 逐地块打印
+        for block in map_objs:
+            objs = block.get("objs", [])
+            if not objs:
+                continue
+            bid = block["bid"]
+            for obj in objs:
+                basic = obj.get("objBasic", {})
+                obj_type = basic.get("type", 0)
+                uid_val = basic.get("uid", "0")
+                pos_val = basic.get("pos", "0")
+                obj_id = basic.get("id", "")
+                type_name = type_names.get(obj_type, f"type={obj_type}")
+
+                detail = ""
+                if obj_type == 10101:
+                    city = obj.get("cityInfo", {})
+                    detail = (f" 等级={city.get('level', '?')} 兵力={city.get('curTroopNum', 0)}"
+                              f" camp={basic.get('camp', '?')} {city.get('uname', '')}")
+                elif obj_type == 10001:
+                    bld = obj.get("building", {})
+                    detail = f" 驻军={bld.get('curTroopNum', 0)} camp={basic.get('camp', '?')}"
+                elif obj_type == 101:
+                    march = obj.get("marchBasic", {})
+                    detail = f" marchType={march.get('marchType', '?')}"
+
+                print(f"  bid={bid} {type_name} uid={uid_val} pos={pos_val} id={obj_id}{detail}")
+
+    finally:
+        await client.close()
+
+
 async def cmd_lvl_create_rally(uid_str: str, lvl_id_str: str, target_id_str: str, x_str: str, y_str: str, *extra: str, env: str = None):
     """AVA 战场内发起集结（对建筑或玩家）
 
@@ -2018,6 +2081,7 @@ COMMANDS = {
     "lvl_attack_building":    (cmd_lvl_attack_building,     "<uid> <lvl_id> <building_id> <x> <y>", "AVA攻打建筑"),
     "lvl_reinforce_building": (cmd_lvl_reinforce_building,  "<uid> <lvl_id> <building_id>",         "AVA驻防/增援我方建筑"),
     "lvl_battle_login_get": (cmd_lvl_battle_login_get,   "<uid> <lvl_id>",                     "AVA战场登录数据查询"),
+    "lvl_svr_map_get":      (cmd_lvl_svr_map_get,       "<uid> <lvl_id> <x> <y> [size]",      "AVA战场地块详情查询"),
     "lvl_create_rally":     (cmd_lvl_create_rally,      "<uid> <lvl_id> <target_id> <x> <y> [prepare_time]", "AVA发起集结(建筑/玩家)"),
     "lvl_rally_dismiss":    (cmd_lvl_rally_dismiss,     "<uid> <lvl_id> <unique_id>",         "AVA解散集结"),
     "attack_player":        (cmd_attack_player,         "<uid> <target_uid> <x> <y> [soldier_id count]", "攻击玩家"),

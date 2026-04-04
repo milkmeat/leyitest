@@ -20,7 +20,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import aiohttp
 import yaml
 
-from src.utils.coords import encode_pos, decode_pos
+from src.utils.coords import encode_pos, decode_pos, make_bid_list
 
 logger = logging.getLogger(__name__)
 
@@ -771,3 +771,60 @@ class GameAPIClient:
             march_info={"ids": troop_ids},
             target_info={"pos": pos},
         )
+
+    async def lvl_svr_map_get(
+        self, uid: int, lvl_id: int, bid_list: List[int],
+    ) -> Dict[str, Any]:
+        """AVA 战场内获取地块详细内容（按 bid 分块查询）
+
+        与 lvl_battle_login_get (brief view) 的区别:
+        - brief: 返回 svr_lvl_brief_objs，扁平概要列表
+        - detail: 返回 svr_lvl_map_objs.mapBidObjs，按地块分组，
+          含城市等级/兵力/camp、建筑驻军数、行军类型等详细信息
+
+        Args:
+            uid: 查询账号 UID
+            lvl_id: 战场 ID
+            bid_list: 地块 ID 列表 (bid = (x//10+1)*1000 + (y//10+1))
+        """
+        return await self.send_cmd(
+            "lvl_svr_map_get", uid,
+            bid_list=bid_list,
+            header_overrides={"lvl_id": lvl_id},
+        )
+
+    async def lvl_get_map_area(
+        self, uid: int, lvl_id: int,
+        center_x: int, center_y: int, size: int = 10,
+    ) -> List[Dict[str, Any]]:
+        """AVA 战场内获取指定区域的地块详细内容（自动计算 bid_list）
+
+        Args:
+            uid: 查询账号 UID
+            lvl_id: 战场 ID
+            center_x, center_y: 中心像素坐标
+            size: 范围边长（以地块为单位，默认 10x10=100 块）
+
+        Returns:
+            mapBidObjs 列表，每项含 bid 和 objs；失败返回空列表
+        """
+        bid_list = make_bid_list(center_x, center_y, size)
+        resp = await self.lvl_svr_map_get(uid, lvl_id, bid_list)
+
+        try:
+            data_list = resp["res_data"][0]["push_list"][0]["data"]
+            for item in data_list:
+                if item.get("name") == "svr_lvl_map_objs":
+                    raw = item.get("data", "{}")
+                    parsed = json.loads(raw) if isinstance(raw, str) else raw
+                    map_objs = parsed.get("mapBidObjs", [])
+                    obj_count = sum(len(b.get("objs", [])) for b in map_objs)
+                    logger.info(
+                        "lvl_get_map_area: size=%d, blocks=%d, objects=%d",
+                        size, len(map_objs), obj_count,
+                    )
+                    return map_objs
+        except (KeyError, IndexError, TypeError, json.JSONDecodeError) as e:
+            logger.warning("lvl_get_map_area 响应解析失败 uid=%s: %s", uid, e)
+
+        return []

@@ -588,3 +588,14 @@ commands:
         pos: 0
       target_type: 10004
     description: "AVA战场内从建筑中召回队伍（ids为队伍ID列表，pos为队伍当前位置）"
+
+  # --- 战场内获取地块详情 ---
+  lvl_svr_map_get:
+    cmd: "lvl_svr_map_get"
+    extra_header:
+      lvl_id: "战场ID"
+    required_param:
+      bid_list: "地块ID列表，bid=(x//10+1)*1000+(y//10+1)"
+    default_param:
+      bid_list: []
+    description: "获取AVA战场地块详细内容（玩家城等级/兵力/camp、建筑驻军、行军类型），按bid分块返回，比lvl_battle_login_get更详细"
