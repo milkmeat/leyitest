@@ -1,0 +1,396 @@
+commands:
+  add_gem:
+    cmd: "op_self_set_gem"
+    default_param:
+      gem_num: 116666
+    description: "添加宝石"
+
+  move_city:
+    cmd: "fixed_move_city_new"
+    default_param:
+      use_gem: 1
+      item_id: 1
+      tar_pos: 0
+    description: "花费宝石移城"
+
+  add_soldiers:
+    cmd: "op_add_soldiers"
+    default_param:
+      soldier_id: 204
+      soldier_num: 1000000
+    description: "添加士兵"
+
+  attack_city:
+    cmd: "dispatch_troop"
+    default_param:
+      target_type: 2
+      march_type: 2
+    description: "攻打玩家主城（不带英雄）"
+
+  add_resource:
+    cmd: "op_self_add_clear_resource"
+    default_param:
+      op_type: 0
+    description: "添加各类资源（默认100w）"
+
+  scout_player:
+    cmd: "dispatch_scout"
+    default_param:
+      need_camp: 0
+      scout_queue_id: 8001
+      tar_type: 5
+    description: "侦查玩家"
+
+  get_player_pos:
+    cmd: "login_get"
+    default_param:
+      all: 0
+      list:
+        - "svr_lord_info_new"
+    description: "获取玩家地图坐标"
+
+  copy_player:
+    cmd: "op_copy_player"
+    required_param:
+      src_uid: "数据源账号UID"
+      src_sid: "数据源账号SID"
+      tar_uid: "目标账号UID"
+      tar_sid: "目标账号SID"
+    default_param:
+      ignores: []
+    description: "复制账号数据"
+
+  change_name:
+    cmd: "player_name_change"
+    required_param:
+      name: "新昵称"
+    default_param:
+      type: 1
+      key: 300
+    description: "玩家改昵称"
+
+  join_alliance:
+    cmd: "al_request_join"
+    required_param:
+      target_aid: "目标联盟ID"
+    default_param: {}
+    description: "加入联盟"
+
+  get_al_members:
+    cmd: "get_self_al_member"
+    default_param: {}
+    description: "获取联盟全部成员列表（需在header中传入正确的aid）"
+
+  create_alliance:
+    cmd: "al_create"
+    required_param:
+      name: "联盟名称（5-20个字符）"
+      nick: "联盟简称（3-4个字符）"
+    validate:
+      name:
+        min_len: 5
+        max_len: 20
+      nick:
+        min_len: 3
+        max_len: 4
+    default_param:
+      desc: "desc"
+      lang: 0
+      policy: 1
+      avatar: 60609
+    description: "创建联盟"
+
+  get_player_lvl_info:
+    cmd: "login_get"
+    default_param:
+      all: 0
+      list:
+        - "svr_player_lvl_info"
+    description: "获取玩家临时战场信息（判断是否在ava临时战场）"
+
+  get_player_info:
+    cmd: "login_get"
+    default_param:
+      all: 0
+      list:
+        - "svr_player"
+    description: "获取玩家基础信息（含联盟等）"
+
+  al_leave:
+    cmd: "al_leave"
+    default_param: {}
+    description: "离开联盟"
+
+  al_help_all:
+    cmd: "al_help_all"
+    default_param: {}
+    description: "一键帮助盟友"
+
+  create_ava_battle:
+    cmd: "op_create_lvl_battle"
+    required_param:
+      1v1_id: "战场ID"
+    default_param:
+      event_id: "123456"
+      camp:
+        - aid: 1000022
+          al_nick: "ava1"
+          al_name: "ava1"
+          al_flag: 2
+          uid_list:
+            - 1000138
+            - 1001913
+            - 1001914
+            - 1001915
+            - 1001916
+            - 1001917
+            - 1001918
+            - 1001919
+            - 1001920
+            - 1001921
+        - aid: 1000015
+          al_nick: "ava2"
+          al_name: "ava2"
+          al_flag: 1
+          uid_list:
+            - 1000078
+            - 1001922
+            - 1001923
+            - 1001924
+            - 1001925
+            - 1001926
+            - 1001927
+            - 1001928
+    description: "创建ava临时战场"
+
+  ava_add_player:
+    cmd: "op_lvl_set_player"
+    required_param:
+      lvl_id: "战场ID"
+      uid: "玩家UID"
+      camp_id: "阵营ID（1或2）"
+    validate:
+      camp_id:
+        min_val: 1
+        max_val: 2
+    default_param: {}
+    description: "将玩家添加到ava临时战场名单"
+
+  ava_enter_battle:
+    cmd: "op_enter_lvl_battle"
+    required_param:
+      lvl_id: "战场ID"
+    default_param: {}
+    description: "进入ava临时战场"
+
+  lvl_move_city:
+    cmd: "lvl_move_city"
+    required_param:
+      tar_pos: "目标坐标（编码后的值，x*100000000+y*100）"
+    default_param:
+      use_gem: 1
+      item_id: 1
+    description: "ava临时战场内移城"
+
+  lvl_battle_login_get:
+    cmd: "lvl_battle_login_get"
+    required_param:
+      lvl_id: "战场ID"
+    default_param:
+      lvl_id: 0
+    description: "获取ava临时战场玩家的队伍id"
+
+  lvl_dispatch_scout_player:
+    cmd: "lvl_dispatch_scout"
+    default_param:
+      march_type: 101
+      scout_queue_id: 8001
+      target_info:
+        id: 0
+        pos: 0
+        type: 10101
+        unique_id: ""
+        lv: 20
+    description: "ava战场内侦查玩家"
+
+  lvl_dispatch_scout_building:
+    cmd: "lvl_dispatch_scout"
+    default_param:
+      march_type: 101
+      scout_queue_id: 8001
+      target_info:
+        id: 0
+        pos: 0
+        type: 10001
+        unique_id: ""
+        key: 0
+    description: "ava战场内侦查建筑"
+
+  lvl_dispatch_troop:
+    cmd: "lvl_dispatch_troop"
+    default_param:
+      march_info:
+        carry_lord: 1
+        hero:
+          vice: {}
+        heros: {}
+        leader: 1
+        over_defend: false
+        queue_id: 6001
+        soldier:
+          204: 1000
+        soldier_total_num: 1000
+      march_type: 2
+      target_info:
+        id: ""
+        pos: ""
+      target_type: 10101
+    description: "ava战场内攻打玩家"
+
+  lvl_dispatch_troop_building:
+    cmd: "lvl_dispatch_troop"
+    default_param:
+      march_info:
+        carry_lord: 1
+        hero:
+          vice: {}
+        heros: {}
+        leader: 1
+        over_defend: false
+        queue_id: 6001
+        soldier:
+          204: 1000
+        soldier_total_num: 1000
+      march_type: 15
+      target_info:
+        id: ""
+        pos: 0
+        key: 0
+      target_type: 10001
+    description: "ava战场内攻打建筑"
+
+  lvl_create_rally_war:
+    cmd: "lvl_create_rally_war"
+    default_param:
+      march_info:
+        carry_lord: 1
+        hero:
+          vice: {}
+        heros: {}
+        leader: 1
+        over_defend: false
+        queue_id: 6001
+        soldier:
+          204: 1000
+        soldier_total_num: 1000
+      march_type: 13
+      prepare_time: 60
+      recommand_troop: []
+      target_info:
+        id: ""
+      target_type: 10101
+      timestamp: ""
+      tn_limit: 1
+    description: "ava战场内对玩家发起集结"
+
+  lvl_create_rally_war_building:
+    cmd: "lvl_create_rally_war"
+    default_param:
+      march_info:
+        carry_lord: 1
+        hero:
+          vice: {}
+        heros: {}
+        leader: 1
+        over_defend: false
+        queue_id: 6001
+        soldier:
+          204: 1000
+        soldier_total_num: 1000
+      march_type: 14
+      prepare_time: 60
+      recommand_troop: []
+      target_info:
+        id: ""
+      target_type: 10001
+      timestamp: ""
+      tn_limit: 1
+    description: "ava战场内对建筑发起集结"
+
+  lvl_rally_dismiss:
+    cmd: "lvl_rally_dismiss"
+    default_param:
+      unique_id: ""
+    description: "ava战场内解散集结（unique_id通过lvl_battle_login_get获取，格式107_xxx）"
+
+  lvl_join_rally_war:
+    cmd: "lvl_dispatch_troop"
+    default_param:
+      march_info:
+        carry_lord: 1
+        hero:
+          vice: {}
+        heros: {}
+        leader: 0
+        over_defend: false
+        queue_id: 6001
+        soldier:
+          204: 1000
+        soldier_total_num: 1000
+      march_type: 12
+      target_info:
+        id: ""
+        pos: 0
+      target_type: 107
+    description: "ava战场内参与集结"
+
+  lvl_use_troop_speed_up_item:
+    cmd: "lvl_use_troop_speed_up_item"
+    required_param:
+      unique_id: "队伍唯一ID（如 102_200106468001 或 101_1773137411106081）"
+    default_param:
+      cost_type: 1
+      item_id: 130
+      item_num: 1
+      unique_id: ""
+    description: "ava战场内行军队伍加速"
+
+  lvl_recall_reinforce:
+    cmd: "lvl_recall_reinforce"
+    default_param:
+      unique_id: ""
+    description: "ava战场内取消参与集结（unique_id为行军队伍ID，格式101_xxx）"
+
+  lvl_use_troop_return_item:
+    cmd: "lvl_use_troop_return_item"
+    default_param:
+      cost_type: 1
+      item_id: 306
+      item_num: 1
+      unique_id: ""
+    description: "ava战场内召回普通队伍（unique_id为行军队伍ID，格式101_xxx）"
+
+  lvl_change_troop:
+    cmd: "lvl_change_troop"
+    default_param:
+      march_info:
+        ids: []
+      march_type: 5
+      target_info:
+        pos: 0
+      target_type: 10004
+    description: "ava战场内从建筑中召回队伍（ids为队伍ID列表，pos为队伍当前位置）"
+
+  lvl_svr_map_get:
+    cmd: "lvl_svr_map_get"
+    required_param:
+      bid_list: "地块ID列表，bid=(x//10+1)*1000+(y//10+1)，x/y为玩家坐标"
+    default_param:
+      bid_list: []
+    description: "获取AVA战场地块内容（玩家城、建筑、驻军等地图对象），需在header中传入lvl_id"
+
+  ava_leave_battle:
+    cmd: "leave_lvl_battle"
+    default_param: {}
+    description: "离开ava临时战场,需要额外在header里面添加lvl_id战场id字段"
+
