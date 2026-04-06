@@ -10,14 +10,14 @@
   run --loop.interval_seconds 0                 覆盖循环间隔（测试用）
 
 AI 决策调试:
-  l2_decide [--dry-run] [--json]                L2 军团指挥官决策调试
-  l1_decide <squad_id> [--dry-run] [--json]     L1 单小队决策调试
+  l2_decide [--ava <lvl_id>] [--dry-run] [--json]  L2 军团指挥官决策调试(AVA时自动切换prompt)
+  l1_decide <squad_id> [--dry-run] [--json]     L1 单小队决策调试(--ava时自动切换prompt)
   l1_view <squad_id> [--json]                   L1 小队局部视图
   llm_test [--dry-run]                          测试 LLM 连通性
 
 查询命令:
   get_player_pos <uid>                          查询玩家坐标
-  get_player_info <uid>                         查询玩家完整信息
+  get_player_info <uid>                         查询玩家完整信息(自动检测AVA状态)
   get_all_player_data <uid>                     查询玩家全量数据
   get_map_overview <uid>                        查询地图缩略信息
   get_map_detail <uid> [bid...]                 查询地图详细信息
@@ -56,7 +56,7 @@ GM 命令:
   add_resource <uid> [op_type]                  添加资源
 
 数据同步:
-  sync [--json] [uid]                           数据同步(全量/单账号)
+  sync [--json] [--ava <lvl_id>] [uid]          数据同步(全量/单账号,单账号自动检测AVA)
 
 L0 执行器（AI 指令调试）:
   l0 <ACTION|JSON> <args...>                    执行器调试
@@ -201,7 +201,15 @@ async def cmd_get_player_info(uid_str: str, env: str = None):
     client = GameAPIClient(env=env)
     try:
         uid = int(uid_str)
-        info = await client.get_player_info(uid)
+        # 并发查询玩家信息和 AVA 状态
+        info, lvl_id = await asyncio.gather(
+            client.get_player_info(uid),
+            client.get_player_lvl_info(uid),
+        )
+        if lvl_id:
+            print(f"[地图] uid={uid} 当前在 AVA 战场 lvl_id={lvl_id}")
+        else:
+            print(f"[地图] uid={uid} 当前在普通地图")
         _print_json(info)
     finally:
         await client.close()
@@ -1075,7 +1083,9 @@ async def cmd_l1_decide(*args: str, env: str = None):
                 print(f"L2 order: {l2_order}")
 
         # L1 决策
-        leader = L1Leader(config, llm, squad, prompt_template=l1_prompt)
+        # --ava 时如果没有显式指定 --l1-prompt，自动使用 ava prompt
+        effective_l1_prompt = l1_prompt if l1_prompt else ("ava" if lvl_id else None)
+        leader = L1Leader(config, llm, squad, prompt_template=effective_l1_prompt)
         instructions = await leader.decide(snapshot, l2_order=l2_order)
 
         print(f"\nSquad {squad_id} ({squad.name}) generated {len(instructions)} instructions:")
@@ -1151,7 +1161,8 @@ async def cmd_l2_decide(*args: str, env: str = None):
               + (f" (AVA lvl_id={lvl_id})" if lvl_id else ""))
 
         # L2 决策
-        commander = L2Commander(config, llm)
+        l2_prompt = "ava" if lvl_id else None
+        commander = L2Commander(config, llm, prompt_template=l2_prompt)
         orders = await commander.decide(snapshot)
 
         print(f"\nL2 军团指挥官生成 {len(orders)} 条指令:")
@@ -1389,6 +1400,17 @@ async def cmd_sync(*args: str, env: str = None):
         if remaining:
             # 单账号模式
             uid = int(remaining[0])
+            # 自动检测 AVA 状态（除非已通过 --ava 指定）
+            if not lvl_id:
+                detected_lvl = await client.get_player_lvl_info(uid)
+                if detected_lvl:
+                    lvl_id = detected_lvl
+                    print(f"[自动检测] uid={uid} 当前在 AVA 战场 lvl_id={lvl_id}")
+                else:
+                    print(f"[自动检测] uid={uid} 当前在普通地图")
+            else:
+                print(f"[AVA] 使用指定 lvl_id={lvl_id}")
+
             result = await syncer.sync_single_account(uid)
             from src.perception.data_sync import SyncError
             if isinstance(result, SyncError):
@@ -2108,17 +2130,17 @@ async def cmd_uid_ava_leave(uid_str: str, env: str = None):
 
 COMMANDS = {
     # L2
-    "l2_decide":            (cmd_l2_decide,             "[--dry-run] [--json]",                   "L2 军团指挥官决策调试"),
+    "l2_decide":            (cmd_l2_decide,             "[--ava <lvl_id>] [--dry-run] [--json]",  "L2 军团指挥官决策调试(AVA自动切换prompt)"),
     # L1
     "l1_view":              (cmd_l1_view,               "<squad_id> [--json]",                    "L1 小队局部视图"),
-    "l1_decide":            (cmd_l1_decide,             "<squad_id> [--dry-run] [--json]",        "L1 单小队决策调试"),
+    "l1_decide":            (cmd_l1_decide,             "<squad_id> [--ava <lvl_id>] [--dry-run] [--json]", "L1 单小队决策调试(AVA自动切换prompt)"),
     # LLM
     "llm_test":             (cmd_llm_test,              "[--dry-run]",                            "测试 LLM 连通性"),
     # 主循环
     "run":                  (cmd_run,                   "[--rounds N] [--once] [--loop.interval_seconds N]", "启动 AI 主循环"),
     # 查询
     "get_player_pos":       (cmd_get_player_pos,       "<uid>",                              "查询玩家坐标"),
-    "get_player_info":      (cmd_get_player_info,      "<uid>",                              "查询玩家完整信息"),
+    "get_player_info":      (cmd_get_player_info,      "<uid>",                              "查询玩家完整信息(自动检测AVA)"),
     "get_all_player_data":  (cmd_get_all_player_data,  "<uid>",                              "查询玩家全量数据"),
     "get_map_overview":     (cmd_get_map_overview,      "<uid>",                              "查询地图缩略信息"),
     "get_map_detail":       (cmd_get_map_detail,        "<uid> <x> <y> [size]",               "普通地图地块详情查询"),
@@ -2152,7 +2174,7 @@ COMMANDS = {
     "add_soldiers":         (cmd_add_soldiers,          "<uid> [soldier_id] [num]",           "GM: 添加士兵"),
     "add_resource":         (cmd_add_resource,          "<uid> [op_type]",                    "GM: 添加资源"),
     # 数据同步
-    "sync":                 (cmd_sync,                  "[--json] [uid]",                     "数据同步(全量/单账号)"),
+    "sync":                 (cmd_sync,                  "[--json] [--ava <lvl_id>] [uid]",    "数据同步(单账号自动检测AVA)"),
     # L0 执行器
     "l0":                   (cmd_l0,                    "<ACTION|JSON> <args...>",            "L0 执行器调试"),
     # uid_helper — 测试环境账号准备
@@ -2229,11 +2251,17 @@ def main():
         print("  --team <1|2>            管理指定方 (1=我方, 2=敌方, 默认=1)")
         print()
         print("AI 决策调试 (l1_decide / l2_decide 自动打印完整 prompt 和 LLM 响应):")
+        print("  l2_decide 参数:  [--ava <lvl_id>] [--dry-run] [--json]  (--ava 时自动使用 AVA 战场 prompt)")
         print("  l1_decide 参数:  <squad_id> [--ava <lvl_id>] [--mock-l2 \"<指令>\"] [--l1-prompt <name>] [--dry-run] [--json]")
         print("  run 额外参数:    [--ava <lvl_id>] [--mock-l2 \"<指令>\"] [--l1-prompt <name>] [--llm-timeout N] [--dry-run]")
         print()
+        print("AVA 自动检测:")
+        print("  get_player_info / sync <uid> 会自动检测玩家是否在 AVA 战场，无需手动指定 --ava")
+        print()
         print("示例:")
+        print("  python src/main.py sync 20001946                  # 单账号同步(自动检测AVA)")
         print("  python src/main.py sync --ava 29999")
+        print("  python src/main.py l2_decide --ava 29999          # L2 使用 AVA prompt")
         print("  python src/main.py l1_view 1 --ava 29999")
         print("  python src/main.py l1_decide 1 --ava 29999 --mock-l2 \"[小队 1 (Alpha)] 控制 建筑 pos:( 154, 170 )\" --l1-prompt ava")
         print("  python src/main.py --llm ollama l1_decide 1 --dry-run")

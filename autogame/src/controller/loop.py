@@ -87,9 +87,12 @@ class AIController:
         self.l1_coordinator = None
         self.summarizer = None
         if llm_client is not None and L1Coordinator is not None:
-            self.l1_coordinator = L1Coordinator(config, llm_client, prompt_template=l1_prompt)
+            # --ava 时如果没有显式指定 l1_prompt，自动使用 ava prompt
+            effective_l1_prompt = l1_prompt if l1_prompt else ("ava" if lvl_id else None)
+            self.l1_coordinator = L1Coordinator(config, llm_client, prompt_template=effective_l1_prompt)
         if llm_client is not None and L2Commander is not None:
-            self.l2_commander = L2Commander(config, llm_client)
+            l2_prompt = "ava" if lvl_id else None
+            self.l2_commander = L2Commander(config, llm_client, prompt_template=l2_prompt)
         if llm_client is not None and SituationSummarizer is not None:
             self.summarizer = SituationSummarizer(llm_client)
 

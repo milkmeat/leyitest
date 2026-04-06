@@ -40,10 +40,21 @@ class L2Commander:
     为 LLM 提供上下文，提升决策连续性。
     """
 
-    def __init__(self, config: AppConfig, llm_client: LLMClient, memory_max_entries: int = 5):
+    def __init__(self, config: AppConfig, llm_client: LLMClient,
+                 memory_max_entries: int = 5, prompt_template: str | None = None):
         self.config = config
         self.llm = llm_client
-        self.system_prompt = _load_prompt("l2_system.txt")
+        # 支持 prompt 模板切换（如 "ava" → l2_system_ava.txt）
+        if prompt_template:
+            filename = f"l2_system_{prompt_template}.txt"
+            try:
+                self.system_prompt = _load_prompt(filename)
+                logger.info("L2 prompt loaded: %s", filename)
+            except FileNotFoundError:
+                logger.warning("L2 prompt %s not found, using default", filename)
+                self.system_prompt = _load_prompt("l2_system.txt")
+        else:
+            self.system_prompt = _load_prompt("l2_system.txt")
         self.view_builder = L2ViewBuilder(config)
         self.memory = L2MemoryStore(max_entries=memory_max_entries)
 
