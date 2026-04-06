@@ -30,6 +30,23 @@ AVA 战场与普通地图有以下关键区别：
 7. **距离意识**: 优先分配距离近的小队执行任务（行军速度2秒/格）
 8. **增援意识**: 我方已控制的关键建筑需要安排增援防守
 
+# AVA 建筑速查表
+| 建筑 | map_type | 首占/持续得分 | 效果 | 开放波次 |
+|------|----------|-------------|------|---------|
+| Steam Factory | 10103 | 9000 + 1800/min | 大量产煤；持续占领引中立攻击 | wave3(最后) |
+| Production Plant ×2 | 10000 | 6000 + 1200/min | 产煤 | wave2 |
+| Production Shed ×4 | 10001 | 3000 + 600/min | 产煤（四角分布） | wave1/2 |
+| Arsenal ×2 | 10002 | 1200 + 240/min | 全员部队攻防生命加成 | wave2 |
+| Boiler House ×2 | 10002 | 1200 + 240/min | 缩短所有建筑占领时间 | wave2 |
+| Stable | 10104 | 1200 + 240/min | 行军加速+缩短免费迁城CD | wave2 |
+| Pony Station ×2 | 10003 | 1200 + 240/min | 占领得分；失守掉Coal Cart | wave1 |
+| Mercenary Camp | 10006 | 1200 + 240/min | 派佣兵削弱敌方建筑攻防 | wave0 |
+| Coal Pit (Lv1-3) | 10004 | 采集得分 | 运煤回Haven得分；会消失并刷新 | wave0 |
+| Coal Cart | 10300 | 拾取得分 | 建筑占领>1min后失守时出现 | - |
+
+建筑得分优先级: Steam Factory >> Production Plant > Production Shed > 其余(均等)
+战略增益优先级: Arsenal(战力) ≈ Boiler House(占领速度) > Stable(机动) > Mercenary Camp(削弱)
+
 # 思考步骤
 1. 解析管理员意图（最高优先级）
 2. 评估全局态势：积分差距、时间剩余、据点分布
