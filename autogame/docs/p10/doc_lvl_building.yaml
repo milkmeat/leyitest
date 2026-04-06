@@ -100,28 +100,28 @@ doc_lvl_building:
   name: No.1 Production Plant
   desc: Posted in the northwest and southeast. Occupy it to earn steady Coal Mines.
   effect: 产出煤矿 (Coal Mines)
-  score_type: First Occupation + Successive Occupation
+  score_type: First Occupation(6000) + Successive Occupation(1200/min)
   open_order: 2
 - id: 952
   map_type: 10000
   name: No.2 Production Plant
   desc: Posted in the northwest and southeast. Occupy it to earn steady Coal Mines.
   effect: 产出煤矿 (Coal Mines)
-  score_type: First Occupation + Successive Occupation
+  score_type: First Occupation(6000) + Successive Occupation(1200/min)
   open_order: 2
 - id: 953
   map_type: 10001
   name: No.1 Production Shed
   desc: Four sheds sit at the map's corners. It serves as a key source of Coal Mines.
   effect: 产出煤矿 (Coal Mines)
-  score_type: First Occupation + Successive Occupation
+  score_type: First Occupation(3000) + Successive Occupation(600/min)
   open_order: 1
 - id: 954
   map_type: 10001
   name: No.2 Production Shed
   desc: Four sheds sit at the map's corners. It serves as a key source of Coal Mines.
   effect: 产出煤矿 (Coal Mines)
-  score_type: First Occupation + Successive Occupation
+  score_type: First Occupation(3000) + Successive Occupation(600/min)
   open_order: 1
 - id: 955
   map_type: 10002
@@ -129,7 +129,7 @@ doc_lvl_building:
   desc: Steam thunders across the field. Occupy it to shorten Occupation Times for
     all buildings on the battlefield.
   effect: 缩短所有建筑占领时间 (Building Occupation Time Reduction)
-  score_type: First Occupation + Successive Occupation
+  score_type: First Occupation(1200) + Successive Occupation(240/min)
   open_order: 2
 - id: 956
   map_type: 10002
@@ -137,7 +137,7 @@ doc_lvl_building:
   desc: Steam thunders across the field. Occupy it to shorten Occupation Times for
     all buildings on the battlefield.
   effect: 缩短所有建筑占领时间 (Building Occupation Time Reduction)
-  score_type: First Occupation + Successive Occupation
+  score_type: First Occupation(1200) + Successive Occupation(240)
   open_order: 2
 - id: 957
   map_type: 10002
@@ -151,7 +151,7 @@ doc_lvl_building:
   name: Arsenal
   desc: Occupy it to boost all members' Troop Attack and Defense.
   effect: 全员部队攻击+防御+生命加成 (Troop Attack & Defense & Life Boost)
-  score_type: First Occupation + Successive Occupation
+  score_type: First Occupation(1200) + Successive Occupation(240)
   open_order: 2
 - id: 959
   map_type: 10003
@@ -162,7 +162,7 @@ doc_lvl_building:
     \ of Coal will appear around the building. Collect it before anyone else to earn\
     \ event points."
   effect: 占领获得积分; 占领>1分钟后失守掉落 Coal Cart
-  score_type: First Occupation + Successive Occupation
+  score_type: First Occupation(1200) + Successive Occupation(240)
   open_order: 1
 - id: 960
   map_type: 10003
@@ -173,7 +173,7 @@ doc_lvl_building:
     \ of Coal will appear around the building. Collect it before anyone else to earn\
     \ event points."
   effect: 占领获得积分; 占领>1分钟后失守掉落 Coal Cart
-  score_type: First Occupation + Successive Occupation
+  score_type: First Occupation(1200) + Successive Occupation(240)
   open_order: 1
 - id: 961
   map_type: 10004
@@ -231,7 +231,7 @@ doc_lvl_building:
     a generous amount of Coal Mines. Continuous occupation will draw attacks from
     neutral forces.
   effect: 大量产出煤矿; 持续占领引来中立势力攻击
-  score_type: First Occupation + Successive Occupation
+  score_type: First Occupation(9000) + Successive Occupation(1800/min)
   open_order: 3
 - id: 968
   map_type: 10104
@@ -239,7 +239,7 @@ doc_lvl_building:
   desc: Heavy‑haul horses with range across the battlefield. Occupy it to shorten
     cooldown time for free Adcanced Teleport.
   effect: 缩短免费高级迁城冷却 (Teleport Cooldown Reduction) + 行军速度加成
-  score_type: First Occupation + Successive Occupation
+  score_type: First Occupation(1200) + Successive Occupation(240/min)
   open_order: 2
 - id: 969
   map_type: 10006
@@ -248,21 +248,21 @@ doc_lvl_building:
     you the edge you need. Occupy this spot to deploy them—every strike weakens enemy
     Attack and Defense.
   effect: 可派遣佣兵打击敌方占领的建筑，削弱敌方攻防
-  score_type: First Occupation + Successive Occupation
+  score_type: First Occupation(1200) + Successive Occupation(240/min)
   open_order: 0
 - id: 970
   map_type: 10001
   name: No.3 Production Shed
   desc: Four sheds sit at the map's corners. It serves as a key source of Coal Mines.
   effect: 产出煤矿 (Coal Mines)
-  score_type: First Occupation + Successive Occupation
+  score_type: First Occupation(3000) + Successive Occupation(600/min)
   open_order: 2
 - id: 971
   map_type: 10001
   name: No.4 Production Shed
   desc: Four sheds sit at the map's corners. It serves as a key source of Coal Mines.
   effect: 产出煤矿 (Coal Mines)
-  score_type: First Occupation + Successive Occupation
+  score_type: First Occupation(3000) + Successive Occupation(600/min)
   open_order: 2
 - id: 1220001
   map_type: 10300
@@ -273,81 +273,4 @@ doc_lvl_building:
   effect: 建筑占领>1分钟后失守时出现，拾取获得积分
   score_type: Event Points
   open_order: 0
-doc_lvl_building_info:
-- id: 10003
-  title: Pony Station
-  desc: "Occupy the building to enjoy the event points it provides.\r\n\r\n<b>About\
-    \ Coal Cart</b>\r\nWhen the building has been occupied for more than 1 minute\
-    \ AND its original occupant fails to defend it from enemy attacks, a certain amount\
-    \ of Coal will appear around the building. Collect it before anyone else to earn\
-    \ event points."
-- id: 10004
-  title: Coal Pit
-  desc: "The resource building is a heavily guarded structure that holds a large amount\
-    \ of precious Coal.\r\n\r\n<b>How to Play</b>\r\n· Transporting Coal back to the\
-    \ Haven will reward you with Personal and Alliance Points.\r\n\r\n· The Coal Pit\
-    \ will vanish once emptied, yet new ones will emerge at specific intervals.\r\n\
-    \r\n· About Coal Cart: When the building has been occupied for more than 1 minute\
-    \ AND its original occupant fails to defend it from enemy attacks, a certain amount\
-    \ of Coal will appear around the building. Collect it before anyone else to earn\
-    \ event points."
-- id: 10005
-  title: Steam Factory
-  desc: Engines roar and smoke billows—the Industrial Age is here. Occupy it to obatin
-    a generous amount of Coal Mines. Continuous occupation will draw attacks from
-    neutral forces.
-- id: 10102
-  title: ''
-  desc: ''
-- id: 100001
-  title: No.1 Production Plant
-  desc: Posted in the northwest and southeast. Occupy it to earn steady Coal Mines.
-- id: 100002
-  title: No.2 Production Plant
-  desc: Posted in the northwest and southeast. Occupy it to earn steady Coal Mines.
-- id: 100011
-  title: No.1 Production Shed
-  desc: Posted in the northwest and southeast. Occupy it to earn steady Coal Mines.
-- id: 100012
-  title: No.2 Production Shed
-  desc: Posted in the northwest and southeast. Occupy it to earn steady Coal Mines.
-- id: 100021
-  title: Boiler House
-  desc: Steam thunders across the field. Occupy it to shorten Occupation Times for
-    all buildings on the battlefield.
-- id: 100022
-  title: Arsenal
-  desc: Steam thunders across the field. Occupy it to shorten Occupation Times for
-    all buildings on the battlefield.
-- id: 100061
-  title: Mercenary Camp
-  desc: These money-hungry mercs aren't the most honorable bunch, but they'll give
-    you the edge you need. Occupy this spot to deploy them—every strike weakens enemy
-    Attack and Defense.
-- id: 101011
-  title: No.1 Production Shed
-  desc: "The No.1 Production Shed stands among the ancient trees, providing unparalleled\
-    \ surveillance and protection. The station ensures the safety of the surrounding\
-    \ lands.\r\n\r\n<b>How to Play</b>\r\n\r\n· Occupy the building to earn Event\
-    \ Points.\r\n\r\n· About Coal Cart: When the building has been occupied for more\
-    \ than 1 minute AND its original occupant fails to defend it from enemy attacks,\
-    \ a certain amount of Coal will appear around the building. Collect it before\
-    \ anyone else to earn event points."
-- id: 101012
-  title: No.2 Production Shed
-  desc: "The No.2 Production Shed is a fiery sentinel that offers both illumination\
-    \ and defense. The station's defenders are trained to harness the power of fire.\r\
-    \n\r\n<b>How to Play</b>\r\n\r\n· Occupy the building to earn Event Points.\r\n\
-    \r\n· About Coal Cart: When the building has been occupied for more than 1 minute\
-    \ AND its original occupant fails to defend it from enemy attacks, a certain amount\
-    \ of Coal will appear around the building. Collect it before anyone else to earn\
-    \ event points."
-- id: 101031
-  title: Steam Factory
-  desc: Engines roar and smoke billows—the Industrial Age is here. Occupy it to obatin
-    a generous amount of Coal Mines. Continuous occupation will draw attacks from
-    neutral forces.
-- id: 101042
-  title: Stable
-  desc: Heavy‑haul horses with range across the battlefield. Occupy it to shorten
-    cooldown time for free Adcanced Teleport.
+
