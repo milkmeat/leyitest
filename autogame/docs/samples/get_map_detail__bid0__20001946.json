@@ -2,21 +2,21 @@
   "res_header": {
     "ret_code": 30100,
     "cost_time_us": 0,
-    "ret_time_s": 1773136729,
-    "err_msg": "[bussiness/base_process.cpp:634] [seq=16323056] SendDsReq: do net op error "
+    "ret_time_s": 1775535079,
+    "err_msg": "[bussiness/base_process.cpp:634] [seq=2114127] SendDsReq: do net op error "
   },
   "request": {
     "header": {
       "did": "self-system",
       "sid": 1,
-      "aid": 0,
+      "aid": 20000118,
       "ksid": 1,
-      "ava_id": 0,
+      "lvl_id": 29999,
       "castle_lv": 25,
       "battle_type": 0,
       "battle_id": 0,
       "chat_scene": ",kingdom_1",
-      "invoker_name": "evans_test_debug",
+      "invoker_name": "ying_test_debug",
       "uid": 20001946
     },
     "request": {

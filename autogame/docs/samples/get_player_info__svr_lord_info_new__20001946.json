@@ -2,21 +2,21 @@
   "res_header": {
     "ret_code": 0,
     "cost_time_us": 0,
-    "ret_time_s": 1773136728,
+    "ret_time_s": 1775535078,
     "err_msg": ""
   },
   "request": {
     "header": {
       "did": "self-system",
       "sid": 1,
-      "aid": 0,
+      "aid": 20000118,
       "ksid": 1,
-      "ava_id": 0,
+      "lvl_id": 29999,
       "castle_lv": 25,
       "battle_type": 0,
       "battle_id": 0,
       "chat_scene": ",kingdom_1",
-      "invoker_name": "evans_test_debug",
+      "invoker_name": "ying_test_debug",
       "uid": 20001946
     },
     "request": {
@@ -39,10 +39,11 @@
         {
           "data": [
             {
-              "data": "{\"lord_info_data\":{\"cur_state\":0,\"suicide_etime\":0,\"arrester_lord_info\":{\"uid\":0},\"state_etime\":0,\"lord_info\":{\"aid\":0,\"city_level\":7,\"avatar\":0,\"uid\":20001946,\"ksid\":1,\"head_frame\":0,\"skin_id\":0,\"city_pos\":12300023400,\"uname\":\"Boss_BWPLM\",\"al_name\":\"\",\"al_nick\":\"\",\"lord_level\":1,\"custom_avatar\":\"\"},\"suicide_btime\":0,\"state_btime\":0}}",
+              "data": "{\"lord_info_data\":{\"state_btime\":0,\"cur_state\":0,\"arrester_lord_info\":{\"uid\":0},\"suicide_etime\":0,\"suicide_btime\":0,\"lord_info\":{\"head_frame\":0,\"uid\":20001946,\"skin_id\":0,\"ksid\":1,\"lord_level\":1,\"custom_avatar\":\"\",\"city_pos\":2900089100,\"al_name\":\"eeeee\",\"al_nick\":\"EEEE\",\"uname\":\"Boss_BWPLM\",\"avatar\":0,\"city_level\":20,\"aid\":20000124},\"state_etime\":0}}",
               "name": "svr_lord_info_new"
             }
           ],
+          "error": -161,
           "main": 1
         }
       ],
