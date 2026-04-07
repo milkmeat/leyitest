@@ -49,7 +49,6 @@ async def verify_all(uid: int):
         "recall_troop": {"march_info": {"ids": ["test_id"]}},
         "get_all_player_data": {},
         "get_player_info": {},
-        "get_map_overview": {"sid": 0},
         "get_map_detail": {"sid": 0, "bid_list": [0]},
         "get_battle_report": {"id": "test_report_id"},
         "add_gem": {},

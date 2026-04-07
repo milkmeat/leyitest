@@ -1,7 +1,7 @@
 """建筑/据点数据模型
 
 数据来源（test server 实际返回）:
-  - get_map_brief_obj → svr_map_brief_objs.briefList
+  - AVA 战场: lvl_battle_login_get → svr_lvl_brief_objs.briefObjs
   - 不同 type 含义:
       type=8   联盟要塞 (key=10000 大型, 10100 小型)
       type=27  地图据点/节点 (key=656~676, 不同等级)

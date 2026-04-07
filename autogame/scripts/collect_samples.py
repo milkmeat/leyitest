@@ -1,4 +1,4 @@
-"""从 test server 采集所有查询命令的完整 JSON 响应，保存到 docs/samples/
+"""从 test server 采集所有命令的完整 JSON 响应，保存到 docs/samples/
 
 用法:
   python scripts/collect_samples.py [uid1 uid2 ...]
@@ -7,11 +7,15 @@
 文件名格式: {cmd_name}__{uid}.json
 
 采集的命令:
+  查询类:
   - get_player_info (login_get，含 5 个模块)
   - get_all_player_data (game_server_login_get，全量数据)
-  - get_map_overview (get_map_brief_obj)
+  - game_server_login_get (按 sid 分别采集)
   - get_map_detail (game_svr_map_get)
   - get_battle_report (get_city_battle_report)
+  行动类（用无效参数触发，仅采集响应结构）:
+  - add_gem, add_soldiers, add_resource
+  - scout_player, move_city, recall_troop, recall_reinforce
 """
 
 import asyncio
@@ -77,13 +81,17 @@ async def collect_for_uid(client: GameAPIClient, uid: int):
     except Exception as e:
         print(f"  ERROR: {e}")
 
-    # 3. get_map_overview
-    print(f"\n[{uid}] get_map_overview...")
-    try:
-        resp = await client.send_cmd("get_map_overview", uid, sid=0)
-        save_json(f"get_map_overview{suffix}", resp)
-    except Exception as e:
-        print(f"  ERROR: {e}")
+    # 3. game_server_login_get — 尝试不同 sid 看地图数据
+    for sid in [0, 1]:
+        print(f"\n[{uid}] game_server_login_get (sid={sid})...")
+        try:
+            resp = await client.send_cmd(
+                "get_all_player_data", uid,
+                header_overrides={"sid": sid},
+            )
+            save_json(f"game_server_login_get__sid{sid}{suffix}", resp)
+        except Exception as e:
+            print(f"  ERROR: {e}")
 
     # 4. get_map_detail — 尝试不同 bid_list
     print(f"\n[{uid}] get_map_detail (bid_list=[0])...")
@@ -107,6 +115,24 @@ async def collect_for_uid(client: GameAPIClient, uid: int):
         save_json(f"get_battle_report{suffix}", resp)
     except Exception as e:
         print(f"  ERROR: {e}")
+
+    # 6. 行动类命令 — 用无效参数触发，仅采集响应结构
+    action_cmds = {
+        "add_gem": {},
+        "add_soldiers": {},
+        "add_resource": {},
+        "scout_player": {"tar_pos": encode_pos(500, 500)},
+        "move_city": {"tar_pos": encode_pos(123, 234)},
+        "recall_troop": {"march_info": {"ids": ["nonexist"]}},
+        "recall_reinforce": {"unique_id": "nonexist"},
+    }
+    for cmd_name, overrides in action_cmds.items():
+        print(f"\n[{uid}] {cmd_name}...")
+        try:
+            resp = await client.send_cmd(cmd_name, uid, **overrides)
+            save_json(f"{cmd_name}{suffix}", resp)
+        except Exception as e:
+            print(f"  ERROR: {e}")
 
 
 async def main(uids: list[int]):

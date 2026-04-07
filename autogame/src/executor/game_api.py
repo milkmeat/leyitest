@@ -478,20 +478,6 @@ class GameAPIClient:
         """获取玩家全量数据"""
         return await self.send_cmd("get_all_player_data", uid)
 
-    async def get_map_overview(
-        self, uid: int, sid: int = 0,
-        header_overrides: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
-        """获取地图缩略信息
-
-        Args:
-            uid: 查询用账号 UID
-            sid: 场景 ID（0=主城, 1=活动地图）
-            header_overrides: 覆盖请求头（如 aid 切换联盟视角）
-        """
-        return await self.send_cmd(
-            "get_map_overview", uid, sid=sid, header_overrides=header_overrides,
-        )
 
     async def get_map_detail(self, uid: int, sid: int = 1, bid_list: List = None) -> Dict[str, Any]:
         """获取普通地图详细信息（非 AVA 战场）"""
@@ -510,7 +496,7 @@ class GameAPIClient:
             uid: 查询账号 UID
             center_x, center_y: 中心像素坐标
             size: 范围边长（以地块为单位，默认 10x10=100 块）
-            sid: 服务器 ID（默认 0）
+            sid: 服务器 ID（test环境为 1）
 
         Returns:
             mapBidObjs 列表，每项含 bid 和 objs；失败返回空列表

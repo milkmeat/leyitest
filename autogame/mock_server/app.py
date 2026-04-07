@@ -396,50 +396,6 @@ def handle_change_troop(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
     return _ok_response(data_items)
 
 
-def handle_get_map_brief_obj(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
-    """处理地图缩略信息查询
-
-    输出格式与真实服务器一致:
-      data item name = "svr_map_brief_objs"
-      data = {"briefList": [{uniqueId, objBasic: {type, pos, uid, aid, ...}}, ...]}
-    """
-    buildings = MOCK_DATA.get("buildings", {})
-    players = MOCK_DATA.get("players", {})
-
-    brief_list = []
-    # 添加玩家城市 (type=2)
-    for pid, pdata in players.items():
-        pos = encode_pos(pdata["x"], pdata["y"])
-        brief_list.append({
-            "uniqueId": f"2_{pid}_1",
-            "objBasic": {
-                "type": 2,
-                "pos": str(pos),
-                "uid": str(pid),
-                "aid": str(pdata.get("alliance_id", 0)),
-                "sid": 1,
-            },
-        })
-    # 添加建筑
-    for bid, bdata in buildings.items():
-        pos = encode_pos(bdata["x"], bdata["y"])
-        brief_list.append({
-            "uniqueId": bid,
-            "objBasic": {
-                "type": bdata.get("type", 27),
-                "pos": str(pos),
-                "key": bdata.get("id", 0),
-                "aid": str(bdata.get("alliance_id", 0)),
-                "alName": bdata.get("owner_alliance", ""),
-                "sid": 1,
-                "status": bdata.get("status", 0),
-                "fightFlag": bdata.get("fight_flag", 0),
-            },
-        })
-
-    data_items = [_data_item("svr_map_brief_objs", {"briefList": brief_list})]
-    return _ok_response(data_items)
-
 
 def handle_game_svr_map_get(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
     """处理地图详细信息查询"""
@@ -769,7 +725,6 @@ CMD_HANDLERS = {
     # 感知查询
     "login_get": handle_login_get,
     "game_server_login_get": handle_game_server_login_get,
-    "get_map_brief_obj": handle_get_map_brief_obj,
     "game_svr_map_get": handle_game_svr_map_get,
     "get_city_battle_report": handle_get_city_battle_report,
     "get_self_al_member": handle_get_self_al_member,

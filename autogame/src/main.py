@@ -19,7 +19,6 @@ AI 决策调试:
   get_player_pos <uid>                          查询玩家坐标
   get_player_info <uid>                         查询玩家完整信息(自动检测AVA状态)
   get_all_player_data <uid>                     查询玩家全量数据
-  get_map_overview <uid>                        查询地图缩略信息
   get_map_detail <uid> [bid...]                 查询地图详细信息
   get_battle_report <uid> <report_id>           查询战报
 
@@ -240,17 +239,6 @@ async def cmd_get_all_player_data(uid_str: str, env: str = None):
     finally:
         await client.close()
 
-
-async def cmd_get_map_overview(uid_str: str, env: str = None):
-    from src.executor.game_api import GameAPIClient
-    client = GameAPIClient(env=env)
-    try:
-        uid = int(uid_str)
-        resp = await client.get_map_overview(uid)
-        _print_ret_code(resp)
-        _print_json(resp)
-    finally:
-        await client.close()
 
 
 async def cmd_get_map_detail(uid_str: str, x_str: str, y_str: str, *extra: str, env: str = None):
@@ -2142,7 +2130,6 @@ COMMANDS = {
     "get_player_pos":       (cmd_get_player_pos,       "<uid>",                              "查询玩家坐标"),
     "get_player_info":      (cmd_get_player_info,      "<uid>",                              "查询玩家完整信息(自动检测AVA)"),
     "get_all_player_data":  (cmd_get_all_player_data,  "<uid>",                              "查询玩家全量数据"),
-    "get_map_overview":     (cmd_get_map_overview,      "<uid>",                              "查询地图缩略信息"),
     "get_map_detail":       (cmd_get_map_detail,        "<uid> <x> <y> [size]",               "普通地图地块详情查询"),
     "get_battle_report":    (cmd_get_battle_report,     "<uid> <report_id>",                  "查询战报"),
     # 行动

@@ -15,7 +15,7 @@ environments:
 # 请求头默认值（每次请求会合并 uid/sid 等动态字段）
 default_header:
   did: "self-system"
-  sid: 1
+  sid: 1                       # 服务器ID（test环境只有 sid=1）
   aid: 20000118              # 联盟 TestSquad2026
   ksid: 1
   lvl_id: 29999

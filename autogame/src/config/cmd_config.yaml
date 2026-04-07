@@ -158,12 +158,6 @@ commands:
     default_param: {}
     description: "获取联盟全部成员列表（需在header中传入正确的aid）"
 
-  # --- 获取地图缩略信息 ---
-  get_map_overview:
-    cmd: "get_map_brief_obj"
-    default_param:
-      sid: 0                  # 服务器id
-    description: "获取地图缩略信息（建筑归属、玩家位置等概览数据）"
 
   # --- 获取地图详细信息 ---
   get_map_detail:

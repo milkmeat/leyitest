@@ -28,9 +28,9 @@ environments:
 | 参数 | 值 | 说明 |
 |------|-----|------|
 | `did` | "self-system" | 设备ID |
-| `sid` | 1 | 场景ID（1=活动地图） |
+| `sid` | 1 | 服务器ID（test环境只有sid=1） |
 | `aid` | 20000118 | 联盟ID (TestSquad2026，我方) |
-| `ksid` | 1 | 场景key |
+| `ksid` | 1 | Kingdom服务器ID |
 | `ava_id` | 0 | AVA战场ID（0=普通地图，非0=战场副本ID） |
 | `castle_lv` | 25 | 城堡等级 |
 | `battle_type` | 0 | 战斗类型 |

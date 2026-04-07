@@ -2,13 +2,13 @@
 
 Phase 1 (Sync 0-5s) 的核心实现:
 - 并发查询所有账号状态（get_player_info）
-- 获取全图数据（get_map_brief_obj → 建筑 + 敌方玩家）
+- AVA 战场: lvl_battle_login_get 获取全图数据（建筑 + 敌方玩家）
+- 普通地图: 仅同步各账号自身数据（game_server_login_get）
 - 返回 SyncSnapshot 供下游 AI 层使用
 
 设计要点:
 - asyncio.Semaphore 控制并发（默认 20）
 - 单账号失败不阻塞整体，记入 SyncSnapshot.errors
-- 地图查询用任意一个成功账号的 uid 发起
 - squad_id → group_id 映射从 config.squads 获取
 """
 
@@ -27,12 +27,8 @@ from src.executor.game_api import GameAPIClient
 from src.models.player_state import PlayerState
 from src.models.building import Building
 from src.models.enemy import Enemy
-from src.utils.coords import make_bid_list
 
 logger = logging.getLogger(__name__)
-
-# 可作为建筑解析的 type 集合（普通地图）
-BUILDING_TYPES = {27, 48, 64, 156}
 
 # AVA 战场类型常量
 AVA_PLAYER_TYPE = 10101          # AVA 玩家城市
@@ -120,16 +116,13 @@ class DataSyncer:
         accounts, acct_errors = await self._sync_all_accounts()
         errors.extend(acct_errors)
 
-        # 2) 同步地图 — 用第一个成功账号的 uid
+        # 2) 同步地图 — 仅 AVA 战场需要全图数据
         buildings: list[Building] = []
         enemies: list[Enemy] = []
-        if accounts:
+        if accounts and lvl_id != 0:
             first_uid = next(iter(accounts))
             try:
-                if lvl_id != 0:
-                    buildings, enemies = await self._sync_map_ava(first_uid, lvl_id)
-                else:
-                    buildings, enemies = await self._sync_map_both_sides(first_uid)
+                buildings, enemies = await self._sync_map_ava(first_uid, lvl_id)
             except Exception as e:
                 logger.error("map sync failed: %s", e)
                 errors.append(SyncError(uid=first_uid, step="map", message=str(e)))
@@ -240,114 +233,6 @@ class DataSyncer:
 
         logger.info("AVA map sync (lvl_id=%d): %d buildings, %d enemies",
                      lvl_id, len(buildings), len(enemies))
-        return buildings, enemies
-
-    async def _sync_map_both_sides(
-        self, uid: int,
-    ) -> Tuple[list[Building], list[Enemy]]:
-        """分别用我方/敌方 aid 请求地图 brief，合并双方数据
-
-        地图 brief API 按 header 中的 aid 过滤，只返回同联盟成员。
-        因此需要两次请求：我方 aid 获取建筑，敌方 aid 获取敌方玩家。
-
-        Args:
-            uid: 用于发起查询的账号 UID
-        """
-        alliances = self.config.accounts.alliances
-        enemy_aid_val = alliances.enemy.aid if alliances else 0
-
-        # 并发请求：我方视角 + 敌方视角
-        async with self._semaphore:
-            tasks = [
-                self.client.get_map_overview(uid, sid=1),
-            ]
-            if enemy_aid_val:
-                enemy_uid = self.config.accounts.enemy_uids()[0] if self.config.accounts.enemy_uids() else uid
-                tasks.append(
-                    self.client.get_map_overview(
-                        enemy_uid, sid=1,
-                        header_overrides={"aid": enemy_aid_val},
-                    )
-                )
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-
-        # 解析我方视角 → 建筑 + (可能有的) 敌方
-        buildings: list[Building] = []
-        enemies: list[Enemy] = []
-
-        our_resp = results[0]
-        if not isinstance(our_resp, Exception):
-            buildings, enemies = self._parse_map_response(our_resp)
-
-        # 解析敌方视角 → 敌方玩家
-        if len(results) > 1:
-            enemy_resp = results[1]
-            if not isinstance(enemy_resp, Exception):
-                _, enemy_players = self._parse_map_response(enemy_resp)
-                # 合并去重（敌方视角查到的覆盖我方视角）
-                existing = {e.uid for e in enemies}
-                for e in enemy_players:
-                    if e.uid not in existing:
-                        enemies.append(e)
-
-        logger.info("map sync: %d buildings, %d enemies", len(buildings), len(enemies))
-        return buildings, enemies
-
-    def _parse_map_response(
-        self, resp: dict,
-    ) -> Tuple[list[Building], list[Enemy]]:
-        """解析地图响应，提取建筑和非我方玩家
-
-        敌我区分: 仅根据 UID 是否在 config.accounts 中判断，
-        不依赖 alliance_id（测试账号联盟可能不统一）。
-
-        响应结构: res_data[0].push_list[0].data 是 data item 列表，
-        找到 name 含 "svr_map_brief" 的项，解析其 briefList。
-        """
-        buildings: list[Building] = []
-        enemies: list[Enemy] = []
-
-        # 提取 data items
-        try:
-            items = resp["res_data"][0]["push_list"][0]["data"]
-        except (KeyError, IndexError, TypeError):
-            logger.warning("地图响应结构异常")
-            return buildings, enemies
-
-        # 找到地图 brief 数据
-        brief_data = None
-        for item in items:
-            name = item.get("name", "")
-            if "svr_map_brief" in name:
-                raw = item.get("data", "")
-                try:
-                    brief_data = json.loads(raw) if isinstance(raw, str) else raw
-                except (json.JSONDecodeError, TypeError):
-                    continue
-                break
-
-        if not brief_data:
-            logger.warning("未找到 svr_map_brief 数据")
-            return buildings, enemies
-
-        # 解析 briefList
-        brief_list = brief_data.get("briefList", brief_data.get("objs", []))
-        # 我方账号 UID 集合 — 不在此集合中的 type=2 对象视为非我方玩家
-        my_uids = set(self.config.accounts.all_uids())
-
-        for obj in brief_list:
-            basic = obj.get("objBasic", obj)  # 兼容扁平/嵌套格式
-            obj_type = basic.get("type", 0)
-
-            if obj_type == 2:
-                # 玩家城市 — 不在我方 UID 集合中则归为非我方
-                uid = int(basic.get("uid", 0))
-                if uid not in my_uids:
-                    enemies.append(Enemy.from_brief_obj(obj))
-
-            elif obj_type in BUILDING_TYPES:
-                buildings.append(Building.from_brief_obj(obj))
-
         return buildings, enemies
 
     async def sync_single_account(self, uid: int) -> PlayerState | SyncError:
