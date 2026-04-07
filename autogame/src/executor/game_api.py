@@ -675,6 +675,24 @@ class GameAPIClient:
             overrides["march_info"] = march_info
         return await self.send_cmd("lvl_dispatch_troop", uid, header_overrides={"lvl_id": lvl_id}, **overrides)
 
+    async def lvl_collect_cart(
+        self, uid: int, lvl_id: int, target_id: str,
+    ) -> Dict[str, Any]:
+        """AVA 战场内搜集资源车 (coal cart, type=10300)
+
+        使用 lvl_dispatch_pick 命令字，march_type=21，不需要兵力信息。
+
+        Args:
+            lvl_id: 战场 ID
+            target_id: 资源车唯一 ID (如 "10300_xxx")
+        """
+        overrides: Dict[str, Any] = {
+            "march_type": 21,
+            "target_info": {"type": 10300, "id": target_id},
+            "queue_id": 6001,
+        }
+        return await self.send_cmd("lvl_collect_cart", uid, header_overrides={"lvl_id": lvl_id}, **overrides)
+
     async def lvl_reinforce_building(
         self, uid: int, lvl_id: int, target_id: str, key: int = 0,
         target_type: int = 10006, march_info: Optional[Dict[str, Any]] = None,

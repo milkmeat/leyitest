@@ -583,6 +583,20 @@ commands:
       target_type: 10004
     description: "AVA战场内从建筑中召回队伍（ids为队伍ID列表，pos为队伍当前位置）"
 
+  # --- 战场内采集资源车 (coal cart) ---
+  lvl_collect_cart:
+    cmd: "lvl_dispatch_pick"
+    extra_header:
+      lvl_id: "战场ID"
+    default_param:
+      march_type: 21
+      unique_id: ""
+      target_info:
+        type: 10300
+        id: ""
+      queue_id: 6001
+    description: "AVA战场内搜集资源车(coal cart, type=10300, cmd=lvl_dispatch_pick)"
+
   # --- 战场内获取地块详情 ---
   lvl_svr_map_get:
     cmd: "lvl_svr_map_get"

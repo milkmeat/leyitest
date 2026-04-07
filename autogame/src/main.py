@@ -464,6 +464,105 @@ async def cmd_lvl_reinforce_building(uid_str: str, lvl_id_str: str, building_id_
         await client.close()
 
 
+async def cmd_collect_cart(uid_str: str, *extra: str, env: str = None):
+    """AVA 战场内采集最近的 coal cart (type=10300)
+
+    用法: collect_cart <uid> --ava <lvl_id>
+    - 自动查询 AVA 地图，找到距离玩家最近的 10300 资源车并派兵采集
+    """
+    import math as _math
+    from src.executor.game_api import GameAPIClient
+    from src.utils.coords import encode_pos, decode_pos
+
+    # 解析 --ava <lvl_id>
+    args_list = list(extra)
+    lvl_id = None
+    if "--ava" in args_list:
+        idx = args_list.index("--ava")
+        if idx + 1 < len(args_list):
+            lvl_id = int(args_list[idx + 1])
+    if not lvl_id:
+        print("Error: 必须指定 --ava <lvl_id>，例如: collect_cart 20010366 --ava 29999", file=sys.stderr)
+        sys.exit(1)
+
+    client = GameAPIClient(env=env)
+    try:
+        uid = int(uid_str)
+
+        # 1. 查询 AVA 地图数据
+        resp = await client.lvl_battle_login_get(uid, lvl_id)
+        code = resp.get("res_header", {}).get("ret_code", -1)
+        if code != 0:
+            print(f"查询 AVA 地图失败 ret_code={code}", file=sys.stderr)
+            sys.exit(1)
+
+        # 2. 解析 brief_objs，提取玩家坐标和 10300 资源车
+        #    数据可能在任意 push_list 中，需遍历所有
+        items = []
+        for push in resp["res_data"][0].get("push_list", []):
+            items.extend(push.get("data", []))
+        player_pos = None
+        carts = []  # [(id, x, y, pos_encoded)]
+
+        for item in items:
+            name = item.get("name", "")
+            raw = item.get("data", "")
+            try:
+                parsed = _json.loads(raw) if isinstance(raw, str) else raw
+            except (_json.JSONDecodeError, TypeError):
+                continue
+
+            if "svr_lvl_brief_objs" in name:
+                brief_list = parsed.get("briefObjs", parsed.get("briefList", []))
+                for obj in brief_list:
+                    obj_type = obj.get("type", 0)
+                    raw_pos = obj.get("pos")
+                    if not raw_pos:
+                        continue
+                    ox, oy = decode_pos(int(raw_pos))
+
+                    # 找到自己的城
+                    if obj_type == 10101:
+                        obj_uid = int(obj.get("uid", 0)) or int(obj.get("id", 0))
+                        if obj_uid == uid:
+                            player_pos = (ox, oy)
+
+                    # 收集 coal cart
+                    if obj_type == 10300:
+                        cart_id = obj.get("uniqueId", "") or obj.get("unique_id", "")
+                        if not cart_id:
+                            cart_id = f"10300_{obj.get('id', 0)}"
+                        carts.append((cart_id, ox, oy))
+
+        if not player_pos:
+            print(f"Error: 未在 AVA 地图中找到 uid={uid} 的城市位置", file=sys.stderr)
+            sys.exit(1)
+
+        if not carts:
+            print(f"Error: AVA 地图中未找到 coal cart (type=10300)", file=sys.stderr)
+            sys.exit(1)
+
+        # 3. 找最近的 cart
+        px, py = player_pos
+        nearest = min(carts, key=lambda c: _math.hypot(c[1] - px, c[2] - py))
+        cart_id, cx, cy = nearest
+        dist = _math.hypot(cx - px, cy - py)
+
+        print(f"玩家位置: ({px},{py})")
+        print(f"最近 coal cart: id={cart_id} ({cx},{cy}) 距离={dist:.1f}格")
+        print(f"共发现 {len(carts)} 个 coal cart")
+
+        # 4. 派兵搜集
+        resp = await client.lvl_collect_cart(uid, lvl_id, cart_id)
+        code = _print_ret_code(resp)
+        if code == 0:
+            print(f"采集派遣成功 → cart_id={cart_id} ({cx},{cy})")
+        else:
+            print(f"采集派遣失败", file=sys.stderr)
+    finally:
+        await client.close()
+
+
 async def cmd_lvl_rally_dismiss(uid_str: str, lvl_id_str: str, unique_id_str: str, env: str = None):
     """AVA 战场内解散集结"""
     from src.executor.game_api import GameAPIClient
@@ -2191,6 +2290,7 @@ COMMANDS = {
     "lvl_svr_map_get":      (cmd_lvl_svr_map_get,       "<uid> <lvl_id> <x> <y> [size]",      "AVA战场地块详情查询"),
     "lvl_create_rally":     (cmd_lvl_create_rally,      "<uid> <lvl_id> <target_id> <x> <y> [prepare_time]", "AVA发起集结(建筑/玩家)"),
     "lvl_rally_dismiss":    (cmd_lvl_rally_dismiss,     "<uid> <lvl_id> <unique_id>",         "AVA解散集结"),
+    "collect_cart":         (cmd_collect_cart,           "<uid> --ava <lvl_id>",               "AVA采集最近coal cart(10300)"),
     "attack_player":        (cmd_attack_player,         "<uid> <target_uid> <x> <y> [soldier_id count]", "攻击玩家"),
     "attack_building":      (cmd_attack_building,       "<uid> <building_id> <x> <y>",        "攻击建筑"),
     "reinforce_building":   (cmd_reinforce_building,    "<uid> <building_id> <x> <y>",        "驻防建筑"),
