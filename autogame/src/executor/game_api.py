@@ -689,7 +689,7 @@ class GameAPIClient:
         overrides: Dict[str, Any] = {
             "march_type": 21,
             "target_info": {"type": 10300, "id": target_id},
-            "queue_id": 6001,
+            "queue_id": 6003,
         }
         return await self.send_cmd("lvl_collect_cart", uid, header_overrides={"lvl_id": lvl_id}, **overrides)
 

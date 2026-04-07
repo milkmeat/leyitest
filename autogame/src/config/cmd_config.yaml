@@ -594,7 +594,7 @@ commands:
       target_info:
         type: 10300
         id: ""
-      queue_id: 6001
+      queue_id: 6003
     description: "AVA战场内搜集资源车(coal cart, type=10300, cmd=lvl_dispatch_pick)"
 
   # --- 战场内获取地块详情 ---
