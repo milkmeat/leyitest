@@ -566,9 +566,33 @@ class GameAPIClient:
         """
         return await self.send_cmd("lvl_move_city", uid, tar_pos=encode_pos(x, y), header_overrides={"lvl_id": lvl_id})
 
-    async def lvl_battle_login_get(self, uid: int, lvl_id: int) -> Dict[str, Any]:
-        """获取 AVA 战场队伍信息"""
-        return await self.send_cmd("lvl_battle_login_get", uid, lvl_id=lvl_id, header_overrides={"lvl_id": lvl_id})
+    # sync_all=False 时请求的数据段列表
+    _SYNC_SECTIONS = [
+        "svr_lvl_brief_objs",
+        "svr_lvl_rally_brief_objs",
+        "svr_lvl_user_objs",
+    ]
+
+    async def lvl_battle_login_get(
+        self, uid: int, lvl_id: int, *, sync_all: bool = True,
+    ) -> Dict[str, Any]:
+        """获取 AVA 战场队伍信息
+
+        Args:
+            sync_all: True → all=1（服务器返回全量）；
+                      False → all=0 + list 指定 3 个 section
+        """
+        overrides: Dict[str, Any] = {"lvl_id": lvl_id}
+        if sync_all:
+            overrides["all"] = 1
+        else:
+            overrides["all"] = 0
+            overrides["list"] = self._SYNC_SECTIONS
+        return await self.send_cmd(
+            "lvl_battle_login_get", uid,
+            header_overrides={"lvl_id": lvl_id},
+            **overrides,
+        )
 
     async def lvl_scout_player(
         self, uid: int, lvl_id: int, target_uid: int, target_pos: int,

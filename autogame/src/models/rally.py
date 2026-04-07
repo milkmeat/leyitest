@@ -15,6 +15,8 @@ from enum import IntEnum
 
 from pydantic import BaseModel, Field
 
+from src.utils.coords import decode_pos
+
 
 class RallyState(IntEnum):
     """集结状态"""
@@ -65,3 +67,51 @@ class Rally(BaseModel):
     @property
     def participant_uids(self) -> list[int]:
         return [p.uid for p in self.participants]
+
+
+class RallyBrief(BaseModel):
+    """集结概览 — 来自 svr_lvl_rally_brief_objs.brief[]
+
+    轻量模型，仅包含同步阶段需要的字段。
+    """
+    unique_id: str = ""           # "107_xxx"
+    camp: int = 0
+    owner_uid: int = 0
+    leader_uid: int = 0
+    target_id: str = ""           # "10001_xxx"
+    target_type: int = 0
+    target_camp: int = 0
+    target_pos: tuple[int, int] = (0, 0)
+    pos: tuple[int, int] = (0, 0)
+    status: int = 0               # 1=行军, 6=集合中
+    is_attack: int = 0
+    stime: int = 0                # 发起时间(ms)
+    march_etime: int = 0          # 预计到达时间(ms)
+    rally_fighting: int = 0
+
+    @classmethod
+    def from_brief(cls, obj: dict) -> RallyBrief:
+        """从 svr_lvl_rally_brief_objs.brief[] 中的集结对象构建"""
+        raw_pos = obj.get("pos")
+        pos = decode_pos(int(raw_pos)) if raw_pos else (0, 0)
+        raw_tar = obj.get("tarPos")
+        tar_pos = decode_pos(int(raw_tar)) if raw_tar else (0, 0)
+
+        march = obj.get("march", {})
+
+        return cls(
+            unique_id=obj.get("uniqueId", ""),
+            camp=int(obj.get("camp", 0)),
+            owner_uid=int(obj.get("ownerUid", 0)),
+            leader_uid=int(obj.get("leaderUid", 0)),
+            target_id=obj.get("targetId", ""),
+            target_type=int(obj.get("tarType", 0)),
+            target_camp=int(obj.get("tarCamp", 0)),
+            target_pos=tar_pos,
+            pos=pos,
+            status=int(obj.get("status", 0)),
+            is_attack=int(obj.get("isAttack", 0)),
+            stime=int(obj.get("stime", 0)),
+            march_etime=int(march.get("etime", 0)),
+            rally_fighting=int(obj.get("rallyFighting", 0)),
+        )

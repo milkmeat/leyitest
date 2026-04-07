@@ -55,7 +55,7 @@ GM 命令:
   add_resource <uid> [op_type]                  添加资源
 
 数据同步:
-  sync [--json] [--ava <lvl_id>] [uid]          数据同步(全量/单账号,单账号自动检测AVA)
+  sync [--json] [--ava <lvl_id>] [--sync-all] [uid]  数据同步(全量/单账号,默认精简模式)
 
 L0 执行器（AI 指令调试）:
   l0 <ACTION|JSON> <args...>                    执行器调试
@@ -1321,7 +1321,11 @@ async def cmd_run(*args: str, env: str = None):
         elif arg == "--ava" and i + 1 < len(remaining):
             lvl_id = int(remaining[i + 1])
             i += 1
+        elif arg == "--sync-all":
+            pass  # 下面单独处理
         i += 1
+
+    sync_all = "--sync-all" in args
 
     # 显示 LLM 配置
     if llm_timeout is not None:
@@ -1347,7 +1351,7 @@ async def cmd_run(*args: str, env: str = None):
     client = GameAPIClient(env=env)
     controller = AIController(config, client, llm_client=llm_client,
                              mock_l2=mock_l2, l1_prompt=l1_prompt,
-                             lvl_id=lvl_id)
+                             lvl_id=lvl_id, sync_all=sync_all)
     try:
         await controller.run(max_rounds=max_rounds)
     finally:
@@ -1371,9 +1375,10 @@ async def cmd_sync(*args: str, env: str = None):
     syncer = DataSyncer(client, config)
 
     try:
-        # 判断模式: sync --json / sync --ava <lvl_id> / sync <uid> / sync
+        # 判断模式: sync --json / sync --ava <lvl_id> / sync --sync-all / sync <uid> / sync
         json_mode = "--json" in args
-        remaining = [a for a in args if a != "--json"]
+        sync_all = "--sync-all" in args
+        remaining = [a for a in args if a not in ("--json", "--sync-all")]
 
         # 解析 --ava <lvl_id>
         lvl_id = 0
@@ -1404,8 +1409,23 @@ async def cmd_sync(*args: str, env: str = None):
             if isinstance(result, SyncError):
                 print(f"[FAIL] 同步失败 uid={uid}: {result.message}", file=sys.stderr)
                 sys.exit(1)
-            elif json_mode:
-                _print_json(result.model_dump(mode="json"))
+
+            # AVA 模式下额外获取该账号的集结和部队信息
+            rallies = []
+            user_troops = []
+            if lvl_id:
+                try:
+                    _, _, rallies, user_troops = await syncer._sync_map_ava(
+                        uid, lvl_id, sync_all=False, player_pos=result.city_pos,
+                    )
+                except Exception as e:
+                    print(f"[warn] AVA 地图同步失败: {e}", file=sys.stderr)
+
+            if json_mode:
+                data = result.model_dump(mode="json")
+                data["rallies"] = [r.model_dump(mode="json") for r in rallies]
+                data["user_troops"] = user_troops
+                _print_json(data)
             else:
                 print(f"同步完成 uid={uid}")
                 print(f"  名称: {result.name}")
@@ -1414,19 +1434,46 @@ async def cmd_sync(*args: str, env: str = None):
                 print(f"  兵种: {len(result.soldiers)} 种, 总兵力 {sum(s.value for s in result.soldiers)}")
                 print(f"  英雄: {len(result.heroes)} 个")
                 print(f"  小队: {result.group_id}")
+
+                if rallies:
+                    print(f"\n  集结 ({len(rallies)} 个):")
+                    for r in rallies:
+                        print(f"    {r.unique_id} 目标={r.target_id} 状态={r.status} "
+                              f"发起={r.owner_uid} 队长={r.leader_uid}")
+                else:
+                    print(f"  集结: 0 个")
+
+                if user_troops:
+                    print(f"\n  部队 ({len(user_troops)} 个):")
+                    for t in user_troops:
+                        basic = t.get("objBasic", {})
+                        march = t.get("marchBasic", {})
+                        troop_info = t.get("troopInfo", {})
+                        t_type = basic.get("type", 0)
+                        t_pos = basic.get("pos", "0")
+                        t_status = march.get("status", 0)
+                        march_type = march.get("marchType", 0)
+                        queue_id = troop_info.get("queueId", march.get("queueId", "?"))
+                        print(f"    {t.get('uniqueId', '?')} type={t_type} pos={t_pos} "
+                              f"status={t_status} marchType={march_type} queueId={queue_id}")
+                else:
+                    print(f"  部队: 0 个")
             return
 
         # 全量同步
-        snapshot = await syncer.sync(loop_id=0, lvl_id=lvl_id)
+        snapshot = await syncer.sync(loop_id=0, lvl_id=lvl_id, sync_all=sync_all)
 
         if json_mode:
             _print_json(snapshot.model_dump(mode="json"))
         else:
             # 摘要输出
-            print(f"同步完成 (耗时 {snapshot.sync_time}s)")
+            mode_label = "全量" if sync_all else "精简"
+            print(f"同步完成 (耗时 {snapshot.sync_time}s, 模式={mode_label})")
             print(f"  账号: {len(snapshot.accounts)} 个")
             print(f"  建筑: {len(snapshot.buildings)} 个")
             print(f"  敌方: {len(snapshot.enemies)} 个")
+            print(f"  集结: {len(snapshot.rallies)} 个")
+            print(f"  部队: {len(snapshot.user_troops)} 个")
             print(f"  错误: {len(snapshot.errors)} 个")
 
             # 前几个账号详情
