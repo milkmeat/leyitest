@@ -80,6 +80,7 @@ uid_helper (测试环境账号准备):
   uid_setup <alliance_key> <src_uid> <tar_uid...>  一站式账号准备
 
 uid_helper (AVA 战场):
+  uid_ava_create <lvl_id> [event_id]            GM: 创建AVA临时战场
   uid_ava_add <lvl_id> <uid> <camp_id>          添加到AVA战场名单
   uid_ava_enter <lvl_id> <uid>                  进入AVA战场
   uid_ava_status <uid>                          查询AVA战场状态
@@ -2160,6 +2161,29 @@ async def cmd_uid_setup(alliance_key: str, src_uid_str: str, *uid_args: str, env
         await client.close()
 
 
+async def cmd_uid_ava_create(lvl_id_str: str, *extra: str, env: str = None):
+    """创建AVA临时战场: uid_ava_create <lvl_id> [event_id]"""
+    from src.executor.game_api import GameAPIClient
+    client = GameAPIClient(env=env)
+    try:
+        lvl_id = int(lvl_id_str)
+        overrides = {"1v1_id": lvl_id}
+        if extra:
+            overrides["event_id"] = extra[0]
+        # GM 指令用 camp 默认配置中第一个 uid 作为 header 身份
+        gm_uid = 20010643
+        print(f"创建 AVA 战场 lvl_id={lvl_id}" + (f" event_id={extra[0]}" if extra else ""))
+        resp = await client.send_cmd("create_ava_battle", gm_uid,
+                                     param_overrides=overrides)
+        code = _print_ret_code(resp)
+        if code == 0:
+            print(f"  [OK] AVA 战场 {lvl_id} 创建成功")
+        else:
+            print(f"  [FAIL] 创建失败", file=sys.stderr)
+    finally:
+        await client.close()
+
+
 async def cmd_uid_ava_add(lvl_id_str: str, uid_str: str, camp_id_str: str, env: str = None):
     """将玩家添加到AVA战场名单: uid_ava_add <lvl_id> <uid> <camp_id>"""
     from src.executor.game_api import GameAPIClient
@@ -2317,6 +2341,7 @@ COMMANDS = {
     "uid_join_al":          (cmd_uid_join_al,           "<aid> <uid1> [uid2...]",             "加入联盟+改名"),
     "uid_members":          (cmd_uid_members,           "<aid>",                              "查看联盟成员"),
     "uid_setup":            (cmd_uid_setup,             "<alliance_key> <src_uid> <tar_uid...>", "一站式账号准备"),
+    "uid_ava_create":       (cmd_uid_ava_create,        "<lvl_id> [event_id]",                "GM: 创建AVA临时战场"),
     "uid_ava_add":          (cmd_uid_ava_add,           "<lvl_id> <uid> <camp_id>",           "添加到AVA战场名单"),
     "uid_ava_enter":        (cmd_uid_ava_enter,         "<lvl_id> <uid>",                     "进入AVA战场"),
     "uid_ava_status":       (cmd_uid_ava_status,        "<uid>",                              "查询AVA战场状态"),
