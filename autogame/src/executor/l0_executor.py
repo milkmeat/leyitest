@@ -15,7 +15,6 @@ from __future__ import annotations
 import json as _json
 import logging
 import math
-import random
 from enum import Enum
 from typing import Any, Dict, Optional
 
@@ -24,7 +23,7 @@ from pydantic import BaseModel
 from src.executor.game_api import GameAPIClient
 from src.config.schemas import AppConfig
 from src.models.player_state import PlayerState, TroopState
-from src.utils.coords import encode_pos
+from src.utils.coords import encode_pos, decode_pos, make_bid_list
 
 logger = logging.getLogger(__name__)
 
@@ -332,7 +331,7 @@ class L0Executor:
             # Smart L0: LVL_ATTACK_BUILDING / LVL_REINFORCE_BUILDING 预处理（距离检查 + 部队去重）
             original_attack_instr: AIInstruction | None = None
             if instr.action in (ActionType.LVL_ATTACK_BUILDING, ActionType.LVL_REINFORCE_BUILDING):
-                processed, skip_reason = self._preprocess_lvl_attack_building(instr)
+                processed, skip_reason = await self._preprocess_lvl_attack_building(instr)
                 if processed is None:
                     results.append(ExecutionResult(
                         success=True, action=instr.action, uid=instr.uid,
@@ -368,6 +367,15 @@ class L0Executor:
                     last_rally_pos = rpos
                     logger.info("提取 rally_id=%s pos=%s from %s uid=%d",
                                 rid, rpos, instr.action.value, instr.uid)
+
+        # ── 自动采集 coal cart (AVA only) ──
+        _move_actions = {ActionType.MOVE_CITY, ActionType.LVL_MOVE_CITY}
+        eligible_uids: set[int] = set()
+        for r, i in zip(results, instructions):
+            if r.success and i.action not in _move_actions:
+                eligible_uids.add(i.uid)
+        if eligible_uids:
+            await self._auto_collect_coal_carts(eligible_uids)
 
         return results
 
@@ -416,6 +424,98 @@ class L0Executor:
         except Exception as e:
             logger.warning("查询 rally_id 失败: %s", e)
         return "", ""
+
+    async def _auto_collect_coal_carts(self, uids: set[int]) -> None:
+        """批次执行后自动采集最近的 coal cart (type=10300)
+
+        对每个 uid: 查询 AVA 地图 → 找最近资源车 → 派遣采集。
+        失败不影响主流程，仅记录日志。
+        """
+        lvl_id = self.client.default_header.get("lvl_id", 0)
+        if not lvl_id:
+            return
+
+        for uid in uids:
+            try:
+                # 1. 队列检查: march_type=21 表示采集行军
+                acct = self._accounts.get(uid)
+                if acct:
+                    busy = any(
+                        t.march_type == 21 and t.state != TroopState.IDLE
+                        for t in acct.troops
+                    )
+                    if busy:
+                        logger.debug("uid=%d 采集队列已占用，跳过 coal cart", uid)
+                        continue
+
+                # 2. 查询 AVA 地图
+                resp = await self.client.lvl_battle_login_get(uid, lvl_id)
+                code = resp.get("res_header", {}).get("ret_code", -1)
+                if code != 0:
+                    logger.warning("uid=%d 查询 AVA 地图失败 ret_code=%d", uid, code)
+                    continue
+
+                # 3. 解析 briefObjs: 提取玩家坐标和 10300 资源车
+                player_pos = None
+                carts: list[tuple[str, int, int]] = []
+
+                for res in resp.get("res_data", []):
+                    for push in res.get("push_list", []):
+                        for item in push.get("data", []):
+                            name = item.get("name", "")
+                            if "svr_lvl_brief_objs" not in name:
+                                continue
+                            raw = item.get("data", "")
+                            parsed = _json.loads(raw) if isinstance(raw, str) else raw
+                            for obj in parsed.get("briefObjs", parsed.get("briefList", [])):
+                                obj_type = obj.get("type", 0)
+                                raw_pos = obj.get("pos")
+                                if not raw_pos:
+                                    continue
+                                ox, oy = decode_pos(int(raw_pos))
+
+                                if obj_type == 10101:
+                                    obj_uid = int(obj.get("uid", 0)) or int(obj.get("id", 0))
+                                    if obj_uid == uid:
+                                        player_pos = (ox, oy)
+
+                                elif obj_type == 10300:
+                                    cart_id = (
+                                        obj.get("uniqueId", "")
+                                        or obj.get("unique_id", "")
+                                        or f"10300_{obj.get('id', 0)}"
+                                    )
+                                    carts.append((cart_id, ox, oy))
+
+                if not player_pos:
+                    logger.warning("uid=%d AVA 地图中未找到玩家坐标，跳过采集", uid)
+                    continue
+                if not carts:
+                    logger.debug("uid=%d AVA 地图中无 coal cart", uid)
+                    continue
+
+                # 4. 找最近的 cart
+                px, py = player_pos
+                nearest = min(carts, key=lambda c: math.hypot(c[1] - px, c[2] - py))
+                cart_id, cx, cy = nearest
+                dist = math.hypot(cx - px, cy - py)
+
+                # 5. 派遣采集
+                collect_resp = await self.client.lvl_collect_cart(uid, lvl_id, cart_id)
+                ret = collect_resp.get("res_header", {}).get("ret_code", -1)
+                if ret == 0:
+                    logger.info(
+                        "uid=%d 自动采集 coal cart 成功: cart=%s (%d,%d) 距离=%.1f",
+                        uid, cart_id, cx, cy, dist,
+                    )
+                else:
+                    logger.warning(
+                        "uid=%d 自动采集 coal cart 失败: cart=%s ret_code=%d%s",
+                        uid, cart_id, ret, _lookup_error(ret),
+                    )
+
+            except Exception as e:
+                logger.warning("uid=%d 自动采集 coal cart 异常: %s", uid, e)
 
     @staticmethod
     def _extract_rally_id(resp: Dict[str, Any]) -> str:
@@ -731,17 +831,128 @@ class L0Executor:
 
     # 移城失败重试次数上限
     MOVE_CITY_MAX_RETRIES = 3
-    # 随机偏移范围（在原始目标附近 ±N 格随机）
-    MOVE_CITY_RANDOM_RANGE = 5
+
+    # 主城占位半径（主城中心 ± CITY_RADIUS 格都被占据）
+    CITY_RADIUS = 1
+    # 两个主城中心之间的最小切比雪夫距离
+    CITY_MIN_GAP = CITY_RADIUS * 2 + 1  # = 3
+
+    # 需要作为障碍物的地图对象类型
+    _OBSTACLE_TYPES = {
+        2,      # 玩家主城（普通地图）
+        10101,  # 玩家主城（AVA）
+        27,     # 据点节点
+        48,     # 王座
+        64,     # 通道建筑
+        156,    # 王座侧翼
+        8,      # 联盟要塞
+        121,    # 联盟旗帜
+        10300,  # 资源车
+    }
+
+    async def _find_empty_spot(
+        self, uid: int, target_x: int, target_y: int, max_radius: int = 10,
+    ) -> tuple[int, int]:
+        """查询地图，在 target 附近找到最近的可移城空位
+
+        算法:
+        1. 调用 lvl_get_map_area / get_map_area 获取目标周围地图数据
+        2. 提取所有障碍物坐标，按主城宽度扩展为禁区集合
+        3. 从 target 开始按切比雪夫距离由近到远搜索第一个合法位置
+
+        Args:
+            uid: 查询用的账号 UID
+            target_x, target_y: 期望移城的目标坐标
+            max_radius: 最大搜索半径（格）
+
+        Returns:
+            (x, y) 最近的空位坐标；找不到时返回原始 target
+        """
+        # 1. 查询地图
+        lvl_id = self.client.default_header.get("lvl_id", 0)
+        try:
+            if lvl_id:
+                map_objs = await self.client.lvl_get_map_area(
+                    uid, lvl_id, target_x, target_y, size=3,
+                )
+            else:
+                map_objs = await self.client.get_map_area(
+                    uid, target_x, target_y, size=3,
+                )
+        except Exception as e:
+            logger.warning("_find_empty_spot 地图查询失败: %s, 回退原坐标", e)
+            return target_x, target_y
+
+        # 2. 提取障碍物中心坐标
+        occupied: set[tuple[int, int]] = set()
+        for bid_block in map_objs:
+            for obj in bid_block.get("objs", []):
+                basic = obj.get("objBasic", obj)
+                obj_type = basic.get("type", 0)
+                if obj_type not in self._OBSTACLE_TYPES:
+                    continue
+                raw_pos = basic.get("pos")
+                if not raw_pos:
+                    continue
+                ox, oy = decode_pos(int(raw_pos))
+                occupied.add((ox, oy))
+
+        if not occupied:
+            logger.info("_find_empty_spot: 目标 (%d,%d) 周围无障碍物", target_x, target_y)
+            return target_x, target_y
+
+        logger.info(
+            "_find_empty_spot: 目标 (%d,%d) 周围发现 %d 个障碍物",
+            target_x, target_y, len(occupied),
+        )
+
+        # 3. 构建禁区集合（每个障碍物中心扩展 ±CITY_MIN_GAP-1 = ±2 格）
+        #    新城中心 (nx,ny) 与任何障碍物中心 (ox,oy) 的切比雪夫距离必须 >= CITY_MIN_GAP
+        gap = self.CITY_MIN_GAP
+
+        def is_blocked(x: int, y: int) -> bool:
+            for ox, oy in occupied:
+                if abs(x - ox) < gap and abs(y - oy) < gap:
+                    return True
+            return False
+
+        # 4. 螺旋搜索：按切比雪夫距离从 0 到 max_radius
+        for r in range(0, max_radius + 1):
+            if r == 0:
+                candidates = [(target_x, target_y)]
+            else:
+                candidates = []
+                for dx in range(-r, r + 1):
+                    for dy in range(-r, r + 1):
+                        if max(abs(dx), abs(dy)) == r:
+                            candidates.append((target_x + dx, target_y + dy))
+
+            for cx, cy in candidates:
+                if not (0 <= cx < self.map_width and 0 <= cy < self.map_height):
+                    continue
+                if not is_blocked(cx, cy):
+                    if (cx, cy) != (target_x, target_y):
+                        logger.info(
+                            "_find_empty_spot: (%d,%d) 被占，选择空位 (%d,%d) 距离=%d",
+                            target_x, target_y, cx, cy, r,
+                        )
+                    return cx, cy
+
+        logger.warning(
+            "_find_empty_spot: (%d,%d) 半径 %d 内无空位，回退原坐标",
+            target_x, target_y, max_radius,
+        )
+        return target_x, target_y
 
     async def _retry_move_city(
         self,
         failed_instr: AIInstruction,
         original_attack_instr: AIInstruction,
     ) -> ExecutionResult:
-        """移城失败后随机换坐标重试
+        """移城失败后查询地图找空位重试
 
-        在原始攻击目标附近随机取偏移坐标，最多重试 MOVE_CITY_MAX_RETRIES 次。
+        调用 _find_empty_spot 查询目标附近地图，找到最近空位后重试。
+        如果智能搜索的坐标仍然失败，逐步扩大搜索半径再试。
 
         Args:
             failed_instr: 已失败的 LVL_MOVE_CITY 指令
@@ -752,23 +963,23 @@ class L0Executor:
         uid = failed_instr.uid
 
         for attempt in range(1, self.MOVE_CITY_MAX_RETRIES + 1):
-            rand_x = target_x + random.randint(-self.MOVE_CITY_RANDOM_RANGE, self.MOVE_CITY_RANDOM_RANGE)
-            rand_y = target_y + random.randint(-self.MOVE_CITY_RANDOM_RANGE, self.MOVE_CITY_RANDOM_RANGE)
-            # 夹到地图范围内
-            rand_x = max(0, min(rand_x, self.map_width - 1))
-            rand_y = max(0, min(rand_y, self.map_height - 1))
+            # 每次重试扩大搜索半径
+            search_radius = 10 + (attempt - 1) * 5
+            spot_x, spot_y = await self._find_empty_spot(
+                uid, target_x, target_y, max_radius=search_radius,
+            )
 
             retry_instr = failed_instr.model_copy(update={
-                "target_x": rand_x,
-                "target_y": rand_y,
+                "target_x": spot_x,
+                "target_y": spot_y,
                 "reason": (
                     f"移城重试 {attempt}/{self.MOVE_CITY_MAX_RETRIES}, "
-                    f"随机坐标 ({rand_x},{rand_y})"
+                    f"智能空位 ({spot_x},{spot_y}) 搜索半径={search_radius}"
                 ),
             })
             logger.info(
-                "L0 移城重试 %d/%d: uid=%d → (%d,%d)",
-                attempt, self.MOVE_CITY_MAX_RETRIES, uid, rand_x, rand_y,
+                "L0 移城重试 %d/%d: uid=%d → (%d,%d) (智能搜索 r=%d)",
+                attempt, self.MOVE_CITY_MAX_RETRIES, uid, spot_x, spot_y, search_radius,
             )
             result = await self.execute(retry_instr)
             if result.success:
@@ -781,17 +992,15 @@ class L0Executor:
         return ExecutionResult(
             success=False, action=ActionType.LVL_MOVE_CITY, uid=uid,
             error=(
-                f"移城失败（已重试{self.MOVE_CITY_MAX_RETRIES}次随机坐标），"
+                f"移城失败（已重试{self.MOVE_CITY_MAX_RETRIES}次智能搜索空位），"
                 f"目标建筑附近 ({target_x},{target_y})"
             ),
         )
 
     # 距离阈值: 超过此格数则先移城再攻打
     MOVE_CITY_DISTANCE_THRESHOLD = 20
-    # 移城坐标偏移量（建筑有宽度，避免重叠）
-    MOVE_CITY_OFFSET = 2
 
-    def _preprocess_lvl_attack_building(
+    async def _preprocess_lvl_attack_building(
         self, instr: AIInstruction,
     ) -> tuple[AIInstruction | None, str]:
         """LVL_ATTACK_BUILDING 预处理: 部队去重 + 距离检查
@@ -829,11 +1038,10 @@ class L0Executor:
         dist = math.hypot(dx, dy)
 
         if dist > self.MOVE_CITY_DISTANCE_THRESHOLD:
-            # 移城到建筑附近（偏移 ±2 避免重叠）
-            offset_x = self.MOVE_CITY_OFFSET if dx >= 0 else -self.MOVE_CITY_OFFSET
-            offset_y = self.MOVE_CITY_OFFSET if dy >= 0 else -self.MOVE_CITY_OFFSET
-            move_x = max(0, min(instr.target_x + offset_x, self.map_width - 1))
-            move_y = max(0, min(instr.target_y + offset_y, self.map_height - 1))
+            # 智能搜索建筑附近的空位
+            move_x, move_y = await self._find_empty_spot(
+                instr.uid, instr.target_x, instr.target_y,
+            )
 
             new_instr = instr.model_copy(update={
                 "action": ActionType.LVL_MOVE_CITY,
@@ -841,12 +1049,12 @@ class L0Executor:
                 "target_y": move_y,
                 "reason": (
                     f"距离={dist:.0f}>{self.MOVE_CITY_DISTANCE_THRESHOLD}, "
-                    f"转移城 ({cx},{cy})→({move_x},{move_y})"
+                    f"转移城 ({cx},{cy})→({move_x},{move_y}) [智能空位]"
                 ),
             })
             logger.info(
                 "L0 预处理转换: uid=%d LVL_ATTACK_BUILDING→LVL_MOVE_CITY "
-                "dist=%.0f (%d,%d)→(%d,%d)",
+                "dist=%.0f (%d,%d)→(%d,%d) [智能空位]",
                 instr.uid, dist, cx, cy, move_x, move_y,
             )
             return new_instr, ""
