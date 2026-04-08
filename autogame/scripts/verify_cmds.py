@@ -68,7 +68,7 @@ async def verify_all(uid: int):
         "join_alliance": {"target_aid": 1},
         "al_leave": {},
         "al_help_all": {},
-        "create_ava_battle": {"1v1_id": "test_battle_1"},
+        "create_ava_battle": {"lvl_id": "test_battle_1"},
         "ava_add_player": {"lvl_id": "test_battle_1", "uid": uid, "camp_id": 1},
         "ava_enter_battle": {"lvl_id": "test_battle_1"},
     }

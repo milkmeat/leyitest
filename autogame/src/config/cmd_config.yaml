@@ -274,14 +274,18 @@ commands:
   create_ava_battle:
     cmd: "op_create_lvl_battle"
     required_param:
-      1v1_id: "战场ID"
+      lvl_id: "战场ID"
     default_param:
+      begin_time: 0
+      end_time: 0
       event_id: "123456"
       camp:
         - aid: 1000022
           al_nick: "ava1"
           al_name: "ava1"
-          al_flag: 2
+          al_flag: 1
+          main: {}
+          vice: {}
           uid_list:
             - 1000138
             - 1001913
@@ -296,7 +300,9 @@ commands:
         - aid: 1000015
           al_nick: "ava2"
           al_name: "ava2"
-          al_flag: 1
+          al_flag: 2
+          main: {}
+          vice: {}
           uid_list:
             - 1000078
             - 1001922

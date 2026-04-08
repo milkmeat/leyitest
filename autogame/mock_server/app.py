@@ -650,7 +650,7 @@ def handle_rally_dismiss(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
 
 def handle_op_create_lvl_battle(uid: int, param: Dict[str, Any]) -> Dict[str, Any]:
     """处理创建 AVA 临时战场"""
-    battle_id = param.get("1v1_id", str(int(time.time())))
+    battle_id = param.get("lvl_id", str(int(time.time())))
     event_id = param.get("event_id", "123456")
     camp = param.get("camp", [])
 
