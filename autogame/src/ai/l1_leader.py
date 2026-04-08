@@ -82,6 +82,8 @@ class L1Leader:
             squad_id=squad.squad_id,
             max_entries=memory_max_entries,
         )
+        self.last_input: str = ""
+        self.last_output: dict[str, Any] = {}
 
     async def decide(
         self,
@@ -105,12 +107,14 @@ class L1Leader:
         history_text = self.memory.format_for_llm(include_loops=3)
         if history_text and "（小队" not in history_text:
             user_prompt = f"{history_text}\n\n## 当前态势\n\n{user_prompt}"
+        self.last_input = user_prompt
 
         # 3. 调用 LLM (YAML 格式节省 30-40% output tokens)
         context = f"L1 squad={self.squad.squad_id} ({self.squad.name})"
         response = await self.llm.chat_yaml(
             self._system_prompt, user_prompt, context=context
         )
+        self.last_output = response
 
         # 4. 解析响应
         instructions = self._parse_response(response)

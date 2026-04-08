@@ -20,6 +20,7 @@ import os
 import signal
 import time
 from dataclasses import asdict, dataclass, field
+from datetime import datetime
 from typing import Any
 
 from src.config.schemas import AppConfig
@@ -133,8 +134,6 @@ class AIController:
                     print(f"[loop #{loop_id}] 异常: {e}")
                     continue
 
-                self._write_log(stats)
-
                 # 判断是否需要继续
                 if self._stop:
                     break
@@ -240,6 +239,9 @@ class AIController:
             await self._save_memory(
                 loop_id, snapshot, l2_orders, instructions, results, stats,
             )
+
+        # ── 写入增强日志 ──
+        self._write_log(stats, l2_orders, instructions, results)
 
         stats.total_time = round(time.monotonic() - round_start, 2)
         return stats
@@ -396,12 +398,63 @@ class AIController:
 
         print(f"[Accept] ---")
 
-    def _write_log(self, stats: LoopStats):
-        """将 LoopStats 序列化为 JSON 写入 logs/ 目录"""
+    def _write_log(self, stats: LoopStats, l2_orders: dict,
+                   instructions: list, results: list):
+        """将增强日志写入 logs/ 目录（含 L2/L1 输入输出 + L0 命令结果）"""
         try:
             os.makedirs(self.log_dir, exist_ok=True)
-            path = os.path.join(self.log_dir, f"loop_{stats.loop_id}.json")
+
+            # 文件名: {联盟名}_loop_{id}_{时间戳}.json
+            alliance_name = self.config.squads.active_alliance.name or "unknown"
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"{alliance_name}_loop_{stats.loop_id}_{timestamp}.json"
+            path = os.path.join(self.log_dir, filename)
+
+            log_data = {
+                "loop_id": stats.loop_id,
+                "timestamp": datetime.now().isoformat(),
+                "alliance": alliance_name,
+                "stats": asdict(stats),
+                "l2": self._build_l2_log(l2_orders),
+                "l1": self._build_l1_log(),
+                "l0": self._build_l0_log(instructions, results),
+            }
+
             with open(path, "w", encoding="utf-8") as f:
-                json.dump(asdict(stats), f, indent=2, ensure_ascii=False)
+                json.dump(log_data, f, indent=2, ensure_ascii=False, default=str)
         except Exception:
             pass  # 日志写入失败不影响主循环
+
+    def _build_l2_log(self, l2_orders: dict) -> dict:
+        section: dict[str, Any] = {"orders": {str(k): v for k, v in l2_orders.items()}}
+        if self.l2_commander:
+            section["input"] = self.l2_commander.last_input
+            section["output"] = self.l2_commander.last_output
+        elif self.mock_l2:
+            section["input"] = f"(mock) {self.mock_l2}"
+            section["output"] = {}
+        return section
+
+    def _build_l1_log(self) -> list[dict]:
+        entries: list[dict] = []
+        if self.l1_coordinator:
+            for sid, leader in self.l1_coordinator.leaders.items():
+                entries.append({
+                    "squad_id": sid,
+                    "squad_name": leader.squad.name,
+                    "input": leader.last_input,
+                    "output": leader.last_output,
+                })
+        return entries
+
+    def _build_l0_log(self, instructions: list, results: list) -> list[dict]:
+        entries: list[dict] = []
+        for i, instr in enumerate(instructions):
+            entry: dict[str, Any] = {
+                "instruction": instr.model_dump() if hasattr(instr, "model_dump") else str(instr),
+            }
+            if i < len(results):
+                r = results[i]
+                entry["result"] = r.model_dump() if hasattr(r, "model_dump") else str(r)
+            entries.append(entry)
+        return entries

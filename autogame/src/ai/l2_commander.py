@@ -57,6 +57,8 @@ class L2Commander:
             self.system_prompt = _load_prompt("l2_system.txt")
         self.view_builder = L2ViewBuilder(config)
         self.memory = L2MemoryStore(max_entries=memory_max_entries)
+        self.last_input: str = ""
+        self.last_output: dict[str, Any] = {}
 
     async def decide(self, snapshot: SyncSnapshot) -> dict[int, str]:
         """全局决策 → {squad_id: order_text}
@@ -75,11 +77,13 @@ class L2Commander:
         history_text = self.memory.format_for_llm(include_loops=3)
         if history_text and "（无历史记录）" not in history_text:
             user_prompt = f"{history_text}\n\n## 当前态势\n\n{user_prompt}"
+        self.last_input = user_prompt
 
         # 3. LLM 调用 (YAML 格式节省 30-40% output tokens)
         response = await self.llm.chat_yaml(
             self.system_prompt, user_prompt, context="L2"
         )
+        self.last_output = response
 
         # 记录 LLM 思考过程
         thinking = response.get("thinking", "")
