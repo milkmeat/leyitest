@@ -82,9 +82,11 @@ uid_helper (测试环境账号准备):
 uid_helper (AVA 战场):
   uid_ava_create <lvl_id> [event_id] [duration=hours]  GM: 创建AVA临时战场
   uid_ava_add <lvl_id> <uid> <camp_id>          添加到AVA战场名单
+  uid_ava_join_all <lvl_id>                     批量加入AVA战场(20账号全部add+enter)
   uid_ava_enter <lvl_id> <uid>                  进入AVA战场
   uid_ava_status <uid>                          查询AVA战场状态
   uid_ava_leave <uid>                           离开AVA战场
+  uid_ava_leave_all <lvl_id>                    批量退出AVA战场(20账号全部leave)
 """
 
 import asyncio
@@ -2263,6 +2265,71 @@ async def cmd_uid_ava_status(uid_str: str, env: str = None):
         await client.close()
 
 
+async def cmd_uid_ava_join_all(lvl_id_str: str, *extra: str, env: str = None):
+    """批量将 accounts.yaml 中的 20 个账号添加到 AVA 战场并进入
+
+    用法: uid_ava_join_all <lvl_id>
+
+    自动读取 accounts + enemies，按 alliances 配置分配 camp_id:
+      - accounts → ours.lvl_aid (默认 camp=1)
+      - enemies  → enemy.lvl_aid (默认 camp=2)
+
+    对每个账号依次执行: ava_add_player → ava_enter_battle
+    """
+    from src.executor.game_api import GameAPIClient
+    config = _load_config()
+    lvl_id = int(lvl_id_str)
+
+    # 构建 (uid, camp_id) 列表
+    ally = config.accounts.alliances
+    ours_camp = ally.ours.lvl_aid if ally else 1
+    enemy_camp = ally.enemy.lvl_aid if ally else 2
+
+    uid_camp_list = []
+    for acct in config.accounts.accounts:
+        uid_camp_list.append((acct.uid, ours_camp, "ours"))
+    for acct in config.accounts.enemies:
+        uid_camp_list.append((acct.uid, enemy_camp, "enemy"))
+
+    print(f"AVA 战场 lvl_id={lvl_id}: 准备加入 {len(uid_camp_list)} 个账号")
+    print(f"  我方 camp={ours_camp}: {[u for u, c, s in uid_camp_list if s == 'ours']}")
+    print(f"  敌方 camp={enemy_camp}: {[u for u, c, s in uid_camp_list if s == 'enemy']}")
+
+    client = GameAPIClient(env=env)
+    try:
+        ok_count = 0
+        fail_count = 0
+        for uid, camp_id, side in uid_camp_list:
+            # Step 1: add to battle roster
+            resp = await client.send_cmd("ava_add_player", uid,
+                                         param_overrides={"lvl_id": lvl_id, "uid": uid, "camp_id": camp_id})
+            code = resp.get("res_header", {}).get("ret_code", -1)
+            if code != 0:
+                msg = resp.get("res_header", {}).get("err_msg", "")
+                print(f"  [FAIL] uid={uid} ({side}) add 失败 code={code} {msg}", file=sys.stderr)
+                fail_count += 1
+                continue
+
+            # Step 2: enter battle
+            resp = await client.send_cmd("ava_enter_battle", uid, lvl_id=lvl_id)
+            code = resp.get("res_header", {}).get("ret_code", -1)
+            if code == 0:
+                print(f"  [OK] uid={uid} ({side}) camp={camp_id}")
+                ok_count += 1
+            elif code == 30001:
+                # "has enter lvl battle" — 已在战场中，视为成功
+                print(f"  [SKIP] uid={uid} ({side}) 已在战场中")
+                ok_count += 1
+            else:
+                msg = resp.get("res_header", {}).get("err_msg", "")
+                print(f"  [FAIL] uid={uid} ({side}) enter 失败 code={code} {msg}", file=sys.stderr)
+                fail_count += 1
+
+        print(f"\n=== 完成: {ok_count} 成功, {fail_count} 失败 (共 {len(uid_camp_list)}) ===")
+    finally:
+        await client.close()
+
+
 async def cmd_uid_ava_leave(uid_str: str, env: str = None):
     """离开AVA战场: uid_ava_leave <uid>"""
     from src.executor.game_api import GameAPIClient
@@ -2292,6 +2359,49 @@ async def cmd_uid_ava_leave(uid_str: str, env: str = None):
                 print(f"  [warn] 仍在战场中 (lvl_id={after_lvl})", file=sys.stderr)
         else:
             print(f"  [FAIL] 离开战场失败", file=sys.stderr)
+    finally:
+        await client.close()
+
+
+async def cmd_uid_ava_leave_all(lvl_id_str: str, *extra: str, env: str = None):
+    """批量将 accounts.yaml 中的 20 个账号退出 AVA 战场
+
+    用法: uid_ava_leave_all <lvl_id>
+    """
+    from src.executor.game_api import GameAPIClient
+    config = _load_config()
+    lvl_id = int(lvl_id_str)
+
+    all_uids = [(a.uid, "ours") for a in config.accounts.accounts] + \
+               [(a.uid, "enemy") for a in config.accounts.enemies]
+
+    print(f"AVA 战场 lvl_id={lvl_id}: 准备退出 {len(all_uids)} 个账号")
+
+    client = GameAPIClient(env=env)
+    try:
+        ok_count = 0
+        skip_count = 0
+        fail_count = 0
+        for uid, side in all_uids:
+            # 先检查是否在战场中
+            cur_lvl = await client.get_player_lvl_info(uid)
+            if cur_lvl == 0:
+                print(f"  [SKIP] uid={uid} ({side}) 不在任何战场")
+                skip_count += 1
+                continue
+
+            resp = await client.send_cmd("ava_leave_battle", uid,
+                                         header_overrides={"lvl_id": cur_lvl})
+            code = resp.get("res_header", {}).get("ret_code", -1)
+            if code == 0:
+                print(f"  [OK] uid={uid} ({side}) 已退出")
+                ok_count += 1
+            else:
+                msg = resp.get("res_header", {}).get("err_msg", "")
+                print(f"  [FAIL] uid={uid} ({side}) code={code} {msg}", file=sys.stderr)
+                fail_count += 1
+
+        print(f"\n=== 完成: {ok_count} 退出, {skip_count} 跳过, {fail_count} 失败 (共 {len(all_uids)}) ===")
     finally:
         await client.close()
 
@@ -2357,9 +2467,11 @@ COMMANDS = {
     "uid_setup":            (cmd_uid_setup,             "<alliance_key> <src_uid> <tar_uid...>", "一站式账号准备"),
     "uid_ava_create":       (cmd_uid_ava_create,        "<lvl_id> [event_id] [duration=hours]", "GM: 创建AVA临时战场"),
     "uid_ava_add":          (cmd_uid_ava_add,           "<lvl_id> <uid> <camp_id>",           "添加到AVA战场名单"),
+    "uid_ava_join_all":     (cmd_uid_ava_join_all,      "<lvl_id>",                           "批量加入AVA战场(accounts+enemies全部)"),
     "uid_ava_enter":        (cmd_uid_ava_enter,         "<lvl_id> <uid>",                     "进入AVA战场"),
     "uid_ava_status":       (cmd_uid_ava_status,        "<uid>",                              "查询AVA战场状态"),
     "uid_ava_leave":        (cmd_uid_ava_leave,         "<uid>",                              "离开AVA战场"),
+    "uid_ava_leave_all":    (cmd_uid_ava_leave_all,     "<lvl_id>",                           "批量退出AVA战场(accounts+enemies全部)"),
 }
 
 
