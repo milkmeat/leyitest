@@ -15,6 +15,7 @@ from __future__ import annotations
 import json as _json
 import logging
 import math
+import random
 from enum import Enum
 from typing import Any, Dict, Optional
 
@@ -829,13 +830,16 @@ class L0Executor:
             "over_defend": False,
         }
 
-    # 移城失败重试次数上限
-    MOVE_CITY_MAX_RETRIES = 3
+    # --- 建筑尺寸定义（碰撞检测用） ---
+    _CITY_TYPES = {2, 10101}       # 玩家主城类型
+    _CITY_RADIUS = 2               # 主城: 5x5, 中心 ± 2
+    _STEAM_FACTORY_KEY = 10103     # steam factory 模板 key
+    _STEAM_FACTORY_RECT = (139, 155, 145, 161)  # 固定矩形 (xmin,ymin,xmax,ymax) inclusive
+    _OTHER_BUILDING_WIDTH = 4      # 其余建筑: 4x4, (x,y)-(x+3,y+3)
 
-    # 主城占位半径（主城中心 ± CITY_RADIUS 格都被占据）
-    CITY_RADIUS = 1
-    # 两个主城中心之间的最小切比雪夫距离
-    CITY_MIN_GAP = CITY_RADIUS * 2 + 1  # = 3
+    # 随机重试参数
+    RANDOM_RETRY_COUNT = 3
+    RANDOM_RETRY_RADIUS = 15
 
     # 需要作为障碍物的地图对象类型
     _OBSTACLE_TYPES = {
@@ -857,8 +861,8 @@ class L0Executor:
 
         算法:
         1. 调用 lvl_get_map_area / get_map_area 获取目标周围地图数据
-        2. 提取所有障碍物坐标，按主城宽度扩展为禁区集合
-        3. 从 target 开始按切比雪夫距离由近到远搜索第一个合法位置
+        2. 提取所有障碍物，按建筑类型计算占地矩形（主城5x5/steam factory固定/其余4x4）
+        3. 从 target 开始按切比雪夫距离由近到远搜索第一个不与任何障碍物重叠的位置
 
         Args:
             uid: 查询用的账号 UID
@@ -883,19 +887,29 @@ class L0Executor:
             logger.warning("_find_empty_spot 地图查询失败: %s, 回退原坐标", e)
             return target_x, target_y
 
-        # 2. 提取障碍物中心坐标
-        occupied: set[tuple[int, int]] = set()
+        # 2. 提取障碍物占地矩形 (xmin, ymin, xmax, ymax) inclusive
+        occupied: list[tuple[int, int, int, int]] = []
         for bid_block in map_objs:
             for obj in bid_block.get("objs", []):
                 basic = obj.get("objBasic", obj)
                 obj_type = basic.get("type", 0)
                 if obj_type not in self._OBSTACLE_TYPES:
                     continue
+                obj_key = basic.get("key", 0)
                 raw_pos = basic.get("pos")
                 if not raw_pos:
                     continue
                 ox, oy = decode_pos(int(raw_pos))
-                occupied.add((ox, oy))
+
+                if obj_key == self._STEAM_FACTORY_KEY:
+                    rect = self._STEAM_FACTORY_RECT
+                elif obj_type in self._CITY_TYPES:
+                    r = self._CITY_RADIUS
+                    rect = (ox - r, oy - r, ox + r, oy + r)
+                else:
+                    w = self._OTHER_BUILDING_WIDTH
+                    rect = (ox, oy, ox + w - 1, oy + w - 1)
+                occupied.append(rect)
 
         if not occupied:
             logger.info("_find_empty_spot: 目标 (%d,%d) 周围无障碍物", target_x, target_y)
@@ -906,13 +920,13 @@ class L0Executor:
             target_x, target_y, len(occupied),
         )
 
-        # 3. 构建禁区集合（每个障碍物中心扩展 ±CITY_MIN_GAP-1 = ±2 格）
-        #    新城中心 (nx,ny) 与任何障碍物中心 (ox,oy) 的切比雪夫距离必须 >= CITY_MIN_GAP
-        gap = self.CITY_MIN_GAP
+        # 3. AABB 碰撞检测：新城 5x5 (中心±2) 与障碍物矩形是否重叠
+        cr = self._CITY_RADIUS
 
         def is_blocked(x: int, y: int) -> bool:
-            for ox, oy in occupied:
-                if abs(x - ox) < gap and abs(y - oy) < gap:
+            nx1, ny1, nx2, ny2 = x - cr, y - cr, x + cr, y + cr
+            for bx1, by1, bx2, by2 in occupied:
+                if nx1 <= bx2 and nx2 >= bx1 and ny1 <= by2 and ny2 >= by1:
                     return True
             return False
 
@@ -949,10 +963,7 @@ class L0Executor:
         failed_instr: AIInstruction,
         original_attack_instr: AIInstruction,
     ) -> ExecutionResult:
-        """移城失败后查询地图找空位重试
-
-        调用 _find_empty_spot 查询目标附近地图，找到最近空位后重试。
-        如果智能搜索的坐标仍然失败，逐步扩大搜索半径再试。
+        """移城失败后重试：1次智能搜索 + 最多3次随机偏移
 
         Args:
             failed_instr: 已失败的 LVL_MOVE_CITY 指令
@@ -962,24 +973,40 @@ class L0Executor:
         target_y = original_attack_instr.target_y
         uid = failed_instr.uid
 
-        for attempt in range(1, self.MOVE_CITY_MAX_RETRIES + 1):
-            # 每次重试扩大搜索半径
-            search_radius = 10 + (attempt - 1) * 5
-            spot_x, spot_y = await self._find_empty_spot(
-                uid, target_x, target_y, max_radius=search_radius,
-            )
+        # Phase 1: 单次智能搜索
+        spot_x, spot_y = await self._find_empty_spot(
+            uid, target_x, target_y, max_radius=10,
+        )
+        retry_instr = failed_instr.model_copy(update={
+            "target_x": spot_x,
+            "target_y": spot_y,
+            "reason": f"移城重试 smart, 智能空位 ({spot_x},{spot_y})",
+        })
+        logger.info("L0 移城重试 smart: uid=%d → (%d,%d)", uid, spot_x, spot_y)
+        result = await self.execute(retry_instr)
+        if result.success:
+            return result
+
+        # Phase 2: 随机偏移重试
+        for attempt in range(1, self.RANDOM_RETRY_COUNT + 1):
+            rand_x = target_x + random.randint(
+                -self.RANDOM_RETRY_RADIUS, self.RANDOM_RETRY_RADIUS)
+            rand_y = target_y + random.randint(
+                -self.RANDOM_RETRY_RADIUS, self.RANDOM_RETRY_RADIUS)
+            rand_x = max(0, min(rand_x, self.map_width - 1))
+            rand_y = max(0, min(rand_y, self.map_height - 1))
 
             retry_instr = failed_instr.model_copy(update={
-                "target_x": spot_x,
-                "target_y": spot_y,
+                "target_x": rand_x,
+                "target_y": rand_y,
                 "reason": (
-                    f"移城重试 {attempt}/{self.MOVE_CITY_MAX_RETRIES}, "
-                    f"智能空位 ({spot_x},{spot_y}) 搜索半径={search_radius}"
+                    f"移城重试 random {attempt}/{self.RANDOM_RETRY_COUNT}, "
+                    f"随机偏移 ({rand_x},{rand_y})"
                 ),
             })
             logger.info(
-                "L0 移城重试 %d/%d: uid=%d → (%d,%d) (智能搜索 r=%d)",
-                attempt, self.MOVE_CITY_MAX_RETRIES, uid, spot_x, spot_y, search_radius,
+                "L0 移城重试 random %d/%d: uid=%d → (%d,%d)",
+                attempt, self.RANDOM_RETRY_COUNT, uid, rand_x, rand_y,
             )
             result = await self.execute(retry_instr)
             if result.success:
@@ -992,7 +1019,7 @@ class L0Executor:
         return ExecutionResult(
             success=False, action=ActionType.LVL_MOVE_CITY, uid=uid,
             error=(
-                f"移城失败（已重试{self.MOVE_CITY_MAX_RETRIES}次智能搜索空位），"
+                f"移城失败（1次智能+{self.RANDOM_RETRY_COUNT}次随机重试），"
                 f"目标建筑附近 ({target_x},{target_y})"
             ),
         )
