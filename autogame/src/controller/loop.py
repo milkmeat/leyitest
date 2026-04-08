@@ -82,7 +82,7 @@ class AIController:
         self.mock_l2 = mock_l2  # Mock L2 指令（跳过 L2 LLM 调用）
         self.l1_prompt = l1_prompt  # L1 prompt 模板名称
         self.lvl_id = lvl_id  # AVA 战场 ID（0=普通地图）
-        self.sync_all = sync_all  # AVA 同步模式（True=全量, False=精简）
+        self.sync_all = sync_all  # 同步模式（True=全量[默认], False=精简）
 
         # L2 指挥官 + L1 协调器 + 摘要生成器（可选 — 传入 llm_client 时启用 AI 决策）
         self.l2_commander = None

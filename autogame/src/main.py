@@ -55,7 +55,7 @@ GM 命令:
   add_resource <uid> [op_type]                  添加资源
 
 数据同步:
-  sync [--json] [--ava <lvl_id>] [--sync-all] [uid]  数据同步(全量/单账号,默认精简模式)
+  sync [--json] [--ava <lvl_id>] [--no-sync-all] [uid]  数据同步(全量/单账号,默认全量模式)
 
 L0 执行器（AI 指令调试）:
   l0 <ACTION|JSON> <args...>                    执行器调试
@@ -1423,11 +1423,11 @@ async def cmd_run(*args: str, env: str = None):
         elif arg == "--ava" and i + 1 < len(remaining):
             lvl_id = int(remaining[i + 1])
             i += 1
-        elif arg == "--sync-all":
+        elif arg in ("--sync-all", "--no-sync-all"):
             pass  # 下面单独处理
         i += 1
 
-    sync_all = "--sync-all" in args
+    sync_all = "--no-sync-all" not in args
 
     # 显示 LLM 配置
     if llm_timeout is not None:
@@ -1479,8 +1479,8 @@ async def cmd_sync(*args: str, env: str = None):
     try:
         # 判断模式: sync --json / sync --ava <lvl_id> / sync --sync-all / sync <uid> / sync
         json_mode = "--json" in args
-        sync_all = "--sync-all" in args
-        remaining = [a for a in args if a not in ("--json", "--sync-all")]
+        sync_all = "--no-sync-all" not in args
+        remaining = [a for a in args if a not in ("--json", "--no-sync-all", "--sync-all")]
 
         # 解析 --ava <lvl_id>
         lvl_id = 0
