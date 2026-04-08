@@ -464,8 +464,15 @@ class L0Executor:
         if lvl_id and action == ActionType.LVL_ATTACK_PLAYER and instr.building_id:
             action = ActionType.LVL_ATTACK_BUILDING
 
+        # 集结操作使用队列 6002，solo 行军使用默认 6001
+        _RALLY_ACTIONS = {
+            ActionType.INITIATE_RALLY, ActionType.JOIN_RALLY,
+            ActionType.LVL_INITIATE_RALLY, ActionType.LVL_INITIATE_RALLY_BUILDING, ActionType.LVL_JOIN_RALLY,
+        }
+        q_id = 6002 if action in _RALLY_ACTIONS else 6001
         march = self._build_march_info(instr.uid,
                                          needs_hero=(action not in {ActionType.JOIN_RALLY, ActionType.LVL_JOIN_RALLY}),
+                                         queue_id=q_id,
                                          soldier_id=instr.soldier_id, soldier_count=instr.soldier_count)
 
         if action == ActionType.MOVE_CITY:
@@ -675,7 +682,7 @@ class L0Executor:
     # 默认出征兵力上限（每支部队，测试服实测 5000 可用，10000 被拒）
     DEFAULT_MARCH_SIZE = 5000
 
-    def _build_march_info(self, uid: int, needs_hero: bool = True,
+    def _build_march_info(self, uid: int, needs_hero: bool = True, queue_id: int = 6001,
                           soldier_id: int = 0, soldier_count: int = 0) -> Dict[str, Any]:
         """根据账号数据自动构建完整 march_info
 
@@ -717,7 +724,7 @@ class L0Executor:
             "leader": 1 if needs_hero else 0,
             "soldier_total_num": cnt,
             "heros": {},
-            "queue_id": 6001,
+            "queue_id": queue_id,
             "soldier": {sid: cnt},
             "over_defend": False,
         }

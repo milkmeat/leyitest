@@ -825,7 +825,7 @@ async def cmd_create_rally(uid_str: str, target_uid_str: str, x_str: str, y_str:
                 "leader": 1,
                 "soldier_total_num": soldier_count,
                 "heros": {},
-                "queue_id": 6001,
+                "queue_id": 6002,
                 "soldier": {soldier_id: soldier_count},
                 "carry_lord": 1,
             }
@@ -867,7 +867,7 @@ async def cmd_join_rally(uid_str: str, rally_id: str, rally_x_str: str, rally_y_
                 "leader": 0,
                 "soldier_total_num": soldier_count,
                 "heros": {},
-                "queue_id": 6001,
+                "queue_id": 6002,
                 "soldier": {soldier_id: soldier_count},
                 "carry_lord": 1,
             }
