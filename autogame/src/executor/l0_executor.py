@@ -859,6 +859,8 @@ class L0Executor:
         8,      # 联盟要塞
         121,    # 联盟旗帜
         10300,  # 资源车
+        # AVA 据点/建筑
+        10000, 10001, 10002, 10006, 10103, 10104,
     }
 
     async def _find_empty_spot(
@@ -911,8 +913,11 @@ class L0Executor:
                 if obj_key == self._STEAM_FACTORY_KEY:
                     rect = self._STEAM_FACTORY_RECT
                 elif obj_type in self._CITY_TYPES:
-                    r = self._CITY_RADIUS
-                    rect = (ox - r, oy - r, ox + r, oy + r)
+                    # 主城 5x5, pos 是左下角
+                    rect = (ox, oy, ox + 4, oy + 4)
+                elif obj_type == 10300:
+                    # 资源车 1x1
+                    rect = (ox, oy, ox, oy)
                 else:
                     w = self._OTHER_BUILDING_WIDTH
                     rect = (ox, oy, ox + w - 1, oy + w - 1)
@@ -927,18 +932,17 @@ class L0Executor:
             target_x, target_y, len(occupied),
         )
 
-        # 3. AABB 碰撞检测：新城 5x5 (中心±2) 与障碍物矩形是否重叠
-        cr = self._CITY_RADIUS
-
+        # 3. AABB 碰撞检测：新城 5x5, pos 是左下角
         def is_blocked(x: int, y: int) -> bool:
-            nx1, ny1, nx2, ny2 = x - cr, y - cr, x + cr, y + cr
+            nx1, ny1, nx2, ny2 = x, y, x + 4, y + 4
             for bx1, by1, bx2, by2 in occupied:
                 if nx1 <= bx2 and nx2 >= bx1 and ny1 <= by2 and ny2 >= by1:
                     return True
             return False
 
         # 4. 螺旋搜索：按切比雪夫距离从 0 到 max_radius
-        for r in range(0, max_radius + 1):
+        #    同一环内按欧氏距离排序，优先选最近的空位
+        for r in range(0, max_radius + 1, 2):
             if r == 0:
                 candidates = [(target_x, target_y)]
             else:
@@ -947,6 +951,7 @@ class L0Executor:
                     for dy in range(-r, r + 1):
                         if max(abs(dx), abs(dy)) == r:
                             candidates.append((target_x + dx, target_y + dy))
+                candidates.sort(key=lambda c: (c[0] - target_x) ** 2 + (c[1] - target_y) ** 2)
 
             for cx, cy in candidates:
                 if not (0 <= cx < self.map_width and 0 <= cy < self.map_height):
