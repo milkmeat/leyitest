@@ -529,7 +529,7 @@ commands:
         heros: {}
         leader: 0
         over_defend: false
-        queue_id: 6002
+        queue_id: 6004
         soldier:
           204: 1000
         soldier_total_num: 1000

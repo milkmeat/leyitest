@@ -329,6 +329,27 @@ class L0Executor:
                 instr = instr.model_copy(update={"rally_id": last_rally_id})
                 logger.info("自动回填 rally_id=%s → uid=%d", last_rally_id, instr.uid)
 
+            # Smart L0: 发起集结前检查 queue_id=6002 是否已被占用
+            if instr.action in _initiate_actions:
+                acct = self._accounts.get(instr.uid)
+                if acct:
+                    active_rally = next(
+                        (t for t in acct.troops
+                         if t.state == TroopState.RALLYING or t.march_type in (13, 14)),
+                        None,
+                    )
+                    if active_rally:
+                        reason = (
+                            f"SKIP: uid={instr.uid} 已有活跃集结 {active_rally.unique_id} "
+                            f"(march_type={active_rally.march_type}), queue_id=6002 被占用"
+                        )
+                        logger.info("L0 集结预检查跳过: %s", reason)
+                        results.append(ExecutionResult(
+                            success=False, action=instr.action, uid=instr.uid,
+                            error=reason,
+                        ))
+                        continue
+
             # Smart L0: LVL_ATTACK_BUILDING / LVL_REINFORCE_BUILDING 预处理（距离检查 + 部队去重）
             original_attack_instr: AIInstruction | None = None
             if instr.action in (ActionType.LVL_ATTACK_BUILDING, ActionType.LVL_REINFORCE_BUILDING):
@@ -572,12 +593,20 @@ class L0Executor:
         if lvl_id and action == ActionType.LVL_ATTACK_PLAYER and instr.building_id:
             action = ActionType.LVL_ATTACK_BUILDING
 
-        # 集结操作使用队列 6002，solo 行军使用默认 6001
-        _RALLY_ACTIONS = {
-            ActionType.INITIATE_RALLY, ActionType.JOIN_RALLY,
-            ActionType.LVL_INITIATE_RALLY, ActionType.LVL_INITIATE_RALLY_BUILDING, ActionType.LVL_JOIN_RALLY,
+        # 集结队列: 发起集结用 6002，参加集结用 6004，solo 行军用 6001
+        _INITIATE_RALLY_ACTIONS = {
+            ActionType.INITIATE_RALLY,
+            ActionType.LVL_INITIATE_RALLY, ActionType.LVL_INITIATE_RALLY_BUILDING,
         }
-        q_id = 6002 if action in _RALLY_ACTIONS else 6001
+        _JOIN_RALLY_ACTIONS = {
+            ActionType.JOIN_RALLY, ActionType.LVL_JOIN_RALLY,
+        }
+        if action in _INITIATE_RALLY_ACTIONS:
+            q_id = 6002
+        elif action in _JOIN_RALLY_ACTIONS:
+            q_id = 6004
+        else:
+            q_id = 6001
         march = self._build_march_info(instr.uid,
                                          needs_hero=(action not in {ActionType.JOIN_RALLY, ActionType.LVL_JOIN_RALLY}),
                                          queue_id=q_id,
