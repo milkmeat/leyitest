@@ -31,18 +31,21 @@ from src.executor.game_api import GameAPIClient
 from src.utils.coords import decode_pos
 
 
-def parse_brief_objs(resp: dict, uid: int) -> tuple:
-    """从 lvl_battle_login_get 响应中解析玩家坐标和所有 coal cart
+def parse_resp(resp: dict, uid: int) -> tuple:
+    """从 lvl_battle_login_get 响应中解析玩家坐标、coal cart 列表和采集队列状态
+
+    通过 svr_lvl_brief_objs 获取地图对象（玩家城 + cart），
+    通过 svr_lvl_user_objs 获取当前玩家的部队队列状态（queueId=6003 或 marchType=21）。
 
     Returns:
-        (player_pos, carts, collecting_cart_ids)
+        (player_pos, carts, busy_collect)
         player_pos: (x, y) or None
         carts: [(cart_id, x, y), ...]
-        collecting: 正在被采集中的 cart id 集合（通过行军队伍 march_type=21 判断）
+        busy_collect: 采集队列是否被占用
     """
     player_pos = None
     carts = []
-    busy_collect = False  # 是否有采集行军在进行中
+    busy_collect = False
 
     for res in resp.get("res_data", []):
         for push in res.get("push_list", []):
@@ -54,6 +57,7 @@ def parse_brief_objs(resp: dict, uid: int) -> tuple:
                 except (json.JSONDecodeError, TypeError):
                     continue
 
+                # 地图对象：玩家城 + coal cart
                 if "svr_lvl_brief_objs" in name:
                     brief_list = parsed.get("briefObjs", parsed.get("briefList", []))
                     for obj in brief_list:
@@ -63,13 +67,11 @@ def parse_brief_objs(resp: dict, uid: int) -> tuple:
                             continue
                         ox, oy = decode_pos(int(raw_pos))
 
-                        # 玩家城
                         if obj_type == 10101:
                             obj_uid = int(obj.get("uid", 0)) or int(obj.get("id", 0))
                             if obj_uid == uid:
                                 player_pos = (ox, oy)
 
-                        # coal cart
                         elif obj_type == 10300:
                             cart_id = (
                                 obj.get("uniqueId", "")
@@ -78,12 +80,17 @@ def parse_brief_objs(resp: dict, uid: int) -> tuple:
                             )
                             carts.append((cart_id, ox, oy))
 
-                        # 检查是否有采集行军 (march_type=21 的行军队伍)
-                        elif obj_type == 101:
-                            mt = obj.get("marchType", obj.get("march_type", 0))
-                            obj_uid = int(obj.get("uid", 0))
-                            if mt == 21 and obj_uid == uid:
-                                busy_collect = True
+                # 玩家部队详情：检查采集队列 (queueId=6003 / marchType=27) 是否被占用
+                # 采集部队 type=132, marchType=27, queueId=6003
+                # marchType 在 marchBasic 中，queueId 在 troopInfo 中
+                elif "svr_lvl_user_objs" in name:
+                    for obj in parsed.get("objs", []):
+                        march = obj.get("marchBasic", {})
+                        troop_info = obj.get("troopInfo", {})
+                        queue_id = int(troop_info.get("queueId", march.get("queueId", 0)))
+                        march_type = int(march.get("marchType", 0))
+                        if queue_id == 6003 or march_type == 27:
+                            busy_collect = True
 
     return player_pos, carts, busy_collect
 
@@ -116,7 +123,7 @@ async def collect_all_carts(uid: int, lvl_id: int = None, poll_interval: int = 1
                 print(f"[!] 查询 AVA 地图失败 ret_code={code}", file=sys.stderr)
                 break
 
-            player_pos, carts, busy_collect = parse_brief_objs(resp, uid)
+            player_pos, carts, busy_collect = parse_resp(resp, uid)
 
             if not player_pos:
                 print(f"[!] 未找到 uid={uid} 的城市位置", file=sys.stderr)
@@ -179,7 +186,7 @@ async def collect_all_carts(uid: int, lvl_id: int = None, poll_interval: int = 1
                     print(f"[!] 轮询查询失败 ret_code={check_code}")
                     break
 
-                _, _, still_busy = parse_brief_objs(check_resp, uid)
+                _, _, still_busy = parse_resp(check_resp, uid)
                 if not still_busy:
                     print(f"[✓] 采集完成 (耗时 {elapsed:.0f}s)")
                     break

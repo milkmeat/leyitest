@@ -438,55 +438,62 @@ class L0Executor:
 
         for uid in uids:
             try:
-                # 1. 队列检查: march_type=21 表示采集行军
-                acct = self._accounts.get(uid)
-                if acct:
-                    busy = any(
-                        t.march_type == 21 and t.state != TroopState.IDLE
-                        for t in acct.troops
-                    )
-                    if busy:
-                        logger.debug("uid=%d 采集队列已占用，跳过 coal cart", uid)
-                        continue
-
-                # 2. 查询 AVA 地图
+                # 1. 查询 AVA 地图
                 resp = await self.client.lvl_battle_login_get(uid, lvl_id)
                 code = resp.get("res_header", {}).get("ret_code", -1)
                 if code != 0:
                     logger.warning("uid=%d 查询 AVA 地图失败 ret_code=%d", uid, code)
                     continue
 
-                # 3. 解析 briefObjs: 提取玩家坐标和 10300 资源车
+                # 2. 解析 briefObjs + user_objs: 提取玩家坐标、10300 资源车、采集队列状态
                 player_pos = None
                 carts: list[tuple[str, int, int]] = []
+                busy_collect = False
 
                 for res in resp.get("res_data", []):
                     for push in res.get("push_list", []):
                         for item in push.get("data", []):
                             name = item.get("name", "")
-                            if "svr_lvl_brief_objs" not in name:
-                                continue
                             raw = item.get("data", "")
-                            parsed = _json.loads(raw) if isinstance(raw, str) else raw
-                            for obj in parsed.get("briefObjs", parsed.get("briefList", [])):
-                                obj_type = obj.get("type", 0)
-                                raw_pos = obj.get("pos")
-                                if not raw_pos:
-                                    continue
-                                ox, oy = decode_pos(int(raw_pos))
+                            try:
+                                parsed = _json.loads(raw) if isinstance(raw, str) else raw
+                            except (_json.JSONDecodeError, TypeError):
+                                continue
 
-                                if obj_type == 10101:
-                                    obj_uid = int(obj.get("uid", 0)) or int(obj.get("id", 0))
-                                    if obj_uid == uid:
-                                        player_pos = (ox, oy)
+                            if "svr_lvl_brief_objs" in name:
+                                for obj in parsed.get("briefObjs", parsed.get("briefList", [])):
+                                    obj_type = obj.get("type", 0)
+                                    raw_pos = obj.get("pos")
+                                    if not raw_pos:
+                                        continue
+                                    ox, oy = decode_pos(int(raw_pos))
 
-                                elif obj_type == 10300:
-                                    cart_id = (
-                                        obj.get("uniqueId", "")
-                                        or obj.get("unique_id", "")
-                                        or f"10300_{obj.get('id', 0)}"
-                                    )
-                                    carts.append((cart_id, ox, oy))
+                                    if obj_type == 10101:
+                                        obj_uid = int(obj.get("uid", 0)) or int(obj.get("id", 0))
+                                        if obj_uid == uid:
+                                            player_pos = (ox, oy)
+
+                                    elif obj_type == 10300:
+                                        cart_id = (
+                                            obj.get("uniqueId", "")
+                                            or obj.get("unique_id", "")
+                                            or f"10300_{obj.get('id', 0)}"
+                                        )
+                                        carts.append((cart_id, ox, oy))
+
+                            # 检查采集队列: marchType=27 / queueId=6003
+                            elif "svr_lvl_user_objs" in name:
+                                for obj in parsed.get("objs", []):
+                                    march = obj.get("marchBasic", {})
+                                    troop_info = obj.get("troopInfo", {})
+                                    queue_id = int(troop_info.get("queueId", march.get("queueId", 0)))
+                                    march_type = int(march.get("marchType", 0))
+                                    if queue_id == 6003 or march_type == 27:
+                                        busy_collect = True
+
+                if busy_collect:
+                    logger.debug("uid=%d 采集队列已占用 (queueId=6003/marchType=27)，跳过 coal cart", uid)
+                    continue
 
                 if not player_pos:
                     logger.warning("uid=%d AVA 地图中未找到玩家坐标，跳过采集", uid)
