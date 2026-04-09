@@ -55,6 +55,9 @@ class L2Commander:
                 self.system_prompt = _load_prompt("l2_system.txt")
         else:
             self.system_prompt = _load_prompt("l2_system.txt")
+        # 动态替换 prompt 中的小队数量占位符
+        squad_count = len(config.squads.squads)
+        self.system_prompt = self.system_prompt.replace("{squad_count}", str(squad_count))
         self.view_builder = L2ViewBuilder(config)
         self.memory = L2MemoryStore(max_entries=memory_max_entries)
         self.last_input: str = ""
