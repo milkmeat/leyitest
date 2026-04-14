@@ -860,6 +860,23 @@ class GameAPIClient:
             header_overrides={"lvl_id": lvl_id},
         )
 
+    async def lvl_get_battle_server_detail(
+        self, uid: int, lvl_id: int,
+    ) -> Dict[str, Any]:
+        """获取 AVA 战场双方阵营积分排行
+
+        返回 svr_lvl_war_situation_detail，包含每个阵营所有成员的
+        score（累计积分）、scoreSpeed（积分增速/分钟）、rank 等。
+
+        Args:
+            uid: 玩家 UID（必须已进入战场）
+            lvl_id: 战场 ID
+        """
+        return await self.send_cmd(
+            "lvl_get_battle_server_detail", uid,
+            header_overrides={"lvl_id": lvl_id},
+        )
+
     async def lvl_get_map_area(
         self, uid: int, lvl_id: int,
         center_x: int, center_y: int, size: int = 10,

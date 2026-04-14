@@ -1,0 +1,51 @@
+{
+  "_investigation_notes": {
+    "collected_at": "2026-04-14T09:54:26.048088",
+    "uid": 20010643,
+    "env": "test",
+    "status": "FAILED - data_key routing error",
+    "error_code": 30112,
+    "error_meaning": "[SVC] Downstream data key fetch failed.",
+    "internal_error": "ret=-204",
+    "analysis": "Command is registered on server (not \"cannot find desc in cmd_def\"), but proxy cannot generate data_key for routing. Tested all combinations of battle_type(0,9), battle_id(0,29999), lvl_id(0,29999), ksid(0,1,29999), sid(0,1), key-based params, top-level fields. Player IS in AVA battle (lvl_id=29999, confirmed by op_enter_lvl_battle returning \"has enter lvl battle\"). Likely requires battle routing context set by enter_battle_map (which does not exist on this test server - returns \"cannot find desc\").",
+    "tested_params": [
+      "param={} (empty)",
+      "param={battle_type:0/9}",
+      "param={battle_type:0/9, battle_id:29999}",
+      "param={sid:1}",
+      "param={lvl_id:29999}",
+      "param={key0:0/9, key1:29999}",
+      "header: battle_type=0/9, battle_id=0/29999, lvl_id=0/29999, sid=0/1, ksid=0/1/29999"
+    ]
+  },
+  "res_header": {
+    "ret_code": 30112,
+    "cost_time_us": 0,
+    "ret_time_s": 1776131666,
+    "err_msg": "[bussiness/base_process.cpp:422] [seq=612852] ProcessCmdFlow: flow[0] msg[get_battle_server_detail], gen data_key fail[ret=-204] "
+  },
+  "request": {
+    "header": {
+      "did": "self-system",
+      "sid": 1,
+      "aid": 20000118,
+      "ksid": 1,
+      "lvl_id": 29999,
+      "castle_lv": 25,
+      "battle_type": 0,
+      "battle_id": 29999,
+      "chat_scene": ",kingdom_1",
+      "invoker_name": "ying_test_debug",
+      "uid": 20010643
+    },
+    "request": {
+      "cmd": "get_battle_server_detail",
+      "param": {}
+    },
+    "extra_info": {
+      "no_checkac": 1,
+      "op_cmd": 1
+    }
+  },
+  "res_data": []
+}

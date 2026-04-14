@@ -375,6 +375,12 @@ commands:
       bid_list: []
     description: "获取AVA战场地块内容（玩家城、建筑、驻军等地图对象），需在header中传入lvl_id"
 
+  lvl_get_battle_server_detail:
+    cmd: "lvl_get_battle_server_detail"
+    required_param: {}
+    default_param: {}
+    description: "获取AVA战场双方阵营积分排行（svr_lvl_war_situation_detail），需在header中传入lvl_id"
+
   ava_leave_battle:
     cmd: "leave_lvl_battle"
     default_param: {}

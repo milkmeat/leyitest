@@ -44,6 +44,7 @@ AVA 战场行动:
   lvl_create_rally <uid> <lvl_id> <target_id> <x> <y> [prepare_time]  AVA发起集结(建筑/玩家)
   lvl_battle_login_get <uid> <lvl_id>                    AVA战场登录数据查询
   lvl_rally_dismiss <uid> <lvl_id> <unique_id>  AVA解散集结
+  get_ava_score <uid> <lvl_id>                  AVA战场积分总览(阵营汇总+个人排行)
 
 简化查询命令:
   get_gem <uid>                                 查询宝石数量（纯数字）
@@ -620,6 +621,90 @@ async def cmd_lvl_battle_login_get(uid_str: str, lvl_id_str: str, env: str = Non
             _print_json(resp)
     finally:
         await client.close()
+
+
+async def cmd_get_ava_score(uid_str: str, lvl_id_str: str, env: str = None):
+    """AVA 战场积分总览（阵营汇总 + 个人排行）
+
+    用法: get_ava_score <uid> <lvl_id>
+    同时查询 svr_lvl_war_situation（阵营总分/建筑/速率）
+    和 svr_lvl_war_situation_detail（个人积分排行）。
+    """
+    from src.executor.game_api import GameAPIClient
+    import asyncio as _asyncio
+    client = GameAPIClient(env=env)
+    try:
+        uid, lvl_id = int(uid_str), int(lvl_id_str)
+        resp_login, resp_detail = await _asyncio.gather(
+            client.lvl_battle_login_get(uid, lvl_id),
+            client.lvl_get_battle_server_detail(uid, lvl_id),
+        )
+
+        # --- 1) 阵营汇总 (svr_lvl_war_situation) ---
+        situation = _extract_push_data(resp_login, "svr_lvl_war_situation")
+        # --- 2) 个人明细 (svr_lvl_war_situation_detail) ---
+        detail = _extract_push_data(resp_detail, "svr_lvl_war_situation_detail")
+
+        if not situation and not detail:
+            print("[warn] 两个接口均未返回积分数据")
+            _print_ret_code(resp_login)
+            _print_ret_code(resp_detail)
+            return
+
+        # 建立 detail 索引: campId -> memberDetail list
+        detail_by_camp = {}
+        if detail:
+            for camp in detail.get("avaCampMemberInfo", []):
+                detail_by_camp[camp.get("campId")] = camp.get("memberDetail", [])
+
+        # 打印
+        camps = situation.get("avaCampInfo", []) if situation else []
+        if not camps and detail:
+            # fallback: 只有 detail 没有 situation
+            camps = [{"campId": c.get("campId"), "aid": c.get("aid")} for c in detail.get("avaCampMemberInfo", [])]
+
+        for camp in camps:
+            camp_id = camp.get("campId", "?")
+            aid = camp.get("aid", "?")
+            score = camp.get("score", "?")
+            speed = camp.get("scoreSpeedRate", "?")
+            joiners = camp.get("joinerNum", "?")
+            buildings_owned = camp.get("avaCampOccupiedBuildingInfo", [])
+            coffin = camp.get("coffinNum", 0)
+
+            print(f"\n{'='*60}")
+            print(f"Camp {camp_id}  aid={aid}  score={int(score):,}" if score != "?" else f"Camp {camp_id}  aid={aid}")
+            print(f"  speedRate={speed}  joiners={joiners}  buildings={len(buildings_owned)}  coffins={coffin}")
+            print(f"{'-'*60}")
+
+            members = detail_by_camp.get(camp_id, [])
+            if members:
+                for m in members:
+                    sp = m.get("scoreSpeed", "0")
+                    sp_str = f"  (+{sp}/min)" if sp != "0" else ""
+                    print(f"  #{m.get('rank','-'):>2}  uid={m.get('uid','?')}  score={int(m.get('score',0)):>12,}{sp_str}")
+            else:
+                print("  (无个人明细)")
+
+        if situation:
+            total_buildings = situation.get("totalLandBuildingNum", "?")
+            print(f"\n--- total land buildings: {total_buildings} ---")
+    finally:
+        await client.close()
+
+
+def _extract_push_data(resp: dict, target_name: str):
+    """从标准响应中提取指定 push name 的 parsed data"""
+    try:
+        for res in resp.get("res_data", []):
+            for push in res.get("push_list", []):
+                for item in push.get("data", []):
+                    if item.get("name") == target_name:
+                        raw = item.get("data", "")
+                        return _json.loads(raw) if isinstance(raw, str) and raw else raw
+    except (KeyError, IndexError, TypeError, _json.JSONDecodeError):
+        pass
+    return None
 
 
 async def cmd_lvl_svr_map_get(uid_str: str, lvl_id_str: str, x_str: str, y_str: str, *extra: str, env: str = None):
@@ -2435,6 +2520,7 @@ COMMANDS = {
     "lvl_attack_building":    (cmd_lvl_attack_building,     "<uid> <lvl_id> <building_id> <x> <y>", "AVA攻打建筑"),
     "lvl_reinforce_building": (cmd_lvl_reinforce_building,  "<uid> <lvl_id> <building_id>",         "AVA驻防/增援我方建筑"),
     "lvl_battle_login_get": (cmd_lvl_battle_login_get,   "<uid> <lvl_id>",                     "AVA战场登录数据查询"),
+    "get_ava_score":        (cmd_get_ava_score,          "<uid> <lvl_id>",                     "AVA战场积分总览(阵营+个人)"),
     "lvl_svr_map_get":      (cmd_lvl_svr_map_get,       "<uid> <lvl_id> <x> <y> [size]",      "AVA战场地块详情查询"),
     "lvl_create_rally":     (cmd_lvl_create_rally,      "<uid> <lvl_id> <target_id> <x> <y> [prepare_time]", "AVA发起集结(建筑/玩家)"),
     "lvl_rally_dismiss":    (cmd_lvl_rally_dismiss,     "<uid> <lvl_id> <unique_id>",         "AVA解散集结"),

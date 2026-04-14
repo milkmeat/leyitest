@@ -613,3 +613,10 @@ commands:
     default_param:
       bid_list: []
     description: "获取AVA战场地块详细内容（玩家城等级/兵力/camp、建筑驻军、行军类型），按bid分块返回，比lvl_battle_login_get更详细"
+
+  lvl_get_battle_server_detail:
+    cmd: "lvl_get_battle_server_detail"
+    extra_header:
+      lvl_id: "战场ID"
+    default_param: {}
+    description: "获取AVA战场双方阵营积分排行（svr_lvl_war_situation_detail）"

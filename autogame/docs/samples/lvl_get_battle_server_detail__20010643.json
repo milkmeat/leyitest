@@ -1,0 +1,225 @@
+{
+  "res_header": {
+    "ret_code": 0,
+    "cost_time_us": 0,
+    "ret_time_s": 1776133252,
+    "err_msg": ""
+  },
+  "request": {
+    "header": {
+      "did": "self-system",
+      "sid": 1,
+      "aid": 20000118,
+      "ksid": 1,
+      "lvl_id": 29999,
+      "castle_lv": 25,
+      "battle_type": 0,
+      "battle_id": 0,
+      "chat_scene": ",kingdom_1",
+      "invoker_name": "ying_test_debug",
+      "uid": 20010643
+    },
+    "request": {
+      "cmd": "lvl_get_battle_server_detail",
+      "param": {}
+    },
+    "extra_info": {
+      "no_checkac": 1,
+      "op_cmd": 1
+    }
+  },
+  "res_data": [
+    {
+      "push_list": [
+        {
+          "data": [
+            {
+              "data": "{\"avaCampMemberInfo\":[{\"campId\":\"1\",\"aid\":\"1000022\",\"memberDetail\":[{\"uid\":\"20010643\",\"rank\":1,\"score\":\"3081815\",\"sid\":0,\"scoreSpeed\":\"0\",\"lastUpdateTime\":\"1776133252\"},{\"uid\":\"20010644\",\"rank\":2,\"score\":\"2600264\",\"sid\":0,\"scoreSpeed\":\"120\",\"lastUpdateTime\":\"1776133252\"},{\"uid\":\"20010647\",\"rank\":3,\"score\":\"2563394\",\"sid\":0,\"scoreSpeed\":\"0\",\"lastUpdateTime\":\"1776133252\"},{\"uid\":\"20010645\",\"rank\":4,\"score\":\"2357388\",\"sid\":0,\"scoreSpeed\":\"120\",\"lastUpdateTime\":\"1776133252\"},{\"uid\":\"20010652\",\"rank\":5,\"score\":\"2205255\",\"sid\":0,\"scoreSpeed\":\"0\",\"lastUpdateTime\":\"1776133252\"},{\"uid\":\"20010650\",\"rank\":6,\"score\":\"2181639\",\"sid\":0,\"scoreSpeed\":\"0\",\"lastUpdateTime\":\"1776133252\"},{\"uid\":\"20010651\",\"rank\":7,\"score\":\"2148642\",\"sid\":0,\"scoreSpeed\":\"0\",\"lastUpdateTime\":\"1776133252\"},{\"uid\":\"20010649\",\"rank\":8,\"score\":\"2108149\",\"sid\":0,\"scoreSpeed\":\"0\",\"lastUpdateTime\":\"1776133252\"},{\"uid\":\"20010648\",\"rank\":9,\"score\":\"2016584\",\"sid\":0,\"scoreSpeed\":\"0\",\"lastUpdateTime\":\"1776133252\"},{\"uid\":\"20010646\",\"rank\":10,\"score\":\"1897793\",\"sid\":0,\"scoreSpeed\":\"0\",\"lastUpdateTime\":\"1776133252\"}]},{\"campId\":\"2\",\"aid\":\"1000015\",\"memberDetail\":[{\"uid\":\"20010672\",\"rank\":1,\"score\":\"2270817\",\"sid\":0,\"scoreSpeed\":\"300\",\"lastUpdateTime\":\"1776133252\"},{\"uid\":\"20010668\",\"rank\":2,\"score\":\"2048475\",\"sid\":0,\"scoreSpeed\":\"0\",\"lastUpdateTime\":\"1776133252\"},{\"uid\":\"20010669\",\"rank\":3,\"score\":\"1846822\",\"sid\":0,\"scoreSpeed\":\"0\",\"lastUpdateTime\":\"1776133252\"},{\"uid\":\"20010677\",\"rank\":4,\"score\":\"1837185\",\"sid\":0,\"scoreSpeed\":\"0\",\"lastUpdateTime\":\"1776133252\"},{\"uid\":\"20010675\",\"rank\":5,\"score\":\"1801630\",\"sid\":0,\"scoreSpeed\":\"0\",\"lastUpdateTime\":\"1776133252\"},{\"uid\":\"20010670\",\"rank\":6,\"score\":\"1750033\",\"sid\":0,\"scoreSpeed\":\"0\",\"lastUpdateTime\":\"1776133252\"},{\"uid\":\"20010676\",\"rank\":7,\"score\":\"1702648\",\"sid\":0,\"scoreSpeed\":\"120\",\"lastUpdateTime\":\"1776133252\"},{\"uid\":\"20010673\",\"rank\":8,\"score\":\"1661972\",\"sid\":0,\"scoreSpeed\":\"120\",\"lastUpdateTime\":\"1776133252\"},{\"uid\":\"20010674\",\"rank\":9,\"score\":\"1604284\",\"sid\":0,\"scoreSpeed\":\"0\",\"lastUpdateTime\":\"1776133252\"},{\"uid\":\"20010671\",\"rank\":10,\"score\":\"1580144\",\"sid\":0,\"scoreSpeed\":\"0\",\"lastUpdateTime\":\"1776133252\"}]}]}",
+              "name": "svr_lvl_war_situation_detail",
+              "data_parsed": {
+                "avaCampMemberInfo": [
+                  {
+                    "campId": "1",
+                    "aid": "1000022",
+                    "memberDetail": [
+                      {
+                        "uid": "20010643",
+                        "rank": 1,
+                        "score": "3081815",
+                        "sid": 0,
+                        "scoreSpeed": "0",
+                        "lastUpdateTime": "1776133252"
+                      },
+                      {
+                        "uid": "20010644",
+                        "rank": 2,
+                        "score": "2600264",
+                        "sid": 0,
+                        "scoreSpeed": "120",
+                        "lastUpdateTime": "1776133252"
+                      },
+                      {
+                        "uid": "20010647",
+                        "rank": 3,
+                        "score": "2563394",
+                        "sid": 0,
+                        "scoreSpeed": "0",
+                        "lastUpdateTime": "1776133252"
+                      },
+                      {
+                        "uid": "20010645",
+                        "rank": 4,
+                        "score": "2357388",
+                        "sid": 0,
+                        "scoreSpeed": "120",
+                        "lastUpdateTime": "1776133252"
+                      },
+                      {
+                        "uid": "20010652",
+                        "rank": 5,
+                        "score": "2205255",
+                        "sid": 0,
+                        "scoreSpeed": "0",
+                        "lastUpdateTime": "1776133252"
+                      },
+                      {
+                        "uid": "20010650",
+                        "rank": 6,
+                        "score": "2181639",
+                        "sid": 0,
+                        "scoreSpeed": "0",
+                        "lastUpdateTime": "1776133252"
+                      },
+                      {
+                        "uid": "20010651",
+                        "rank": 7,
+                        "score": "2148642",
+                        "sid": 0,
+                        "scoreSpeed": "0",
+                        "lastUpdateTime": "1776133252"
+                      },
+                      {
+                        "uid": "20010649",
+                        "rank": 8,
+                        "score": "2108149",
+                        "sid": 0,
+                        "scoreSpeed": "0",
+                        "lastUpdateTime": "1776133252"
+                      },
+                      {
+                        "uid": "20010648",
+                        "rank": 9,
+                        "score": "2016584",
+                        "sid": 0,
+                        "scoreSpeed": "0",
+                        "lastUpdateTime": "1776133252"
+                      },
+                      {
+                        "uid": "20010646",
+                        "rank": 10,
+                        "score": "1897793",
+                        "sid": 0,
+                        "scoreSpeed": "0",
+                        "lastUpdateTime": "1776133252"
+                      }
+                    ]
+                  },
+                  {
+                    "campId": "2",
+                    "aid": "1000015",
+                    "memberDetail": [
+                      {
+                        "uid": "20010672",
+                        "rank": 1,
+                        "score": "2270817",
+                        "sid": 0,
+                        "scoreSpeed": "300",
+                        "lastUpdateTime": "1776133252"
+                      },
+                      {
+                        "uid": "20010668",
+                        "rank": 2,
+                        "score": "2048475",
+                        "sid": 0,
+                        "scoreSpeed": "0",
+                        "lastUpdateTime": "1776133252"
+                      },
+                      {
+                        "uid": "20010669",
+                        "rank": 3,
+                        "score": "1846822",
+                        "sid": 0,
+                        "scoreSpeed": "0",
+                        "lastUpdateTime": "1776133252"
+                      },
+                      {
+                        "uid": "20010677",
+                        "rank": 4,
+                        "score": "1837185",
+                        "sid": 0,
+                        "scoreSpeed": "0",
+                        "lastUpdateTime": "1776133252"
+                      },
+                      {
+                        "uid": "20010675",
+                        "rank": 5,
+                        "score": "1801630",
+                        "sid": 0,
+                        "scoreSpeed": "0",
+                        "lastUpdateTime": "1776133252"
+                      },
+                      {
+                        "uid": "20010670",
+                        "rank": 6,
+                        "score": "1750033",
+                        "sid": 0,
+                        "scoreSpeed": "0",
+                        "lastUpdateTime": "1776133252"
+                      },
+                      {
+                        "uid": "20010676",
+                        "rank": 7,
+                        "score": "1702648",
+                        "sid": 0,
+                        "scoreSpeed": "120",
+                        "lastUpdateTime": "1776133252"
+                      },
+                      {
+                        "uid": "20010673",
+                        "rank": 8,
+                        "score": "1661972",
+                        "sid": 0,
+                        "scoreSpeed": "120",
+                        "lastUpdateTime": "1776133252"
+                      },
+                      {
+                        "uid": "20010674",
+                        "rank": 9,
+                        "score": "1604284",
+                        "sid": 0,
+                        "scoreSpeed": "0",
+                        "lastUpdateTime": "1776133252"
+                      },
+                      {
+                        "uid": "20010671",
+                        "rank": 10,
+                        "score": "1580144",
+                        "sid": 0,
+                        "scoreSpeed": "0",
+                        "lastUpdateTime": "1776133252"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "main": 1,
+          "push_type": 1,
+          "target_keys": "20010643"
+        }
+      ],
+      "push_result": 0
+    }
+  ]
+}
