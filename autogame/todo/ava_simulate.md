@@ -3,16 +3,24 @@
 
 ## 任务
 - 完成脚本 ava_simulate.sh，使用cli命令行完成全部操作。脚本需要打印出所有实际执行的cli命令
-- 脚本使用方式为 "./ava_simulate.sh <ava_id>", 例如: "./ava_simulate.sh 29999"
+- 脚本使用方式为 `./ava_simulate.sh <ava_id> [duration_minutes]`，例如: `./ava_simulate.sh 29999` (默认60分钟) 或 `./ava_simulate.sh 29999 30`
 - 脚本完成以下功能
-  - 检查 ava 战场是否存在，不存在的话调用cli命令创建一个 
-  - 根据accounts.yaml的配置，将双方的账号先退出到普通地图（如有），再加入到指定ava战场
-  - 为每个账号加上10，000，000宝石，和1，000，000士兵
-  - 记录该战场的双方得分快照，作为计分起点。（由于战场会重复使用，起点不一定为0）
-  - 并发启动两个脚本 “python src/main.py run --ava 29999 --team 1” 和 “python src/main.py run --ava 29999 --team 2”，操作双方进行对战
-  - 对战进行1小时后，记录双方的得分快照，作为计分终点。
-  - 将所有账号退出到普通地图（离开ava战场）
-  - 打印本次对战双方各自的得分（计分终点-计分起点）
+  - 创建 ava 战场: 直接调用 `uid_ava_create <lvl_id>`，已存在时根据返回错误码判断并忽略
+  - 将双方账号先退出到普通地图: `uid_ava_leave_all <lvl_id>` (已内置容错，不在战场的账号自动跳过)
+  - 将双方账号加入到指定ava战场: `uid_ava_join_all <lvl_id>` (自动读取 accounts.yaml 分配 camp)
+  - 为每个账号(双方)加上 10,000,000 宝石 (`add_gem <uid> 10000000`) 和三个兵种各 1,000,000 士兵:
+    - `add_soldiers <uid> 4 1000000` (cavalry 骑兵)
+    - `add_soldiers <uid> 104 1000000` (infantry 步兵)
+    - `add_soldiers <uid> 204 1000000` (archer 弓兵)
+  - 记录该战场的双方得分快照作为计分起点: `get_ava_score <uid> <lvl_id>` (由于战场会重复使用，起点不一定为0)
+  - 并发启动两个后台进程:
+    - `python src/main.py run --ava <ava_id> --team 1`
+    - `python src/main.py run --ava <ava_id> --team 2`
+  - 使用 `trap` 注册信号处理，确保脚本退出时(含 Ctrl+C)杀掉两个后台进程
+  - `sleep <duration>` 等待对战时长结束后，kill 两个后台进程
+  - 记录双方的得分快照作为计分终点
+  - 将所有账号退出到普通地图: `uid_ava_leave_all <lvl_id>`
+  - 打印本次对战双方各自的得分（计分终点 - 计分起点）
 
 
 ## 要求
@@ -24,5 +32,8 @@
 ## 验收标准
 ```
 ./ava_simulate.sh 29999
-# 能持续运行1小时，并打印出双方实际得分
+# 默认持续运行60分钟，并打印出双方实际得分
+
+./ava_simulate.sh 29999 30
+# 持续运行30分钟
 ```
