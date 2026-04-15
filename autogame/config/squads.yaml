@@ -16,6 +16,16 @@ alliances:
         leader_uid: 20010648
         member_uids: [20010648, 20010649, 20010650, 20010651, 20010652]
 
+      - squad_id: 3
+        name: "Charlie"
+        leader_uid: 20010653
+        member_uids: [20010653, 20010654, 20010655, 20010656, 20010657]
+
+      - squad_id: 4
+        name: "Delta"
+        leader_uid: 20010658
+        member_uids: [20010658, 20010659, 20010660, 20010661, 20010662]
+
   enemy:
     aid: 20000119
     name: "PhoenixRise2026"
@@ -29,3 +39,13 @@ alliances:
         name: "Red-B"
         leader_uid: 20010673
         member_uids: [20010673, 20010674, 20010675, 20010676, 20010677]
+
+      - squad_id: 3
+        name: "Red-C"
+        leader_uid: 20010678
+        member_uids: [20010678, 20010679, 20010680, 20010681, 20010682]
+
+      - squad_id: 4
+        name: "Red-D"
+        leader_uid: 20010683
+        member_uids: [20010683, 20010684, 20010685, 20010686, 20010687]
