@@ -89,7 +89,7 @@ echo ""
 
 # Step 1: 创建战场
 echo "Step 1: Create AVA battlefield..."
-cli uid_ava_create "$AVA_ID" || true
+cli uid_ava_create "$AVA_ID" "duration=2" || true
 echo ""
 
 # Step 2: 全员退出（清理旧状态）

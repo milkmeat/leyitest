@@ -2256,7 +2256,7 @@ async def cmd_uid_ava_create(lvl_id_str: str, *extra: str, env: str = None):
         import time as _time
         lvl_id = int(lvl_id_str)
         now = int(_time.time())
-        duration_hours = 365 * 24  # 默认365天
+        duration_hours = 2  # 默认2小时
         event_id = None
         for arg in extra:
             if arg.startswith("duration="):
