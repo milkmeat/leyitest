@@ -135,6 +135,14 @@ class L0Executor:
         self.valid_uids = config.accounts.all_uids()
         self.map_width = config.activity.map.width
         self.map_height = config.activity.map.height
+        # 我方联盟 ID（AVA 用 lvl_aid，主世界用 aid）
+        alliances = config.accounts.alliances
+        if alliances and alliances.ours.lvl_aid:
+            self._my_alliance_id = alliances.ours.lvl_aid
+        elif alliances:
+            self._my_alliance_id = alliances.ours.aid
+        else:
+            self._my_alliance_id = 0
 
     def validate(self, instr: AIInstruction) -> tuple[bool, str]:
         """预校验指令参数
@@ -301,6 +309,7 @@ class L0Executor:
         self,
         instructions: list[AIInstruction],
         accounts: Optional[dict[int, PlayerState]] = None,
+        buildings: Optional[list] = None,
     ) -> list[ExecutionResult]:
         """顺序执行一批指令（不并发，避免同一账号竞态）
 
@@ -308,12 +317,19 @@ class L0Executor:
         - 自动构建 march_info（从 accounts 获取兵力/英雄数据）
         - 同循环 Rally：INITIATE_RALLY 成功后自动提取 rally_id，
           回填到后续 rally_id 为空的 JOIN_RALLY 指令
+        - 建筑归属预检查：INITIATE_RALLY 前检查目标是否已是我方建筑
+        - 28003 恢复：INITIATE 失败时查询已有集结或转为 REINFORCE
         """
         self._accounts = accounts or {}
+        self._buildings = {b.unique_id: b for b in (buildings or [])}
         results = []
         # 最近一次成功的 rally 信息（同循环回填用）
         last_rally_id: str = ""
         last_rally_pos: str = ""
+        # 最近一次 INITIATE 的目标信息（用于补全 JOIN 的坐标）
+        last_initiate_target: dict = {}  # {target_x, target_y, building_id}
+        # 当 INITIATE 目标已是我方建筑且无活跃集结时，后续 JOIN 转为 REINFORCE
+        _convert_join_to_reinforce: str = ""
 
         _rally_actions = {ActionType.JOIN_RALLY, ActionType.LVL_JOIN_RALLY}
         _initiate_actions = {
@@ -323,14 +339,81 @@ class L0Executor:
         }
 
         for instr in instructions:
+            # 补全 JOIN_RALLY 的缺失坐标（从最近的 INITIATE 目标推断）
+            if (instr.action in _rally_actions
+                    and not instr.target_x and not instr.target_y
+                    and last_initiate_target):
+                instr = instr.model_copy(update={
+                    "target_x": last_initiate_target.get("target_x", 0),
+                    "target_y": last_initiate_target.get("target_y", 0),
+                })
+                logger.info(
+                    "L0 补全 JOIN 坐标: uid=%d → (%d,%d) from last INITIATE",
+                    instr.uid, instr.target_x, instr.target_y,
+                )
+
             # 自动回填 rally_id 和坐标
             if (instr.action in _rally_actions
                     and not instr.rally_id and last_rally_id):
                 instr = instr.model_copy(update={"rally_id": last_rally_id})
                 logger.info("自动回填 rally_id=%s → uid=%d", last_rally_id, instr.uid)
 
+            # Fix 4: JOIN_RALLY 转 REINFORCE（目标建筑已是我方且无集结）
+            if (instr.action in _rally_actions
+                    and not instr.rally_id
+                    and _convert_join_to_reinforce):
+                bid = _convert_join_to_reinforce
+                new_action = (ActionType.LVL_REINFORCE_BUILDING
+                              if instr.action == ActionType.LVL_JOIN_RALLY
+                              else ActionType.REINFORCE_BUILDING)
+                instr = instr.model_copy(update={
+                    "action": new_action,
+                    "building_id": bid,
+                })
+                logger.info(
+                    "L0 JOIN→REINFORCE: uid=%d 建筑 %s 已是我方, 转为驻防",
+                    instr.uid, bid,
+                )
+
+            # Fix 2: 无前置 INITIATE 的 JOIN_RALLY → 自动转为 INITIATE
+            # 当小队只有 JOIN 没有 INITIATE 时（跨小队 JOIN 场景），
+            # 将第一个 JOIN 转为 INITIATE，让小队自己发起集结
+            if (instr.action in _rally_actions
+                    and not instr.rally_id
+                    and not _convert_join_to_reinforce
+                    and instr.target_x and instr.target_y):
+                # 需要 building_id 来发起集结，尝试从坐标匹配建筑
+                matched_bid = self._find_building_by_pos(
+                    instr.target_x, instr.target_y,
+                )
+                if matched_bid:
+                    new_action = (ActionType.LVL_INITIATE_RALLY_BUILDING
+                                  if instr.action == ActionType.LVL_JOIN_RALLY
+                                  else ActionType.INITIATE_RALLY)
+                    instr = instr.model_copy(update={
+                        "action": new_action,
+                        "building_id": matched_bid,
+                    })
+                    logger.info(
+                        "L0 JOIN→INITIATE: uid=%d 无前置集结, "
+                        "自动转为发起集结 building=%s",
+                        instr.uid, matched_bid,
+                    )
+
             # Smart L0: 发起集结前检查 queue_id=6002 是否已被占用
             if instr.action in _initiate_actions:
+                # 记录 INITIATE 目标信息，供后续 JOIN 补全坐标
+                tx, ty = instr.target_x, instr.target_y
+                # 如果 INITIATE 没有坐标，从 buildings 中获取
+                if (not tx and not ty) and instr.building_id and self._buildings:
+                    bld = self._buildings.get(instr.building_id)
+                    if bld:
+                        tx, ty = bld.pos
+                last_initiate_target = {
+                    "target_x": tx,
+                    "target_y": ty,
+                    "building_id": instr.building_id,
+                }
                 acct = self._accounts.get(instr.uid)
                 if acct:
                     active_rally = next(
@@ -348,6 +431,44 @@ class L0Executor:
                             success=False, action=instr.action, uid=instr.uid,
                             error=reason,
                         ))
+                        continue
+
+                # Fix 4: 建筑归属预检查 — INITIATE 前检查目标是否已是我方建筑
+                if instr.building_id and self._buildings:
+                    target_bld = self._buildings.get(instr.building_id)
+                    if (target_bld
+                            and self._my_alliance_id
+                            and target_bld.alliance_id == self._my_alliance_id):
+                        # 建筑已是我方的，尝试查询已有集结
+                        rid, rpos = await self._query_rally_by_target(
+                            instr.uid, instr.building_id,
+                        )
+                        if rid:
+                            last_rally_id = rid
+                            last_rally_pos = rpos
+                            logger.info(
+                                "L0 建筑归属预检查: %s 已是我方建筑, "
+                                "找到已有集结 rally_id=%s, 跳过 INITIATE",
+                                instr.building_id, rid,
+                            )
+                            results.append(ExecutionResult(
+                                success=False, action=instr.action, uid=instr.uid,
+                                error=f"建筑 {instr.building_id} 已是我方, 复用集结 {rid}",
+                            ))
+                        else:
+                            logger.info(
+                                "L0 建筑归属预检查: %s 已是我方建筑且无活跃集结, "
+                                "后续 JOIN 将转为 REINFORCE",
+                                instr.building_id,
+                            )
+                            # 标记: 后续 JOIN 应转为 REINFORCE
+                            last_rally_id = ""
+                            last_rally_pos = ""
+                            _convert_join_to_reinforce = instr.building_id
+                            results.append(ExecutionResult(
+                                success=False, action=instr.action, uid=instr.uid,
+                                error=f"建筑 {instr.building_id} 已是我方且无集结, 转 REINFORCE",
+                            ))
                         continue
 
             # Smart L0: LVL_ATTACK_BUILDING / LVL_REINFORCE_BUILDING 预处理（距离检查 + 部队去重）
@@ -387,8 +508,32 @@ class L0Executor:
                 if rid:
                     last_rally_id = rid
                     last_rally_pos = rpos
+                    _convert_join_to_reinforce = ""  # 清除转 REINFORCE 标记
                     logger.info("提取 rally_id=%s pos=%s from %s uid=%d",
                                 rid, rpos, instr.action.value, instr.uid)
+
+            # Fix 1: INITIATE 返回 28003 ("target is your ally") 恢复机制
+            if (not result.success
+                    and instr.action in _initiate_actions
+                    and result.server_response.get("res_header", {}).get("ret_code") == 28003):
+                target_id = instr.building_id
+                if target_id:
+                    rid, rpos = await self._query_rally_by_target(instr.uid, target_id)
+                    if rid:
+                        last_rally_id = rid
+                        last_rally_pos = rpos
+                        _convert_join_to_reinforce = ""
+                        logger.info(
+                            "28003 恢复: 建筑 %s 已是我方, 找到已有集结 rally_id=%s",
+                            target_id, rid,
+                        )
+                    else:
+                        # 无活跃集结，后续 JOIN 转为 REINFORCE
+                        _convert_join_to_reinforce = target_id
+                        logger.info(
+                            "28003 恢复: 建筑 %s 已是我方且无集结, 后续 JOIN 转 REINFORCE",
+                            target_id,
+                        )
 
         # ── 自动采集 coal cart (AVA only) ──
         _move_actions = {ActionType.MOVE_CITY, ActionType.LVL_MOVE_CITY}
@@ -445,6 +590,67 @@ class L0Executor:
                                         return main_troop, rpos
         except Exception as e:
             logger.warning("查询 rally_id 失败: %s", e)
+        return "", ""
+
+    def _find_building_by_pos(self, x: int, y: int) -> str:
+        """根据坐标查找最近的建筑 unique_id
+
+        用于 Fix 2: JOIN_RALLY 转 INITIATE 时需要 building_id。
+        Returns:
+            building unique_id，未找到返回 ""
+        """
+        if not self._buildings:
+            return ""
+        best_bid = ""
+        best_dist = float("inf")
+        for bid, bld in self._buildings.items():
+            bx, by = bld.pos
+            dist = abs(bx - x) + abs(by - y)
+            if dist < best_dist:
+                best_dist = dist
+                best_bid = bid
+        # 只在距离合理时返回（坐标应该非常接近）
+        if best_dist <= 5:
+            return best_bid
+        return ""
+
+    async def _query_rally_by_target(
+        self, uid: int, target_id: str,
+    ) -> tuple[str, str]:
+        """查询指定目标建筑上的活跃集结
+
+        通过 lvl_battle_login_get 获取 svr_lvl_rally 数据，
+        查找 targetId 匹配且状态为 gathering 的集结。
+
+        Returns:
+            (rally_unique_id, rally_pos_encoded) — 失败时返回 ("", "")
+        """
+        lvl_id = self.client.default_header.get("lvl_id", 0)
+        if not lvl_id:
+            return "", ""
+        try:
+            resp = await self.client.lvl_battle_login_get(uid, lvl_id)
+            for res in resp.get("res_data", []):
+                for push in res.get("push_list", []):
+                    for item in push.get("data", []):
+                        name = item.get("name", "")
+                        raw = item.get("data", "")
+                        if "svr_lvl_rally" not in name:
+                            continue
+                        data = _json.loads(raw) if isinstance(raw, str) else raw
+                        for brief in data.get("brief", []):
+                            # 匹配目标建筑 + gathering 状态 (0 或 6)
+                            if (str(brief.get("targetId", "")) == str(target_id)
+                                    and brief.get("status", -1) in (0, 6)):
+                                rid = brief.get("uniqueId", "")
+                                rpos = str(brief.get("pos", ""))
+                                logger.info(
+                                    "从 svr_lvl_rally 查到目标 %s 的集结: %s pos=%s",
+                                    target_id, rid, rpos,
+                                )
+                                return rid, rpos
+        except Exception as e:
+            logger.warning("查询目标集结失败: target=%s err=%s", target_id, e)
         return "", ""
 
     async def _auto_collect_coal_carts(self, uids: set[int]) -> None:

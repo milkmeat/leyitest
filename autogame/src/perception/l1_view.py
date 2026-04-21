@@ -23,6 +23,7 @@ from src.config.schemas import AppConfig, SquadEntry
 from src.models.player_state import PlayerState, TroopState
 from src.models.building import Building
 from src.models.enemy import Enemy
+from src.models.rally import RallyBrief
 from src.perception.data_sync import SyncSnapshot
 
 logger = logging.getLogger(__name__)
@@ -76,6 +77,16 @@ class NearbyBuilding(BaseModel):
     status: int = 0
 
 
+class ActiveRally(BaseModel):
+    """当前活跃集结 — 可加入的集结信息"""
+    rally_id: str               # 集结 unique_id（JOIN_RALLY 必填）
+    leader_uid: int = 0         # 发起者 UID
+    target_id: str = ""         # 目标 unique_id
+    target_pos: tuple[int, int] = (0, 0)
+    pos: tuple[int, int] = (0, 0)
+    status: str = ""            # "gathering" / "marching" / "fighting"
+
+
 class L1SquadView(BaseModel):
     """L1 小队完整视图 — LLM 输入的结构化数据"""
     squad_id: int
@@ -84,6 +95,7 @@ class L1SquadView(BaseModel):
     members: list[MemberView] = Field(default_factory=list)
     enemies: list[NearbyEnemy] = Field(default_factory=list)
     buildings: list[NearbyBuilding] = Field(default_factory=list)
+    rallies: list[ActiveRally] = Field(default_factory=list)
     l2_order: str = ""           # L2 战略指令
 
 
@@ -157,6 +169,9 @@ class L1ViewBuilder:
         # 4. 附近建筑（按距离排序，截取 top N）
         buildings = self._build_nearby_buildings(snapshot.buildings, center)
 
+        # 5. 当前活跃集结（我方发起的、可加入的）
+        rallies = self._build_active_rallies(snapshot.rallies)
+
         return L1SquadView(
             squad_id=squad.squad_id,
             squad_name=squad.name,
@@ -164,6 +179,7 @@ class L1ViewBuilder:
             members=members,
             enemies=enemies,
             buildings=buildings,
+            rallies=rallies,
             l2_order=l2_order,
         )
 
@@ -225,6 +241,17 @@ class L1ViewBuilder:
                 )
         else:
             lines.append("- (none)")
+
+        # Active rallies (joinable)
+        if view.rallies:
+            lines.append("")
+            lines.append(f"## Active Rallies ({len(view.rallies)} joinable)")
+            for r in view.rallies:
+                lines.append(
+                    f"- rally_id={r.rally_id} leader_uid={r.leader_uid} "
+                    f"target={r.target_id} target_pos({r.target_pos[0]},{r.target_pos[1]}) "
+                    f"pos({r.pos[0]},{r.pos[1]}) status={r.status}"
+                )
 
         return "\n".join(lines)
 
@@ -321,6 +348,27 @@ class L1ViewBuilder:
             ))
         items.sort(key=lambda x: x.distance)
         return items[:self.MAX_BUILDINGS]
+
+    @staticmethod
+    def _build_active_rallies(
+        rallies: list[RallyBrief],
+    ) -> list[ActiveRally]:
+        """构建当前活跃集结列表（可加入的集结）"""
+        _STATUS_MAP = {0: "gathering", 1: "marching", 6: "gathering"}
+        items = []
+        for r in rallies:
+            # status=6 表示集合中（可加入），status=0 也可能是等待中
+            # status=1 表示行军中（不可加入但有参考价值）
+            status_str = _STATUS_MAP.get(r.status, f"status_{r.status}")
+            items.append(ActiveRally(
+                rally_id=r.unique_id,
+                leader_uid=r.leader_uid,
+                target_id=r.target_id,
+                target_pos=r.target_pos,
+                pos=r.pos,
+                status=status_str,
+            ))
+        return items
 
 
 # ------------------------------------------------------------------

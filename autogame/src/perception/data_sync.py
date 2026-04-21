@@ -231,6 +231,7 @@ class DataSyncer:
             except (json.JSONDecodeError, TypeError):
                 continue
 
+            logger.debug("AVA map section: %s", name)
             if "svr_lvl_brief_objs" in name and not brief_data:
                 brief_data = parsed
             elif "svr_lvl_rally_brief_objs" in name and not rally_data:
@@ -270,11 +271,23 @@ class DataSyncer:
         if rally_data:
             my_uids = set(self.config.accounts.all_uids())
             my_uid_strs = {str(u) for u in my_uids}
-            for obj in rally_data.get("brief", rally_data.get("briefObjs", [])):
+            all_briefs = rally_data.get("brief", rally_data.get("briefObjs", []))
+            logger.debug(
+                "svr_lvl_rally_brief_objs: %d 条集结数据, 我方 UID 数=%d",
+                len(all_briefs), len(my_uid_strs),
+            )
+            for obj in all_briefs:
                 owner = obj.get("ownerUid", "")
                 leader = obj.get("leaderUid", "")
                 if str(owner) in my_uid_strs or str(leader) in my_uid_strs:
                     rallies.append(RallyBrief.from_brief(obj))
+                else:
+                    logger.debug(
+                        "跳过非我方集结: owner=%s leader=%s target=%s status=%s",
+                        owner, leader, obj.get("targetId", ""), obj.get("status", ""),
+                    )
+        else:
+            logger.debug("svr_lvl_rally_brief_objs 未返回或为空")
 
         # ── 3. svr_lvl_user_objs → user_troops ──
         if user_data:

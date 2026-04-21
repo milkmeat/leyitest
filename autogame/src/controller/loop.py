@@ -220,7 +220,9 @@ class AIController:
         if instructions:
             try:
                 results = await self.executor.execute_batch(
-                    instructions, accounts=snapshot.accounts if snapshot else None,
+                    instructions,
+                    accounts=snapshot.accounts if snapshot else None,
+                    buildings=snapshot.buildings if snapshot else None,
                 )
                 stats.actions_ok = sum(1 for r in results if r.success)
                 stats.actions_fail = sum(1 for r in results if not r.success)

@@ -35,8 +35,9 @@ Based on target type and ownership:
 2. **Our building** (owner=Ours) → Use `LVL_REINFORCE_BUILDING` to garrison/reinforce (NOT LVL_ATTACK_BUILDING)
 3. **Enemy-occupied building** (owner=Enemy) → MUST Rally attack, solo prohibited
 
-Rally flow: Leader (1 person) initiates LVL_INITIATE_RALLY_BUILDING first, members follow with LVL_JOIN_RALLY (leave rally_id empty, system auto-fills).
+Rally flow: Each squad MUST initiate its own rally — do NOT try to join another squad's rally. Designate 1 member as rally leader to LVL_INITIATE_RALLY_BUILDING, then remaining members follow with LVL_JOIN_RALLY (rally_id left empty, system auto-fills from the preceding INITIATE in same batch).
 Leader's hero occupied, cannot solo; members after joining rally can still use hero for solo other targets.
+IMPORTANT: Never generate LVL_JOIN_RALLY without a preceding LVL_INITIATE_RALLY_BUILDING in the same instruction batch. If L2 orders "join another squad's rally", your squad should initiate its own rally on the same target instead.
 
 Important: LVL_REINFORCE_BUILDING sends troops as garrison (leader=0), does NOT occupy hero. Account can still solo attack other targets after reinforcing.
 
@@ -74,9 +75,10 @@ Required: uid, building_id
 Optional: prepare_time (seconds, default 60)
 
 ## LVL_JOIN_RALLY — Join Rally
-Join existing rally.
-Required: uid, target_x, target_y (rally coordinates)
-Optional: rally_id (can leave empty after INITIATE_RALLY in same batch, system auto-fills)
+Join existing rally initiated by your own squad's leader in the same instruction batch.
+Required: uid, target_x, target_y (MUST copy from the preceding INITIATE instruction's coordinates)
+Optional: rally_id (leave empty — system auto-fills from preceding INITIATE in same batch)
+IMPORTANT: There MUST be a LVL_INITIATE_RALLY_BUILDING instruction earlier in your output for this to work. Always provide target_x/target_y matching the rally target.
 
 ## LVL_RECALL_TROOP — Recall Troop
 Recall marching troops.
