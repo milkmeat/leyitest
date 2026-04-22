@@ -1359,6 +1359,20 @@ class L0Executor:
                 logger.info("L0 预处理跳过: %s", reason)
                 return None, reason
 
+        # 1.5 坐标补全: 缺少坐标时从 buildings 缓存获取
+        if (not instr.target_x and not instr.target_y
+                and instr.building_id and self._buildings):
+            bld = self._buildings.get(instr.building_id)
+            if bld and bld.pos != (0, 0):
+                instr = instr.model_copy(update={
+                    "target_x": bld.pos[0],
+                    "target_y": bld.pos[1],
+                })
+                logger.info(
+                    "L0 预处理坐标补全: uid=%d building=%s → (%d,%d)",
+                    instr.uid, instr.building_id, bld.pos[0], bld.pos[1],
+                )
+
         # 2. 距离检查: 超过阈值则转换为移城指令
         cx, cy = acct.city_pos
         dx = instr.target_x - cx
@@ -1366,6 +1380,14 @@ class L0Executor:
         dist = math.hypot(dx, dy)
 
         if dist > self.MOVE_CITY_DISTANCE_THRESHOLD:
+            # 安全网: 坐标未解析仍为(0,0)时不转移城，直接放行
+            if not instr.target_x and not instr.target_y:
+                logger.warning(
+                    "L0 预处理: uid=%d building=%s 坐标未解析(0,0), "
+                    "跳过移城转换",
+                    instr.uid, instr.building_id,
+                )
+                return instr, ""
             # 智能搜索建筑附近的空位
             move_x, move_y = await self._find_empty_spot(
                 instr.uid, instr.target_x, instr.target_y,
