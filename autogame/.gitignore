@@ -94,6 +94,7 @@ cython_debug/
 
 # Runtime / Logs
 logs/
+logs.*
 mock_logs/
 *.log
 
