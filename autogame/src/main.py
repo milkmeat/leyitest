@@ -623,6 +623,30 @@ async def cmd_lvl_battle_login_get(uid_str: str, lvl_id_str: str, env: str = Non
         await client.close()
 
 
+async def cmd_lvl_get_battle_server_detail(lvl_id_str: str, env: str = None):
+    """AVA 战场双方阵营积分排行原始数据（svr_lvl_war_situation_detail）
+
+    用法: lvl_get_battle_server_detail <lvl_id>
+    返回每个阵营所有成员的 score、scoreSpeed、rank 等。
+    不需要玩家 uid，使用 GM 身份查询。
+    """
+    from src.executor.game_api import GameAPIClient
+    client = GameAPIClient(env=env)
+    try:
+        gm_uid = 20010643
+        lvl_id = int(lvl_id_str)
+        resp = await client.lvl_get_battle_server_detail(gm_uid, lvl_id)
+        code = _print_ret_code(resp)
+        detail = _extract_push_data(resp, "svr_lvl_war_situation_detail")
+        if detail:
+            _print_json(detail)
+        elif code == 0:
+            print("[warn] 响应成功但未找到 svr_lvl_war_situation_detail 数据")
+            _print_json(resp)
+    finally:
+        await client.close()
+
+
 async def cmd_get_ava_score(uid_str: str, lvl_id_str: str, env: str = None):
     """AVA 战场积分总览（阵营汇总 + 个人排行）
 
@@ -2520,6 +2544,7 @@ COMMANDS = {
     "lvl_attack_building":    (cmd_lvl_attack_building,     "<uid> <lvl_id> <building_id> <x> <y>", "AVA攻打建筑"),
     "lvl_reinforce_building": (cmd_lvl_reinforce_building,  "<uid> <lvl_id> <building_id>",         "AVA驻防/增援我方建筑"),
     "lvl_battle_login_get": (cmd_lvl_battle_login_get,   "<uid> <lvl_id>",                     "AVA战场登录数据查询"),
+    "lvl_get_battle_server_detail": (cmd_lvl_get_battle_server_detail, "<lvl_id>", "AVA战场阵营积分排行原始数据"),
     "get_ava_score":        (cmd_get_ava_score,          "<uid> <lvl_id>",                     "AVA战场积分总览(阵营+个人)"),
     "lvl_svr_map_get":      (cmd_lvl_svr_map_get,       "<uid> <lvl_id> <x> <y> [size]",      "AVA战场地块详情查询"),
     "lvl_create_rally":     (cmd_lvl_create_rally,      "<uid> <lvl_id> <target_id> <x> <y> [prepare_time]", "AVA发起集结(建筑/玩家)"),

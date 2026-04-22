@@ -1,27 +1,20 @@
 #!/bin/bash
 # ava_simulate.sh — AVA 战场模拟对战脚本
 #
-# 用法: ./ava_simulate.sh <ava_id> [duration_minutes]
-#   ava_id:           战场 ID (如 29999)
+# 用法: ./ava_simulate.sh [duration_minutes]
 #   duration_minutes: 对战时长，默认 60 分钟
 #
-# 流程: 创建战场 → 全员加入 → 补给资源 → 记录起始积分
-#       → 双方并发对战 → 等待 → 记录终止积分 → 全员退出 → 打印得分
+# 自动从 40001 开始探测空闲战场 ID，无需手动指定。
+#
+# 流程: 探测空闲战场ID → 创建战场 → 全员加入 → 补给资源 → 记录起始积分
+#       → 归档旧日志 → 双方并发对战 → 等待 → 记录终止积分 → 全员退出 → 打印得分
 
 set -uo pipefail
 cd "$(dirname "$0")"
 export PYTHONIOENCODING=utf-8
 
 # ── 参数 ────────────────────────────────────────────────
-if [ $# -lt 1 ]; then
-    echo "Usage: $0 <ava_id> [duration_minutes]"
-    echo "  ava_id:           战场 ID (如 29999)"
-    echo "  duration_minutes: 对战时长，默认 60 分钟"
-    exit 1
-fi
-
-AVA_ID=$1
-DURATION_MINUTES=${2:-60}
+DURATION_MINUTES=${1:-60}
 DURATION_SECONDS=$((DURATION_MINUTES * 60))
 
 # ── 配置 ────────────────────────────────────────────────
@@ -49,6 +42,23 @@ SOLDIER_IDS=(4 104 204)  # cavalry, infantry, archer
 cli() {
     echo "  > $CMD $*"
     $CMD "$@" 2>&1
+}
+
+# 从 40001 开始探测，找到第一个不存在的战场 ID
+find_free_ava_id() {
+    local id
+    for id in $(seq 40001 40100); do
+        local output
+        output=$($CMD lvl_get_battle_server_detail "$id" 2>&1)
+        if echo "$output" | grep -q "\[OK\]"; then
+            echo "  ava_id=$id 已存在，跳过" >&2
+        else
+            echo "$id"
+            return 0
+        fi
+    done
+    echo "ERROR: 40001-40100 全部被占用" >&2
+    return 1
 }
 
 # 从 get_ava_score 输出中提取指定 camp 的分数
@@ -80,6 +90,16 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 # ── 开始 ────────────────────────────────────────────────
+
+# Step 0: 自动选择空闲战场 ID
+echo "Step 0: Finding free AVA battlefield ID (40001-40100)..."
+AVA_ID=$(find_free_ava_id)
+if [ -z "$AVA_ID" ]; then
+    echo "ERROR: 无法找到空闲战场 ID" >&2
+    exit 1
+fi
+echo "  -> 选定 ava_id=$AVA_ID"
+echo ""
 
 echo "======================================================"
 echo "  AVA Battlefield Simulation"
@@ -123,8 +143,19 @@ echo ""
 echo "  Starting scores: Camp1=$CAMP1_START  Camp2=$CAMP2_START"
 echo ""
 
-# Step 6: 启动双方对战
-echo "Step 6: Starting battle (${DURATION_MINUTES} minutes)..."
+# Step 6: 归档旧日志
+if [ -d "logs" ] && [ "$(ls -A logs 2>/dev/null)" ]; then
+    ARCHIVE_NAME="logs.$(date +%Y%m%d_%H%M%S)"
+    echo "Step 6: Archiving old logs -> $ARCHIVE_NAME"
+    mv logs "$ARCHIVE_NAME"
+else
+    echo "Step 6: No old logs to archive"
+fi
+mkdir -p logs
+echo ""
+
+# Step 7: 启动双方对战
+echo "Step 7: Starting battle (${DURATION_MINUTES} minutes)..."
 echo "  > $CMD --team 1 run --ava $AVA_ID &"
 $CMD --team 1 run --ava "$AVA_ID" &
 PID1=$!
@@ -136,30 +167,30 @@ PID2=$!
 echo "  Team1 PID=$PID1  Team2 PID=$PID2"
 echo ""
 
-# Step 7: 等待对战时长
-echo "Step 7: Waiting ${DURATION_MINUTES} minutes..."
+# Step 8: 等待对战时长
+echo "Step 8: Waiting ${DURATION_MINUTES} minutes..."
 sleep "$DURATION_SECONDS"
 
-# Step 8: 停止对战
+# Step 9: 停止对战
 echo ""
-echo "Step 8: Time's up, stopping battle..."
+echo "Step 9: Time's up, stopping battle..."
 cleanup
 echo ""
 
-# Step 9: 记录终止积分
-echo "Step 9: Recording ending scores..."
+# Step 10: 记录终止积分
+echo "Step 10: Recording ending scores..."
 SCORE_END_OUTPUT=$(cli get_ava_score "$SCORE_UID" "$AVA_ID")
 echo "$SCORE_END_OUTPUT"
 CAMP1_END=$(parse_camp_score "$SCORE_END_OUTPUT" 1)
 CAMP2_END=$(parse_camp_score "$SCORE_END_OUTPUT" 2)
 echo ""
 
-# Step 10: 全员退出
-echo "Step 10: Leave all accounts from battlefield..."
+# Step 11: 全员退出
+echo "Step 11: Leave all accounts from battlefield..."
 cli uid_ava_leave_all "$AVA_ID"
 echo ""
 
-# Step 11: 打印结果
+# Step 12: 打印结果
 CAMP1_DIFF=$((CAMP1_END - CAMP1_START))
 CAMP2_DIFF=$((CAMP2_END - CAMP2_START))
 
