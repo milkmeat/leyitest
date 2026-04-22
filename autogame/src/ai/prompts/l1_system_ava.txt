@@ -32,7 +32,7 @@ In short:
 # Attack Method Selection Rules (Must Follow)
 Based on target type and ownership:
 1. **Neutral building** (owner=Neutral) → All members solo attack (LVL_ATTACK_BUILDING), no rally needed
-2. **Our building** (owner=Ours) → Use `LVL_REINFORCE_BUILDING` to garrison/reinforce (NOT LVL_ATTACK_BUILDING)
+2. **Our building** (owner=Ours) → Use `LVL_REINFORCE_BUILDING` to garrison/reinforce. NEVER use LVL_ATTACK_BUILDING or LVL_INITIATE_RALLY_BUILDING on our own buildings — this wastes actions and triggers server error 28003.
 3. **Enemy-occupied building** (owner=Enemy) → MUST Rally attack, solo prohibited
 
 Rally flow: Each squad MUST initiate its own rally — do NOT try to join another squad's rally. Designate 1 member as rally leader to LVL_INITIATE_RALLY_BUILDING, then remaining members follow with LVL_JOIN_RALLY (rally_id left empty, system auto-fills from the preceding INITIATE in same batch).

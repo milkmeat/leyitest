@@ -445,6 +445,22 @@ class L0Executor:
                 # Fix 4: 建筑归属预检查 — INITIATE 前检查目标是否已是我方建筑
                 if instr.building_id and self._buildings:
                     target_bld = self._buildings.get(instr.building_id)
+                    # Fix 6: sync→action 时间差补偿 — 缓存显示非我方时实时查询服务器
+                    if (target_bld
+                            and self._my_alliance_id
+                            and target_bld.alliance_id != self._my_alliance_id
+                            and target_bld.alliance_id != 0):
+                        fresh_aid = await self._check_building_ownership_fresh(
+                            instr.uid, instr.building_id,
+                        )
+                        if fresh_aid == self._my_alliance_id:
+                            logger.info(
+                                "L0 实时归属检查: %s 缓存=敌方(aid=%d) 实际=我方(aid=%d), "
+                                "更新缓存",
+                                instr.building_id, target_bld.alliance_id, fresh_aid,
+                            )
+                            self._mark_building_as_ours(instr.building_id)
+                            target_bld = self._buildings.get(instr.building_id)
                     if (target_bld
                             and self._my_alliance_id
                             and target_bld.alliance_id == self._my_alliance_id):
@@ -799,6 +815,42 @@ class L0Executor:
         except Exception as e:
             logger.warning("查询目标集结失败: target=%s err=%s", target_id, e)
         return "", ""
+
+    async def _check_building_ownership_fresh(
+        self, uid: int, building_id: str,
+    ) -> int:
+        """查询服务器获取建筑最新归属（解决 sync→action 时间差问题）
+
+        在 INITIATE_RALLY 前调用，防止对已被己方占领的建筑发起攻击。
+        从 svr_lvl_brief_objs 中解析目标建筑的 camp/aid 字段。
+
+        Returns:
+            alliance_id — 建筑当前归属联盟 ID，失败时返回 -1
+        """
+        lvl_id = self.client.default_header.get("lvl_id", 0)
+        if not lvl_id:
+            return -1
+        try:
+            resp = await self.client.lvl_battle_login_get(uid, lvl_id)
+            for res in resp.get("res_data", []):
+                for push in res.get("push_list", []):
+                    for item in push.get("data", []):
+                        name = item.get("name", "")
+                        if "svr_lvl_brief_objs" not in name:
+                            continue
+                        raw = item.get("data", "")
+                        data = _json.loads(raw) if isinstance(raw, str) else raw
+                        for obj in data.get("briefObjs", data.get("briefList", [])):
+                            if obj.get("uniqueId", "") == building_id:
+                                aid = int(obj.get("aid", 0)) or int(obj.get("camp", 0))
+                                logger.info(
+                                    "L0 建筑归属实时查询: %s alliance_id=%d",
+                                    building_id, aid,
+                                )
+                                return aid
+        except Exception as e:
+            logger.warning("建筑归属实时查询失败: building=%s err=%s", building_id, e)
+        return -1
 
     async def _auto_collect_coal_carts(self, uids: set[int]) -> None:
         """批次执行后自动采集最近的 coal cart (type=10300)
@@ -1435,6 +1487,21 @@ class L0Executor:
         # 0. 归属预检查: 我方建筑 → ATTACK 转为 REINFORCE
         if instr.building_id and self._buildings and self._my_alliance_id:
             target_bld = self._buildings.get(instr.building_id)
+            # Fix 6: sync→action 时间差补偿 — ATTACK 前也做实时归属查询
+            if (target_bld
+                    and target_bld.alliance_id != self._my_alliance_id
+                    and target_bld.alliance_id != 0
+                    and instr.action == ActionType.LVL_ATTACK_BUILDING):
+                fresh_aid = await self._check_building_ownership_fresh(
+                    instr.uid, instr.building_id,
+                )
+                if fresh_aid == self._my_alliance_id:
+                    logger.info(
+                        "L0 实时归属检查(ATTACK): %s 缓存=敌方 实际=我方, 更新缓存",
+                        instr.building_id,
+                    )
+                    self._mark_building_as_ours(instr.building_id)
+                    target_bld = self._buildings.get(instr.building_id)
             if target_bld and target_bld.alliance_id == self._my_alliance_id:
                 if instr.action == ActionType.LVL_ATTACK_BUILDING:
                     new_instr = instr.model_copy(update={
