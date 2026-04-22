@@ -115,8 +115,11 @@ Each instruction field:
 - reason: decision rationale (for logging)
 
 # Notes
-- Only operate accounts with idle dispatch slots (dispatch_slots>0)
-- Do NOT generate instructions for accounts without idle slots
+- Each member shows queue_status: {6001:0/1, 6002:0/1, 6003:0/1, 6004:0/1} where 0=free, 1=occupied
+- Queue mapping: solo attack/reinforce → 6001, initiate rally → 6002, join rally → 6004, collect → 6003
+- Do NOT assign actions to members whose required queue is occupied (=1)
+- If queue 6002 is occupied for a member, pick another member to initiate rally
+- L0 has fallback: if JOIN_RALLY queue 6004 is full, L0 will try 6003 then 6002 automatically
 - Rally Leader account can dispatch max 1 troop (hero occupied)
 - Do NOT fabricate UIDs, only use UIDs from situation report
 - If no clear action needed, can return empty instructions list

@@ -25,7 +25,7 @@ from pydantic import BaseModel, Field
 
 from src.config.schemas import AppConfig
 from src.executor.game_api import GameAPIClient
-from src.models.player_state import PlayerState
+from src.models.player_state import PlayerState, Troop
 from src.models.building import Building
 from src.models.enemy import Enemy
 from src.models.rally import RallyBrief
@@ -140,6 +140,10 @@ class DataSyncer:
                 logger.error("map sync failed: %s", e)
                 errors.append(SyncError(uid=first_uid, step="map", message=str(e)))
 
+        # 3) 并发查询所有账号的 AVA 部队状态
+        if accounts and lvl_id != 0:
+            await self._sync_all_troops_ava(accounts, lvl_id)
+
         return SyncSnapshot(
             accounts=accounts,
             buildings=buildings,
@@ -181,6 +185,69 @@ class DataSyncer:
                 return PlayerState.from_sync_info(info, group_id=group_id)
             except Exception as e:
                 return SyncError(uid=uid, step="account", message=str(e))
+
+    async def _sync_all_troops_ava(
+        self, accounts: dict[int, PlayerState], lvl_id: int,
+    ) -> None:
+        """并发查询所有账号的 AVA 部队状态，填充 PlayerState.troops
+
+        svr_lvl_user_objs 只返回查询者自己的部队，所以需要为每个账号单独查询。
+        只请求 svr_lvl_user_objs section 以减少数据量。
+        """
+        uids = list(accounts.keys())
+        tasks = [self._sync_troops_ava_single(uid, lvl_id) for uid in uids]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        total_troops = 0
+        accts_with_troops = 0
+        for uid, result in zip(uids, results):
+            acct = accounts.get(uid)
+            if not acct:
+                continue
+            acct.troops = []  # 清空重建
+            if isinstance(result, list):
+                acct.troops = result
+                if result:
+                    total_troops += len(result)
+                    accts_with_troops += 1
+
+        if total_troops:
+            logger.info(
+                "AVA troops sync: %d troops across %d/%d accounts",
+                total_troops, accts_with_troops, len(uids),
+            )
+
+    async def _sync_troops_ava_single(
+        self, uid: int, lvl_id: int,
+    ) -> list[Troop]:
+        """查询单个账号的 AVA 部队（受 semaphore 限流）"""
+        async with self._semaphore:
+            try:
+                resp = await self.client.lvl_battle_login_get(
+                    uid, lvl_id, sync_all=False,
+                )
+                code = resp.get("res_header", {}).get("ret_code", -1)
+                if code != 0:
+                    return []
+
+                troops: list[Troop] = []
+                for res in resp.get("res_data", []):
+                    for push in res.get("push_list", []):
+                        for item in push.get("data", []):
+                            name = item.get("name", "")
+                            if "svr_lvl_user_objs" not in name:
+                                continue
+                            raw = item.get("data", "")
+                            parsed = json.loads(raw) if isinstance(raw, str) else raw
+                            for obj in parsed.get("objs", []):
+                                result = Troop.from_user_obj(obj)
+                                if result:
+                                    troop, _ = result
+                                    troops.append(troop)
+                return troops
+            except Exception as e:
+                logger.debug("troops sync failed uid=%d: %s", uid, e)
+                return []
 
     async def _sync_map_ava(
         self, uid: int, lvl_id: int, *,
@@ -358,3 +425,34 @@ class DataSyncer:
             lvl_id, center_x, center_y, size, len(buildings), len(enemies),
         )
         return buildings, enemies
+
+
+# ------------------------------------------------------------------
+# 辅助: 将 user_troops 解析分发到各账号
+# ------------------------------------------------------------------
+
+def _populate_troops(
+    accounts: dict[int, PlayerState],
+    raw_troops: list[dict],
+) -> None:
+    """解析 svr_lvl_user_objs.objs 并分发到对应账号的 troops 列表"""
+    # 先清空（每次 sync 重建）
+    for acct in accounts.values():
+        acct.troops = []
+
+    parsed = 0
+    for obj in raw_troops:
+        result = Troop.from_user_obj(obj)
+        if result is None:
+            continue
+        troop, owner_uid = result
+        if owner_uid in accounts:
+            accounts[owner_uid].troops.append(troop)
+            parsed += 1
+
+    if parsed:
+        accts_with_troops = sum(1 for a in accounts.values() if a.troops)
+        logger.info(
+            "Populated troops: %d troops across %d accounts",
+            parsed, accts_with_troops,
+        )

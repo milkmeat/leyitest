@@ -51,6 +51,7 @@ class MemberView(BaseModel):
     total_soldiers: int = 0
     troops: list[TroopView] = Field(default_factory=list)
     dispatch_slots: int = 0      # 可用出征槽位（最多2）
+    queue_status: dict[str, int] = Field(default_factory=dict)  # {"6001":0/1, ...} 0=free, 1=occupied
 
 
 class NearbyEnemy(BaseModel):
@@ -204,7 +205,7 @@ class L1ViewBuilder:
                 f"- uid={m.uid} {m.name} "
                 f"city({m.city_pos[0]},{m.city_pos[1]}) "
                 f"power={m.power} soldiers={m.total_soldiers} "
-                f"slots={m.dispatch_slots}"
+                f"queues={{{','.join(f'{k}:{v}' for k,v in m.queue_status.items())}}}"
             )
             for t in m.troops:
                 lines.append(
@@ -275,9 +276,14 @@ class L1ViewBuilder:
             )
             troops.append(tv)
 
-        # 账号最多向城外派出 2 支部队，在外部队之外的都算空闲槽位
-        busy_count = len([t for t in acct.troops if t.state != TroopState.IDLE])
-        idle_count = max(0, 2 - busy_count)
+        # 按 queue_id 检测占用状态
+        queue_status = {"6001": 0, "6002": 0, "6003": 0, "6004": 0}
+        for t in acct.troops:
+            if t.state != TroopState.IDLE and t.queue_id > 0:
+                qkey = str(t.queue_id)
+                if qkey in queue_status:
+                    queue_status[qkey] = 1
+        dispatch_slots = sum(1 for v in queue_status.values() if v == 0)
 
         total_soldiers = sum(s.value for s in acct.soldiers)
 
@@ -288,7 +294,8 @@ class L1ViewBuilder:
             power=acct.power,
             total_soldiers=total_soldiers,
             troops=troops,
-            dispatch_slots=idle_count,
+            dispatch_slots=dispatch_slots,
+            queue_status=queue_status,
         )
 
     def _build_nearby_enemies(

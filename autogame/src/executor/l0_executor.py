@@ -107,6 +107,7 @@ class AIInstruction(BaseModel):
     building_key: int = 0              # 建筑 key（LVL 战场建筑操作用）
     soldier_id: int = 0                # 手动指定兵种ID（0=自动选择）
     soldier_count: int = 0             # 手动指定出征数量（0=默认）
+    override_queue_id: int = 0         # L0 回退队列覆盖（0=按默认规则）
     reason: str = ""                   # L1 决策理由（日志用）
 
 
@@ -322,6 +323,7 @@ class L0Executor:
         """
         self._accounts = accounts or {}
         self._buildings = {b.unique_id: b for b in (buildings or [])}
+        self._inflight_queues: dict[int, set[int]] = {}  # uid → 本批次已消耗的 queue_id
         results = []
         # 最近一次成功的 rally 信息（同循环回填用）
         last_rally_id: str = ""
@@ -339,6 +341,31 @@ class L0Executor:
         }
 
         for instr in instructions:
+            # ── 通用队列占用预检查 ──
+            # 仅对出征类指令检查（排除 RETREAT/RECALL/MOVE_CITY 等非出征操作）
+            required_queue = self._get_queue_id_for_action(instr.action)
+            if required_queue > 0:
+                queue_occupied = self._is_queue_occupied(instr.uid, required_queue)
+                if queue_occupied:
+                    fallback = self._find_fallback_queue(instr.action, instr.uid)
+                    if fallback:
+                        instr = instr.model_copy(update={"override_queue_id": fallback})
+                        logger.info(
+                            "L0 队列回退: uid=%d queue %d occupied, 使用 fallback %d (%s)",
+                            instr.uid, required_queue, fallback, instr.action.value,
+                        )
+                    else:
+                        reason = (
+                            f"SKIP: uid={instr.uid} queue {required_queue} occupied, "
+                            f"no fallback ({instr.action.value})"
+                        )
+                        logger.info("L0 队列预检查跳过: %s", reason)
+                        results.append(ExecutionResult(
+                            success=False, action=instr.action, uid=instr.uid,
+                            error=reason,
+                        ))
+                        continue
+
             # 补全 JOIN_RALLY 的缺失坐标（从最近的 INITIATE 目标推断）
             if (instr.action in _rally_actions
                     and not instr.target_x and not instr.target_y
@@ -400,7 +427,7 @@ class L0Executor:
                         instr.uid, matched_bid,
                     )
 
-            # Smart L0: 发起集结前检查 queue_id=6002 是否已被占用
+            # Smart L0: 发起集结前的预处理
             if instr.action in _initiate_actions:
                 # 记录 INITIATE 目标信息，供后续 JOIN 补全坐标
                 tx, ty = instr.target_x, instr.target_y
@@ -414,24 +441,6 @@ class L0Executor:
                     "target_y": ty,
                     "building_id": instr.building_id,
                 }
-                acct = self._accounts.get(instr.uid)
-                if acct:
-                    active_rally = next(
-                        (t for t in acct.troops
-                         if t.state == TroopState.RALLYING or t.march_type in (13, 14)),
-                        None,
-                    )
-                    if active_rally:
-                        reason = (
-                            f"SKIP: uid={instr.uid} 已有活跃集结 {active_rally.unique_id} "
-                            f"(march_type={active_rally.march_type}), queue_id=6002 被占用"
-                        )
-                        logger.info("L0 集结预检查跳过: %s", reason)
-                        results.append(ExecutionResult(
-                            success=False, action=instr.action, uid=instr.uid,
-                            error=reason,
-                        ))
-                        continue
 
                 # Fix 4: 建筑归属预检查 — INITIATE 前检查目标是否已是我方建筑
                 if instr.building_id and self._buildings:
@@ -524,6 +533,13 @@ class L0Executor:
                     )
 
             results.append(result)
+
+            # 批次内队列追踪: 记录成功消耗的 queue_id
+            if result.success:
+                consumed_q = self._get_queue_id_for_action(instr.action)
+                if consumed_q > 0:
+                    actual_q = instr.override_queue_id or consumed_q
+                    self._inflight_queues.setdefault(instr.uid, set()).add(actual_q)
 
             # 从 INITIATE_RALLY / LVL_INITIATE_RALLY 响应中提取 rally_id 和 pos
             if result.success and instr.action in _initiate_actions:
@@ -640,6 +656,72 @@ class L0Executor:
         except Exception as e:
             logger.warning("查询 rally_id 失败: %s", e)
         return "", ""
+
+    # ------------------------------------------------------------------
+    # 队列占用检查
+    # ------------------------------------------------------------------
+
+    # 出征类 action → 默认 queue_id 映射
+    _INITIATE_Q_ACTIONS = {
+        ActionType.INITIATE_RALLY,
+        ActionType.LVL_INITIATE_RALLY,
+        ActionType.LVL_INITIATE_RALLY_BUILDING,
+    }
+    _JOIN_Q_ACTIONS = {
+        ActionType.JOIN_RALLY,
+        ActionType.LVL_JOIN_RALLY,
+    }
+    # 非出征类 action（不占用队列）
+    _NON_DISPATCH_ACTIONS = {
+        ActionType.RETREAT,
+        ActionType.LVL_RECALL_TROOP,
+        ActionType.LVL_RECALL_FROM_BUILDING,
+        ActionType.LVL_RECALL_REINFORCE,
+        ActionType.LVL_SPEED_UP,
+        ActionType.MOVE_CITY,
+        ActionType.LVL_MOVE_CITY,
+        ActionType.SCOUT,
+    }
+
+    def _get_queue_id_for_action(self, action: ActionType) -> int:
+        """返回 action 对应的默认 queue_id，非出征类返回 0"""
+        if action in self._NON_DISPATCH_ACTIONS:
+            return 0
+        if action in self._INITIATE_Q_ACTIONS:
+            return 6002
+        if action in self._JOIN_Q_ACTIONS:
+            return 6004
+        return 6001  # solo: attack, reinforce, garrison 等
+
+    def _is_queue_occupied(self, uid: int, queue_id: int) -> bool:
+        """检查指定账号的 queue_id 是否已被占用（含批次内 inflight）"""
+        # 1. 检查 sync 数据中的部队
+        acct = self._accounts.get(uid)
+        if acct:
+            for t in acct.troops:
+                if t.state != TroopState.IDLE and t.queue_id == queue_id:
+                    return True
+        # 2. 检查本批次已消耗的队列
+        if queue_id in self._inflight_queues.get(uid, set()):
+            return True
+        return False
+
+    def _find_fallback_queue(self, action: ActionType, uid: int) -> int:
+        """为被占用的队列寻找回退 queue_id
+
+        回退规则:
+        - JOIN_RALLY (6004 occupied): 依次尝试 6003 → 6002
+        - INITIATE_RALLY (6002 occupied): 无回退（L1 应选其他队员）
+        - Solo (6001 occupied): 无回退
+
+        Returns:
+            可用的 fallback queue_id，无回退返回 0
+        """
+        if action in self._JOIN_Q_ACTIONS:
+            for fallback in [6003, 6002]:
+                if not self._is_queue_occupied(uid, fallback):
+                    return fallback
+        return 0
 
     def _find_building_by_pos(self, x: int, y: int) -> str:
         """根据坐标查找最近的建筑 unique_id
@@ -865,16 +947,12 @@ class L0Executor:
             action = ActionType.LVL_ATTACK_BUILDING
 
         # 集结队列: 发起集结用 6002，参加集结用 6004，solo 行军用 6001
-        _INITIATE_RALLY_ACTIONS = {
-            ActionType.INITIATE_RALLY,
-            ActionType.LVL_INITIATE_RALLY, ActionType.LVL_INITIATE_RALLY_BUILDING,
-        }
-        _JOIN_RALLY_ACTIONS = {
-            ActionType.JOIN_RALLY, ActionType.LVL_JOIN_RALLY,
-        }
-        if action in _INITIATE_RALLY_ACTIONS:
+        # 支持 override_queue_id 回退覆盖
+        if instr.override_queue_id:
+            q_id = instr.override_queue_id
+        elif action in self._INITIATE_Q_ACTIONS:
             q_id = 6002
-        elif action in _JOIN_RALLY_ACTIONS:
+        elif action in self._JOIN_Q_ACTIONS:
             q_id = 6004
         else:
             q_id = 6001

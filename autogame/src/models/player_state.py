@@ -59,22 +59,93 @@ class TroopState(IntEnum):
     RALLYING = 13       # 集结中
 
 
-class Troop(BaseModel):
-    """在外部队 — 来自 svr_user_objs 中的行军对象
+# marchType → TroopState 映射（模块级，避免 Pydantic private attr 冲突）
+_MARCH_TYPE_STATE: dict[int, "TroopState"] = {
+    2: TroopState.MARCHING,     # 攻击
+    5: TroopState.RETURNING,    # 回城
+    11: TroopState.GARRISON,    # 驻防建筑
+    12: TroopState.RALLYING,    # 加入集结（等待中）
+    13: TroopState.RALLYING,    # 发起集结
+    14: TroopState.RALLYING,    # 发起集结(建筑)
+    15: TroopState.MARCHING,    # 攻击建筑
+    21: TroopState.MARCHING,    # 采集 (coal cart)
+    27: TroopState.MARCHING,    # 采集
+}
 
-    注: 测试账号当前无部署部队，字段基于 marchBasic 结构和 cmd_config 推断，
-    后续用实际行军数据校验。
-    """
-    unique_id: str = ""                   # 如 "108_xxx_1"
+
+class Troop(BaseModel):
+    """在外部队 — 来自 svr_lvl_user_objs (AVA) 或 svr_user_objs 中的行军对象"""
+    unique_id: str = ""                   # 如 "101_xxx"
     soldiers: dict[int, int] = Field(default_factory=dict)  # {兵种id: 数量}
     hero_main: int = 0                    # 主英雄 id
     hero_vice: int = 0                    # 副英雄 id
     state: TroopState = TroopState.IDLE
-    march_type: int = 0                   # 行军类型 (2=攻击, 5=回城, 11=增援, 13=集结)
+    march_type: int = 0                   # 行军类型 (2=攻击, 5=回城, 11=增援, 12=加入集结, 13=发起集结)
+    queue_id: int = 0                     # 队列ID (6001=solo, 6002=发起集结, 6003=采集, 6004=加入集结)
     pos: tuple[int, int] = (0, 0)         # 当前/目标坐标
     target_unique_id: str = ""            # 目标 unique_id
     btime: int = 0                        # 出发时间戳
     etime: int = 0                        # 到达时间戳
+
+    @classmethod
+    def from_user_obj(cls, obj: dict) -> tuple["Troop", int] | None:
+        """从 svr_lvl_user_objs.objs[] 单条原始数据解析
+
+        Returns:
+            (Troop, owner_uid) 元组，或 None（非部队对象时跳过）
+        """
+        obj_basic = obj.get("objBasic", {})
+        # 仅解析 type=101 (部队)，跳过 107=rally, 10101=city 等
+        if int(obj_basic.get("type", 0)) != 101:
+            return None
+
+        march_basic = obj.get("marchBasic", {})
+        troop_info = obj.get("troopInfo", {})
+
+        march_type = int(march_basic.get("marchType", 0))
+        state = _MARCH_TYPE_STATE.get(march_type, TroopState.MARCHING)
+
+        # 战斗中的部队标记为 FIGHTING
+        fight_basic = obj.get("fightBasic", {})
+        if int(fight_basic.get("isFight", 0)) == 1:
+            state = TroopState.FIGHTING
+
+        # 驻扎状态 (status=2 表示已到达目标)
+        if int(march_basic.get("status", 0)) == 2 and state == TroopState.MARCHING:
+            state = TroopState.STATIONED
+
+        # queue_id: 优先 troopInfo (int) > marchBasic (string)
+        queue_id = int(troop_info.get("queueId", march_basic.get("queueId", 0)))
+
+        # 坐标
+        raw_pos = int(obj_basic.get("pos", 0))
+        pos = decode_pos(raw_pos) if raw_pos else (0, 0)
+
+        # 目标
+        target = troop_info.get("target", {})
+        target_uid = target.get("uniqueId", "")
+
+        # 兵力
+        soldiers = {
+            int(s["id"]): int(s["num"])
+            for s in troop_info.get("troop", [])
+            if int(s.get("num", 0)) > 0
+        }
+
+        owner_uid = int(obj_basic.get("uid", 0))
+
+        troop = cls(
+            unique_id=obj.get("uniqueId", ""),
+            soldiers=soldiers,
+            state=state,
+            march_type=march_type,
+            queue_id=queue_id,
+            pos=pos,
+            target_unique_id=target_uid,
+            btime=int(march_basic.get("btime", 0)),
+            etime=int(march_basic.get("etime", 0)),
+        )
+        return troop, owner_uid
 
 
 class WallInfo(BaseModel):
