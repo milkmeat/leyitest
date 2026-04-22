@@ -518,6 +518,7 @@ class L0Executor:
                     and result.server_response.get("res_header", {}).get("ret_code") == 28003):
                 target_id = instr.building_id
                 if target_id:
+                    self._mark_building_as_ours(target_id)
                     rid, rpos = await self._query_rally_by_target(instr.uid, target_id)
                     if rid:
                         last_rally_id = rid
@@ -534,6 +535,26 @@ class L0Executor:
                             "28003 恢复: 建筑 %s 已是我方且无集结, 后续 JOIN 转 REINFORCE",
                             target_id,
                         )
+
+            # Fix 5: LVL_ATTACK_BUILDING 返回 28003 — 转为 REINFORCE 重试
+            if (not result.success
+                    and instr.action == ActionType.LVL_ATTACK_BUILDING
+                    and result.server_response.get("res_header", {}).get("ret_code") == 28003):
+                target_id = instr.building_id
+                if target_id:
+                    self._mark_building_as_ours(target_id)
+                    reinforce_instr = instr.model_copy(update={
+                        "action": ActionType.LVL_REINFORCE_BUILDING,
+                        "reason": f"28003 恢复: 建筑 {target_id} 已是我方, 转为驻防",
+                    })
+                    logger.info(
+                        "28003 恢复: LVL_ATTACK_BUILDING→LVL_REINFORCE_BUILDING "
+                        "uid=%d building=%s",
+                        instr.uid, target_id,
+                    )
+                    reinforce_result = await self.execute(reinforce_instr)
+                    # 无论成功与否都替换结果，日志可追踪恢复尝试
+                    results[-1] = reinforce_result
 
         # ── 自动采集 coal cart (AVA only) ──
         _move_actions = {ActionType.MOVE_CITY, ActionType.LVL_MOVE_CITY}
@@ -613,6 +634,22 @@ class L0Executor:
         if best_dist <= 5:
             return best_bid
         return ""
+
+    def _mark_building_as_ours(self, building_id: str) -> None:
+        """28003 后更新缓存: 将建筑标记为我方
+
+        当服务器返回 28003 ("target is your ally")，说明建筑在同步后
+        已被己方占领。更新缓存使同批次后续命令能被 Fix 4 预检查拦截。
+        """
+        bld = self._buildings.get(building_id)
+        if bld and self._my_alliance_id:
+            self._buildings[building_id] = bld.model_copy(
+                update={"alliance_id": self._my_alliance_id}
+            )
+            logger.info(
+                "L0 缓存更新: 建筑 %s 标记为我方 (alliance_id=%d)",
+                building_id, self._my_alliance_id,
+            )
 
     async def _query_rally_by_target(
         self, uid: int, target_id: str,
@@ -1287,6 +1324,23 @@ class L0Executor:
         acct = self._accounts.get(instr.uid)
         if not acct:
             return instr, ""
+
+        # 0. 归属预检查: 我方建筑 → ATTACK 转为 REINFORCE
+        if instr.building_id and self._buildings and self._my_alliance_id:
+            target_bld = self._buildings.get(instr.building_id)
+            if target_bld and target_bld.alliance_id == self._my_alliance_id:
+                if instr.action == ActionType.LVL_ATTACK_BUILDING:
+                    new_instr = instr.model_copy(update={
+                        "action": ActionType.LVL_REINFORCE_BUILDING,
+                        "reason": f"建筑 {instr.building_id} 已是我方, 转为驻防",
+                    })
+                    logger.info(
+                        "L0 预处理: uid=%d LVL_ATTACK_BUILDING→LVL_REINFORCE_BUILDING "
+                        "建筑 %s 已是我方",
+                        instr.uid, instr.building_id,
+                    )
+                    return new_instr, ""
+                # LVL_REINFORCE_BUILDING 对我方建筑是正常操作，放行
 
         # 1. 部队去重: 已有部队正在前往或驻守该建筑
         _active_states = {
