@@ -495,6 +495,34 @@ class L0Executor:
                     instr, original_attack_instr or instr,
                 )
 
+            # Smart L0: 移城成功后自动追击（消除浪费的 loop 周期）
+            if (result.success
+                    and instr.action == ActionType.LVL_MOVE_CITY
+                    and original_attack_instr is not None):
+                # 更新缓存的城市坐标，避免二次距离检查再触发移城
+                acct = self._accounts.get(instr.uid)
+                if acct:
+                    acct.city_pos = (instr.target_x, instr.target_y)
+                # 重新预处理原始指令（处理归属变化、部队去重）
+                follow_instr, skip_reason = await self._preprocess_lvl_attack_building(
+                    original_attack_instr,
+                )
+                if follow_instr and follow_instr.action != ActionType.LVL_MOVE_CITY:
+                    follow_result = await self.execute(
+                        follow_instr, rally_pos=last_rally_pos,
+                    )
+                    logger.info(
+                        "L0 移城后追击: uid=%d %s building=%s success=%s",
+                        instr.uid, follow_instr.action.value,
+                        follow_instr.building_id, follow_result.success,
+                    )
+                    result = follow_result
+                elif skip_reason:
+                    logger.info(
+                        "L0 移城后追击跳过: uid=%d %s",
+                        instr.uid, skip_reason,
+                    )
+
             results.append(result)
 
             # 从 INITIATE_RALLY / LVL_INITIATE_RALLY 响应中提取 rally_id 和 pos
@@ -920,6 +948,7 @@ class L0Executor:
         # --- AVA 战场指令 ---
         elif action == ActionType.LVL_MOVE_CITY:
             lvl_id = self.client.default_header.get("lvl_id", 0)
+            # 服务器响应含 svr_city_wall push (error=-161)，是城墙状态重置通知，不影响移城成功
             return await self.client.lvl_move_city(instr.uid, instr.target_x, instr.target_y, lvl_id)
 
         elif action == ActionType.LVL_ATTACK_PLAYER:

@@ -26,7 +26,7 @@ In short:
 1. Survival first: Heavily damaged troops (<30% soldiers) not for attack
 2. Focus fire: Multiple troops concentrate on same target, weak enemies first
 3. State consistency: No new commands to MARCHING/FIGHTING troops (unless LVL_RECALL_TROOP)
-4. Distance awareness: Prioritize close targets, avoid long marches
+4. Distance awareness: Prefer targets within 20 grids. If must attack a far target (dist > 20), L0 will auto-teleport city first — no extra action needed from you.
 5. Hero awareness: Rally Leader and Solo both need strongest hero, same account cannot do both
 
 # Attack Method Selection Rules (Must Follow)
@@ -57,6 +57,7 @@ Do NOT use just the numeric key like `"10006"` — the server will reject it.
 ## LVL_MOVE_CITY — Move City
 Teleport city to target coordinates, recall all troops immediately. Strongest tactical mobility.
 Required: uid, target_x, target_y
+Note: L0 auto-handles move_city when attack target > 20 grids away. Only issue this manually for strategic repositioning (e.g., moving entire squad to a new area).
 
 ## LVL_ATTACK_BUILDING — Attack Building
 Attack enemy or neutral building to capture control.
