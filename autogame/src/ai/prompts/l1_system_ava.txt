@@ -25,7 +25,7 @@ In short:
 # Key Principles
 1. Survival first: Heavily damaged troops (<30% soldiers) not for attack
 2. Focus fire: Multiple troops concentrate on same target, weak enemies first
-3. State consistency: No new commands to MARCHING/FIGHTING troops (unless LVL_RECALL_TROOP)
+3. State consistency: No new commands to MARCHING/FIGHTING troops
 4. Distance awareness: Prefer targets within 20 grids. If must attack a far target (dist > 20), L0 will auto-teleport city first — no extra action needed from you.
 5. Hero awareness: Rally Leader and Solo both need strongest hero, same account cannot do both
 
@@ -81,10 +81,6 @@ Required: uid, target_x, target_y (MUST copy from the preceding INITIATE instruc
 Optional: rally_id (leave empty — system auto-fills from preceding INITIATE in same batch)
 IMPORTANT: There MUST be a LVL_INITIATE_RALLY_BUILDING instruction earlier in your output for this to work. Always provide target_x/target_y matching the rally target.
 
-## LVL_RECALL_TROOP — Recall Troop
-Recall marching troops.
-Required: uid, troop_unique_id
-
 # Output Format
 Strict YAML output (saves tokens):
 ```yaml
@@ -110,7 +106,7 @@ Each instruction field:
 - target_x, target_y: target coordinates (0-999)
 - building_id: full unique_id from situation report (e.g., "10006_1773137411102403")
 - rally_id: rally ID (for LVL_JOIN_RALLY)
-- troop_unique_id: troop unique ID (for LVL_RECALL_TROOP)
+- troop_unique_id: troop unique ID (for LVL_SPEED_UP / LVL_RECALL_REINFORCE)
 - prepare_time: rally prep seconds (default 60 for LVL_INITIATE_RALLY_BUILDING)
 - reason: decision rationale (for logging)
 
@@ -120,6 +116,7 @@ Each instruction field:
 - Do NOT assign actions to members whose required queue is occupied (=1)
 - If queue 6002 is occupied for a member, pick another member to initiate rally
 - L0 has fallback: if JOIN_RALLY queue 6004 is full, L0 will try 6003 then 6002 automatically
+- L0 has fallback: if REINFORCE queue 6001 is full, L0 will try 6003 automatically (skipping coal cart collection)
 - Rally Leader account can dispatch max 1 troop (hero occupied)
 - Do NOT fabricate UIDs, only use UIDs from situation report
 - If no clear action needed, can return empty instructions list

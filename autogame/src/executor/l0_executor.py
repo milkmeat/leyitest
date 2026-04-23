@@ -103,7 +103,7 @@ class AIInstruction(BaseModel):
     troop_ids: list[str] = []          # 部队 ID 列表（RETREAT / LVL_RECALL_FROM_BUILDING）
     prepare_time: int = 300            # 集结准备时间秒（INITIATE_RALLY 默认300, LVL 默认60）
     reinforce_id: str = ""             # 增援部队 unique_id（RECALL_REINFORCE 用）
-    troop_unique_id: str = ""          # 队伍唯一 ID（LVL_SPEED_UP / LVL_RECALL_TROOP / LVL_RECALL_REINFORCE）
+    troop_unique_id: str = ""          # 队伍唯一 ID（LVL_SPEED_UP / LVL_RECALL_REINFORCE）
     building_key: int = 0              # 建筑 key（LVL 战场建筑操作用）
     soldier_id: int = 0                # 手动指定兵种ID（0=自动选择）
     soldier_count: int = 0             # 手动指定出征数量（0=默认）
@@ -249,10 +249,6 @@ class L0Executor:
         elif instr.action == ActionType.LVL_RECALL_REINFORCE:
             if not instr.troop_unique_id:
                 return False, "LVL_RECALL_REINFORCE 需要 troop_unique_id 非空"
-
-        elif instr.action == ActionType.LVL_RECALL_TROOP:
-            if not instr.troop_unique_id:
-                return False, "LVL_RECALL_TROOP 需要 troop_unique_id 非空"
 
         elif instr.action == ActionType.LVL_SPEED_UP:
             if not instr.troop_unique_id:
@@ -687,10 +683,13 @@ class L0Executor:
         ActionType.JOIN_RALLY,
         ActionType.LVL_JOIN_RALLY,
     }
+    _REINFORCE_Q_ACTIONS = {
+        ActionType.LVL_REINFORCE_BUILDING,
+        ActionType.GARRISON_BUILDING,
+    }
     # 非出征类 action（不占用队列）
     _NON_DISPATCH_ACTIONS = {
         ActionType.RETREAT,
-        ActionType.LVL_RECALL_TROOP,
         ActionType.LVL_RECALL_FROM_BUILDING,
         ActionType.LVL_RECALL_REINFORCE,
         ActionType.LVL_SPEED_UP,
@@ -727,8 +726,9 @@ class L0Executor:
 
         回退规则:
         - JOIN_RALLY (6004 occupied): 依次尝试 6003 → 6002
+        - REINFORCE (6001 occupied): 尝试 6003（牺牲采集矿车）
         - INITIATE_RALLY (6002 occupied): 无回退（L1 应选其他队员）
-        - Solo (6001 occupied): 无回退
+        - 其他 Solo (6001 occupied): 无回退
 
         Returns:
             可用的 fallback queue_id，无回退返回 0
@@ -737,6 +737,9 @@ class L0Executor:
             for fallback in [6003, 6002]:
                 if not self._is_queue_occupied(uid, fallback):
                     return fallback
+        if action in self._REINFORCE_Q_ACTIONS:
+            if not self._is_queue_occupied(uid, 6003):
+                return 6003
         return 0
 
     def _find_building_by_pos(self, x: int, y: int) -> str:
@@ -978,7 +981,6 @@ class L0Executor:
         ActionType.GARRISON_BUILDING: ActionType.LVL_REINFORCE_BUILDING,
         ActionType.INITIATE_RALLY: ActionType.LVL_INITIATE_RALLY,
         ActionType.JOIN_RALLY: ActionType.LVL_JOIN_RALLY,
-        ActionType.RETREAT: ActionType.LVL_RECALL_TROOP,
         ActionType.RALLY_DISMISS: ActionType.LVL_RALLY_DISMISS,
         ActionType.RECALL_REINFORCE: ActionType.LVL_RECALL_REINFORCE,
     }
@@ -1148,10 +1150,6 @@ class L0Executor:
             lvl_id = self.client.default_header.get("lvl_id", 0)
             return await self.client.lvl_recall_reinforce(instr.uid, lvl_id, instr.troop_unique_id)
 
-        elif action == ActionType.LVL_RECALL_TROOP:
-            lvl_id = self.client.default_header.get("lvl_id", 0)
-            return await self.client.lvl_recall_troop(instr.uid, lvl_id, instr.troop_unique_id)
-
         elif action == ActionType.LVL_SPEED_UP:
             lvl_id = self.client.default_header.get("lvl_id", 0)
             return await self.client.lvl_speed_up_troop(instr.uid, lvl_id, instr.troop_unique_id)
@@ -1210,8 +1208,6 @@ class L0Executor:
             return f"[AVA] 解散集结 {instr.rally_id}"
         elif a == ActionType.LVL_RECALL_REINFORCE:
             return f"[AVA] 取消集结 {instr.troop_unique_id}"
-        elif a == ActionType.LVL_RECALL_TROOP:
-            return f"[AVA] 召回队伍 {instr.troop_unique_id}"
         elif a == ActionType.LVL_SPEED_UP:
             return f"[AVA] 行军加速 {instr.troop_unique_id}"
         elif a == ActionType.LVL_RECALL_FROM_BUILDING:
