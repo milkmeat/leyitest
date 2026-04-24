@@ -328,6 +328,8 @@ class L0Executor:
         last_initiate_target: dict = {}  # {target_x, target_y, building_id}
         # 当 INITIATE 目标已是我方建筑且无活跃集结时，后续 JOIN 转为 REINFORCE
         _convert_join_to_reinforce: str = ""
+        # 本批次已尝试 INITIATE 的 building_id（成功或失败均记录，防止重复发起和级联）
+        _initiated_buildings: set[str] = set()
 
         _rally_actions = {ActionType.JOIN_RALLY, ActionType.LVL_JOIN_RALLY}
         _initiate_actions = {
@@ -409,7 +411,8 @@ class L0Executor:
                 matched_bid = self._find_building_by_pos(
                     instr.target_x, instr.target_y,
                 )
-                if matched_bid:
+                # Fix A3: 已有 INITIATE 尝试（成功或失败）的建筑不再重复转换
+                if matched_bid and matched_bid not in _initiated_buildings:
                     new_action = (ActionType.LVL_INITIATE_RALLY_BUILDING
                                   if instr.action == ActionType.LVL_JOIN_RALLY
                                   else ActionType.INITIATE_RALLY)
@@ -437,6 +440,39 @@ class L0Executor:
                     "target_y": ty,
                     "building_id": instr.building_id,
                 }
+
+                # Fix A1: 批次内 INITIATE 去重 — 同一建筑只允许一次 INITIATE
+                if instr.building_id and instr.building_id in _initiated_buildings:
+                    logger.info(
+                        "L0 INITIATE 去重: uid=%d building=%s 已有同批次 INITIATE, 跳过",
+                        instr.uid, instr.building_id,
+                    )
+                    results.append(ExecutionResult(
+                        success=False, action=instr.action, uid=instr.uid,
+                        error=f"SKIP: building {instr.building_id} already INITIATE'd in this batch",
+                    ))
+                    continue
+
+                # Fix A2: INITIATE 前查询已有集结 — 目标建筑可能已有活跃集结（上一轮或其他小队）
+                if instr.building_id:
+                    existing_rid, existing_rpos = await self._query_rally_by_target(
+                        instr.uid, instr.building_id,
+                    )
+                    if existing_rid:
+                        last_rally_id = existing_rid
+                        last_rally_pos = existing_rpos
+                        _convert_join_to_reinforce = ""
+                        _initiated_buildings.add(instr.building_id)
+                        logger.info(
+                            "L0 INITIATE 预检查: building=%s 已有活跃集结 rally_id=%s, "
+                            "跳过 INITIATE, 后续 JOIN 复用",
+                            instr.building_id, existing_rid,
+                        )
+                        results.append(ExecutionResult(
+                            success=False, action=instr.action, uid=instr.uid,
+                            error=f"building {instr.building_id} has active rally {existing_rid}, reusing",
+                        ))
+                        continue
 
                 # Fix 4: 建筑归属预检查 — INITIATE 前检查目标是否已是我方建筑
                 if instr.building_id and self._buildings:
@@ -565,8 +601,16 @@ class L0Executor:
                     last_rally_id = rid
                     last_rally_pos = rpos
                     _convert_join_to_reinforce = ""  # 清除转 REINFORCE 标记
+                    if instr.building_id:
+                        _initiated_buildings.add(instr.building_id)
                     logger.info("提取 rally_id=%s pos=%s from %s uid=%d",
                                 rid, rpos, instr.action.value, instr.uid)
+
+            # Fix A3: 失败的 INITIATE 也记入追踪，防止 JOIN→INITIATE 级联
+            if (not result.success
+                    and instr.action in _initiate_actions
+                    and instr.building_id):
+                _initiated_buildings.add(instr.building_id)
 
             # Fix 1: INITIATE 返回 28003 ("target is your ally") 恢复机制
             if (not result.success
@@ -592,6 +636,42 @@ class L0Executor:
                             target_id,
                         )
 
+            # Fix C: INITIATE 返回 30001 ("Invalid operation") 恢复机制
+            # 常见原因: 目标建筑已有活跃集结（服务器只允许一个）
+            if (not result.success
+                    and instr.action in _initiate_actions
+                    and result.server_response.get("res_header", {}).get("ret_code") == 30001):
+                target_id = instr.building_id
+                if target_id:
+                    rid, rpos = await self._query_rally_by_target(instr.uid, target_id)
+                    if rid:
+                        last_rally_id = rid
+                        last_rally_pos = rpos
+                        _convert_join_to_reinforce = ""
+                        logger.info(
+                            "30001 恢复: INITIATE building=%s 失败, "
+                            "找到已有集结 rally_id=%s, 后续 JOIN 复用",
+                            target_id, rid,
+                        )
+                    else:
+                        fresh_aid = await self._check_building_ownership_fresh(
+                            instr.uid, target_id,
+                        )
+                        if fresh_aid == self._my_alliance_id:
+                            self._mark_building_as_ours(target_id)
+                            _convert_join_to_reinforce = target_id
+                            logger.info(
+                                "30001 恢复: INITIATE building=%s 失败, "
+                                "无集结且已是我方, 后续 JOIN 转 REINFORCE",
+                                target_id,
+                            )
+                        else:
+                            logger.warning(
+                                "30001 恢复: INITIATE building=%s 失败, "
+                                "无集结且非我方(aid=%s), 后续 JOIN 将被跳过",
+                                target_id, fresh_aid,
+                            )
+
             # Fix 5: LVL_ATTACK_BUILDING 返回 28003 — 转为 REINFORCE 重试
             if (not result.success
                     and instr.action == ActionType.LVL_ATTACK_BUILDING
@@ -611,6 +691,46 @@ class L0Executor:
                     reinforce_result = await self.execute(reinforce_instr)
                     # 无论成功与否都替换结果，日志可追踪恢复尝试
                     results[-1] = reinforce_result
+
+            # Fix D: LVL_JOIN_RALLY 返回 30001 — 集结不可加入
+            # 我方建筑→REINFORCE，敌方建筑→跳过（AVA 禁止 solo 攻击敌方建筑）
+            if (not result.success
+                    and instr.action == ActionType.LVL_JOIN_RALLY
+                    and result.server_response.get("res_header", {}).get("ret_code") == 30001):
+                bid = ""
+                tx, ty = 0, 0
+                if last_initiate_target:
+                    bid = last_initiate_target.get("building_id", "")
+                    tx = last_initiate_target.get("target_x", 0)
+                    ty = last_initiate_target.get("target_y", 0)
+                elif instr.target_x and instr.target_y:
+                    bid = self._find_building_by_pos(instr.target_x, instr.target_y)
+                    tx, ty = instr.target_x, instr.target_y
+                if bid and self._my_alliance_id:
+                    fresh_aid = await self._check_building_ownership_fresh(
+                        instr.uid, bid,
+                    )
+                    if fresh_aid == self._my_alliance_id:
+                        reinforce_instr = instr.model_copy(update={
+                            "action": ActionType.LVL_REINFORCE_BUILDING,
+                            "building_id": bid,
+                            "target_x": tx,
+                            "target_y": ty,
+                            "reason": f"30001 恢复: JOIN 失败, 建筑已是我方, 转为驻防 {bid}",
+                        })
+                        logger.info(
+                            "30001 恢复: LVL_JOIN_RALLY→LVL_REINFORCE_BUILDING "
+                            "uid=%d building=%s (已是我方)",
+                            instr.uid, bid,
+                        )
+                        reinforce_result = await self.execute(reinforce_instr)
+                        results[-1] = reinforce_result
+                    else:
+                        logger.info(
+                            "30001 恢复: LVL_JOIN_RALLY 失败, building=%s 非我方(aid=%s), "
+                            "AVA 禁止 solo 攻击, 跳过",
+                            bid, fresh_aid,
+                        )
 
         # ── 自动采集 coal cart (AVA only) ──
         _move_actions = {ActionType.MOVE_CITY, ActionType.LVL_MOVE_CITY}
@@ -783,10 +903,10 @@ class L0Executor:
     async def _query_rally_by_target(
         self, uid: int, target_id: str,
     ) -> tuple[str, str]:
-        """查询指定目标建筑上的活跃集结
+        """查询指定目标建筑上的我方活跃集结
 
         通过 lvl_battle_login_get 获取 svr_lvl_rally 数据，
-        查找 targetId 匹配且状态为 gathering 的集结。
+        查找 targetId 匹配且状态为 gathering 的我方集结。
 
         Returns:
             (rally_unique_id, rally_pos_encoded) — 失败时返回 ("", "")
@@ -794,6 +914,7 @@ class L0Executor:
         lvl_id = self.client.default_header.get("lvl_id", 0)
         if not lvl_id:
             return "", ""
+        our_uids = set(str(u) for u in self._accounts) if self._accounts else set()
         try:
             resp = await self.client.lvl_battle_login_get(uid, lvl_id)
             for res in resp.get("res_data", []):
@@ -805,13 +926,20 @@ class L0Executor:
                             continue
                         data = _json.loads(raw) if isinstance(raw, str) else raw
                         for brief in data.get("brief", []):
-                            # 匹配目标建筑 + gathering 状态 (0 或 6)
+                            # 匹配目标建筑 + gathering 状态 (0 或 6) + 我方发起
                             if (str(brief.get("targetId", "")) == str(target_id)
                                     and brief.get("status", -1) in (0, 6)):
+                                owner = str(brief.get("ownerUid", ""))
+                                if our_uids and owner not in our_uids:
+                                    logger.info(
+                                        "跳过非我方集结: target=%s rally=%s owner=%s",
+                                        target_id, brief.get("uniqueId", ""), owner,
+                                    )
+                                    continue
                                 rid = brief.get("uniqueId", "")
                                 rpos = str(brief.get("pos", ""))
                                 logger.info(
-                                    "从 svr_lvl_rally 查到目标 %s 的集结: %s pos=%s",
+                                    "从 svr_lvl_rally 查到目标 %s 的我方集结: %s pos=%s",
                                     target_id, rid, rpos,
                                 )
                                 return rid, rpos
@@ -1483,18 +1611,18 @@ class L0Executor:
         # 0. 归属预检查: 我方建筑 → ATTACK 转为 REINFORCE
         if instr.building_id and self._buildings and self._my_alliance_id:
             target_bld = self._buildings.get(instr.building_id)
-            # Fix 6: sync→action 时间差补偿 — ATTACK 前也做实时归属查询
+            # Fix 6: sync→action 时间差补偿 — ATTACK/REINFORCE 前做实时归属查询
             if (target_bld
                     and target_bld.alliance_id != self._my_alliance_id
                     and target_bld.alliance_id != 0
-                    and instr.action == ActionType.LVL_ATTACK_BUILDING):
+                    and instr.action in (ActionType.LVL_ATTACK_BUILDING, ActionType.LVL_REINFORCE_BUILDING)):
                 fresh_aid = await self._check_building_ownership_fresh(
                     instr.uid, instr.building_id,
                 )
                 if fresh_aid == self._my_alliance_id:
                     logger.info(
-                        "L0 实时归属检查(ATTACK): %s 缓存=敌方 实际=我方, 更新缓存",
-                        instr.building_id,
+                        "L0 实时归属检查(%s): %s 缓存=敌方 实际=我方, 更新缓存",
+                        instr.action.value, instr.building_id,
                     )
                     self._mark_building_as_ours(instr.building_id)
                     target_bld = self._buildings.get(instr.building_id)
@@ -1511,6 +1639,41 @@ class L0Executor:
                     )
                     return new_instr, ""
                 # LVL_REINFORCE_BUILDING 对我方建筑是正常操作，放行
+
+            # Fix B: REINFORCE 非我方建筑（敌方或中性）→ 转为 solo 攻击
+            if (target_bld
+                    and self._my_alliance_id
+                    and target_bld.alliance_id != self._my_alliance_id
+                    and instr.action == ActionType.LVL_REINFORCE_BUILDING):
+                new_instr = instr.model_copy(update={
+                    "action": ActionType.LVL_ATTACK_BUILDING,
+                    "reason": f"建筑 {instr.building_id} 非我方(aid={target_bld.alliance_id}), 转为攻击",
+                })
+                logger.info(
+                    "L0 预处理: uid=%d LVL_REINFORCE_BUILDING→LVL_ATTACK_BUILDING "
+                    "建筑 %s 非我方(aid=%d)",
+                    instr.uid, instr.building_id, target_bld.alliance_id,
+                )
+                return new_instr, ""
+
+        # Fix B2: REINFORCE 建筑不在缓存中 — 实时查询归属
+        if (instr.building_id
+                and self._my_alliance_id
+                and instr.action == ActionType.LVL_REINFORCE_BUILDING
+                and (not self._buildings or instr.building_id not in self._buildings)):
+            fresh_aid = await self._check_building_ownership_fresh(
+                instr.uid, instr.building_id,
+            )
+            if fresh_aid > 0 and fresh_aid != self._my_alliance_id:
+                new_instr = instr.model_copy(update={
+                    "action": ActionType.LVL_ATTACK_BUILDING,
+                    "reason": f"建筑 {instr.building_id} 非我方(实时查询aid={fresh_aid}), 转为攻击",
+                })
+                logger.info(
+                    "L0 预处理: uid=%d REINFORCE→ATTACK 建筑 %s 非我方(实时aid=%d)",
+                    instr.uid, instr.building_id, fresh_aid,
+                )
+                return new_instr, ""
 
         # 1. 部队去重: 已有部队正在前往或驻守该建筑
         _active_states = {
