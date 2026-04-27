@@ -14,6 +14,6 @@
 
 ## 验收标准
 ```
-python main.py <...>
-<expected result>
+./ava_simulate.sh 20 >/dev/null
+检查 logs/ 目录下的日志看错误数量是否减少
 ```
