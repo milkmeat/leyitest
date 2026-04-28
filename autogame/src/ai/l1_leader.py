@@ -104,7 +104,7 @@ class L1Leader:
 
         # 2. 生成 user prompt，附加历史上下文
         user_prompt = self.view_builder.format_text(view)
-        history_text = self.memory.format_for_llm(include_loops=3)
+        history_text = self.memory.format_for_llm(include_loops=2)
         if history_text and "（小队" not in history_text:
             user_prompt = f"{history_text}\n\n## 当前态势\n\n{user_prompt}"
         self.last_input = user_prompt

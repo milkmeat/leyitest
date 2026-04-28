@@ -225,7 +225,17 @@ class L1MemoryStore(MemoryStore):
             if entry.l1_instructions:
                 lines.append("**本小队行动**:")
                 for instr in entry.l1_instructions:
-                    lines.append(f"  - {instr.action.value}: {instr.reason or instr.uid}")
+                    desc = instr.reason
+                    if not desc:
+                        if instr.building_id:
+                            desc = f"building={instr.building_id}"
+                        elif instr.target_uid:
+                            desc = f"target={instr.target_uid}"
+                        elif instr.target_x or instr.target_y:
+                            desc = f"({instr.target_x},{instr.target_y})"
+                        else:
+                            desc = str(instr.uid)
+                    lines.append(f"  - {instr.action.value}: {desc}")
             else:
                 lines.append("**本小队行动**: (无行动)")
 

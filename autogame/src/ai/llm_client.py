@@ -29,7 +29,6 @@ logger = logging.getLogger(__name__)
 
 # dry_run 模式下返回的预设响应
 _DRY_RUN_RESPONSE = {
-    "thinking": "dry_run 模式，跳过 LLM 调用",
     "instructions": [
         {
             "action": "SCOUT",
@@ -37,7 +36,6 @@ _DRY_RUN_RESPONSE = {
             "target_uid": 0,
             "target_x": 500,
             "target_y": 500,
-            "reason": "dry_run 预设指令",
         }
     ],
 }
@@ -458,7 +456,7 @@ class LLMClient:
                 pass
 
         # 2) 纯 YAML（以常见 key 开头）
-        yaml_keys = ["thinking:", "instructions:", "action:"]
+        yaml_keys = ["thinking:", "instructions:", "action:", "orders:"]
         for key in yaml_keys:
             if stripped.startswith(key):
                 try:
@@ -469,7 +467,7 @@ class LLMClient:
                     break
 
         # 3) 查找第一个 YAML 块（从 thinking: 或 instructions: 开始）
-        for key in ["thinking:", "instructions:"]:
+        for key in ["thinking:", "instructions:", "orders:"]:
             start = stripped.find(key)
             if start >= 0:
                 # 尝试解析从该位置到末尾的内容

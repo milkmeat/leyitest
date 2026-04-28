@@ -112,8 +112,9 @@ def _distance(a: tuple[int, int], b: tuple[int, int]) -> float:
 class L1ViewBuilder:
     """从 SyncSnapshot 构建 L1 局部视图"""
 
-    MAX_ENEMIES = 20
-    MAX_BUILDINGS = 15
+    MAX_ENEMIES = 10
+    MAX_ENEMIES_DISTANCE = 100  # 超过此距离的敌人不传给 LLM
+    MAX_BUILDINGS = 10
 
     def __init__(self, config: AppConfig):
         self.config = config
@@ -201,17 +202,19 @@ class L1ViewBuilder:
         # Friendly members
         lines.append(f"## Friendly Members ({len(view.members)} total)")
         for m in view.members:
+            power_str = f" power={m.power}" if m.power else ""
             lines.append(
-                f"- uid={m.uid} {m.name} "
-                f"city({m.city_pos[0]},{m.city_pos[1]}) "
-                f"power={m.power} soldiers={m.total_soldiers} "
+                f"- uid={m.uid} "
+                f"city({m.city_pos[0]},{m.city_pos[1]}){power_str} "
+                f"soldiers={m.total_soldiers} "
                 f"queues={{{','.join(f'{k}:{v}' for k,v in m.queue_status.items())}}}"
             )
             for t in m.troops:
+                if t.state == "IDLE":
+                    continue
                 lines.append(
-                    f"  - Troop {t.unique_id}: {t.state} "
-                    f"count={t.soldier_count} pos({t.pos[0]},{t.pos[1]}) "
-                    f"target={t.target}"
+                    f"  - {t.state} count={t.soldier_count} "
+                    f"pos({t.pos[0]},{t.pos[1]}) target={t.target}"
                 )
         lines.append("")
 
@@ -220,9 +223,10 @@ class L1ViewBuilder:
         if view.enemies:
             for e in view.enemies:
                 fight = " [FIGHTING]" if e.is_fighting else ""
+                power_str = f" power={e.power}" if e.power else ""
                 lines.append(
-                    f"- uid={e.uid} ({e.pos[0]},{e.pos[1]}) "
-                    f"power={e.power} alliance={e.alliance} "
+                    f"- uid={e.uid} ({e.pos[0]},{e.pos[1]}){power_str} "
+                    f"alliance={e.alliance} "
                     f"dist={e.distance:.0f} march≈{e.march_seconds}s{fight}"
                 )
         else:
@@ -319,6 +323,7 @@ class L1ViewBuilder:
                 is_fighting=e.is_fighting,
             ))
         items.sort(key=lambda x: x.distance)
+        items = [e for e in items if e.distance <= self.MAX_ENEMIES_DISTANCE]
         return items[:self.MAX_ENEMIES]
 
     def _build_nearby_buildings(

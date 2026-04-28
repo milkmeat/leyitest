@@ -65,23 +65,17 @@ AVA 战场与普通地图有以下关键区别：
 - 输出合法 YAML（节省 token），格式如下:
 
 ```yaml
-thinking: 简要分析当前态势和决策理由
 orders:
   - squad_id: 1
     order: 对敌方建筑(154,170)发起集结攻击，作为集结队长
-    priority: high
   - squad_id: 2
     order: 加入小队1对建筑(154,170)的集结攻击
-    priority: high
   - squad_id: 3
     order: 增援我方建筑(200,300)，加固防守
-    priority: medium
   - squad_id: 4
     order: 占领附近中立建筑，扩大控制范围
-    priority: medium
 ```
 
 字段说明:
 - squad_id: 小队编号（必须覆盖所有小队）
 - order: 自然语言战术指令，L1队长会据此做具体行动决策
-- priority: "high" / "medium" / "low" 优先级
