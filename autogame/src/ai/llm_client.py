@@ -52,6 +52,7 @@ class LLMClient:
         self.dry_run = dry_run
         self._client = None
         self.last_raw_response: str = ""
+        self._streaming_chunks: dict[str, list[str]] = {}
 
         if not dry_run:
             api_key = (
@@ -212,6 +213,38 @@ class LLMClient:
 
         raise last_error  # type: ignore[misc]
 
+    async def chat_yaml_once(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        temperature: float = 0.7,
+        context: str = "",
+    ) -> dict[str, Any]:
+        """单次 LLM 调用（无重试、无 per-call 超时），L1 专用。
+
+        超时由上层 L1Coordinator 通过 asyncio.wait 统一管控。
+        """
+        if self.dry_run:
+            logger.info("[dry_run] 返回预设 YAML")
+            return _DRY_RUN_RESPONSE
+
+        ctx_prefix = f"[{context}] " if context else ""
+        logger.info("%s开始 LLM 调用 (single attempt, no timeout)", ctx_prefix)
+        return await self._call_api(
+            system_prompt, user_prompt, temperature, ctx_prefix, output_format="yaml"
+        )
+
+    def get_partial_content(self, context_key: str) -> str | None:
+        """获取超时调用的部分流式内容。
+
+        从 _streaming_chunks 中 pop 指定 key，返回拼接字符串或 None。
+        """
+        key = context_key.strip("[] ") or "default"
+        chunks = self._streaming_chunks.pop(key, None)
+        if chunks:
+            return "".join(chunks)
+        return None
+
     async def _call_api(
         self,
         system_prompt: str,
@@ -270,16 +303,18 @@ class LLMClient:
                     temperature=temperature,
                     stream=True,
                 )
-                chunks = []
+                stream_key = ctx_prefix.strip("[] ") or "default"
+                self._streaming_chunks[stream_key] = []
                 _sys.stderr.write(f"{ctx_prefix}[stream] ")
                 async for chunk in stream:
                     delta = chunk.choices[0].delta if chunk.choices[0].delta else None
                     if delta and delta.content:
-                        chunks.append(delta.content)
+                        self._streaming_chunks[stream_key].append(delta.content)
                         _sys.stderr.write(delta.content)
                         _sys.stderr.flush()
                 _sys.stderr.write("\n")
-                content = "".join(chunks)
+                content = "".join(self._streaming_chunks[stream_key])
+                del self._streaming_chunks[stream_key]
 
             elapsed = time.time() - start_time
             if not content:
@@ -365,7 +400,8 @@ class LLMClient:
             },
         }
 
-        chunks = []
+        stream_key = ctx_prefix.strip("[] ") or "default"
+        self._streaming_chunks[stream_key] = []
         _sys.stderr.write(f"{ctx_prefix}[ollama stream] ")
         async with aiohttp.ClientSession() as session:
             async with session.post(url, json=payload) as resp:
@@ -381,13 +417,15 @@ class LLMClient:
                     msg = data.get("message", {})
                     content = msg.get("content", "")
                     if content:
-                        chunks.append(content)
+                        self._streaming_chunks[stream_key].append(content)
                         _sys.stderr.write(content)
                         _sys.stderr.flush()
                     if data.get("done"):
                         break
         _sys.stderr.write("\n")
-        return "".join(chunks)
+        result = "".join(self._streaming_chunks[stream_key])
+        del self._streaming_chunks[stream_key]
+        return result
 
     @staticmethod
     def _extract_json(text: str) -> dict[str, Any]:

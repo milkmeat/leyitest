@@ -101,6 +101,11 @@ class L1Leader:
         Returns:
             AIInstruction 列表（可能为空）
         """
+        # 0. 清空上轮残留（防止 cancel 后日志记录到旧值）
+        self.last_input = ""
+        self.last_output = {}
+        self.last_raw_response = ""
+
         # 1. 构建局部视图
         view = self.view_builder.build(snapshot, self.squad, l2_order)
 
@@ -113,7 +118,7 @@ class L1Leader:
 
         # 3. 调用 LLM (YAML 格式节省 30-40% output tokens)
         context = f"L1 squad={self.squad.squad_id} ({self.squad.name})"
-        response = await self.llm.chat_yaml(
+        response = await self.llm.chat_yaml_once(
             self._system_prompt, user_prompt, context=context
         )
         self.last_output = response
@@ -164,6 +169,42 @@ class L1Leader:
                 continue
 
         return results
+
+    def try_parse_partial(self) -> list[AIInstruction]:
+        """超时时尝试从流式部分内容中恢复指令。"""
+        context = f"L1 squad={self.squad.squad_id} ({self.squad.name})"
+        partial_content = self.llm.get_partial_content(context)
+
+        if not partial_content or len(partial_content.strip()) < 20:
+            logger.warning(
+                "L1 squad=%d (%s): timeout, no usable partial content (%d chars)",
+                self.squad.squad_id, self.squad.name,
+                len(partial_content) if partial_content else 0,
+            )
+            return []
+
+        logger.info(
+            "L1 squad=%d (%s): timeout, attempting partial parse (%d chars)",
+            self.squad.squad_id, self.squad.name, len(partial_content),
+        )
+        self.last_raw_response = f"[PARTIAL] {partial_content}"
+
+        try:
+            from src.ai.llm_client import LLMClient
+            response = LLMClient._extract_yaml(partial_content)
+            self.last_output = response
+            instructions = self._parse_response(response)
+            logger.info(
+                "L1 squad=%d (%s): partial parse recovered %d instructions",
+                self.squad.squad_id, self.squad.name, len(instructions),
+            )
+            return instructions
+        except Exception as e:
+            logger.warning(
+                "L1 squad=%d (%s): partial parse failed: %s",
+                self.squad.squad_id, self.squad.name, e,
+            )
+            return []
 
     def save_history(
         self,
@@ -221,41 +262,74 @@ class L1Coordinator:
         snapshot: SyncSnapshot,
         l2_orders: dict[int, str] | None = None,
     ) -> list[AIInstruction]:
-        """并行调用所有 L1Leader，汇总指令
+        """并行调用所有 L1Leader，60s 整体超时，支持部分结果恢复。
 
-        Args:
-            snapshot: 当轮同步快照
-            l2_orders: {squad_id: order_text}，可选
-
-        Returns:
-            所有小队的 AIInstruction 合并列表
+        - 已完成 squad: 正常收集指令
+        - 超时 squad: 尝试从流式部分内容中恢复指令
+        - 失败 squad: 记录日志，返回空
         """
         if l2_orders is None:
             l2_orders = {}
 
-        tasks = []
-        squad_ids = []
-        # 如果 l2_orders 非空，只处理有指令的小队（用于 mock 测试场景）
+        L1_OVERALL_TIMEOUT = 90
+
         target_leaders = (
             {sid: self.leaders[sid] for sid in l2_orders if sid in self.leaders}
             if l2_orders
             else self.leaders
         )
+
+        task_map: dict[asyncio.Task, int] = {}
         for sid, leader in target_leaders.items():
             order = l2_orders.get(sid, "")
-            tasks.append(leader.decide(snapshot, l2_order=order))
-            squad_ids.append(sid)
+            task = asyncio.create_task(
+                leader.decide(snapshot, l2_order=order),
+                name=f"l1_squad_{sid}",
+            )
+            task_map[task] = sid
 
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        if not task_map:
+            return []
+
+        done, pending = await asyncio.wait(
+            task_map.keys(),
+            timeout=L1_OVERALL_TIMEOUT,
+        )
 
         all_instructions: list[AIInstruction] = []
-        for sid, result in zip(squad_ids, results):
-            if isinstance(result, Exception):
-                logger.error("L1 squad=%d 决策失败: %s", sid, result)
-            elif isinstance(result, list):
-                all_instructions.extend(result)
 
-        logger.info("L1 总计 %d 条指令 (来自 %d 个小队)", len(all_instructions), len(self.leaders))
+        for task in done:
+            sid = task_map[task]
+            exc = task.exception()
+            if exc is not None:
+                logger.error("L1 squad=%d 决策失败: %s", sid, exc)
+            else:
+                result = task.result()
+                if isinstance(result, list):
+                    all_instructions.extend(result)
+
+        timed_out_sids = []
+        for task in pending:
+            sid = task_map[task]
+            timed_out_sids.append(sid)
+            task.cancel()
+
+        if pending:
+            await asyncio.wait(pending, timeout=2)
+
+        for sid in timed_out_sids:
+            leader = target_leaders[sid]
+            partial = leader.try_parse_partial()
+            if partial:
+                all_instructions.extend(partial)
+
+        completed = len(done)
+        timed_out = len(timed_out_sids)
+        timeout_info = ",".join(str(s) for s in timed_out_sids) if timed_out_sids else "none"
+        logger.info(
+            "L1 总计 %d 条指令 (completed=%d, timed_out=%d [%s])",
+            len(all_instructions), completed, timed_out, timeout_info,
+        )
         return all_instructions
 
     def save_all_history(
