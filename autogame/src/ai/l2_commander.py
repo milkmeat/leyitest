@@ -62,6 +62,8 @@ class L2Commander:
         self.memory = L2MemoryStore(max_entries=memory_max_entries)
         self.last_input: str = ""
         self.last_output: dict[str, Any] = {}
+        self.last_system_prompt: str = ""
+        self.last_raw_response: str = ""
 
     async def decide(self, snapshot: SyncSnapshot) -> dict[int, str]:
         """全局决策 → {squad_id: order_text}
@@ -87,6 +89,8 @@ class L2Commander:
             self.system_prompt, user_prompt, context="L2"
         )
         self.last_output = response
+        self.last_system_prompt = self.system_prompt
+        self.last_raw_response = self.llm.last_raw_response
 
         # 记录 LLM 思考过程
         thinking = response.get("thinking", "")

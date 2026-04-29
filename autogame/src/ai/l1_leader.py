@@ -84,6 +84,8 @@ class L1Leader:
         )
         self.last_input: str = ""
         self.last_output: dict[str, Any] = {}
+        self.last_system_prompt: str = ""
+        self.last_raw_response: str = ""
 
     async def decide(
         self,
@@ -115,6 +117,8 @@ class L1Leader:
             self._system_prompt, user_prompt, context=context
         )
         self.last_output = response
+        self.last_system_prompt = self._system_prompt
+        self.last_raw_response = self.llm.last_raw_response
 
         # 4. 解析响应
         instructions = self._parse_response(response)

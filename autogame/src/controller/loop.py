@@ -430,7 +430,9 @@ class AIController:
     def _build_l2_log(self, l2_orders: dict) -> dict:
         section: dict[str, Any] = {"orders": {str(k): v for k, v in l2_orders.items()}}
         if self.l2_commander:
+            section["system_prompt"] = self.l2_commander.last_system_prompt
             section["input"] = self.l2_commander.last_input
+            section["raw_response"] = self.l2_commander.last_raw_response
             section["output"] = self.l2_commander.last_output
         elif self.mock_l2:
             section["input"] = f"(mock) {self.mock_l2}"
@@ -444,7 +446,9 @@ class AIController:
                 entries.append({
                     "squad_id": sid,
                     "squad_name": leader.squad.name,
+                    "system_prompt": leader.last_system_prompt,
                     "input": leader.last_input,
+                    "raw_response": leader.last_raw_response,
                     "output": leader.last_output,
                 })
         return entries

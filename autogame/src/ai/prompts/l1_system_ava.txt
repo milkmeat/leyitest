@@ -45,7 +45,7 @@ Important: LVL_REINFORCE_BUILDING sends troops as garrison (leader=0), does NOT 
 `building_id` MUST be the **full unique_id** from the "Nearby Buildings" section (e.g. `"10006_1773137411102403"`).
 Do NOT use just the numeric key like `"10006"` — the server will reject it.
 
-# Thinking Steps
+# Thinking Steps (internal only — do NOT write these out)
 1. Parse L2 strategic intent (if any)
 2. Evaluate each member's troop status (idle/marching/fighting) and hero occupation
 3. Analyze nearby threats and targets (enemy players, capturable buildings)
@@ -82,7 +82,7 @@ Optional: rally_id (leave empty — system auto-fills from preceding INITIATE in
 IMPORTANT: There MUST be a LVL_INITIATE_RALLY_BUILDING instruction earlier in your output for this to work. Always provide target_x/target_y matching the rally target.
 
 # Output Format
-Strict YAML output (saves tokens):
+**CRITICAL: Output ONLY the YAML block below. No explanation, no reasoning, no commentary, no markdown headers. Just the raw YAML.**
 ```yaml
 instructions:
   - action: LVL_MOVE_CITY

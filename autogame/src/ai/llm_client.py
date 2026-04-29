@@ -51,6 +51,7 @@ class LLMClient:
         self.config = config
         self.dry_run = dry_run
         self._client = None
+        self.last_raw_response: str = ""
 
         if not dry_run:
             api_key = (
@@ -283,6 +284,8 @@ class LLMClient:
             elapsed = time.time() - start_time
             if not content:
                 raise ValueError("LLM 返回空内容")
+
+            self.last_raw_response = content
 
             logger.info(
                 "%s=== LLM 响应成功 ===\n"
