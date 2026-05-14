@@ -1961,10 +1961,29 @@ async def cmd_l0(*args: str, env: str = None):
         print("用法:", file=sys.stderr)
         print("  JSON 模式:  l0 '{\"action\":\"MOVE_CITY\",\"uid\":123,...}'", file=sys.stderr)
         print("  简写模式:  l0 MOVE_CITY <uid> <x> <y>", file=sys.stderr)
+        print("  可选: --camp 1|2  操作敌方阵营账号(camp=2)", file=sys.stderr)
         sys.exit(1)
 
+    # 提取 --camp 参数
+    args_list = list(args)
+    camp = 1
+    if "--camp" in args_list:
+        idx = args_list.index("--camp")
+        if idx + 1 >= len(args_list):
+            print("错误: --camp 需要参数 (1 或 2)", file=sys.stderr)
+            sys.exit(1)
+        try:
+            camp = int(args_list[idx + 1])
+        except ValueError:
+            print(f"错误: --camp 值必须为 1 或 2，收到: {args_list[idx + 1]}", file=sys.stderr)
+            sys.exit(1)
+        if camp not in (1, 2):
+            print(f"错误: --camp 值必须为 1 或 2，收到: {camp}", file=sys.stderr)
+            sys.exit(1)
+        args_list = args_list[:idx] + args_list[idx + 2:]
+
     # 判断是 JSON 模式还是简写模式
-    first = args[0].strip()
+    first = args_list[0].strip()
     if first.startswith("{"):
         # JSON 模式: 直接反序列化
         try:
@@ -1975,7 +1994,7 @@ async def cmd_l0(*args: str, env: str = None):
     else:
         # 简写模式: 解析位置参数
         try:
-            data = _parse_l0_shorthand(list(args))
+            data = _parse_l0_shorthand(args_list)
         except (ValueError, IndexError) as e:
             print(f"参数解析失败: {e}", file=sys.stderr)
             sys.exit(1)
@@ -1988,7 +2007,8 @@ async def cmd_l0(*args: str, env: str = None):
     # 加载配置 + 创建执行器
     config = _load_config()
     client = GameAPIClient(env=env)
-    executor = L0Executor(client, config)
+    extra_uids = set(config.accounts.enemy_uids()) if camp == 2 else None
+    executor = L0Executor(client, config, extra_uids=extra_uids)
     try:
         # 先打印解析后的指令（方便确认）
         print(f"[L0] {instr.action.value} uid={instr.uid}", end="")

@@ -131,9 +131,12 @@ class L0Executor:
     流程: validate → 翻译参数 → 调用 game_api → 包装 ExecutionResult
     """
 
-    def __init__(self, client: GameAPIClient, config: AppConfig):
+    def __init__(self, client: GameAPIClient, config: AppConfig, extra_uids: set[int] | None = None):
         self.client = client
+        self._config = config
         self.valid_uids = config.accounts.all_uids()
+        if extra_uids:
+            self.valid_uids |= extra_uids
         self.map_width = config.activity.map.width
         self.map_height = config.activity.map.height
         # 我方联盟 ID（AVA 用 lvl_aid，主世界用 aid）
@@ -1138,6 +1141,11 @@ class L0Executor:
             q_id = 6004
         else:
             q_id = 6001
+
+        # AVA 攻击类 action: 自动克制选兵
+        if action in self._COUNTER_ACTIONS:
+            await self._resolve_counter_soldier(instr, action)
+
         march = self._build_march_info(instr.uid,
                                          needs_hero=(action not in {ActionType.JOIN_RALLY, ActionType.LVL_JOIN_RALLY}),
                                          queue_id=q_id,
@@ -1345,6 +1353,172 @@ class L0Executor:
     # 默认出征兵力上限（每支部队，测试服实测 5000 可用，10000 被拒）
     DEFAULT_MARCH_SIZE = 5000
 
+    # 需要触发克制选兵的 action 集合（仅建筑攻击/集结发起）
+    _COUNTER_ACTIONS = {
+        ActionType.LVL_ATTACK_BUILDING,
+        ActionType.LVL_INITIATE_RALLY,
+        ActionType.LVL_INITIATE_RALLY_BUILDING,
+    }
+
+    async def _resolve_counter_soldier(self, instr: AIInstruction, action: ActionType) -> None:
+        """在 _dispatch 中为 AVA 攻击类 action 自动填充 soldier_id/soldier_count
+
+        仅在 instr.soldier_id==0 或 soldier_count==0 时生效（尊重上游显式覆写）。
+        """
+        # 上游已显式指定则跳过
+        if instr.soldier_id > 0 and instr.soldier_count > 0:
+            return
+
+        from src.utils.counter import pick_counter_soldier
+        from src.perception.defender_probe import probe_defender_composition
+
+        # 确定目标 unique_id（建筑用 building_id，玩家构造 "2_{uid}_1"）
+        target_id = instr.building_id or ""
+        cur_troop_num = 0
+        troop_uids: list[str] = []
+        target_camp = 0
+        troop_comp_from_map = None
+
+        # 从 _buildings 字典查 briefObj 信息
+        if target_id and target_id in self._buildings:
+            b = self._buildings[target_id]
+            cur_troop_num = getattr(b, "cur_troop_num", 0)
+            troop_uids = getattr(b, "troop_unique_ids", [])
+            target_camp = getattr(b, "alliance_id", 0)
+        elif target_id:
+            # L0 CLI 单指令模式无 buildings → 拉一次 map_get（含 troop 详情）
+            info = await self._fetch_building_detail(target_id, instr.target_x, instr.target_y)
+            if info:
+                cur_troop_num = info["cur_troop_num"]
+                troop_uids = info["troop_unique_ids"]
+                target_camp = info["camp"]
+                # map_get 返回的 troop_comp 优先于 probe 兜底
+                troop_comp_from_map = info.get("troop_comp")
+
+        acct = self._accounts.get(instr.uid)
+        if not acct:
+            return
+
+        # 优先使用 map_get 的实际兵种数据，跳过 probe 兜底
+        comp = troop_comp_from_map if troop_comp_from_map else None
+        if not comp:
+            comp = probe_defender_composition(
+                target_unique_id=target_id,
+                target_cur_troop_num=cur_troop_num,
+                target_troop_unique_ids=troop_uids,
+                accounts=self._accounts,
+                my_camp=self._my_alliance_id,
+                target_camp=target_camp,
+            )
+
+        sid, available = 0, 0
+        if comp:
+            sid, available = pick_counter_soldier(comp, acct.soldiers)
+        # 无 defender 数据时默认 Shooter
+        if sid == 0:
+            shooters = [s for s in acct.soldiers if s.id // 100 == 1 and s.value > 0]
+            if shooters:
+                best = max(shooters, key=lambda s: s.value)
+                sid, available = best.id, best.value
+
+        if sid > 0 and instr.soldier_id == 0:
+            instr.soldier_id = sid
+
+        if instr.soldier_count == 0:
+            default_count = self._config.activity.combat.ava_default_troop_count
+            instr.soldier_count = min(available, default_count) if available > 0 else default_count
+
+        logger.info("counter 选兵: uid=%d action=%s → sid=%d count=%d",
+                     instr.uid, action.value, instr.soldier_id, instr.soldier_count)
+
+    async def _fetch_building_detail(
+        self, target_unique_id: str, target_x: int = 0, target_y: int = 0,
+    ) -> Optional[Dict[str, Any]]:
+        """从 lvl_svr_map_get 获取建筑驻防兵种详情
+
+        优先使用 map_get（含 building.troop 实际兵种），回退到 briefObj（仅 curTroopNum）。
+        """
+        import json as _json
+        from src.utils.coords import decode_pos, make_bid_list
+
+        lvl_id = self.client.default_header.get("lvl_id", 0)
+        if not lvl_id:
+            return None
+        probe_uid = next(iter(self._accounts)) if self._accounts else 0
+        if not probe_uid:
+            return None
+
+        try:
+            return await self._fetch_building_from_map(probe_uid, lvl_id, target_unique_id, target_x, target_y)
+        except Exception as e:
+            logger.debug("_fetch_building_from_map 失败，回退 briefObj: %s", e)
+
+        # 回退: briefObj（无 troop 详情）
+        try:
+            resp = await self.client.lvl_battle_login_get(probe_uid, lvl_id)
+            for res in resp.get("res_data", []):
+                for push in res.get("push_list", []):
+                    for item in push.get("data", []):
+                        if item.get("name") == "svr_lvl_brief_objs":
+                            raw = item.get("data", "")
+                            data = _json.loads(raw) if isinstance(raw, str) and raw else raw
+                            for o in data.get("briefObjs", []):
+                                if o.get("uniqueId") == target_unique_id:
+                                    result = {
+                                        "cur_troop_num": int(o.get("curTroopNum", 0)),
+                                        "troop_unique_ids": o.get("troopUniqueIds", []),
+                                        "camp": int(o.get("camp", 0)),
+                                        "troop_comp": None,
+                                    }
+                                    from src.models.building import Building
+                                    self._buildings[target_unique_id] = Building.from_brief_obj(o)
+                                    return result
+        except Exception as e:
+            logger.debug("_fetch_building_detail 回退也失败: %s", e)
+        return None
+
+    async def _fetch_building_from_map(
+        self, probe_uid: int, lvl_id: int, target_unique_id: str,
+        target_x: int = 0, target_y: int = 0,
+    ) -> Optional[Dict[str, Any]]:
+        """从 lvl_svr_map_get 获取建筑详情，含 troop 实际兵种构成"""
+        import json as _json
+        from src.utils.coords import decode_pos, make_bid_list
+
+        # 用指令坐标或缓存坐标计算 bid
+        if target_x and target_y:
+            bids = make_bid_list(target_x, target_y, 2)
+        elif target_unique_id in self._buildings:
+            b = self._buildings[target_unique_id]
+            x, y = decode_pos(b.pos)
+            bids = make_bid_list(x, y, 2)
+        else:
+            return None
+
+        resp = await self.client.lvl_svr_map_get(probe_uid, lvl_id, bids)
+        for res in resp.get("res_data", []):
+            for push in res.get("push_list", []):
+                for item in push.get("data", []):
+                    if item.get("name") == "svr_lvl_map_objs":
+                        raw = item.get("data", "")
+                        data = _json.loads(raw) if isinstance(raw, str) and raw else raw
+                        for bid_obj in data.get("mapBidObjs", []):
+                            for obj in bid_obj.get("objs", []):
+                                if obj.get("uniqueId") == target_unique_id:
+                                    basic = obj.get("objBasic", {})
+                                    bld = obj.get("building", {})
+                                    troop_list = bld.get("troop", [])
+                                    troop_comp = {
+                                        t["id"]: t["num"] for t in troop_list if "id" in t and "num" in t
+                                    } if troop_list else None
+                                    return {
+                                        "cur_troop_num": int(bld.get("curTroopNum", 0)),
+                                        "troop_unique_ids": [bld.get("mainDefendUniqueId", "")] if bld.get("mainDefendUniqueId") else [],
+                                        "camp": int(basic.get("camp", 0)),
+                                        "troop_comp": troop_comp,
+                                    }
+        return None
+
     def _build_march_info(self, uid: int, needs_hero: bool = True, queue_id: int = 6001,
                           soldier_id: int = 0, soldier_count: int = 0) -> Dict[str, Any]:
         """根据账号数据自动构建完整 march_info
@@ -1358,15 +1532,16 @@ class L0Executor:
             uid: 执行账号 UID
             needs_hero: 是否需要英雄（JOIN_RALLY 队员不需要 leader）
             soldier_id: 手动指定兵种ID（>0 跳过自动选择）
-            soldier_count: 手动指定出征数量（>0 使用该值，仍受 DEFAULT_MARCH_SIZE 上限）
+            soldier_count: 手动指定出征数量（>0 直接使用，不 clamp；0 时自动回退并受 DEFAULT_MARCH_SIZE 限制）
         """
         acct = getattr(self, "_accounts", {}).get(uid)
         if not acct:
             return {}
 
-        # 兵种：手动指定 > 自动选数量最多的，限制出征兵力
+        # 兵种：手动指定 > 自动选数量最多的
         sid = str(soldier_id) if soldier_id > 0 else "204"  # 默认弓兵
-        cnt = min(soldier_count, self.DEFAULT_MARCH_SIZE) if soldier_count > 0 else self.DEFAULT_MARCH_SIZE
+        # 显式 count 直接采用（AVA 路径由 _resolve_counter_soldier 设置），自动回退保留 5000 上限
+        cnt = soldier_count if soldier_count > 0 else self.DEFAULT_MARCH_SIZE
         if soldier_id <= 0 and acct.soldiers:
             best = max(acct.soldiers, key=lambda s: s.value)
             if best.value > 0:

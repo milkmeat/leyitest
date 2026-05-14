@@ -171,6 +171,7 @@ class RallyConfig(BaseModel):
 class CombatConfig(BaseModel):
     counter_bonus: float = 1.3
     counter_penalty: float = 0.7
+    ava_default_troop_count: int = 281000
 
 
 class ScoringConfig(BaseModel):

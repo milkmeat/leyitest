@@ -61,6 +61,11 @@ class Building(BaseModel):
     open_time: int = 0                       # 开放时间
     change_owner_time: int = 0               # 上次易手时间戳
 
+    # --- 驻防信息 (AVA briefObj) ---
+    cur_troop_num: int = 0                   # 当前驻防总兵力
+    troop_unique_ids: list[str] = Field(default_factory=list)  # 驻防部队 unique_id 列表
+    limit_troop_num: int = 0                 # 驻防兵力上限
+
     # --- KVK 专属 (type=48, 156) ---
     kvk_winner: int = 0
 
@@ -106,6 +111,9 @@ class Building(BaseModel):
             open_time=basic.get("openTime", 0),
             change_owner_time=int(basic.get("changeOwnerTime", 0)),
             kvk_winner=basic.get("kvkWinner", 0),
+            cur_troop_num=int(basic.get("curTroopNum", 0)),
+            troop_unique_ids=basic.get("troopUniqueIds", []),
+            limit_troop_num=int(basic.get("limitTroopNum", 0)),
         )
 
     def owner_side(self, my_alliance_id: int) -> str:
