@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import logging
 import math
+import time
 
 import numpy as np
 from pydantic import BaseModel, Field
@@ -75,6 +76,7 @@ class BuildingDetail(BaseModel):
     pos: tuple[int, int] = (0, 0)
     owner_side: str = "neutral"        # "neutral" / "ally" / "enemy"
     is_fighting: bool = False
+    protection_remaining: str = ""     # "9m45s" or "" if not protected
 
 
 class L2GlobalView(BaseModel):
@@ -238,6 +240,7 @@ class L2ViewBuilder:
         if view.building_details:
             for bd in view.building_details:
                 fight = " [交战中]" if bd.is_fighting else ""
+                protected = f" [保护中 {bd.protection_remaining}]" if bd.protection_remaining else ""
                 side_label = {
                     "ally": "我方",
                     "enemy": "敌方",
@@ -246,7 +249,7 @@ class L2ViewBuilder:
                 lines.append(
                     f"- {bd.unique_id} type={bd.obj_type} "
                     f"({bd.pos[0]},{bd.pos[1]}) "
-                    f"{side_label}{fight}"
+                    f"{side_label}{fight}{protected}"
                 )
         else:
             lines.append("- (无)")
@@ -399,6 +402,7 @@ class L2ViewBuilder:
         self, buildings: list[Building],
     ) -> tuple[BuildingSummary, list[BuildingDetail]]:
         """统计建筑归属并提取详情"""
+        now_ms = int(time.time() * 1000)
         ally = 0
         enemy = 0
         neutral = 0
@@ -424,6 +428,7 @@ class L2ViewBuilder:
                 pos=b.pos,
                 owner_side=side,
                 is_fighting=b.is_fighting,
+                protection_remaining=b.protection_remaining_str(now_ms),
             ))
 
         # 排序：交战中优先，然后敌方，然后中立，最后我方

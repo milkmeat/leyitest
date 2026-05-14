@@ -77,6 +77,27 @@ class Building(BaseModel):
     def is_fighting(self) -> bool:
         return self.fight_flag != 0
 
+    def is_protected(self, now_ms: int) -> bool:
+        """建筑是否处于保护期（未开放或 etime 保护中）"""
+        if self.open_time > 0 and self.open_time > now_ms:
+            return True
+        if self.etime > 0 and self.etime > now_ms:
+            return True
+        return False
+
+    def protection_remaining_str(self, now_ms: int) -> str:
+        """剩余保护时间的可读字符串，如 '2m30s'，无保护返回空"""
+        if not self.is_protected(now_ms):
+            return ""
+        # 取 open_time 和 etime 中较晚的那个作为保护结束时间
+        end_ms = max(
+            self.open_time if self.open_time > now_ms else 0,
+            self.etime if self.etime > now_ms else 0,
+        )
+        remaining_s = (end_ms - now_ms) // 1000
+        m, s = divmod(remaining_s, 60)
+        return f"{m}m{s:02d}s" if m > 0 else f"{s}s"
+
     @classmethod
     def from_brief_obj(cls, obj: dict) -> Building:
         """从 svr_map_brief_objs.briefList 中的单个对象构建

@@ -16,6 +16,7 @@ from __future__ import annotations
 import logging
 import math
 import re
+import time
 
 from pydantic import BaseModel, Field
 
@@ -76,6 +77,7 @@ class NearbyBuilding(BaseModel):
     march_seconds: int = 0
     is_fighting: bool = False
     status: int = 0
+    protection_remaining: str = ""  # "2m30s" or "" if not protected
 
 
 class ActiveRally(BaseModel):
@@ -169,7 +171,8 @@ class L1ViewBuilder:
         enemies = self._build_nearby_enemies(snapshot.enemies, center)
 
         # 4. 附近建筑（按距离排序，截取 top N）
-        buildings = self._build_nearby_buildings(snapshot.buildings, center)
+        now_ms = int(time.time() * 1000)
+        buildings = self._build_nearby_buildings(snapshot.buildings, center, now_ms=now_ms)
 
         # 5. 当前活跃集结（我方发起的、可加入的）
         rallies = self._build_active_rallies(snapshot.rallies)
@@ -238,11 +241,12 @@ class L1ViewBuilder:
         if view.buildings:
             for b in view.buildings:
                 fight = " [FIGHTING]" if b.is_fighting else ""
+                protected = f" [PROTECTED {b.protection_remaining}]" if b.protection_remaining else ""
                 lines.append(
                     f"- {b.unique_id} type={b.obj_type} "
                     f"({b.pos[0]},{b.pos[1]}) "
                     f"owner={b.owner_alliance} "
-                    f"dist={b.distance:.0f} march≈{b.march_seconds}s{fight}"
+                    f"dist={b.distance:.0f} march≈{b.march_seconds}s{fight}{protected}"
                 )
         else:
             lines.append("- (none)")
@@ -330,6 +334,7 @@ class L1ViewBuilder:
         self,
         buildings: list[Building],
         center: tuple[int, int],
+        now_ms: int = 0,
     ) -> list[NearbyBuilding]:
         """Sort by distance, take top N buildings"""
         items = []
@@ -357,6 +362,7 @@ class L1ViewBuilder:
                 march_seconds=march_sec,
                 is_fighting=b.is_fighting,
                 status=b.status,
+                protection_remaining=b.protection_remaining_str(now_ms),
             ))
         items.sort(key=lambda x: x.distance)
         return items[:self.MAX_BUILDINGS]

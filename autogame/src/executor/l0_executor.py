@@ -16,6 +16,7 @@ import json as _json
 import logging
 import math
 import random
+import time as _time
 from enum import Enum
 from typing import Any, Dict, Optional
 
@@ -455,6 +456,23 @@ class L0Executor:
                         error=f"SKIP: building {instr.building_id} already INITIATE'd in this batch",
                     ))
                     continue
+
+                # 保护期检查: INITIATE 前检查目标建筑是否处于保护期
+                if instr.building_id and self._buildings:
+                    target_bld = self._buildings.get(instr.building_id)
+                    if target_bld:
+                        now_ms = int(_time.time() * 1000)
+                        if target_bld.is_protected(now_ms):
+                            remaining = target_bld.protection_remaining_str(now_ms)
+                            logger.info(
+                                "L0 保护期跳过: building=%s 剩余 %s, 跳过 INITIATE",
+                                instr.building_id, remaining,
+                            )
+                            results.append(ExecutionResult(
+                                success=False, action=instr.action, uid=instr.uid,
+                                error=f"建筑 {instr.building_id} 处于保护期(剩余 {remaining})",
+                            ))
+                            continue
 
                 # Fix A2: INITIATE 前查询已有集结 — 目标建筑可能已有活跃集结（上一轮或其他小队）
                 if instr.building_id:
@@ -1782,6 +1800,18 @@ class L0Executor:
         acct = self._accounts.get(instr.uid)
         if not acct:
             return instr, ""
+
+        # 保护期检查: etime > 当前时间则跳过
+        if instr.building_id and self._buildings:
+            target_bld = self._buildings.get(instr.building_id)
+            if target_bld:
+                now_ms = int(_time.time() * 1000)
+                if target_bld.is_protected(now_ms):
+                    remaining = target_bld.protection_remaining_str(now_ms)
+                    return None, (
+                        f"SKIP: 建筑 {instr.building_id} 处于保护期"
+                        f"(剩余 {remaining}), 无法攻击"
+                    )
 
         # 0. 归属预检查: 我方建筑 → ATTACK 转为 REINFORCE
         if instr.building_id and self._buildings and self._my_alliance_id:

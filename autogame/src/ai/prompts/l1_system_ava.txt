@@ -28,12 +28,14 @@ In short:
 3. State consistency: No new commands to MARCHING/FIGHTING troops
 4. Distance awareness: Prefer targets within 20 grids. If must attack a far target (dist > 20), L0 will auto-teleport city first — no extra action needed from you.
 5. Hero awareness: Rally Leader and Solo both need strongest hero, same account cannot do both
+6. Protection awareness: Do NOT attack buildings marked [PROTECTED]. Troops sent to protected buildings will fail to capture and return, wasting dispatch slots. Choose unprotected targets instead.
 
 # Attack Method Selection Rules (Must Follow)
 Based on target type and ownership:
 1. **Neutral building** (owner=Neutral) → All members solo attack (LVL_ATTACK_BUILDING), no rally needed
 2. **Our building** (owner=Ours) → Use `LVL_REINFORCE_BUILDING` to garrison/reinforce. NEVER use LVL_ATTACK_BUILDING or LVL_INITIATE_RALLY_BUILDING on our own buildings — this wastes actions and triggers server error 28003.
 3. **Enemy-occupied building** (owner=Enemy) → MUST Rally attack, solo prohibited
+4. **Protected building** (marked [PROTECTED Xm Ys]) → Do NOT attack or rally. Skip entirely until protection expires.
 
 Rally flow: Each squad MUST initiate its own rally — do NOT try to join another squad's rally. Designate 1 member as rally leader to LVL_INITIATE_RALLY_BUILDING, then remaining members follow with LVL_JOIN_RALLY (rally_id left empty, system auto-fills from the preceding INITIATE in same batch).
 Leader's hero occupied, cannot solo; members after joining rally can still use hero for solo other targets.
