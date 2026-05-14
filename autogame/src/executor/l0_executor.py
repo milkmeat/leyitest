@@ -564,13 +564,22 @@ class L0Executor:
                     original_attack_instr = instr
                 instr = processed
 
+            # Smart L0: Rally 距离检查 — 队长/队员距离目标>20格时先移城
+            original_rally_instr: AIInstruction | None = None
+            if instr.action in (_initiate_actions | _rally_actions):
+                if instr.target_x or instr.target_y:
+                    processed, _ = await self._preprocess_rally_distance(instr)
+                    if processed.action == ActionType.LVL_MOVE_CITY:
+                        original_rally_instr = instr
+                    instr = processed
+
             result = await self.execute(instr, rally_pos=last_rally_pos)
 
             # Smart L0: 移城失败重试（随机偏移坐标）
             if (not result.success
                     and instr.action == ActionType.LVL_MOVE_CITY):
                 result = await self._retry_move_city(
-                    instr, original_attack_instr or instr,
+                    instr, original_attack_instr or original_rally_instr or instr,
                 )
 
             # Smart L0: 移城成功后自动追击（消除浪费的 loop 周期）
@@ -600,6 +609,24 @@ class L0Executor:
                         "L0 移城后追击跳过: uid=%d %s",
                         instr.uid, skip_reason,
                     )
+
+            # Smart L0: Rally 移城成功后自动执行原始 rally 指令
+            if (result.success
+                    and instr.action == ActionType.LVL_MOVE_CITY
+                    and original_rally_instr is not None):
+                acct = self._accounts.get(instr.uid)
+                if acct:
+                    acct.city_pos = (instr.target_x, instr.target_y)
+                follow_result = await self.execute(
+                    original_rally_instr, rally_pos=last_rally_pos,
+                )
+                logger.info(
+                    "L0 Rally移城后追击: uid=%d %s success=%s",
+                    instr.uid, original_rally_instr.action.value,
+                    follow_result.success,
+                )
+                result = follow_result
+                instr = original_rally_instr
 
             results.append(result)
 
@@ -1949,6 +1976,53 @@ class L0Executor:
 
         # 3. 通过
         return instr, ""
+
+    async def _preprocess_rally_distance(
+        self, instr: AIInstruction,
+    ) -> tuple[AIInstruction, str]:
+        """Rally 指令距离预处理：距离>阈值时先移城
+
+        适用于 LVL_INITIATE_RALLY_BUILDING / LVL_INITIATE_RALLY 和 LVL_JOIN_RALLY。
+
+        Returns:
+            (move_instr, "")    — 替换为 LVL_MOVE_CITY
+            (instr, "")         — 原样放行（距离在阈值内或无法判断）
+        """
+        acct = self._accounts.get(instr.uid)
+        if not acct:
+            return instr, ""
+
+        tx, ty = instr.target_x, instr.target_y
+        if not tx and not ty:
+            if instr.building_id and self._buildings:
+                bld = self._buildings.get(instr.building_id)
+                if bld and bld.pos != (0, 0):
+                    tx, ty = bld.pos
+            if not tx and not ty:
+                return instr, ""
+
+        cx, cy = acct.city_pos
+        dist = math.hypot(tx - cx, ty - cy)
+
+        if dist <= self.MOVE_CITY_DISTANCE_THRESHOLD:
+            return instr, ""
+
+        move_x, move_y = await self._find_empty_spot(instr.uid, tx, ty)
+        move_instr = instr.model_copy(update={
+            "action": ActionType.LVL_MOVE_CITY,
+            "target_x": move_x,
+            "target_y": move_y,
+            "reason": (
+                f"Rally距离={dist:.0f}>{self.MOVE_CITY_DISTANCE_THRESHOLD}, "
+                f"转移城 ({cx},{cy})→({move_x},{move_y})"
+            ),
+        })
+        logger.info(
+            "L0 Rally距离预处理: uid=%d %s→LVL_MOVE_CITY "
+            "dist=%.0f (%d,%d)→(%d,%d)",
+            instr.uid, instr.action.value, dist, cx, cy, move_x, move_y,
+        )
+        return move_instr, ""
 
     @staticmethod
     def _extract_rally_info(resp: Dict[str, Any]) -> tuple[str, str]:
