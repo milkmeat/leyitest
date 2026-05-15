@@ -1812,7 +1812,7 @@ class L0Executor:
         )
 
     # 距离阈值: 超过此格数则先移城再攻打
-    MOVE_CITY_DISTANCE_THRESHOLD = 20
+    MOVE_CITY_DISTANCE_THRESHOLD = 10
 
     async def _preprocess_lvl_attack_building(
         self, instr: AIInstruction,

@@ -761,7 +761,7 @@ class GameAPIClient:
     async def lvl_create_rally_building(
         self, uid: int, lvl_id: int, target_id: str,
         march_info: Optional[Dict[str, Any]] = None,
-        prepare_time: int = 60, tn_limit: int = 15,
+        prepare_time: int = 60, tn_limit: int = 5,
     ) -> Dict[str, Any]:
         """AVA 战场内对建筑发起集结
 
