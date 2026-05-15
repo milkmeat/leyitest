@@ -1084,6 +1084,26 @@ async def cmd_get_soldiers(uid_str: str, soldier_id_str: str, env: str = None):
         await client.close()
 
 
+async def cmd_get_team_soldiers(team_str: str, env: str = None):
+    """并发查询指定 team 全部账号的士兵总数，输出纯数字"""
+    from src.executor.game_api import GameAPIClient
+    config = _load_config()
+    team = int(team_str)
+    uids = config.accounts.active_uids() if team == 1 else config.accounts.enemy_uids()
+
+    client = GameAPIClient(env=env)
+    try:
+        async def _get_total(uid: int) -> int:
+            info = await client.get_player_info(uid, modules=["svr_soldier"])
+            return sum(s.get("value", 0) for s in info.get("soldiers", []))
+
+        results = await asyncio.gather(*[_get_total(uid) for uid in uids], return_exceptions=True)
+        total = sum(r for r in results if isinstance(r, int))
+        print(total)
+    finally:
+        await client.close()
+
+
 # ---------------------------------------------------------------------------
 # GM 命令
 # ---------------------------------------------------------------------------
@@ -2582,6 +2602,7 @@ COMMANDS = {
     # 简化查询
     "get_gem":              (cmd_get_gem,               "<uid>",                              "查询宝石数量(纯数字)"),
     "get_soldiers":         (cmd_get_soldiers,          "<uid> <soldier_id>",                 "查询兵种数量(纯数字)"),
+    "get_team_soldiers":    (cmd_get_team_soldiers,     "<team>",                             "查询team全部账号士兵总数(纯数字)"),
     # GM
     "add_gem":              (cmd_add_gem,               "<uid> [amount]",                     "GM: 添加宝石"),
     "add_soldiers":         (cmd_add_soldiers,          "<uid> [soldier_id] [num]",           "GM: 添加士兵"),

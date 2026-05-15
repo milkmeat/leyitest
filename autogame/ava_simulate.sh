@@ -133,6 +133,14 @@ for uid in "${ALL_UIDS[@]}"; do
 done
 echo ""
 
+# Step 4.5: 记录起始兵力
+echo "Step 4.5: Recording starting soldiers..."
+SOLDIERS_TEAM1_START=$($CMD get_team_soldiers 1 2>/dev/null)
+SOLDIERS_TEAM2_START=$($CMD get_team_soldiers 2 2>/dev/null)
+echo "  Team1 soldiers: $SOLDIERS_TEAM1_START"
+echo "  Team2 soldiers: $SOLDIERS_TEAM2_START"
+echo ""
+
 # Step 5: 记录起始积分
 echo "Step 5: Recording starting scores..."
 SCORE_START_OUTPUT=$(cli get_ava_score "$SCORE_UID" "$AVA_ID")
@@ -177,6 +185,14 @@ echo "Step 9: Time's up, stopping battle..."
 cleanup
 echo ""
 
+# Step 9.5: 记录结束兵力
+echo "Step 9.5: Recording ending soldiers..."
+SOLDIERS_TEAM1_END=$($CMD get_team_soldiers 1 2>/dev/null)
+SOLDIERS_TEAM2_END=$($CMD get_team_soldiers 2 2>/dev/null)
+echo "  Team1 soldiers: $SOLDIERS_TEAM1_END"
+echo "  Team2 soldiers: $SOLDIERS_TEAM2_END"
+echo ""
+
 # Step 10: 记录终止积分
 echo "Step 10: Recording ending scores..."
 SCORE_END_OUTPUT=$(cli get_ava_score "$SCORE_UID" "$AVA_ID")
@@ -193,10 +209,17 @@ echo ""
 # Step 12: 打印结果
 CAMP1_DIFF=$((CAMP1_END - CAMP1_START))
 CAMP2_DIFF=$((CAMP2_END - CAMP2_START))
+SOLDIERS_TEAM1_LOSS=$((SOLDIERS_TEAM1_START - SOLDIERS_TEAM1_END))
+SOLDIERS_TEAM2_LOSS=$((SOLDIERS_TEAM2_START - SOLDIERS_TEAM2_END))
 
 echo "======================================================"
 echo "  AVA Simulation Results (${DURATION_MINUTES} minutes)"
 echo "======================================================"
+echo "  Scores:"
 echo "  Camp 1: $CAMP1_START -> $CAMP1_END  (delta: $CAMP1_DIFF)"
 echo "  Camp 2: $CAMP2_START -> $CAMP2_END  (delta: $CAMP2_DIFF)"
+echo ""
+echo "  Soldiers:"
+echo "  Team 1: $SOLDIERS_TEAM1_START -> $SOLDIERS_TEAM1_END  (loss: $SOLDIERS_TEAM1_LOSS)"
+echo "  Team 2: $SOLDIERS_TEAM2_START -> $SOLDIERS_TEAM2_END  (loss: $SOLDIERS_TEAM2_LOSS)"
 echo "======================================================"
