@@ -1616,7 +1616,7 @@ class L0Executor:
     _CITY_TYPES = {2, 10101}       # 玩家主城类型
     _CITY_RADIUS = 2               # 主城: 5x5, 中心 ± 2
     _STEAM_FACTORY_KEY = 10103     # steam factory 模板 key
-    _STEAM_FACTORY_RECT = (139, 155, 145, 161)  # 固定矩形 (xmin,ymin,xmax,ymax) inclusive
+    _STEAM_FACTORY_RECT = (139, 155, 144, 160)  # 固定矩形 (xmin,ymin,xmax,ymax) inclusive
     _OTHER_BUILDING_WIDTH = 4      # 其余建筑: 4x4, (x,y)-(x+3,y+3)
 
     # 随机重试参数
@@ -1698,6 +1698,10 @@ class L0Executor:
                     rect = (ox, oy, ox + w - 1, oy + w - 1)
                 occupied.append(rect)
 
+        # 始终注入已知固定建筑（地图查询可能不返回它们）
+        if self._STEAM_FACTORY_RECT not in occupied:
+            occupied.append(self._STEAM_FACTORY_RECT)
+
         if not occupied:
             logger.info("_find_empty_spot: 目标 (%d,%d) 周围无障碍物", target_x, target_y)
             return target_x, target_y
@@ -1707,17 +1711,16 @@ class L0Executor:
             target_x, target_y, len(occupied),
         )
 
-        # 3. AABB 碰撞检测：新城 5x5, pos 是左下角
+        # 3. 碰撞检测：目标点是否在任何建筑占地内
         def is_blocked(x: int, y: int) -> bool:
-            nx1, ny1, nx2, ny2 = x, y, x + 4, y + 4
             for bx1, by1, bx2, by2 in occupied:
-                if nx1 <= bx2 and nx2 >= bx1 and ny1 <= by2 and ny2 >= by1:
+                if bx1 <= x <= bx2 and by1 <= y <= by2:
                     return True
             return False
 
         # 4. 螺旋搜索：按切比雪夫距离从 0 到 max_radius
         #    同一环内按欧氏距离排序，优先选最近的空位
-        for r in range(0, max_radius + 1, 2):
+        for r in range(0, max_radius + 1):
             if r == 0:
                 candidates = [(target_x, target_y)]
             else:
