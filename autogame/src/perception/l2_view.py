@@ -91,6 +91,11 @@ class L2GlobalView(BaseModel):
     total_power: int = 0               # 我方总战力
     total_soldiers: int = 0            # 我方总兵力
     total_enemy_power: int = 0         # 可见敌方总战力
+    # --- 积分态势 ---
+    ally_score: int = 0                # 我方总积分
+    enemy_score: int = 0               # 敌方总积分
+    score_diff: int = 0                # 分差（正=领先，负=落后）
+    time_remaining: int = 0            # 剩余时间（秒）
 
 
 # ------------------------------------------------------------------
@@ -153,6 +158,9 @@ class L2ViewBuilder:
         total_enemy_power = sum(e.power for e in snapshot.enemies)
         army_center = self._compute_army_center(squads)
 
+        # 5. 积分态势
+        score = getattr(snapshot, 'score', None)
+
         return L2GlobalView(
             loop_id=snapshot.loop_id,
             squads=squads,
@@ -164,6 +172,10 @@ class L2ViewBuilder:
             total_power=total_power,
             total_soldiers=total_soldiers,
             total_enemy_power=total_enemy_power,
+            ally_score=score.ally_score if score else 0,
+            enemy_score=score.enemy_score if score else 0,
+            score_diff=score.score_diff if score else 0,
+            time_remaining=score.time_remaining if score else 0,
         )
 
     def format_text(self, view: L2GlobalView) -> str:
@@ -188,6 +200,13 @@ class L2ViewBuilder:
             f"我方{b.ally_held} 敌方{b.enemy_held} "
             f"中立{b.neutral} 交战{b.contested}"
         )
+        if view.ally_score or view.enemy_score:
+            lines.append(
+                f"- 积分: 我方{view.ally_score:,} vs 敌方{view.enemy_score:,} "
+                f"(分差: {view.score_diff:+,d})"
+            )
+            mins, secs = divmod(view.time_remaining, 60)
+            lines.append(f"- 剩余时间: {mins}分{secs}秒")
         lines.append("")
 
         # 小队状态
