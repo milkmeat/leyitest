@@ -264,12 +264,13 @@ class L0Executor:
 
         return True, ""
 
-    async def execute(self, instr: AIInstruction, rally_pos: str = "") -> ExecutionResult:
+    async def execute(self, instr: AIInstruction, rally_pos: str = "", *, silent: bool = False) -> ExecutionResult:
         """校验 → 翻译 → 调用 game_api → 返回结果
 
         Args:
             instr: AI 指令
             rally_pos: 集结对象的编码坐标（JOIN_RALLY 用，同循环回填）
+            silent: 为 True 时将服务器错误日志降级为 DEBUG（用于移城重试等场景）
         """
         # 1. 校验
         ok, err_msg = self.validate(instr)
@@ -294,7 +295,10 @@ class L0Executor:
             else:
                 err = resp.get("res_header", {}).get("err_msg", f"ret_code={ret_code}")
                 err_detail = _lookup_error(ret_code)
-                logger.warning("L0 服务器返回错误: %s uid=%s — %s%s", instr.action.value, instr.uid, err, err_detail)
+                if silent:
+                    logger.debug("L0 服务器返回错误(静默): %s uid=%s — %s%s", instr.action.value, instr.uid, err, err_detail)
+                else:
+                    logger.warning("L0 服务器返回错误: %s uid=%s — %s%s", instr.action.value, instr.uid, err, err_detail)
                 return ExecutionResult(
                     success=False, action=instr.action, uid=instr.uid,
                     error=err, server_response=resp,
@@ -573,7 +577,9 @@ class L0Executor:
                         original_rally_instr = instr
                     instr = processed
 
-            result = await self.execute(instr, rally_pos=last_rally_pos)
+            is_auto_move = (instr.action == ActionType.LVL_MOVE_CITY
+                            and (original_attack_instr or original_rally_instr))
+            result = await self.execute(instr, rally_pos=last_rally_pos, silent=is_auto_move)
 
             # Smart L0: 移城失败重试（随机偏移坐标）
             if (not result.success
@@ -1762,6 +1768,7 @@ class L0Executor:
         target_x = original_attack_instr.target_x
         target_y = original_attack_instr.target_y
         uid = failed_instr.uid
+        last_error = ""
 
         # Phase 1: 单次智能搜索
         spot_x, spot_y = await self._find_empty_spot(
@@ -1772,10 +1779,11 @@ class L0Executor:
             "target_y": spot_y,
             "reason": f"移城重试 smart, 智能空位 ({spot_x},{spot_y})",
         })
-        logger.info("L0 移城重试 smart: uid=%d → (%d,%d)", uid, spot_x, spot_y)
-        result = await self.execute(retry_instr)
+        logger.debug("L0 移城重试 smart: uid=%d → (%d,%d)", uid, spot_x, spot_y)
+        result = await self.execute(retry_instr, silent=True)
         if result.success:
             return result
+        last_error = result.error
 
         # Phase 2: 随机偏移重试
         for attempt in range(1, self.RANDOM_RETRY_COUNT + 1):
@@ -1794,23 +1802,32 @@ class L0Executor:
                     f"随机偏移 ({rand_x},{rand_y})"
                 ),
             })
-            logger.info(
+            logger.debug(
                 "L0 移城重试 random %d/%d: uid=%d → (%d,%d)",
                 attempt, self.RANDOM_RETRY_COUNT, uid, rand_x, rand_y,
             )
-            result = await self.execute(retry_instr)
+            result = await self.execute(retry_instr, silent=True)
             if result.success:
                 return result
+            last_error = result.error
 
+        total_retries = 1 + self.RANDOM_RETRY_COUNT
         logger.warning(
-            "L0 移城重试全部失败: uid=%d, 目标建筑 (%d,%d)",
-            uid, target_x, target_y,
+            "L0 移城彻底失败: uid=%d | 初始指令=%s building=%s target=(%d,%d) | "
+            "重试次数=%d(1smart+%drandom) | 最后错误=%s",
+            uid, original_attack_instr.action.value,
+            original_attack_instr.building_id,
+            target_x, target_y,
+            total_retries, self.RANDOM_RETRY_COUNT,
+            last_error,
         )
         return ExecutionResult(
             success=False, action=ActionType.LVL_MOVE_CITY, uid=uid,
             error=(
-                f"移城失败（1次智能+{self.RANDOM_RETRY_COUNT}次随机重试），"
-                f"目标建筑附近 ({target_x},{target_y})"
+                f"移城彻底失败 | 初始指令={original_attack_instr.action.value} "
+                f"building={original_attack_instr.building_id} target=({target_x},{target_y}) | "
+                f"重试={total_retries}次(1smart+{self.RANDOM_RETRY_COUNT}random) | "
+                f"原因={last_error}"
             ),
         )
 
