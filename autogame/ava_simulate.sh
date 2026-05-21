@@ -1,25 +1,42 @@
 #!/bin/bash
-# ava_simulate.sh — AVA 战场模拟对战脚本
+# ava_simulate.sh — AVA 战场 A/B 对战模拟脚本
 #
-# 用法: ./ava_simulate.sh [duration_minutes]
-#   duration_minutes: 对战时长，默认 60 分钟
+# 用法: ./ava_simulate.sh [--v1 VERSION1] [--v2 VERSION2] [--rounds N] [--duration MINUTES]
 #
-# 自动从 40001 开始探测空闲战场 ID，无需手动指定。
+#   --v1        第一个 L2 prompt 版本（默认: default）
+#   --v2        第二个 L2 prompt 版本（默认: attack）
+#   --rounds    对战轮数，每轮2场交换阵营（默认: 1）
+#   --duration  每场对战时长，分钟（默认: 60）
 #
-# 流程: 探测空闲战场ID → 创建战场 → 全员加入 → 补给资源 → 记录起始积分
-#       → 归档旧日志 → 双方并发对战 → 等待 → 记录终止积分 → 全员退出 → 打印得分
+# 每轮对战包含两场（交换 team1/team2 位置），消除阵营位置偏差。
+# 每场开始前创建新战场并重置账号状态。
 
 set -uo pipefail
 cd "$(dirname "$0")"
 export PYTHONIOENCODING=utf-8
 
-# ── 参数 ────────────────────────────────────────────────
-DURATION_MINUTES=${1:-60}
+# ── 参数解析 ────────────────────────────────────────────
+V1="default"
+V2="attack"
+ROUNDS=1
+DURATION_MINUTES=60
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --v1) V1="$2"; shift 2 ;;
+        --v2) V2="$2"; shift 2 ;;
+        --rounds) ROUNDS="$2"; shift 2 ;;
+        --duration) DURATION_MINUTES="$2"; shift 2 ;;
+        *) echo "Unknown option: $1"; exit 1 ;;
+    esac
+done
+
 DURATION_SECONDS=$((DURATION_MINUTES * 60))
+TOTAL_MATCHES=$((ROUNDS * 2))
 
 # ── 配置 ────────────────────────────────────────────────
 CMD="python src/main.py"
-SCORE_UID=20010643  # 用于查询积分的代表 UID
+SCORE_UID=20010643
 
 OUR_UIDS=(
     20010643 20010644 20010645 20010646 20010647
@@ -34,8 +51,15 @@ ENEMY_UIDS=(
     20010683 20010684 20010685 20010686 20010687
 )
 ALL_UIDS=("${OUR_UIDS[@]}" "${ENEMY_UIDS[@]}")
+SOLDIER_IDS=(4 104 204)
 
-SOLDIER_IDS=(4 104 204)  # cavalry, infantry, archer
+# ── 结果存储数组 ────────────────────────────────────────
+declare -a MATCH_V_TEAM1=()
+declare -a MATCH_V_TEAM2=()
+declare -a MATCH_SCORE_CAMP1=()
+declare -a MATCH_SCORE_CAMP2=()
+declare -a MATCH_LOSS_TEAM1=()
+declare -a MATCH_LOSS_TEAM2=()
 
 # ── 辅助函数 ────────────────────────────────────────────
 
@@ -44,7 +68,6 @@ cli() {
     $CMD "$@" 2>&1
 }
 
-# 从 40001 开始探测，找到第一个不存在的战场 ID
 find_free_ava_id() {
     local id
     for id in $(seq 40001 40100); do
@@ -61,8 +84,6 @@ find_free_ava_id() {
     return 1
 }
 
-# 从 get_ava_score 输出中提取指定 camp 的分数
-# 用法: parse_camp_score "$output" 1   → 返回 Camp 1 的分数
 parse_camp_score() {
     local output="$1" camp="$2"
     local score
@@ -89,137 +110,213 @@ cleanup() {
 
 trap cleanup EXIT INT TERM
 
-# ── 开始 ────────────────────────────────────────────────
+# ── 单场对战函数 ────────────────────────────────────────
 
-# Step 0: 自动选择空闲战场 ID
-echo "Step 0: Finding free AVA battlefield ID (40001-40100)..."
-AVA_ID=$(find_free_ava_id)
-if [ -z "$AVA_ID" ]; then
-    echo "ERROR: 无法找到空闲战场 ID" >&2
-    exit 1
-fi
-echo "  -> 选定 ava_id=$AVA_ID"
-echo ""
+run_single_match() {
+    local match_idx="$1" round_num="$2" match_in_round="$3"
+    local v_team1="$4" v_team2="$5"
 
-echo "======================================================"
-echo "  AVA Battlefield Simulation"
-echo "  ava_id=$AVA_ID  duration=${DURATION_MINUTES}min"
-echo "======================================================"
-echo ""
+    echo ""
+    echo "╔══════════════════════════════════════════════════════╗"
+    echo "  Round $round_num Match $match_in_round"
+    echo "  Team1=$v_team1  Team2=$v_team2"
+    echo "╚══════════════════════════════════════════════════════╝"
+    echo ""
 
-# Step 1: 创建战场
-echo "Step 1: Create AVA battlefield..."
-cli uid_ava_create "$AVA_ID" "duration=2" || true
-echo ""
+    # 存储本场版本分配
+    MATCH_V_TEAM1[$match_idx]="$v_team1"
+    MATCH_V_TEAM2[$match_idx]="$v_team2"
 
-# Step 2: 全员退出（清理旧状态）
-echo "Step 2: Leave all accounts from battlefield..."
-cli uid_ava_leave_all "$AVA_ID"
-echo ""
+    # 1. 探测空闲战场 ID
+    echo "[Match] Finding free AVA battlefield ID..."
+    local ava_id
+    ava_id=$(find_free_ava_id)
+    if [ -z "$ava_id" ]; then
+        echo "ERROR: 无法找到空闲战场 ID" >&2
+        return 1
+    fi
+    echo "  -> ava_id=$ava_id"
 
-# Step 3: 全员加入
-echo "Step 3: Join all accounts to battlefield..."
-cli uid_ava_join_all "$AVA_ID"
-echo ""
+    # 2. 创建战场
+    echo "[Match] Create AVA battlefield..."
+    cli uid_ava_create "$ava_id" "duration=2" || true
 
-# Step 4: 补给资源
-echo "Step 4: Adding resources to all ${#ALL_UIDS[@]} accounts..."
-for uid in "${ALL_UIDS[@]}"; do
-    cli add_gem "$uid" 10000000 > /dev/null
-    for sid in "${SOLDIER_IDS[@]}"; do
-        cli add_soldiers "$uid" "$sid" 1000000 > /dev/null
+    # 3. 全员退出（清理旧状态）+ 全员加入
+    echo "[Match] Leave all (cleanup)..."
+    cli uid_ava_leave_all "$ava_id"
+    echo "[Match] Join all accounts..."
+    cli uid_ava_join_all "$ava_id"
+
+    # 4. 补给资源
+    echo "[Match] Adding resources..."
+    for uid in "${ALL_UIDS[@]}"; do
+        $CMD add_gem "$uid" 10000000 > /dev/null 2>&1
+        for sid in "${SOLDIER_IDS[@]}"; do
+            $CMD add_soldiers "$uid" "$sid" 1000000 > /dev/null 2>&1
+        done
     done
-    echo "  [OK] uid=$uid"
+    echo "  [OK] ${#ALL_UIDS[@]} accounts supplied"
+
+    # 5. 记录起始兵力/积分
+    echo "[Match] Recording starting state..."
+    local soldiers_t1_start soldiers_t2_start
+    soldiers_t1_start=$($CMD get_team_soldiers 1 2>/dev/null)
+    soldiers_t2_start=$($CMD get_team_soldiers 2 2>/dev/null)
+
+    local score_start_output camp1_start camp2_start
+    score_start_output=$($CMD get_ava_score "$SCORE_UID" "$ava_id" 2>/dev/null)
+    camp1_start=$(parse_camp_score "$score_start_output" 1)
+    camp2_start=$(parse_camp_score "$score_start_output" 2)
+    echo "  Soldiers: T1=$soldiers_t1_start  T2=$soldiers_t2_start"
+    echo "  Scores:   Camp1=$camp1_start  Camp2=$camp2_start"
+
+    # 6. 归档旧日志
+    if [ -d "logs" ] && [ "$(ls -A logs 2>/dev/null)" ]; then
+        mv logs "logs.r${round_num}m${match_in_round}.$(date +%H%M%S)"
+    fi
+    mkdir -p logs
+
+    # 7. 启动双方对战
+    echo "[Match] Starting battle (${DURATION_MINUTES}min)..."
+    echo "  Team1: --l2-prompt $v_team1"
+    echo "  Team2: --l2-prompt $v_team2"
+
+    $CMD --team 1 run --ava "$ava_id" --l2-prompt "$v_team1" &
+    PID1=$!
+    $CMD --team 2 run --ava "$ava_id" --l2-prompt "$v_team2" &
+    PID2=$!
+
+    # 8. 等待
+    echo "[Match] Waiting ${DURATION_MINUTES} minutes..."
+    sleep "$DURATION_SECONDS"
+
+    # 9. 停止对战
+    echo "[Match] Time's up, stopping..."
+    cleanup
+
+    # 10. 记录结束兵力/积分
+    local soldiers_t1_end soldiers_t2_end
+    soldiers_t1_end=$($CMD get_team_soldiers 1 2>/dev/null)
+    soldiers_t2_end=$($CMD get_team_soldiers 2 2>/dev/null)
+
+    local score_end_output camp1_end camp2_end
+    score_end_output=$($CMD get_ava_score "$SCORE_UID" "$ava_id" 2>/dev/null)
+    camp1_end=$(parse_camp_score "$score_end_output" 1)
+    camp2_end=$(parse_camp_score "$score_end_output" 2)
+
+    # 计算 delta
+    local score_camp1=$((camp1_end - camp1_start))
+    local score_camp2=$((camp2_end - camp2_start))
+    local loss_t1=$((soldiers_t1_start - soldiers_t1_end))
+    local loss_t2=$((soldiers_t2_start - soldiers_t2_end))
+
+    # 存储结果
+    MATCH_SCORE_CAMP1[$match_idx]=$score_camp1
+    MATCH_SCORE_CAMP2[$match_idx]=$score_camp2
+    MATCH_LOSS_TEAM1[$match_idx]=$loss_t1
+    MATCH_LOSS_TEAM2[$match_idx]=$loss_t2
+
+    echo "[Match] Result: Score Camp1=$score_camp1 Camp2=$score_camp2 | Loss T1=$loss_t1 T2=$loss_t2"
+
+    # 11. 全员退出
+    echo "[Match] Leave all..."
+    cli uid_ava_leave_all "$ava_id"
+}
+
+# ── 主流程 ──────────────────────────────────────────────
+
+echo "══════════════════════════════════════════════════════"
+echo "  AVA A/B Test: $V1 vs $V2"
+echo "  Rounds=$ROUNDS (${TOTAL_MATCHES} matches)  Duration=${DURATION_MINUTES}min/match"
+echo "══════════════════════════════════════════════════════"
+
+match_idx=0
+for ((round=1; round<=ROUNDS; round++)); do
+    # Match 1: Team1=V1, Team2=V2
+    run_single_match $match_idx $round 1 "$V1" "$V2"
+    ((match_idx++))
+
+    # Match 2: Team1=V2, Team2=V1 (交换阵营)
+    run_single_match $match_idx $round 2 "$V2" "$V1"
+    ((match_idx++))
 done
+
+# ── 汇总输出 ────────────────────────────────────────────
+
+echo ""
+echo "══════════════════════════════════════════════════════"
+echo "  A/B Test Summary: $V1 vs $V2"
+echo "  Rounds: $ROUNDS (${TOTAL_MATCHES} matches)  Duration: ${DURATION_MINUTES}min/match"
+echo "══════════════════════════════════════════════════════"
 echo ""
 
-# Step 4.5: 记录起始兵力
-echo "Step 4.5: Recording starting soldiers..."
-SOLDIERS_TEAM1_START=$($CMD get_team_soldiers 1 2>/dev/null)
-SOLDIERS_TEAM2_START=$($CMD get_team_soldiers 2 2>/dev/null)
-echo "  Team1 soldiers: $SOLDIERS_TEAM1_START"
-echo "  Team2 soldiers: $SOLDIERS_TEAM2_START"
-echo ""
+# 按版本聚合
+v1_total_score=0
+v1_total_loss=0
+v1_wins=0
+v2_total_score=0
+v2_total_loss=0
+v2_wins=0
 
-# Step 5: 记录起始积分
-echo "Step 5: Recording starting scores..."
-SCORE_START_OUTPUT=$(cli get_ava_score "$SCORE_UID" "$AVA_ID")
-echo "$SCORE_START_OUTPUT"
-CAMP1_START=$(parse_camp_score "$SCORE_START_OUTPUT" 1)
-CAMP2_START=$(parse_camp_score "$SCORE_START_OUTPUT" 2)
-echo ""
-echo "  Starting scores: Camp1=$CAMP1_START  Camp2=$CAMP2_START"
-echo ""
+for ((i=0; i<match_idx; i++)); do
+    local_v_t1="${MATCH_V_TEAM1[$i]}"
+    local_v_t2="${MATCH_V_TEAM2[$i]}"
+    s_camp1="${MATCH_SCORE_CAMP1[$i]}"
+    s_camp2="${MATCH_SCORE_CAMP2[$i]}"
+    l_t1="${MATCH_LOSS_TEAM1[$i]}"
+    l_t2="${MATCH_LOSS_TEAM2[$i]}"
 
-# Step 6: 归档旧日志
-if [ -d "logs" ] && [ "$(ls -A logs 2>/dev/null)" ]; then
-    ARCHIVE_NAME="logs.$(date +%Y%m%d_%H%M%S)"
-    echo "Step 6: Archiving old logs -> $ARCHIVE_NAME"
-    mv logs "$ARCHIVE_NAME"
+    # Team1 的版本得分 = Camp1 分数, Team2 的版本得分 = Camp2 分数
+    if [ "$local_v_t1" = "$V1" ]; then
+        v1_score=$s_camp1; v1_loss=$l_t1
+        v2_score=$s_camp2; v2_loss=$l_t2
+    else
+        v2_score=$s_camp1; v2_loss=$l_t1
+        v1_score=$s_camp2; v1_loss=$l_t2
+    fi
+
+    # 计算 round/match 编号
+    local_round=$(( i / 2 + 1 ))
+    local_match=$(( i % 2 + 1 ))
+    diff=$((v1_score - v2_score))
+
+    if [ $diff -ge 0 ]; then
+        winner="$V1 +$diff"
+    else
+        winner="$V2 +$((-diff))"
+    fi
+
+    echo "  Round $local_round Match $local_match: Team1=$local_v_t1  Team2=$local_v_t2"
+    echo "    Score:  $V1=$v1_score  $V2=$v2_score  ($winner)"
+    echo "    Losses: $V1=$v1_loss  $V2=$v2_loss"
+    echo ""
+
+    # 累加
+    v1_total_score=$((v1_total_score + v1_score))
+    v1_total_loss=$((v1_total_loss + v1_loss))
+    v2_total_score=$((v2_total_score + v2_score))
+    v2_total_loss=$((v2_total_loss + v2_loss))
+
+    if [ $v1_score -gt $v2_score ]; then
+        ((v1_wins++))
+    elif [ $v2_score -gt $v1_score ]; then
+        ((v2_wins++))
+    fi
+done
+
+# 平均值
+if [ $match_idx -gt 0 ]; then
+    v1_avg_score=$((v1_total_score / match_idx))
+    v1_avg_loss=$((v1_total_loss / match_idx))
+    v2_avg_score=$((v2_total_score / match_idx))
+    v2_avg_loss=$((v2_total_loss / match_idx))
 else
-    echo "Step 6: No old logs to archive"
+    v1_avg_score=0; v1_avg_loss=0
+    v2_avg_score=0; v2_avg_loss=0
 fi
-mkdir -p logs
-echo ""
 
-# Step 7: 启动双方对战
-echo "Step 7: Starting battle (${DURATION_MINUTES} minutes)..."
-echo "  > $CMD --team 1 run --ava $AVA_ID &"
-$CMD --team 1 run --ava "$AVA_ID" &
-PID1=$!
-
-echo "  > $CMD --team 2 run --ava $AVA_ID &"
-$CMD --team 2 run --ava "$AVA_ID" &
-PID2=$!
-
-echo "  Team1 PID=$PID1  Team2 PID=$PID2"
-echo ""
-
-# Step 8: 等待对战时长
-echo "Step 8: Waiting ${DURATION_MINUTES} minutes..."
-sleep "$DURATION_SECONDS"
-
-# Step 9: 停止对战
-echo ""
-echo "Step 9: Time's up, stopping battle..."
-cleanup
-echo ""
-
-# Step 9.5: 记录结束兵力
-echo "Step 9.5: Recording ending soldiers..."
-SOLDIERS_TEAM1_END=$($CMD get_team_soldiers 1 2>/dev/null)
-SOLDIERS_TEAM2_END=$($CMD get_team_soldiers 2 2>/dev/null)
-echo "  Team1 soldiers: $SOLDIERS_TEAM1_END"
-echo "  Team2 soldiers: $SOLDIERS_TEAM2_END"
-echo ""
-
-# Step 10: 记录终止积分
-echo "Step 10: Recording ending scores..."
-SCORE_END_OUTPUT=$(cli get_ava_score "$SCORE_UID" "$AVA_ID")
-echo "$SCORE_END_OUTPUT"
-CAMP1_END=$(parse_camp_score "$SCORE_END_OUTPUT" 1)
-CAMP2_END=$(parse_camp_score "$SCORE_END_OUTPUT" 2)
-echo ""
-
-# Step 11: 全员退出
-echo "Step 11: Leave all accounts from battlefield..."
-cli uid_ava_leave_all "$AVA_ID"
-echo ""
-
-# Step 12: 打印结果
-CAMP1_DIFF=$((CAMP1_END - CAMP1_START))
-CAMP2_DIFF=$((CAMP2_END - CAMP2_START))
-SOLDIERS_TEAM1_LOSS=$((SOLDIERS_TEAM1_START - SOLDIERS_TEAM1_END))
-SOLDIERS_TEAM2_LOSS=$((SOLDIERS_TEAM2_START - SOLDIERS_TEAM2_END))
-
-echo "======================================================"
-echo "  AVA Simulation Results (${DURATION_MINUTES} minutes)"
-echo "======================================================"
-echo "  Scores:"
-echo "  Camp 1: $CAMP1_START -> $CAMP1_END  (delta: $CAMP1_DIFF)"
-echo "  Camp 2: $CAMP2_START -> $CAMP2_END  (delta: $CAMP2_DIFF)"
-echo ""
-echo "  Soldiers:"
-echo "  Team 1: $SOLDIERS_TEAM1_START -> $SOLDIERS_TEAM1_END  (loss: $SOLDIERS_TEAM1_LOSS)"
-echo "  Team 2: $SOLDIERS_TEAM2_START -> $SOLDIERS_TEAM2_END  (loss: $SOLDIERS_TEAM2_LOSS)"
-echo "======================================================"
+echo "──────────────────────────────────────────────────────"
+echo "  TOTALS (${match_idx} matches):"
+echo "    $V1: avg_score=$v1_avg_score  avg_loss=$v1_avg_loss  wins=${v1_wins}/${match_idx}"
+echo "    $V2: avg_score=$v2_avg_score  avg_loss=$v2_avg_loss  wins=${v2_wins}/${match_idx}"
+echo "══════════════════════════════════════════════════════"
