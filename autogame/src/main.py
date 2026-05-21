@@ -1349,6 +1349,16 @@ async def cmd_l2_decide(*args: str, env: str = None):
         else:
             remaining = remaining[:ava_idx]
 
+    # 解析 --l2-prompt <version>
+    l2_prompt_version = None
+    if "--l2-prompt" in remaining:
+        idx = remaining.index("--l2-prompt")
+        if idx + 1 < len(remaining):
+            l2_prompt_version = remaining[idx + 1]
+            remaining = remaining[:idx] + remaining[idx + 2:]
+        else:
+            remaining = remaining[:idx]
+
     config = _load_config()
 
     # 创建 LLM 客户端
@@ -1381,7 +1391,8 @@ async def cmd_l2_decide(*args: str, env: str = None):
 
         # L2 决策
         l2_prompt = "ava" if lvl_id else None
-        commander = L2Commander(config, llm, prompt_template=l2_prompt)
+        commander = L2Commander(config, llm, prompt_template=l2_prompt,
+                                prompt_version=l2_prompt_version)
         orders = await commander.decide(snapshot)
 
         print(f"\nL2 军团指挥官生成 {len(orders)} 条指令:")
@@ -1523,6 +1534,7 @@ async def cmd_run(*args: str, env: str = None):
     dry_run = "--dry-run" in args
     mock_l2 = None  # type: str | None
     l1_prompt = None  # type: str | None
+    l2_prompt_version = None  # type: str | None
     llm_timeout = None  # type: int | None
     lvl_id = 0  # AVA 战场 ID
     remaining = list(args)
@@ -1544,6 +1556,9 @@ async def cmd_run(*args: str, env: str = None):
             i += 1
         elif arg == "--l1-prompt" and i + 1 < len(remaining):
             l1_prompt = remaining[i + 1]
+            i += 1
+        elif arg == "--l2-prompt" and i + 1 < len(remaining):
+            l2_prompt_version = remaining[i + 1]
             i += 1
         elif arg == "--llm-timeout" and i + 1 < len(remaining):
             llm_timeout = int(remaining[i + 1])
@@ -1582,13 +1597,36 @@ async def cmd_run(*args: str, env: str = None):
     client = GameAPIClient(env=env)
     controller = AIController(config, client, llm_client=llm_client,
                              mock_l2=mock_l2, l1_prompt=l1_prompt,
-                             lvl_id=lvl_id, sync_all=sync_all)
+                             lvl_id=lvl_id, sync_all=sync_all,
+                             l2_prompt_version=l2_prompt_version)
     try:
         await controller.run(max_rounds=max_rounds)
     finally:
         if llm_client:
             await llm_client.close()
         await client.close()
+
+
+# ---------------------------------------------------------------------------
+# Prompt 版本管理
+# ---------------------------------------------------------------------------
+
+
+async def cmd_prompts(*args: str, env: str = None):
+    """列出可用的 L2 AVA prompt 版本"""
+    from src.ai.l2_commander import list_l2_ava_versions
+
+    versions = list_l2_ava_versions()
+    if not versions:
+        print("未找到 L2 AVA prompt 版本。")
+        print("  在 src/ai/prompts/l2_ava/ 目录下创建 .txt 文件即可添加版本。")
+        return
+
+    print(f"可用的 L2 AVA prompt 版本 ({len(versions)} 个):")
+    for v in versions:
+        marker = " (default)" if v == "default" else ""
+        print(f"  - {v}{marker}")
+    print(f"\n用法: run --ava <lvl_id> --l2-prompt <version>")
 
 
 # ---------------------------------------------------------------------------
@@ -2561,14 +2599,15 @@ async def cmd_uid_ava_leave_all(lvl_id_str: str, *extra: str, env: str = None):
 
 COMMANDS = {
     # L2
-    "l2_decide":            (cmd_l2_decide,             "[--ava <lvl_id>] [--dry-run] [--json]",  "L2 军团指挥官决策调试(AVA自动切换prompt)"),
+    "l2_decide":            (cmd_l2_decide,             "[--ava <lvl_id>] [--l2-prompt <ver>] [--dry-run] [--json]",  "L2 军团指挥官决策调试(AVA自动切换prompt)"),
     # L1
     "l1_view":              (cmd_l1_view,               "<squad_id> [--json]",                    "L1 小队局部视图"),
     "l1_decide":            (cmd_l1_decide,             "<squad_id> [--ava <lvl_id>] [--dry-run] [--json]", "L1 单小队决策调试(AVA自动切换prompt)"),
     # LLM
     "llm_test":             (cmd_llm_test,              "[--dry-run]",                            "测试 LLM 连通性"),
     # 主循环
-    "run":                  (cmd_run,                   "[--rounds N] [--once] [--loop.interval_seconds N]", "启动 AI 主循环"),
+    "run":                  (cmd_run,                   "[--rounds N] [--once] [--ava <lvl_id>] [--l2-prompt <ver>] [--l1-prompt <name>]", "启动 AI 主循环"),
+    "prompts":              (cmd_prompts,               "",                                       "列出可用的 L2 AVA prompt 版本"),
     # 查询
     "get_player_pos":       (cmd_get_player_pos,       "<uid>",                              "查询玩家坐标"),
     "get_player_info":      (cmd_get_player_info,      "<uid>",                              "查询玩家完整信息(自动检测AVA)"),

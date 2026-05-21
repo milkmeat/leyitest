@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 # prompt 文件目录
 _PROMPT_DIR = os.path.join(os.path.dirname(__file__), "prompts")
+_L2_AVA_DIR = os.path.join(_PROMPT_DIR, "l2_ava")
 
 
 def _load_prompt(filename: str) -> str:
@@ -31,6 +32,19 @@ def _load_prompt(filename: str) -> str:
     path = os.path.join(_PROMPT_DIR, filename)
     with open(path, "r", encoding="utf-8") as f:
         return f.read()
+
+
+def list_l2_ava_versions() -> list[str]:
+    """扫描 l2_ava/ 目录，返回可用的 prompt 版本名列表（default 排首位）"""
+    if not os.path.isdir(_L2_AVA_DIR):
+        return []
+    versions = [
+        os.path.splitext(f)[0]
+        for f in os.listdir(_L2_AVA_DIR)
+        if f.endswith(".txt") and os.path.isfile(os.path.join(_L2_AVA_DIR, f))
+    ]
+    versions.sort(key=lambda v: (v != "default", v))
+    return versions
 
 
 class L2Commander:
@@ -41,11 +55,26 @@ class L2Commander:
     """
 
     def __init__(self, config: AppConfig, llm_client: LLMClient,
-                 memory_max_entries: int = 5, prompt_template: str | None = None):
+                 memory_max_entries: int = 5, prompt_template: str | None = None,
+                 prompt_version: str | None = None):
         self.config = config
         self.llm = llm_client
-        # 支持 prompt 模板切换（如 "ava" → l2_system_ava.txt）
-        if prompt_template:
+        # 支持 prompt 模板切换 + AVA 多版本
+        if prompt_template == "ava":
+            version = prompt_version or "default"
+            versioned_path = os.path.join(_L2_AVA_DIR, f"{version}.txt")
+            if os.path.isfile(versioned_path):
+                with open(versioned_path, "r", encoding="utf-8") as f:
+                    self.system_prompt = f.read()
+                logger.info("L2 AVA prompt loaded: l2_ava/%s.txt", version)
+            else:
+                try:
+                    self.system_prompt = _load_prompt("l2_system_ava.txt")
+                    logger.warning("L2 AVA version '%s' not found, fell back to l2_system_ava.txt", version)
+                except FileNotFoundError:
+                    logger.warning("L2 AVA prompt not found, using default l2_system.txt")
+                    self.system_prompt = _load_prompt("l2_system.txt")
+        elif prompt_template:
             filename = f"l2_system_{prompt_template}.txt"
             try:
                 self.system_prompt = _load_prompt(filename)

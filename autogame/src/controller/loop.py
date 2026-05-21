@@ -67,7 +67,8 @@ class AIController:
 
     def __init__(self, config: AppConfig, client: GameAPIClient, llm_client=None,
                  mock_l2: str | None = None, l1_prompt: str | None = None,
-                 lvl_id: int = 0, sync_all: bool = False):
+                 lvl_id: int = 0, sync_all: bool = False,
+                 l2_prompt_version: str | None = None):
         self.config = config
         self.client = client
         self.syncer = DataSyncer(client, config)
@@ -94,7 +95,8 @@ class AIController:
             self.l1_coordinator = L1Coordinator(config, llm_client, prompt_template=effective_l1_prompt)
         if llm_client is not None and L2Commander is not None:
             l2_prompt = "ava" if lvl_id else None
-            self.l2_commander = L2Commander(config, llm_client, prompt_template=l2_prompt)
+            self.l2_commander = L2Commander(config, llm_client, prompt_template=l2_prompt,
+                                           prompt_version=l2_prompt_version)
         if llm_client is not None and SituationSummarizer is not None:
             self.summarizer = SituationSummarizer(llm_client)
 
