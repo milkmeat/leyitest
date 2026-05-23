@@ -205,7 +205,9 @@ class GameAPIClient:
         # 业务失败时打印详细信息
         code = result.get("res_header", {}).get("ret_code", result.get("code", -1))
         if code != 0:
-            logger.warning(
+            # 21105 碰撞有重试机制兜底，降为 DEBUG 减少噪音
+            _log = logger.debug if code == 21105 else logger.warning
+            _log(
                 "[业务失败] cmd_name=%s cmd=%s uid=%s code=%s\n"
                 "Header: %s\n"
                 "Param: %s\n"

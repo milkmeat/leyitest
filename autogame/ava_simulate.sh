@@ -30,7 +30,30 @@ while [[ $# -gt 0 ]]; do
         --rounds) ROUNDS="$2"; shift 2 ;;
         --duration) DURATION_MINUTES="$2"; shift 2 ;;
         --csv) CSV_FILE="$2"; shift 2 ;;
-        *) echo "Unknown option: $1"; exit 1 ;;
+        --help|-h)
+            echo "用法: ./ava_simulate.sh [OPTIONS]"
+            echo ""
+            echo "AVA 战场 A/B 对战模拟 — 两个 L2 prompt 版本交替对战并汇总胜负"
+            echo ""
+            echo "参数:"
+            echo "  --v1 VERSION       第一个 L2 prompt 版本 (默认: $V1)"
+            echo "  --v2 VERSION       第二个 L2 prompt 版本 (默认: $V2)"
+            echo "  --rounds N         对战轮数，每轮2场交换阵营 (默认: $ROUNDS)"
+            echo "  --duration MINUTES 每场对战时长，分钟 (默认: $DURATION_MINUTES)"
+            echo "  --csv FILE         结果 CSV 文件路径 (默认: $CSV_FILE)"
+            echo "  --help, -h         显示此帮助信息"
+            echo ""
+            echo "说明:"
+            echo "  每轮包含两场对战（交换 team1/team2 位置），消除阵营位置偏差。"
+            echo "  每场开始前自动创建新战场、重置账号状态、补给资源。"
+            echo "  对战结束后输出积分汇总和胜负统计。"
+            echo ""
+            echo "示例:"
+            echo "  ./ava_simulate.sh --v1 default --v2 attack --rounds 3 --duration 30"
+            echo "  ./ava_simulate.sh --v1 aggressive --v2 defensive --csv results.csv"
+            exit 0
+            ;;
+        *) echo "Unknown option: $1 (use --help for usage)"; exit 1 ;;
     esac
 done
 

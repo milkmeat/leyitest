@@ -1774,16 +1774,23 @@ class L0Executor:
         spot_x, spot_y = await self._find_empty_spot(
             uid, target_x, target_y, max_radius=10,
         )
-        retry_instr = failed_instr.model_copy(update={
-            "target_x": spot_x,
-            "target_y": spot_y,
-            "reason": f"移城重试 smart, 智能空位 ({spot_x},{spot_y})",
-        })
-        logger.debug("L0 移城重试 smart: uid=%d → (%d,%d)", uid, spot_x, spot_y)
-        result = await self.execute(retry_instr, silent=True)
-        if result.success:
-            return result
-        last_error = result.error
+        # 如果智能搜索返回的坐标与首次失败坐标相同，跳过（避免无意义重复请求）
+        if (spot_x, spot_y) != (failed_instr.target_x, failed_instr.target_y):
+            retry_instr = failed_instr.model_copy(update={
+                "target_x": spot_x,
+                "target_y": spot_y,
+                "reason": f"移城重试 smart, 智能空位 ({spot_x},{spot_y})",
+            })
+            logger.debug("L0 移城重试 smart: uid=%d → (%d,%d)", uid, spot_x, spot_y)
+            result = await self.execute(retry_instr, silent=True)
+            if result.success:
+                return result
+            last_error = result.error
+        else:
+            logger.debug(
+                "L0 移城重试 smart: 坐标与失败相同 (%d,%d), 跳过直接随机重试",
+                spot_x, spot_y,
+            )
 
         # Phase 2: 随机偏移重试
         for attempt in range(1, self.RANDOM_RETRY_COUNT + 1):
