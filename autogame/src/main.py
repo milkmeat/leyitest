@@ -2594,6 +2594,184 @@ async def cmd_uid_ava_leave_all(lvl_id_str: str, *extra: str, env: str = None):
 
 
 # ---------------------------------------------------------------------------
+# AVA 观察者 & CSV 导出
+# ---------------------------------------------------------------------------
+
+async def cmd_ava_observe(*args: str, env: str = None):
+    """AVA 战场单次 poll — 获取当前积分和建筑状态，检测事件写入 JSONL
+
+    用法: ava_observe <uid> <lvl_id> --state FILE --output FILE
+          --strategy-a NAME --strategy-b NAME --match-id ID --camp-a 1|2
+          --elapsed SEC --seq N
+
+    每次调用是独立进程，和 get_ava_score 使用完全相同的 API 路径。
+    """
+    from src.executor.game_api import GameAPIClient
+    from src.recorder.match_recorder import detect_events, STEAM_FACTORY_KEY
+    import asyncio as _asyncio
+
+    uid = int(args[0])
+    lvl_id = int(args[1])
+    state_file = "observer_state.json"
+    output = "events.jsonl"
+    strategy_a = "A"
+    strategy_b = "B"
+    match_id = "unknown"
+    camp_a = 1
+    elapsed = 0.0
+    seq = 0
+
+    i = 2
+    while i < len(args):
+        if args[i] == "--state" and i + 1 < len(args):
+            state_file = args[i + 1]; i += 2
+        elif args[i] == "--output" and i + 1 < len(args):
+            output = args[i + 1]; i += 2
+        elif args[i] == "--strategy-a" and i + 1 < len(args):
+            strategy_a = args[i + 1]; i += 2
+        elif args[i] == "--strategy-b" and i + 1 < len(args):
+            strategy_b = args[i + 1]; i += 2
+        elif args[i] == "--match-id" and i + 1 < len(args):
+            match_id = args[i + 1]; i += 2
+        elif args[i] == "--camp-a" and i + 1 < len(args):
+            camp_a = int(args[i + 1]); i += 2
+        elif args[i] == "--elapsed" and i + 1 < len(args):
+            elapsed = float(args[i + 1]); i += 2
+        elif args[i] == "--seq" and i + 1 < len(args):
+            seq = int(args[i + 1]); i += 2
+        else:
+            i += 1
+
+    camp_b = 2 if camp_a == 1 else 1
+
+    # 用和 get_ava_score 完全相同的方式获取数据
+    client = GameAPIClient(env=env)
+    try:
+        resp_login, resp_detail = await _asyncio.gather(
+            client.lvl_battle_login_get(uid, lvl_id),
+            client.lvl_get_battle_server_detail(uid, lvl_id),
+        )
+
+        # 积分：从 svr_lvl_war_situation
+        situation = _extract_push_data(resp_login, "svr_lvl_war_situation")
+        score_a, score_b = 0, 0
+        if situation:
+            for camp in situation.get("avaCampInfo", []):
+                cid = int(camp.get("campId", 0))
+                if cid == camp_a:
+                    score_a = int(camp.get("score", 0))
+                elif cid == camp_b:
+                    score_b = int(camp.get("score", 0))
+
+        # 建筑：从 svr_lvl_brief_objs
+        brief_objs = _extract_push_data(resp_login, "svr_lvl_brief_objs")
+        factory_owner = "NEUTRAL"
+        factory_found = False
+        if brief_objs:
+            objs = brief_objs if isinstance(brief_objs, list) else brief_objs.get("briefObjs", brief_objs.get("briefList", []))
+            for obj in objs:
+                if int(obj.get("type", 0)) == STEAM_FACTORY_KEY:
+                    factory_found = True
+                    aid = int(obj.get("camp", 0)) or int(obj.get("aid", 0))
+                    if aid == 0:
+                        factory_owner = "NEUTRAL"
+                    elif aid == camp_a:
+                        factory_owner = "A"
+                    else:
+                        factory_owner = "B"
+                    break
+
+        # 诊断日志：前 5 次 + factory 状态变化时记录
+        import os as _os
+        _diag_file = _os.path.join(_os.path.dirname(output), "observer_diag.log")
+        if seq < 5 or (seq % 30 == 0):
+            with open(_diag_file, "a", encoding="utf-8") as _df:
+                _brief_type = type(brief_objs).__name__ if brief_objs else "None"
+                _obj_count = len(objs) if brief_objs else 0
+                _df.write(f"seq={seq} elapsed={elapsed} score_a={score_a} score_b={score_b} "
+                          f"factory_owner={factory_owner} factory_found={factory_found} "
+                          f"brief_type={_brief_type} obj_count={_obj_count}\n")
+                if seq < 3 and brief_objs:
+                    # dump 含 type=10103 的对象原始内容
+                    for obj in objs:
+                        if int(obj.get("type", 0)) == STEAM_FACTORY_KEY:
+                            _df.write(f"  FACTORY_RAW: {_json.dumps(obj, ensure_ascii=False)[:500]}\n")
+                            break
+                    if not factory_found:
+                        # dump 前 3 个对象的 type 看看有什么
+                        sample_types = [obj.get("type") for obj in objs[:10]]
+                        _df.write(f"  sample_types: {sample_types}\n")
+
+        # 检测事件
+        detect_events(
+            prev_state_file=state_file,
+            curr_score_a=score_a,
+            curr_score_b=score_b,
+            curr_factory_owner=factory_owner,
+            elapsed_sec=elapsed,
+            loop_seq=seq,
+            strategy_a=strategy_a,
+            strategy_b=strategy_b,
+            match_id=match_id,
+            output_path=output,
+        )
+    finally:
+        await client.close()
+
+
+async def cmd_ava_observe_end(*args: str, env: str = None):
+    """写入 MATCH_END 事件
+
+    用法: ava_observe_end --state FILE --output FILE --strategy-a NAME --strategy-b NAME --match-id ID
+    """
+    from src.recorder.match_recorder import write_match_end
+
+    state_file = "observer_state.json"
+    output = "events.jsonl"
+    strategy_a = "A"
+    strategy_b = "B"
+    match_id = "unknown"
+
+    i = 0
+    while i < len(args):
+        if args[i] == "--state" and i + 1 < len(args):
+            state_file = args[i + 1]; i += 2
+        elif args[i] == "--output" and i + 1 < len(args):
+            output = args[i + 1]; i += 2
+        elif args[i] == "--strategy-a" and i + 1 < len(args):
+            strategy_a = args[i + 1]; i += 2
+        elif args[i] == "--strategy-b" and i + 1 < len(args):
+            strategy_b = args[i + 1]; i += 2
+        elif args[i] == "--match-id" and i + 1 < len(args):
+            match_id = args[i + 1]; i += 2
+        else:
+            i += 1
+
+    write_match_end(state_file, strategy_a, strategy_b, match_id, output)
+
+
+async def cmd_ava_export_csv(*args: str, env: str = None):
+    """将 JSONL 事件文件导出/追加到 CSV
+
+    用法: ava_export_csv <events_file> [--csv ava_results.csv]
+    """
+    from src.recorder.csv_export import export_events_to_csv
+
+    events_file = args[0]
+    csv_path = "ava_results.csv"
+
+    i = 1
+    while i < len(args):
+        if args[i] == "--csv" and i + 1 < len(args):
+            csv_path = args[i + 1]; i += 2
+        else:
+            i += 1
+
+    count = export_events_to_csv(events_file, csv_path)
+    print(f"[OK] {count} events appended to {csv_path}")
+
+
+# ---------------------------------------------------------------------------
 # 命令注册
 # ---------------------------------------------------------------------------
 
@@ -2663,6 +2841,10 @@ COMMANDS = {
     "uid_ava_status":       (cmd_uid_ava_status,        "<uid>",                              "查询AVA战场状态"),
     "uid_ava_leave":        (cmd_uid_ava_leave,         "<uid>",                              "离开AVA战场"),
     "uid_ava_leave_all":    (cmd_uid_ava_leave_all,     "<lvl_id>",                           "批量退出AVA战场(accounts+enemies全部)"),
+    # 观察者 & CSV
+    "ava_observe":          (cmd_ava_observe,           "<uid> <lvl_id> --state FILE --output FILE --strategy-a NAME --strategy-b NAME --match-id ID --camp-a N --elapsed SEC --seq N", "AVA单次poll(积分+建筑事件检测)"),
+    "ava_observe_end":      (cmd_ava_observe_end,       "--state FILE --output FILE --strategy-a NAME --strategy-b NAME --match-id ID", "写入MATCH_END事件"),
+    "ava_export_csv":       (cmd_ava_export_csv,        "<events_file> [--csv FILE]",         "JSONL事件导出到CSV"),
 }
 
 

@@ -1,12 +1,13 @@
 #!/bin/bash
 # ava_simulate.sh — AVA 战场 A/B 对战模拟脚本
 #
-# 用法: ./ava_simulate.sh [--v1 VERSION1] [--v2 VERSION2] [--rounds N] [--duration MINUTES]
+# 用法: ./ava_simulate.sh [--v1 VERSION1] [--v2 VERSION2] [--rounds N] [--duration MINUTES] [--csv FILE]
 #
 #   --v1        第一个 L2 prompt 版本（默认: default）
 #   --v2        第二个 L2 prompt 版本（默认: attack）
 #   --rounds    对战轮数，每轮2场交换阵营（默认: 1）
 #   --duration  每场对战时长，分钟（默认: 60）
+#   --csv       结果 CSV 文件路径（默认: ava_results.csv）
 #
 # 每轮对战包含两场（交换 team1/team2 位置），消除阵营位置偏差。
 # 每场开始前创建新战场并重置账号状态。
@@ -20,6 +21,7 @@ V1="default"
 V2="attack"
 ROUNDS=1
 DURATION_MINUTES=60
+CSV_FILE="ava_results.csv"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -27,6 +29,7 @@ while [[ $# -gt 0 ]]; do
         --v2) V2="$2"; shift 2 ;;
         --rounds) ROUNDS="$2"; shift 2 ;;
         --duration) DURATION_MINUTES="$2"; shift 2 ;;
+        --csv) CSV_FILE="$2"; shift 2 ;;
         *) echo "Unknown option: $1"; exit 1 ;;
     esac
 done
@@ -94,18 +97,45 @@ parse_camp_score() {
 # 后台进程管理
 PID1=""
 PID2=""
+PID_OBS=""
 
 cleanup() {
-    if [ -n "$PID1" ] || [ -n "$PID2" ]; then
+    if [ -n "$PID1" ] || [ -n "$PID2" ] || [ -n "$PID_OBS" ]; then
         echo ""
         echo "Stopping battle processes..."
+        [ -n "$PID_OBS" ] && kill "$PID_OBS" 2>/dev/null
         [ -n "$PID1" ] && kill "$PID1" 2>/dev/null
         [ -n "$PID2" ] && kill "$PID2" 2>/dev/null
+        wait "$PID_OBS" 2>/dev/null
         wait "$PID1" 2>/dev/null
         wait "$PID2" 2>/dev/null
+        PID_OBS=""
         PID1=""
         PID2=""
     fi
+}
+
+# observer 轮询循环（后台运行）
+run_observer_loop() {
+    local uid="$1" ava_id="$2" events_file="$3" state_file="$4"
+    local match_id="$5" camp_a="$6" duration_sec="$7"
+    local interval=30
+    local seq=0
+    local start_time=$SECONDS
+
+    while true; do
+        local elapsed=$(( SECONDS - start_time ))
+        if [ $elapsed -ge $duration_sec ]; then
+            break
+        fi
+        $CMD ava_observe "$uid" "$ava_id" \
+            --state "$state_file" --output "$events_file" \
+            --strategy-a "$V1" --strategy-b "$V2" \
+            --match-id "$match_id" --camp-a "$camp_a" \
+            --elapsed "$elapsed" --seq "$seq" > /dev/null 2>&1
+        ((seq++))
+        sleep "$interval"
+    done
 }
 
 trap cleanup EXIT INT TERM
@@ -186,6 +216,18 @@ run_single_match() {
     $CMD --team 2 run --ava "$ava_id" --l2-prompt "$v_team2" &
     PID2=$!
 
+    # 7b. 启动观察者循环（后台独立进程调用）
+    local events_file="logs/events_r${round_num}m${match_in_round}.jsonl"
+    local state_file="logs/observer_state_r${round_num}m${match_in_round}.json"
+    local match_id="${V1}_vs_${V2}_r${round_num}m${match_in_round}"
+    local camp_a=1
+    if [ "$v_team1" != "$V1" ]; then
+        camp_a=2
+    fi
+    run_observer_loop "$SCORE_UID" "$ava_id" "$events_file" "$state_file" \
+        "$match_id" "$camp_a" "$DURATION_SECONDS" &
+    PID_OBS=$!
+
     # 8. 等待
     echo "[Match] Waiting ${DURATION_MINUTES} minutes..."
     sleep "$DURATION_SECONDS"
@@ -193,6 +235,17 @@ run_single_match() {
     # 9. 停止对战
     echo "[Match] Time's up, stopping..."
     cleanup
+
+    # 9b. 写入 MATCH_END 并导出 CSV
+    if [ -f "$state_file" ]; then
+        $CMD ava_observe_end \
+            --state "$state_file" --output "$events_file" \
+            --strategy-a "$V1" --strategy-b "$V2" --match-id "$match_id"
+    fi
+    if [ -f "$events_file" ]; then
+        echo "[Match] Exporting events to CSV ($CSV_FILE)..."
+        $CMD ava_export_csv "$events_file" --csv "$CSV_FILE"
+    fi
 
     # 10. 记录结束兵力/积分
     local soldiers_t1_end soldiers_t2_end
