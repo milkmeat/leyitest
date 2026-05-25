@@ -1,31 +1,22 @@
-# 环境配置 — 服务器连接信息
-# 切换环境只需修改 current_env
-
 current_env: test
-
-environments:
-  test:
-    name: "测试环境"
-    url: "https://leyi-offline-game-alb.leyinetwork.com/p10-test-lc-proxy"
-
-  mock:
-    name: "本地Mock"
-    url: "http://localhost:18888/mock"
-
-# 请求头默认值（每次请求会合并 uid/sid 等动态字段）
 default_header:
-  did: "self-system"
-  sid: 1                       # 服务器ID（test环境只有 sid=1）
-  aid: 20000118              # 联盟 TestSquad2026
-  ksid: 1
-  lvl_id: 29999
-  castle_lv: 25
-  battle_type: 0
+  aid: 20000118
   battle_id: 0
-  chat_scene: ",kingdom_1"
-  invoker_name: "ying_test_debug"
-
-# 请求附加信息（固定不变）
+  battle_type: 0
+  castle_lv: 25
+  chat_scene: ',kingdom_1'
+  did: self-system
+  invoker_name: ying_test_debug
+  ksid: 1
+  lvl_id: 40001
+  sid: 1
+environments:
+  mock:
+    name: 本地Mock
+    url: http://localhost:18888/mock
+  test:
+    name: 测试环境
+    url: https://leyi-offline-game-alb.leyinetwork.com/p10-test-lc-proxy
 extra_info:
   no_checkac: 1
   op_cmd: 1

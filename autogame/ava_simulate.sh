@@ -59,6 +59,7 @@ done
 
 DURATION_SECONDS=$((DURATION_MINUTES * 60))
 TOTAL_MATCHES=$((ROUNDS * 2))
+RUN_TS=$(date +%Y%m%d_%H%M%S)
 
 # ── 配置 ────────────────────────────────────────────────
 CMD="python src/main.py"
@@ -242,7 +243,7 @@ run_single_match() {
     # 7b. 启动观察者循环（后台独立进程调用）
     local events_file="logs/events_r${round_num}m${match_in_round}.jsonl"
     local state_file="logs/observer_state_r${round_num}m${match_in_round}.json"
-    local match_id="${V1}_vs_${V2}_r${round_num}m${match_in_round}"
+    local match_id="${V1}_vs_${V2}_${RUN_TS}_r${round_num}m${match_in_round}"
     local camp_a=1
     if [ "$v_team1" != "$V1" ]; then
         camp_a=2

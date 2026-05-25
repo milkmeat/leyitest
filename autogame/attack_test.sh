@@ -62,9 +62,6 @@ fi
 echo "  AVA_ID = $AVA_ID"
 
 cli uid_ava_create "$AVA_ID" "duration=2"
-echo "  等待 4 分钟（3 分钟准备期 + 1 分钟缓冲）..."
-sleep 240
-echo "  等待结束"
 echo ""
 
 # 2. 加入战场
@@ -83,14 +80,20 @@ cli uid_ava_enter "$AVA_ID" "$A_UID"
 cli uid_ava_enter "$AVA_ID" "$B_UID"
 echo ""
 
-# 4. 补兵
-echo "── Step 4: 补兵 ──"
+# 4. 等待准备期（账号已入场后再等待）
+echo "── Step 4: 等待 4 分钟（3 分钟准备期 + 1 分钟缓冲）──"
+sleep 240
+echo "  等待结束"
+echo ""
+
+# 5. 补兵
+echo "── Step 5: 补兵 ──"
 cli add_soldiers "$A_UID" 204 1000000
 cli add_soldiers "$B_UID" 204 1000000
 echo ""
 
-# 5. 更新 env_config 的 lvl_id
-echo "── Step 5: 更新配置 lvl_id=$AVA_ID ──"
+# 6. 更新 env_config 的 lvl_id
+echo "── Step 6: 更新配置 lvl_id=$AVA_ID ──"
 python -c "
 import yaml
 with open('config/env_config.yaml', 'r', encoding='utf-8') as f:
@@ -102,14 +105,14 @@ print('  env_config.yaml lvl_id → $AVA_ID')
 "
 echo ""
 
-# 6. 移城
-echo "── Step 6: 移城 ──"
+# 7. 移城
+echo "── Step 7: 移城 ──"
 cli lvl_move_city "$A_UID" "$AVA_ID" $A_POS
 cli lvl_move_city "$B_UID" "$AVA_ID" $B_POS
 echo ""
 
-# 7. 发现建筑
-echo "── Step 7: 发现 No.4 Production Shed ──"
+# 8. 发现建筑
+echo "── Step 8: 发现 No.4 Production Shed ──"
 BUILDING_UID=$(python attack_find_building.py "$AVA_ID" "$TARGET_KEY" "$A_UID")
 if [ -z "$BUILDING_UID" ]; then
     echo "[FAIL] 未找到 No.4 Production Shed (key=$TARGET_KEY)"
@@ -118,8 +121,8 @@ fi
 echo "  BUILDING_UID = $BUILDING_UID"
 echo ""
 
-# 8. 循环攻击
-echo "── Step 8: 循环攻击 $LOOP_COUNT 次 ──"
+# 9. 循环攻击
+echo "── Step 9: 循环攻击 $LOOP_COUNT 次 ──"
 echo "  格式: [轮次] 攻击方 → 结果 | 选择兵种"
 echo "  每次攻击后等待 ${MARCH_WAIT}s（行军+战斗）"
 echo ""

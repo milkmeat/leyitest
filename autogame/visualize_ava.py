@@ -2,19 +2,131 @@
 """AVA 对战结果可视化：CSV → HTML (Chart.js)"""
 
 import csv
-from collections import defaultdict
 from pathlib import Path
 
 CSV_PATH = Path(__file__).parent / "ava_results.csv"
 OUT_PATH = Path(__file__).parent / "ava_report.html"
 
 
-def load_matches(csv_path: Path) -> dict[str, list[dict]]:
-    matches: dict[str, list[dict]] = defaultdict(list)
+def load_matches(csv_path: Path) -> list[list[dict]]:
+    """Load CSV and group into matches (MATCH_START to next MATCH_START)."""
+    all_rows = []
     with open(csv_path, newline="", encoding="utf-8") as f:
         for row in csv.DictReader(f):
-            matches[row["match_id"]].append(row)
+            all_rows.append(row)
+
+    matches: list[list[dict]] = []
+    current: list[dict] = []
+    for row in all_rows:
+        if row["event_type"] == "MATCH_START":
+            if current:
+                matches.append(current)
+            current = [row]
+        else:
+            current.append(row)
+    if current:
+        matches.append(current)
     return matches
+
+
+def compute_ratings(matches: list[list[dict]]) -> tuple[dict[str, float], dict[str, dict]]:
+    """Compute Elo ratings and head-to-head matrix from match results."""
+    ratings: dict[str, float] = {}
+    h2h: dict[str, dict[str, dict[str, int]]] = {}
+
+    end_events = []
+    for match in matches:
+        end_evt = next((e for e in match if e["event_type"] == "MATCH_END"), None)
+        if end_evt:
+            end_events.append(end_evt)
+
+    end_events.sort(key=lambda e: e["iso_time"])
+
+    for evt in end_events:
+        a, b = evt["strategy_a"], evt["strategy_b"]
+        for s in (a, b):
+            if s not in ratings:
+                ratings[s] = 1500.0
+        if a not in h2h:
+            h2h[a] = {}
+        if b not in h2h:
+            h2h[b] = {}
+        if b not in h2h[a]:
+            h2h[a][b] = {"W": 0, "L": 0, "D": 0}
+        if a not in h2h[b]:
+            h2h[b][a] = {"W": 0, "L": 0, "D": 0}
+
+        winner = evt["leader"]
+        if winner == "A":
+            sa, sb = 1.0, 0.0
+            h2h[a][b]["W"] += 1
+            h2h[b][a]["L"] += 1
+        elif winner == "B":
+            sa, sb = 0.0, 1.0
+            h2h[a][b]["L"] += 1
+            h2h[b][a]["W"] += 1
+        else:
+            sa, sb = 0.5, 0.5
+            h2h[a][b]["D"] += 1
+            h2h[b][a]["D"] += 1
+
+        ea = 1.0 / (1.0 + 10 ** ((ratings[b] - ratings[a]) / 400))
+        eb = 1.0 - ea
+        K = 32
+        ratings[a] += K * (sa - ea)
+        ratings[b] += K * (sb - eb)
+
+    return ratings, h2h
+
+
+def render_rating_section(ratings: dict[str, float], h2h: dict[str, dict]) -> str:
+    """Render Elo rating table and head-to-head matrix as HTML."""
+    strategies = sorted(ratings.keys(), key=lambda s: ratings[s], reverse=True)
+
+    totals = {}
+    for s in strategies:
+        w = sum(rec["W"] for rec in h2h.get(s, {}).values())
+        l = sum(rec["L"] for rec in h2h.get(s, {}).values())
+        d = sum(rec["D"] for rec in h2h.get(s, {}).values())
+        total = w + l + d
+        totals[s] = {"W": w, "L": l, "D": d, "total": total, "rate": w / total if total else 0}
+
+    rows_html = ""
+    for rank, s in enumerate(strategies, 1):
+        t = totals[s]
+        rows_html += (
+            f"<tr><td>{rank}</td><td><b>{s}</b></td>"
+            f"<td>{ratings[s]:.0f}</td>"
+            f"<td>{t['W']}</td><td>{t['L']}</td><td>{t['D']}</td>"
+            f"<td>{t['rate']*100:.1f}%</td></tr>\n"
+        )
+
+    matrix_header = "<th></th>" + "".join(f"<th>{s}</th>" for s in strategies)
+    matrix_rows = ""
+    for s in strategies:
+        cells = ""
+        for opp in strategies:
+            if s == opp:
+                cells += "<td>-</td>"
+            else:
+                rec = h2h.get(s, {}).get(opp, {"W": 0, "L": 0, "D": 0})
+                cells += f"<td>{rec['W']}-{rec['L']}-{rec['D']}</td>"
+        matrix_rows += f"<tr><td><b>{s}</b></td>{cells}</tr>\n"
+
+    return f"""
+    <section>
+      <h2>策略等级分 (Elo Rating)</h2>
+      <table class="rating-table">
+        <thead><tr><th>#</th><th>策略</th><th>Elo</th><th>胜</th><th>负</th><th>平</th><th>胜率</th></tr></thead>
+        <tbody>{rows_html}</tbody>
+      </table>
+      <h3>对战矩阵 (W-L-D)</h3>
+      <table class="matrix-table">
+        <thead><tr>{matrix_header}</tr></thead>
+        <tbody>{matrix_rows}</tbody>
+      </table>
+    </section>
+"""
 
 
 def compute_summary(events: list[dict]) -> dict:
@@ -79,11 +191,15 @@ def build_chart_data(events: list[dict]) -> dict:
     }
 
 
-def render_html(matches: dict[str, list[dict]]) -> str:
+def render_html(matches: list[list[dict]]) -> str:
     import json
 
+    ratings, h2h = compute_ratings(matches)
+    rating_html = render_rating_section(ratings, h2h)
+
     sections = []
-    for i, (match_id, events) in enumerate(matches.items()):
+    for i, events in enumerate(matches):
+        match_id = events[0]["match_id"]
         strat_a = events[0]["strategy_a"]
         strat_b = events[0]["strategy_b"]
         chart_data = build_chart_data(events)
@@ -94,7 +210,7 @@ def render_html(matches: dict[str, list[dict]]) -> str:
         summary_html = (
             f'<div class="summary">'
             f'<p><b>比分交换领先次数:</b> {summary["lead_changes"]}</p>'
-            f'<p><b>Factory 易手次数:</b> {summary["factory_captures"]}</p>'
+            f'<p><b>Factory 易手次数(*号):</b> {summary["factory_captures"]}</p>'
             f'<p><b>最终胜方 ({winner_label}) 领先时间占比:</b> {summary["winner_lead_pct"]:.1f}%</p>'
             f'</div>'
         )
@@ -168,10 +284,15 @@ def render_html(matches: dict[str, list[dict]]) -> str:
     h2 {{ color: #334155; margin-top: 0; }}
     .summary {{ margin-top: 16px; padding: 12px 16px; background: #f1f5f9; border-radius: 8px; }}
     .summary p {{ margin: 4px 0; }}
+    .rating-table, .matrix-table {{ border-collapse: collapse; width: 100%; margin: 12px 0; }}
+    .rating-table th, .rating-table td, .matrix-table th, .matrix-table td {{ border: 1px solid #e2e8f0; padding: 8px 12px; text-align: center; }}
+    .rating-table thead, .matrix-table thead {{ background: #e2e8f0; }}
+    .rating-table tbody tr:nth-child(odd) {{ background: #f8fafc; }}
   </style>
 </head>
 <body>
   <h1>AVA 对战结果可视化</h1>
+  {rating_html}
   {''.join(sections)}
 </body>
 </html>"""
