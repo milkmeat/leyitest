@@ -226,15 +226,17 @@ def render_html(matches: list[list[dict]]) -> str:
       <script>
       (function() {{
         const d = {chart_js};
+        const minutes = d.times.map(t => t / 60);
+        const dataA = minutes.map((m, i) => ({{x: m, y: d.scores_a[i]}}));
+        const dataB = minutes.map((m, i) => ({{x: m, y: d.scores_b[i]}}));
         const ctx = document.getElementById('{chart_id}').getContext('2d');
         new Chart(ctx, {{
           type: 'line',
           data: {{
-            labels: d.times.map(t => (t/60).toFixed(1) + 'm'),
             datasets: [
               {{
                 label: '{strat_a} (A)',
-                data: d.scores_a,
+                data: dataA,
                 borderColor: '#2563eb',
                 backgroundColor: '#2563eb22',
                 tension: 0.2,
@@ -244,7 +246,7 @@ def render_html(matches: list[list[dict]]) -> str:
               }},
               {{
                 label: '{strat_b} (B)',
-                data: d.scores_b,
+                data: dataB,
                 borderColor: '#dc2626',
                 backgroundColor: '#dc262622',
                 tension: 0.2,
@@ -261,7 +263,11 @@ def render_html(matches: list[list[dict]]) -> str:
               tooltip: {{ mode: 'index', intersect: false }}
             }},
             scales: {{
-              x: {{ title: {{ display: true, text: '时间 (分钟)' }} }},
+              x: {{
+                type: 'linear',
+                title: {{ display: true, text: '时间 (分钟)' }},
+                ticks: {{ stepSize: 1, callback: v => v + 'm' }}
+              }},
               y: {{ title: {{ display: true, text: '积分' }}, beginAtZero: true }}
             }}
           }}
