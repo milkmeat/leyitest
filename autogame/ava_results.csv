@@ -1,0 +1,463 @@
+match_id,event_type,iso_time,elapsed_sec,loop_seq,strategy_a,strategy_b,score_a,score_b,leader,factory_owner,detail
+default_vs_attack_20260525_111809_r1m1,MATCH_START,2026-05-25T03:21:29+00:00,0.0,0,default,attack,0,0,TIE,NEUTRAL,match started
+default_vs_attack_20260525_111809_r1m1,LEAD_CHANGE,2026-05-25T03:26:10+00:00,281.0,9,default,attack,1232,6320,B,NEUTRAL,B overtakes A (+5088)
+default_vs_attack_20260525_111809_r1m1,LEAD_CHANGE,2026-05-25T03:26:41+00:00,312.0,10,default,attack,13936,10090,A,NEUTRAL,A overtakes B (+3846)
+default_vs_attack_20260525_111809_r1m1,LEAD_CHANGE,2026-05-25T03:27:12+00:00,343.0,11,default,attack,15300,15570,B,NEUTRAL,B overtakes A (+270)
+default_vs_attack_20260525_111809_r1m1,LEAD_CHANGE,2026-05-25T03:29:16+00:00,467.0,15,default,attack,20800,20320,A,NEUTRAL,A overtakes B (+480)
+default_vs_attack_20260525_111809_r1m1,LEAD_CHANGE,2026-05-25T03:30:19+00:00,530.0,17,default,attack,21914,21960,B,NEUTRAL,B overtakes A (+46)
+default_vs_attack_20260525_111809_r1m1,LEAD_CHANGE,2026-05-25T03:31:21+00:00,592.0,19,default,attack,24180,23820,A,NEUTRAL,A overtakes B (+360)
+default_vs_attack_20260525_111809_r1m1,FACTORY_CAPTURE,2026-05-25T03:37:36+00:00,967.0,31,default,attack,46326,26235,A,B,Factory: neutral -> B
+default_vs_attack_20260525_111809_r1m1,FACTORY_CAPTURE,2026-05-25T03:43:20+00:00,1311.0,42,default,attack,51953,48915,A,A,Factory: b -> A
+default_vs_attack_20260525_111809_r1m1,LEAD_CHANGE,2026-05-25T03:44:54+00:00,1405.0,45,default,attack,51626,54064,B,A,B overtakes A (+2438)
+default_vs_attack_20260525_111809_r1m1,FACTORY_CAPTURE,2026-05-25T03:44:54+00:00,1405.0,45,default,attack,51626,54064,B,A,Factory: neutral -> A
+default_vs_attack_20260525_111809_r1m1,FACTORY_CAPTURE,2026-05-25T03:47:30+00:00,1561.0,50,default,attack,59872,61502,B,B,Factory: a -> B
+default_vs_attack_20260525_111809_r1m1,FACTORY_CAPTURE,2026-05-25T03:53:44+00:00,1935.0,62,default,attack,76140,80701,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r1m1,LEAD_CHANGE,2026-05-25T03:57:54+00:00,2185.0,70,default,attack,89149,82712,A,A,A overtakes B (+6437)
+default_vs_attack_20260525_111809_r1m1,FACTORY_CAPTURE,2026-05-25T04:01:01+00:00,2372.0,76,default,attack,97322,88023,A,B,Factory: a -> B
+default_vs_attack_20260525_111809_r1m1,FACTORY_CAPTURE,2026-05-25T04:04:40+00:00,2591.0,83,default,attack,110302,101319,A,A,Factory: b -> A
+default_vs_attack_20260525_111809_r1m1,FACTORY_CAPTURE,2026-05-25T04:08:49+00:00,2840.0,91,default,attack,117818,111028,A,B,Factory: a -> B
+default_vs_attack_20260525_111809_r1m1,FACTORY_CAPTURE,2026-05-25T04:12:28+00:00,3059.0,98,default,attack,132418,119585,A,A,Factory: b -> A
+default_vs_attack_20260525_111809_r1m1,FACTORY_CAPTURE,2026-05-25T04:17:10+00:00,3341.0,107,default,attack,140971,129055,A,B,Factory: a -> B
+default_vs_attack_20260525_111809_r1m1,MATCH_END,2026-05-25T04:21:28+00:00,3590.0,115,default,attack,143327,140086,A,B,winner=A +3241
+default_vs_attack_20260525_111809_r1m2,MATCH_START,2026-05-25T04:25:14+00:00,0.0,0,default,attack,0,0,TIE,NEUTRAL,match started
+default_vs_attack_20260525_111809_r1m2,LEAD_CHANGE,2026-05-25T04:33:34+00:00,499.0,14,default,attack,5838,40132,B,NEUTRAL,B overtakes A (+34294)
+default_vs_attack_20260525_111809_r1m2,FACTORY_CAPTURE,2026-05-25T04:42:17+00:00,1023.0,28,default,attack,9384,78908,B,B,Factory: neutral -> B
+default_vs_attack_20260525_111809_r1m2,FACTORY_CAPTURE,2026-05-25T04:45:57+00:00,1243.0,35,default,attack,17776,94150,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r1m2,FACTORY_CAPTURE,2026-05-25T04:52:12+00:00,1618.0,47,default,attack,29918,110288,B,B,Factory: a -> B
+default_vs_attack_20260525_111809_r1m2,FACTORY_CAPTURE,2026-05-25T04:56:22+00:00,1867.0,55,default,attack,40221,120727,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r1m2,FACTORY_CAPTURE,2026-05-25T05:01:04+00:00,2150.0,64,default,attack,51336,129280,B,B,Factory: a -> B
+default_vs_attack_20260525_111809_r1m2,FACTORY_CAPTURE,2026-05-25T05:05:16+00:00,2402.0,72,default,attack,66247,142832,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r1m2,FACTORY_CAPTURE,2026-05-25T05:11:01+00:00,2747.0,83,default,attack,76561,159444,B,B,Factory: a -> B
+default_vs_attack_20260525_111809_r1m2,FACTORY_CAPTURE,2026-05-25T05:17:16+00:00,3122.0,95,default,attack,94016,180152,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r1m2,FACTORY_CAPTURE,2026-05-25T05:24:02+00:00,3528.0,108,default,attack,108116,200447,B,B,Factory: a -> B
+default_vs_attack_20260525_111809_r1m2,MATCH_END,2026-05-25T05:25:14+00:00,3590.0,110,default,attack,109964,204043,B,B,winner=B +94079
+default_vs_attack_20260525_111809_r2m1,MATCH_START,2026-05-25T05:28:52+00:00,0.0,0,default,attack,0,0,TIE,NEUTRAL,match started
+default_vs_attack_20260525_111809_r2m1,LEAD_CHANGE,2026-05-25T05:32:30+00:00,218.0,7,default,attack,7376,0,A,NEUTRAL,A overtakes B (+7376)
+default_vs_attack_20260525_111809_r2m1,LEAD_CHANGE,2026-05-25T05:33:33+00:00,281.0,9,default,attack,12474,13240,B,NEUTRAL,B overtakes A (+766)
+default_vs_attack_20260525_111809_r2m1,LEAD_CHANGE,2026-05-25T05:40:49+00:00,717.0,23,default,attack,29133,28587,A,NEUTRAL,A overtakes B (+546)
+default_vs_attack_20260525_111809_r2m1,LEAD_CHANGE,2026-05-25T05:41:20+00:00,748.0,24,default,attack,25467,27071,B,NEUTRAL,B overtakes A (+1604)
+default_vs_attack_20260525_111809_r2m1,FACTORY_CAPTURE,2026-05-25T05:42:54+00:00,842.0,27,default,attack,28959,30503,B,A,Factory: neutral -> A
+default_vs_attack_20260525_111809_r2m1,LEAD_CHANGE,2026-05-25T05:44:59+00:00,966.0,31,default,attack,42486,33406,A,A,A overtakes B (+9080)
+default_vs_attack_20260525_111809_r2m1,FACTORY_CAPTURE,2026-05-25T05:57:27+00:00,1715.0,55,default,attack,83203,55886,A,B,Factory: a -> B
+default_vs_attack_20260525_111809_r2m1,FACTORY_CAPTURE,2026-05-25T06:01:37+00:00,1965.0,63,default,attack,90531,67388,A,A,Factory: b -> A
+default_vs_attack_20260525_111809_r2m1,FACTORY_CAPTURE,2026-05-25T06:07:54+00:00,2342.0,75,default,attack,109910,76487,A,B,Factory: a -> B
+default_vs_attack_20260525_111809_r2m1,FACTORY_CAPTURE,2026-05-25T06:11:01+00:00,2529.0,81,default,attack,117709,85612,A,A,Factory: b -> A
+default_vs_attack_20260525_111809_r2m1,FACTORY_CAPTURE,2026-05-25T06:16:45+00:00,2873.0,92,default,attack,134044,98051,A,B,Factory: a -> B
+default_vs_attack_20260525_111809_r2m1,LEAD_CHANGE,2026-05-25T06:28:44+00:00,3592.0,115,default,attack,146148,149372,B,B,B overtakes A (+3224)
+default_vs_attack_20260525_111809_r2m1,MATCH_END,2026-05-25T06:28:51+00:00,3592.0,115,default,attack,146148,149372,B,B,winner=B +3224
+default_vs_attack_20260525_111809_r2m2,MATCH_START,2026-05-25T06:33:40+00:00,0.0,0,default,attack,0,0,TIE,NEUTRAL,match started
+default_vs_attack_20260525_111809_r2m2,LEAD_CHANGE,2026-05-25T06:37:21+00:00,221.0,7,default,attack,3010,0,A,NEUTRAL,A overtakes B (+3010)
+default_vs_attack_20260525_111809_r2m2,LEAD_CHANGE,2026-05-25T06:44:13+00:00,633.0,20,default,attack,22748,22816,B,NEUTRAL,B overtakes A (+68)
+default_vs_attack_20260525_111809_r2m2,LEAD_CHANGE,2026-05-25T06:44:44+00:00,664.0,21,default,attack,23083,20344,A,NEUTRAL,A overtakes B (+2739)
+default_vs_attack_20260525_111809_r2m2,LEAD_CHANGE,2026-05-25T06:46:18+00:00,758.0,24,default,attack,26155,26983,B,NEUTRAL,B overtakes A (+828)
+default_vs_attack_20260525_111809_r2m2,FACTORY_CAPTURE,2026-05-25T06:47:51+00:00,851.0,27,default,attack,29981,31495,B,A,Factory: neutral -> A
+default_vs_attack_20260525_111809_r2m2,LEAD_CHANGE,2026-05-25T06:49:56+00:00,976.0,31,default,attack,41617,34796,A,A,A overtakes B (+6821)
+default_vs_attack_20260525_111809_r2m2,FACTORY_CAPTURE,2026-05-25T06:54:08+00:00,1228.0,39,default,attack,56455,46789,A,B,Factory: a -> B
+default_vs_attack_20260525_111809_r2m2,LEAD_CHANGE,2026-05-25T06:58:18+00:00,1478.0,47,default,attack,62599,64772,B,B,B overtakes A (+2173)
+default_vs_attack_20260525_111809_r2m2,LEAD_CHANGE,2026-05-25T06:59:52+00:00,1572.0,50,default,attack,66390,63883,A,A,A overtakes B (+2507)
+default_vs_attack_20260525_111809_r2m2,FACTORY_CAPTURE,2026-05-25T06:59:52+00:00,1572.0,50,default,attack,66390,63883,A,A,Factory: b -> A
+default_vs_attack_20260525_111809_r2m2,LEAD_CHANGE,2026-05-25T07:00:54+00:00,1634.0,52,default,attack,62525,66909,B,A,B overtakes A (+4384)
+default_vs_attack_20260525_111809_r2m2,FACTORY_CAPTURE,2026-05-25T07:06:08+00:00,1948.0,62,default,attack,69981,92996,B,B,Factory: a -> B
+default_vs_attack_20260525_111809_r2m2,FACTORY_CAPTURE,2026-05-25T07:12:23+00:00,2323.0,74,default,attack,73187,128602,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r2m2,FACTORY_CAPTURE,2026-05-25T07:16:02+00:00,2542.0,81,default,attack,80373,132189,B,B,Factory: a -> B
+default_vs_attack_20260525_111809_r2m2,FACTORY_CAPTURE,2026-05-25T07:21:45+00:00,2885.0,92,default,attack,92680,145866,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r2m2,FACTORY_CAPTURE,2026-05-25T07:28:00+00:00,3260.0,104,default,attack,106244,166889,B,B,Factory: a -> B
+default_vs_attack_20260525_111809_r2m2,MATCH_END,2026-05-25T07:33:39+00:00,3572.0,114,default,attack,118661,180031,B,B,winner=B +61370
+default_vs_attack_20260525_111809_r3m1,MATCH_START,2026-05-25T07:37:17+00:00,0.0,0,default,attack,0,0,TIE,NEUTRAL,match started
+default_vs_attack_20260525_111809_r3m1,LEAD_CHANGE,2026-05-25T07:41:26+00:00,249.0,8,default,attack,16280,0,A,NEUTRAL,A overtakes B (+16280)
+default_vs_attack_20260525_111809_r3m1,FACTORY_CAPTURE,2026-05-25T07:54:26+00:00,1029.0,33,default,attack,36700,24928,A,A,Factory: neutral -> A
+default_vs_attack_20260525_111809_r3m1,FACTORY_CAPTURE,2026-05-25T07:55:59+00:00,1122.0,36,default,attack,40566,31371,A,B,Factory: a -> B
+default_vs_attack_20260525_111809_r3m1,LEAD_CHANGE,2026-05-25T07:58:04+00:00,1247.0,40,default,attack,39900,48978,B,B,B overtakes A (+9078)
+default_vs_attack_20260525_111809_r3m1,FACTORY_CAPTURE,2026-05-25T08:00:40+00:00,1403.0,45,default,attack,40745,63466,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r3m1,FACTORY_CAPTURE,2026-05-25T08:04:50+00:00,1653.0,53,default,attack,46829,84864,B,B,Factory: a -> B
+default_vs_attack_20260525_111809_r3m1,FACTORY_CAPTURE,2026-05-25T08:09:01+00:00,1904.0,61,default,attack,47444,109288,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r3m1,FACTORY_CAPTURE,2026-05-25T08:13:10+00:00,2153.0,69,default,attack,52679,129202,B,B,Factory: a -> B
+default_vs_attack_20260525_111809_r3m1,FACTORY_CAPTURE,2026-05-25T08:18:54+00:00,2496.0,80,default,attack,55320,163540,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r3m1,FACTORY_CAPTURE,2026-05-25T08:26:41+00:00,2964.0,95,default,attack,73529,183812,B,B,Factory: a -> B
+default_vs_attack_20260525_111809_r3m1,FACTORY_CAPTURE,2026-05-25T08:34:29+00:00,3432.0,110,default,attack,94891,157626,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r3m1,MATCH_END,2026-05-25T08:37:16+00:00,3593.0,115,default,attack,99673,174742,B,A,winner=B +75069
+default_vs_attack_20260525_111809_r3m2,MATCH_START,2026-05-25T08:41:24+00:00,0.0,0,default,attack,0,0,TIE,NEUTRAL,match started
+default_vs_attack_20260525_111809_r3m2,LEAD_CHANGE,2026-05-25T08:45:03+00:00,220.0,7,default,attack,3000,0,A,NEUTRAL,A overtakes B (+3000)
+default_vs_attack_20260525_111809_r3m2,LEAD_CHANGE,2026-05-25T08:46:05+00:00,282.0,9,default,attack,10580,14370,B,NEUTRAL,B overtakes A (+3790)
+default_vs_attack_20260525_111809_r3m2,LEAD_CHANGE,2026-05-25T08:52:51+00:00,688.0,22,default,attack,26298,25694,A,NEUTRAL,A overtakes B (+604)
+default_vs_attack_20260525_111809_r3m2,LEAD_CHANGE,2026-05-25T08:53:22+00:00,719.0,23,default,attack,25786,26142,B,NEUTRAL,B overtakes A (+356)
+default_vs_attack_20260525_111809_r3m2,FACTORY_CAPTURE,2026-05-25T08:56:29+00:00,906.0,29,default,attack,29493,33214,B,A,Factory: neutral -> A
+default_vs_attack_20260525_111809_r3m2,FACTORY_CAPTURE,2026-05-25T08:57:00+00:00,937.0,30,default,attack,31557,35110,B,B,Factory: a -> B
+default_vs_attack_20260525_111809_r3m2,FACTORY_CAPTURE,2026-05-25T09:08:28+00:00,1624.0,52,default,attack,61911,83172,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r3m2,FACTORY_CAPTURE,2026-05-25T09:12:44+00:00,1880.0,60,default,attack,64211,92064,B,B,Factory: a -> B
+default_vs_attack_20260525_111809_r3m2,FACTORY_CAPTURE,2026-05-25T09:17:30+00:00,2166.0,69,default,attack,84506,103795,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r3m2,FACTORY_CAPTURE,2026-05-25T09:22:14+00:00,2451.0,78,default,attack,93530,120473,B,B,Factory: a -> B
+default_vs_attack_20260525_111809_r3m2,FACTORY_CAPTURE,2026-05-25T09:28:03+00:00,2800.0,89,default,attack,100174,149494,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r3m2,FACTORY_CAPTURE,2026-05-25T09:33:52+00:00,3149.0,100,default,attack,120615,142161,B,B,Factory: a -> B
+default_vs_attack_20260525_111809_r3m2,FACTORY_CAPTURE,2026-05-25T09:39:40+00:00,3497.0,111,default,attack,128979,156328,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r3m2,MATCH_END,2026-05-25T09:41:23+00:00,3592.0,114,default,attack,134553,166141,B,A,winner=B +31588
+default_vs_attack_20260525_111809_r4m1,MATCH_START,2026-05-25T09:46:19+00:00,0.0,0,default,attack,0,0,TIE,NEUTRAL,match started
+default_vs_attack_20260525_111809_r4m1,LEAD_CHANGE,2026-05-25T09:50:32+00:00,253.0,8,default,attack,12840,0,A,NEUTRAL,A overtakes B (+12840)
+default_vs_attack_20260525_111809_r4m1,FACTORY_CAPTURE,2026-05-25T10:00:01+00:00,822.0,26,default,attack,42416,9465,A,A,Factory: neutral -> A
+default_vs_attack_20260525_111809_r4m1,FACTORY_CAPTURE,2026-05-25T10:15:20+00:00,1741.0,55,default,attack,108886,38908,A,B,Factory: a -> B
+default_vs_attack_20260525_111809_r4m1,FACTORY_CAPTURE,2026-05-25T10:19:33+00:00,1995.0,63,default,attack,119770,47006,A,A,Factory: neutral -> A
+default_vs_attack_20260525_111809_r4m1,FACTORY_CAPTURE,2026-05-25T10:20:37+00:00,2058.0,65,default,attack,123370,57727,A,B,Factory: a -> B
+default_vs_attack_20260525_111809_r4m1,FACTORY_CAPTURE,2026-05-25T10:24:52+00:00,2313.0,73,default,attack,122371,74909,A,A,Factory: b -> A
+default_vs_attack_20260525_111809_r4m1,FACTORY_CAPTURE,2026-05-25T10:31:19+00:00,2700.0,85,default,attack,131434,90981,A,B,Factory: a -> B
+default_vs_attack_20260525_111809_r4m1,FACTORY_CAPTURE,2026-05-25T10:36:07+00:00,2988.0,94,default,attack,145135,103833,A,A,Factory: b -> A
+default_vs_attack_20260525_111809_r4m1,FACTORY_CAPTURE,2026-05-25T10:40:22+00:00,3243.0,102,default,attack,152225,109237,A,B,Factory: a -> B
+default_vs_attack_20260525_111809_r4m1,MATCH_END,2026-05-25T10:46:18+00:00,3593.0,113,default,attack,161685,127762,A,B,winner=A +33923
+default_vs_attack_20260525_111809_r4m2,MATCH_START,2026-05-25T10:51:56+00:00,0.0,0,default,attack,0,0,TIE,NEUTRAL,match started
+default_vs_attack_20260525_111809_r4m2,LEAD_CHANGE,2026-05-25T10:55:38+00:00,223.0,7,default,attack,9240,0,A,NEUTRAL,A overtakes B (+9240)
+default_vs_attack_20260525_111809_r4m2,FACTORY_CAPTURE,2026-05-25T11:05:07+00:00,792.0,25,default,attack,32655,29576,A,A,Factory: neutral -> A
+default_vs_attack_20260525_111809_r4m2,LEAD_CHANGE,2026-05-25T11:06:10+00:00,855.0,27,default,attack,30489,32368,B,A,B overtakes A (+1879)
+default_vs_attack_20260525_111809_r4m2,LEAD_CHANGE,2026-05-25T11:06:42+00:00,887.0,28,default,attack,32429,32365,A,A,A overtakes B (+64)
+default_vs_attack_20260525_111809_r4m2,FACTORY_CAPTURE,2026-05-25T11:07:13+00:00,918.0,29,default,attack,33197,30496,A,B,Factory: a -> B
+default_vs_attack_20260525_111809_r4m2,LEAD_CHANGE,2026-05-25T11:07:45+00:00,949.0,30,default,attack,33941,40919,B,B,B overtakes A (+6978)
+default_vs_attack_20260525_111809_r4m2,FACTORY_CAPTURE,2026-05-25T11:15:37+00:00,1422.0,45,default,attack,44683,71558,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r4m2,FACTORY_CAPTURE,2026-05-25T11:22:57+00:00,1861.0,59,default,attack,59699,88883,B,B,Factory: a -> B
+default_vs_attack_20260525_111809_r4m2,FACTORY_CAPTURE,2026-05-25T11:27:42+00:00,2146.0,68,default,attack,74246,94315,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r4m2,FACTORY_CAPTURE,2026-05-25T11:31:23+00:00,2368.0,75,default,attack,72976,107832,B,B,Factory: neutral -> B
+default_vs_attack_20260525_111809_r4m2,FACTORY_CAPTURE,2026-05-25T11:35:05+00:00,2589.0,82,default,attack,82443,120426,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r4m2,FACTORY_CAPTURE,2026-05-25T11:39:49+00:00,2874.0,91,default,attack,88421,124580,B,B,Factory: a -> B
+default_vs_attack_20260525_111809_r4m2,FACTORY_CAPTURE,2026-05-25T11:48:47+00:00,3412.0,108,default,attack,100092,165926,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r4m2,MATCH_END,2026-05-25T11:51:55+00:00,3570.0,113,default,attack,103791,176093,B,A,winner=B +72302
+default_vs_attack_20260525_111809_r5m1,MATCH_START,2026-05-25T11:56:48+00:00,0.0,0,default,attack,0,0,TIE,NEUTRAL,match started
+default_vs_attack_20260525_111809_r5m1,LEAD_CHANGE,2026-05-25T11:59:58+00:00,190.0,6,default,attack,3120,0,A,NEUTRAL,A overtakes B (+3120)
+default_vs_attack_20260525_111809_r5m1,LEAD_CHANGE,2026-05-25T12:09:58+00:00,790.0,25,default,attack,28328,30156,B,A,B overtakes A (+1828)
+default_vs_attack_20260525_111809_r5m1,FACTORY_CAPTURE,2026-05-25T12:09:58+00:00,790.0,25,default,attack,28328,30156,B,A,Factory: neutral -> A
+default_vs_attack_20260525_111809_r5m1,FACTORY_CAPTURE,2026-05-25T12:11:33+00:00,884.0,28,default,attack,30943,34275,B,B,Factory: a -> B
+default_vs_attack_20260525_111809_r5m1,FACTORY_CAPTURE,2026-05-25T12:19:26+00:00,1357.0,43,default,attack,37993,68401,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r5m1,FACTORY_CAPTURE,2026-05-25T12:26:49+00:00,1801.0,57,default,attack,50333,106756,B,B,Factory: a -> B
+default_vs_attack_20260525_111809_r5m1,FACTORY_CAPTURE,2026-05-25T12:31:34+00:00,2085.0,66,default,attack,59413,125771,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r5m1,FACTORY_CAPTURE,2026-05-25T12:36:51+00:00,2402.0,76,default,attack,65994,139042,B,B,Factory: a -> B
+default_vs_attack_20260525_111809_r5m1,FACTORY_CAPTURE,2026-05-25T12:40:32+00:00,2623.0,83,default,attack,73729,155724,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r5m1,FACTORY_CAPTURE,2026-05-25T12:43:42+00:00,2814.0,89,default,attack,76897,169414,B,B,Factory: a -> B
+default_vs_attack_20260525_111809_r5m1,FACTORY_CAPTURE,2026-05-25T12:47:56+00:00,3067.0,97,default,attack,83894,182691,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r5m1,FACTORY_CAPTURE,2026-05-25T12:54:16+00:00,3447.0,109,default,attack,99276,181259,B,B,Factory: a -> B
+default_vs_attack_20260525_111809_r5m1,MATCH_END,2026-05-25T12:56:48+00:00,3574.0,113,default,attack,104517,185665,B,B,winner=B +81148
+default_vs_attack_20260525_111809_r5m2,MATCH_START,2026-05-25T13:02:22+00:00,0.0,0,default,attack,0,0,TIE,NEUTRAL,match started
+default_vs_attack_20260525_111809_r5m2,LEAD_CHANGE,2026-05-25T13:06:37+00:00,255.0,8,default,attack,0,15580,B,NEUTRAL,B overtakes A (+15580)
+default_vs_attack_20260525_111809_r5m2,FACTORY_CAPTURE,2026-05-25T13:16:06+00:00,825.0,26,default,attack,24017,35227,B,A,Factory: neutral -> A
+default_vs_attack_20260525_111809_r5m2,LEAD_CHANGE,2026-05-25T13:18:43+00:00,982.0,31,default,attack,42009,41028,A,A,A overtakes B (+981)
+default_vs_attack_20260525_111809_r5m2,FACTORY_CAPTURE,2026-05-25T13:22:54+00:00,1233.0,39,default,attack,56615,46207,A,B,Factory: a -> B
+default_vs_attack_20260525_111809_r5m2,FACTORY_CAPTURE,2026-05-25T13:28:09+00:00,1548.0,49,default,attack,65641,59503,A,A,Factory: b -> A
+default_vs_attack_20260525_111809_r5m2,FACTORY_CAPTURE,2026-05-25T13:31:17+00:00,1736.0,55,default,attack,68246,67722,A,B,Factory: a -> B
+default_vs_attack_20260525_111809_r5m2,LEAD_CHANGE,2026-05-25T13:31:48+00:00,1767.0,56,default,attack,68984,70227,B,B,B overtakes A (+1243)
+default_vs_attack_20260525_111809_r5m2,FACTORY_CAPTURE,2026-05-25T13:35:26+00:00,1985.0,63,default,attack,77353,77589,B,A,Factory: neutral -> A
+default_vs_attack_20260525_111809_r5m2,LEAD_CHANGE,2026-05-25T13:35:58+00:00,2017.0,64,default,attack,78407,78099,A,A,A overtakes B (+308)
+default_vs_attack_20260525_111809_r5m2,LEAD_CHANGE,2026-05-25T13:38:02+00:00,2141.0,68,default,attack,86670,87183,B,A,B overtakes A (+513)
+default_vs_attack_20260525_111809_r5m2,LEAD_CHANGE,2026-05-25T13:38:34+00:00,2173.0,69,default,attack,89088,87741,A,A,A overtakes B (+1347)
+default_vs_attack_20260525_111809_r5m2,FACTORY_CAPTURE,2026-05-25T13:39:05+00:00,2204.0,70,default,attack,91940,88299,A,B,Factory: a -> B
+default_vs_attack_20260525_111809_r5m2,LEAD_CHANGE,2026-05-25T13:42:12+00:00,2391.0,76,default,attack,99367,99372,B,B,B overtakes A (+5)
+default_vs_attack_20260525_111809_r5m2,FACTORY_CAPTURE,2026-05-25T13:45:23+00:00,2582.0,82,default,attack,95585,109553,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r5m2,FACTORY_CAPTURE,2026-05-25T13:50:42+00:00,2900.0,92,default,attack,108294,124190,B,B,Factory: a -> B
+default_vs_attack_20260525_111809_r5m2,FACTORY_CAPTURE,2026-05-25T14:01:50+00:00,3568.0,113,default,attack,129204,156647,B,A,Factory: b -> A
+default_vs_attack_20260525_111809_r5m2,MATCH_END,2026-05-25T14:02:21+00:00,3568.0,113,default,attack,129204,156647,B,A,winner=B +27443
+default_vs_defend_20260525_231414_r1m1,MATCH_START,2026-05-25T15:19:15+00:00,0.0,0,default,defend,0,0,TIE,NEUTRAL,match started
+default_vs_defend_20260525_231414_r1m1,LEAD_CHANGE,2026-05-25T15:22:26+00:00,191.0,6,default,defend,0,3100,B,NEUTRAL,B overtakes A (+3100)
+default_vs_defend_20260525_231414_r1m1,FACTORY_CAPTURE,2026-05-25T15:32:32+00:00,796.0,25,default,defend,13706,43508,B,B,Factory: neutral -> B
+default_vs_defend_20260525_231414_r1m1,FACTORY_CAPTURE,2026-05-25T15:39:58+00:00,1242.0,39,default,defend,27219,68368,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r1m1,FACTORY_CAPTURE,2026-05-25T15:44:12+00:00,1496.0,47,default,defend,40711,76696,B,B,Factory: a -> B
+default_vs_defend_20260525_231414_r1m1,FACTORY_CAPTURE,2026-05-25T15:50:00+00:00,1845.0,58,default,defend,51297,94009,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r1m1,FACTORY_CAPTURE,2026-05-25T15:53:11+00:00,2035.0,64,default,defend,60942,99368,B,B,Factory: a -> B
+default_vs_defend_20260525_231414_r1m1,FACTORY_CAPTURE,2026-05-25T15:56:53+00:00,2257.0,71,default,defend,75332,109668,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r1m1,FACTORY_CAPTURE,2026-05-25T16:01:04+00:00,2509.0,79,default,defend,87891,110551,B,B,Factory: a -> B
+default_vs_defend_20260525_231414_r1m1,FACTORY_CAPTURE,2026-05-25T16:04:12+00:00,2696.0,85,default,defend,99490,120513,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r1m1,FACTORY_CAPTURE,2026-05-25T16:08:52+00:00,2977.0,94,default,defend,102880,127062,B,B,Factory: a -> B
+default_vs_defend_20260525_231414_r1m1,FACTORY_CAPTURE,2026-05-25T16:13:01+00:00,3226.0,102,default,defend,118081,143365,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r1m1,FACTORY_CAPTURE,2026-05-25T16:18:45+00:00,3569.0,113,default,defend,140844,145190,B,B,Factory: a -> B
+default_vs_defend_20260525_231414_r1m1,MATCH_END,2026-05-25T16:19:14+00:00,3569.0,113,default,defend,140844,145190,B,B,winner=B +4346
+default_vs_defend_20260525_231414_r1m2,MATCH_START,2026-05-25T16:22:52+00:00,0.0,0,default,defend,0,0,TIE,NEUTRAL,match started
+default_vs_defend_20260525_231414_r1m2,LEAD_CHANGE,2026-05-25T16:26:30+00:00,218.0,7,default,defend,4270,19310,B,NEUTRAL,B overtakes A (+15040)
+default_vs_defend_20260525_231414_r1m2,FACTORY_CAPTURE,2026-05-25T16:36:54+00:00,842.0,27,default,defend,24834,49239,B,B,Factory: neutral -> B
+default_vs_defend_20260525_231414_r1m2,FACTORY_CAPTURE,2026-05-25T16:42:37+00:00,1185.0,38,default,defend,41839,61931,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r1m2,FACTORY_CAPTURE,2026-05-25T16:45:44+00:00,1372.0,44,default,defend,56699,70969,B,B,Factory: a -> B
+default_vs_defend_20260525_231414_r1m2,FACTORY_CAPTURE,2026-05-25T16:50:56+00:00,1684.0,54,default,defend,73691,81280,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r1m2,FACTORY_CAPTURE,2026-05-25T16:54:03+00:00,1871.0,60,default,defend,86140,88612,B,B,Factory: neutral -> B
+default_vs_defend_20260525_231414_r1m2,FACTORY_CAPTURE,2026-05-25T16:56:39+00:00,2027.0,65,default,defend,84500,96172,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r1m2,FACTORY_CAPTURE,2026-05-25T16:58:43+00:00,2151.0,69,default,defend,93074,102549,B,A,Factory: neutral -> A
+default_vs_defend_20260525_231414_r1m2,FACTORY_CAPTURE,2026-05-25T17:00:48+00:00,2276.0,73,default,defend,95066,107285,B,B,Factory: a -> B
+default_vs_defend_20260525_231414_r1m2,FACTORY_CAPTURE,2026-05-25T17:06:31+00:00,2619.0,84,default,defend,100948,125748,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r1m2,FACTORY_CAPTURE,2026-05-25T17:11:12+00:00,2900.0,93,default,defend,119446,134343,B,B,Factory: a -> B
+default_vs_defend_20260525_231414_r1m2,FACTORY_CAPTURE,2026-05-25T17:14:19+00:00,3087.0,99,default,defend,132968,145677,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r1m2,FACTORY_CAPTURE,2026-05-25T17:18:29+00:00,3337.0,107,default,defend,145648,149843,B,B,Factory: a -> B
+default_vs_defend_20260525_231414_r1m2,FACTORY_CAPTURE,2026-05-25T17:21:36+00:00,3524.0,113,default,defend,154628,162255,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r1m2,MATCH_END,2026-05-25T17:22:51+00:00,3586.0,115,default,defend,153866,166632,B,A,winner=B +12766
+default_vs_defend_20260525_231414_r2m1,MATCH_START,2026-05-25T17:26:30+00:00,0.0,0,default,defend,0,0,TIE,NEUTRAL,match started
+default_vs_defend_20260525_231414_r2m1,LEAD_CHANGE,2026-05-25T17:30:08+00:00,218.0,7,default,defend,6320,9110,B,NEUTRAL,B overtakes A (+2790)
+default_vs_defend_20260525_231414_r2m1,LEAD_CHANGE,2026-05-25T17:38:58+00:00,748.0,24,default,defend,25448,25130,A,NEUTRAL,A overtakes B (+318)
+default_vs_defend_20260525_231414_r2m1,FACTORY_CAPTURE,2026-05-25T17:44:10+00:00,1060.0,34,default,defend,40272,32417,A,A,Factory: neutral -> A
+default_vs_defend_20260525_231414_r2m1,FACTORY_CAPTURE,2026-05-25T17:47:48+00:00,1278.0,41,default,defend,60484,41645,A,B,Factory: a -> B
+default_vs_defend_20260525_231414_r2m1,FACTORY_CAPTURE,2026-05-25T17:52:29+00:00,1559.0,50,default,defend,66883,51173,A,B,Factory: neutral -> B
+default_vs_defend_20260525_231414_r2m1,FACTORY_CAPTURE,2026-05-25T17:59:14+00:00,1964.0,63,default,defend,88544,62028,A,A,Factory: b -> A
+default_vs_defend_20260525_231414_r2m1,FACTORY_CAPTURE,2026-05-25T18:06:00+00:00,2370.0,76,default,defend,117006,83398,A,B,Factory: a -> B
+default_vs_defend_20260525_231414_r2m1,FACTORY_CAPTURE,2026-05-25T18:08:36+00:00,2525.0,81,default,defend,124588,84855,A,A,Factory: b -> A
+default_vs_defend_20260525_231414_r2m1,FACTORY_CAPTURE,2026-05-25T18:12:14+00:00,2744.0,88,default,defend,136538,92920,A,B,Factory: a -> B
+default_vs_defend_20260525_231414_r2m1,FACTORY_CAPTURE,2026-05-25T18:17:26+00:00,3056.0,98,default,defend,143852,104388,A,A,Factory: b -> A
+default_vs_defend_20260525_231414_r2m1,FACTORY_CAPTURE,2026-05-25T18:24:12+00:00,3462.0,111,default,defend,175677,113302,A,B,Factory: a -> B
+default_vs_defend_20260525_231414_r2m1,MATCH_END,2026-05-25T18:26:29+00:00,3586.0,115,default,defend,186012,113476,A,B,winner=A +72536
+default_vs_defend_20260525_231414_r2m2,MATCH_START,2026-05-25T18:30:05+00:00,0.0,0,default,defend,0,0,TIE,NEUTRAL,match started
+default_vs_defend_20260525_231414_r2m2,LEAD_CHANGE,2026-05-25T18:33:43+00:00,218.0,7,default,defend,3040,12440,B,NEUTRAL,B overtakes A (+9400)
+default_vs_defend_20260525_231414_r2m2,FACTORY_CAPTURE,2026-05-25T18:45:40+00:00,935.0,30,default,defend,29312,51612,B,B,Factory: neutral -> B
+default_vs_defend_20260525_231414_r2m2,FACTORY_CAPTURE,2026-05-25T18:48:47+00:00,1122.0,36,default,defend,36650,73129,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r2m2,FACTORY_CAPTURE,2026-05-25T18:55:32+00:00,1527.0,49,default,defend,58763,77174,B,B,Factory: a -> B
+default_vs_defend_20260525_231414_r2m2,FACTORY_CAPTURE,2026-05-25T18:57:05+00:00,1620.0,52,default,defend,47535,83580,B,B,Factory: neutral -> B
+default_vs_defend_20260525_231414_r2m2,FACTORY_CAPTURE,2026-05-25T19:03:19+00:00,1994.0,64,default,defend,58891,113603,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r2m2,FACTORY_CAPTURE,2026-05-25T19:07:29+00:00,2244.0,72,default,defend,68181,139479,B,B,Factory: a -> B
+default_vs_defend_20260525_231414_r2m2,FACTORY_CAPTURE,2026-05-25T19:10:05+00:00,2400.0,77,default,defend,70505,139187,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r2m2,FACTORY_CAPTURE,2026-05-25T19:16:51+00:00,2806.0,90,default,defend,86065,161031,B,B,Factory: a -> B
+default_vs_defend_20260525_231414_r2m2,FACTORY_CAPTURE,2026-05-25T19:21:01+00:00,3056.0,98,default,defend,97078,182173,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r2m2,FACTORY_CAPTURE,2026-05-25T19:24:08+00:00,3243.0,104,default,defend,101313,195526,B,B,Factory: a -> B
+default_vs_defend_20260525_231414_r2m2,FACTORY_CAPTURE,2026-05-25T19:28:17+00:00,3492.0,112,default,defend,103952,213766,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r2m2,MATCH_END,2026-05-25T19:30:04+00:00,3586.0,115,default,defend,109632,219256,B,A,winner=B +109624
+default_vs_defend_20260525_231414_r3m1,MATCH_START,2026-05-25T19:33:39+00:00,0.0,0,default,defend,0,0,TIE,NEUTRAL,match started
+default_vs_defend_20260525_231414_r3m1,LEAD_CHANGE,2026-05-25T19:37:17+00:00,218.0,7,default,defend,0,6110,B,NEUTRAL,B overtakes A (+6110)
+default_vs_defend_20260525_231414_r3m1,FACTORY_CAPTURE,2026-05-25T19:49:14+00:00,935.0,30,default,defend,30538,41771,B,B,Factory: neutral -> B
+default_vs_defend_20260525_231414_r3m1,FACTORY_CAPTURE,2026-05-25T19:57:02+00:00,1402.0,45,default,defend,48576,65897,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r3m1,LEAD_CHANGE,2026-05-25T20:01:42+00:00,1683.0,54,default,defend,77707,77395,A,A,A overtakes B (+312)
+default_vs_defend_20260525_231414_r3m1,FACTORY_CAPTURE,2026-05-25T20:03:16+00:00,1777.0,57,default,defend,82689,80643,A,B,Factory: a -> B
+default_vs_defend_20260525_231414_r3m1,LEAD_CHANGE,2026-05-25T20:03:47+00:00,1808.0,58,default,defend,84619,84623,B,B,B overtakes A (+4)
+default_vs_defend_20260525_231414_r3m1,LEAD_CHANGE,2026-05-25T20:04:18+00:00,1839.0,59,default,defend,86391,86295,A,B,A overtakes B (+96)
+default_vs_defend_20260525_231414_r3m1,LEAD_CHANGE,2026-05-25T20:06:23+00:00,1964.0,63,default,defend,93109,93376,B,B,B overtakes A (+267)
+default_vs_defend_20260525_231414_r3m1,LEAD_CHANGE,2026-05-25T20:06:54+00:00,1995.0,64,default,defend,95413,94976,A,B,A overtakes B (+437)
+default_vs_defend_20260525_231414_r3m1,FACTORY_CAPTURE,2026-05-25T20:07:25+00:00,2026.0,65,default,defend,97645,82236,A,A,Factory: b -> A
+default_vs_defend_20260525_231414_r3m1,FACTORY_CAPTURE,2026-05-25T20:10:32+00:00,2213.0,71,default,defend,116216,93528,A,B,Factory: a -> B
+default_vs_defend_20260525_231414_r3m1,FACTORY_CAPTURE,2026-05-25T20:15:13+00:00,2494.0,80,default,defend,133616,106343,A,A,Factory: b -> A
+default_vs_defend_20260525_231414_r3m1,FACTORY_CAPTURE,2026-05-25T20:17:49+00:00,2650.0,85,default,defend,145423,110328,A,A,Factory: neutral -> A
+default_vs_defend_20260525_231414_r3m1,FACTORY_CAPTURE,2026-05-25T20:18:51+00:00,2712.0,87,default,defend,145544,111636,A,B,Factory: a -> B
+default_vs_defend_20260525_231414_r3m1,FACTORY_CAPTURE,2026-05-25T20:20:56+00:00,2837.0,91,default,defend,154659,109981,A,A,Factory: b -> A
+default_vs_defend_20260525_231414_r3m1,FACTORY_CAPTURE,2026-05-25T20:26:39+00:00,3180.0,102,default,defend,163118,120201,A,B,Factory: a -> B
+default_vs_defend_20260525_231414_r3m1,FACTORY_CAPTURE,2026-05-25T20:31:51+00:00,3492.0,112,default,defend,189657,132829,A,A,Factory: b -> A
+default_vs_defend_20260525_231414_r3m1,MATCH_END,2026-05-25T20:33:39+00:00,3586.0,115,default,defend,194818,134625,A,A,winner=A +60193
+default_vs_defend_20260525_231414_r3m2,MATCH_START,2026-05-25T20:37:16+00:00,0.0,0,default,defend,0,0,TIE,NEUTRAL,match started
+default_vs_defend_20260525_231414_r3m2,LEAD_CHANGE,2026-05-25T20:40:54+00:00,218.0,7,default,defend,4268,0,A,NEUTRAL,A overtakes B (+4268)
+default_vs_defend_20260525_231414_r3m2,FACTORY_CAPTURE,2026-05-25T20:51:48+00:00,872.0,28,default,defend,40482,21340,A,B,Factory: neutral -> B
+default_vs_defend_20260525_231414_r3m2,LEAD_CHANGE,2026-05-25T21:05:18+00:00,1682.0,54,default,defend,80677,81249,B,B,B overtakes A (+572)
+default_vs_defend_20260525_231414_r3m2,FACTORY_CAPTURE,2026-05-25T21:12:35+00:00,2118.0,68,default,defend,86058,99811,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r3m2,FACTORY_CAPTURE,2026-05-25T21:15:42+00:00,2306.0,74,default,defend,100169,117722,B,B,Factory: a -> B
+default_vs_defend_20260525_231414_r3m2,FACTORY_CAPTURE,2026-05-25T21:20:22+00:00,2586.0,83,default,defend,103545,135857,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r3m2,FACTORY_CAPTURE,2026-05-25T21:26:05+00:00,2929.0,94,default,defend,116694,153556,B,B,Factory: a -> B
+default_vs_defend_20260525_231414_r3m2,FACTORY_CAPTURE,2026-05-25T21:30:15+00:00,3179.0,102,default,defend,129754,156424,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r3m2,FACTORY_CAPTURE,2026-05-25T21:32:55+00:00,3338.0,107,default,defend,143459,161979,B,B,Factory: a -> B
+default_vs_defend_20260525_231414_r3m2,FACTORY_CAPTURE,2026-05-25T21:36:34+00:00,3558.0,114,default,defend,155837,161097,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r3m2,MATCH_END,2026-05-25T21:37:15+00:00,3589.0,115,default,defend,157015,161759,B,A,winner=B +4744
+default_vs_defend_20260525_231414_r4m1,MATCH_START,2026-05-25T21:40:56+00:00,0.0,0,default,defend,0,0,TIE,NEUTRAL,match started
+default_vs_defend_20260525_231414_r4m1,LEAD_CHANGE,2026-05-25T21:44:34+00:00,218.0,7,default,defend,12330,10814,A,NEUTRAL,A overtakes B (+1516)
+default_vs_defend_20260525_231414_r4m1,LEAD_CHANGE,2026-05-25T21:47:42+00:00,406.0,13,default,defend,19810,20382,B,NEUTRAL,B overtakes A (+572)
+default_vs_defend_20260525_231414_r4m1,FACTORY_CAPTURE,2026-05-25T21:55:29+00:00,873.0,28,default,defend,36924,43018,B,B,Factory: neutral -> B
+default_vs_defend_20260525_231414_r4m1,FACTORY_CAPTURE,2026-05-25T21:59:07+00:00,1091.0,35,default,defend,47662,62241,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r4m1,LEAD_CHANGE,2026-05-25T22:08:01+00:00,1624.0,52,default,defend,76918,68420,A,A,A overtakes B (+8498)
+default_vs_defend_20260525_231414_r4m1,FACTORY_CAPTURE,2026-05-25T22:10:07+00:00,1751.0,56,default,defend,88017,72761,A,B,Factory: a -> B
+default_vs_defend_20260525_231414_r4m1,FACTORY_CAPTURE,2026-05-25T22:12:45+00:00,1909.0,61,default,defend,93107,86798,A,A,Factory: b -> A
+default_vs_defend_20260525_231414_r4m1,FACTORY_CAPTURE,2026-05-25T22:13:48+00:00,1972.0,63,default,defend,95426,89892,A,B,Factory: neutral -> B
+default_vs_defend_20260525_231414_r4m1,FACTORY_CAPTURE,2026-05-25T22:14:52+00:00,2035.0,65,default,defend,98198,92539,A,A,Factory: b -> A
+default_vs_defend_20260525_231414_r4m1,FACTORY_CAPTURE,2026-05-25T22:17:30+00:00,2193.0,70,default,defend,105752,102079,A,B,Factory: a -> B
+default_vs_defend_20260525_231414_r4m1,LEAD_CHANGE,2026-05-25T22:21:11+00:00,2414.0,77,default,defend,113706,114211,B,B,B overtakes A (+505)
+default_vs_defend_20260525_231414_r4m1,LEAD_CHANGE,2026-05-25T22:22:14+00:00,2478.0,79,default,defend,116352,113722,A,A,A overtakes B (+2630)
+default_vs_defend_20260525_231414_r4m1,FACTORY_CAPTURE,2026-05-25T22:22:14+00:00,2478.0,79,default,defend,116352,113722,A,A,Factory: b -> A
+default_vs_defend_20260525_231414_r4m1,FACTORY_CAPTURE,2026-05-25T22:26:58+00:00,2762.0,88,default,defend,139290,125873,A,B,Factory: a -> B
+default_vs_defend_20260525_231414_r4m1,FACTORY_CAPTURE,2026-05-25T22:30:40+00:00,2984.0,95,default,defend,150689,129757,A,A,Factory: b -> A
+default_vs_defend_20260525_231414_r4m1,FACTORY_CAPTURE,2026-05-25T22:35:25+00:00,3268.0,104,default,defend,170572,140741,A,B,Factory: a -> B
+default_vs_defend_20260525_231414_r4m1,FACTORY_CAPTURE,2026-05-25T22:39:06+00:00,3489.0,111,default,defend,182279,147393,A,A,Factory: b -> A
+default_vs_defend_20260525_231414_r4m1,MATCH_END,2026-05-25T22:40:55+00:00,3584.0,114,default,defend,191002,149760,A,A,winner=A +41242
+default_vs_defend_20260525_231414_r4m2,MATCH_START,2026-05-25T22:45:44+00:00,0.0,0,default,defend,0,0,TIE,NEUTRAL,match started
+default_vs_defend_20260525_231414_r4m2,LEAD_CHANGE,2026-05-25T22:48:52+00:00,188.0,6,default,defend,0,6020,B,NEUTRAL,B overtakes A (+6020)
+default_vs_defend_20260525_231414_r4m2,FACTORY_CAPTURE,2026-05-25T22:58:20+00:00,755.0,24,default,defend,17090,42687,B,B,Factory: neutral -> B
+default_vs_defend_20260525_231414_r4m2,FACTORY_CAPTURE,2026-05-25T23:07:17+00:00,1292.0,41,default,defend,29816,82006,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r4m2,FACTORY_CAPTURE,2026-05-25T23:10:58+00:00,1513.0,48,default,defend,41658,95072,B,B,Factory: a -> B
+default_vs_defend_20260525_231414_r4m2,FACTORY_CAPTURE,2026-05-25T23:14:39+00:00,1735.0,55,default,defend,62550,97113,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r4m2,FACTORY_CAPTURE,2026-05-25T23:20:27+00:00,2083.0,66,default,defend,90992,96411,B,B,Factory: a -> B
+default_vs_defend_20260525_231414_r4m2,LEAD_CHANGE,2026-05-25T23:21:30+00:00,2146.0,68,default,defend,98216,96633,A,B,A overtakes B (+1583)
+default_vs_defend_20260525_231414_r4m2,LEAD_CHANGE,2026-05-25T23:22:02+00:00,2178.0,69,default,defend,93838,96633,B,B,B overtakes A (+2795)
+default_vs_defend_20260525_231414_r4m2,LEAD_CHANGE,2026-05-25T23:22:34+00:00,2209.0,70,default,defend,98227,97263,A,B,A overtakes B (+964)
+default_vs_defend_20260525_231414_r4m2,FACTORY_CAPTURE,2026-05-25T23:25:44+00:00,2399.0,76,default,defend,106482,103570,A,A,Factory: b -> A
+default_vs_defend_20260525_231414_r4m2,FACTORY_CAPTURE,2026-05-25T23:32:35+00:00,2810.0,89,default,defend,127057,120801,A,B,Factory: a -> B
+default_vs_defend_20260525_231414_r4m2,FACTORY_CAPTURE,2026-05-25T23:35:46+00:00,3002.0,95,default,defend,128398,126167,A,A,Factory: b -> A
+default_vs_defend_20260525_231414_r4m2,LEAD_CHANGE,2026-05-25T23:37:21+00:00,3097.0,98,default,defend,130957,131253,B,A,B overtakes A (+296)
+default_vs_defend_20260525_231414_r4m2,LEAD_CHANGE,2026-05-25T23:37:53+00:00,3128.0,99,default,defend,135635,134968,A,A,A overtakes B (+667)
+default_vs_defend_20260525_231414_r4m2,FACTORY_CAPTURE,2026-05-25T23:38:56+00:00,3192.0,101,default,defend,140307,139236,A,B,Factory: a -> B
+default_vs_defend_20260525_231414_r4m2,LEAD_CHANGE,2026-05-25T23:41:03+00:00,3318.0,105,default,defend,146404,147735,B,B,B overtakes A (+1331)
+default_vs_defend_20260525_231414_r4m2,FACTORY_CAPTURE,2026-05-25T23:45:14+00:00,3570.0,113,default,defend,152108,158629,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r4m2,MATCH_END,2026-05-25T23:45:43+00:00,3570.0,113,default,defend,152108,158629,B,A,winner=B +6521
+default_vs_defend_20260525_231414_r5m1,MATCH_START,2026-05-25T23:50:00+00:00,0.0,0,default,defend,0,0,TIE,NEUTRAL,match started
+default_vs_defend_20260525_231414_r5m1,LEAD_CHANGE,2026-05-25T23:53:41+00:00,220.0,7,default,defend,6240,0,A,NEUTRAL,A overtakes B (+6240)
+default_vs_defend_20260525_231414_r5m1,FACTORY_CAPTURE,2026-05-26T00:04:36+00:00,876.0,28,default,defend,36536,25626,A,A,Factory: neutral -> A
+default_vs_defend_20260525_231414_r5m1,FACTORY_CAPTURE,2026-05-26T00:10:49+00:00,1249.0,40,default,defend,66875,27984,A,B,Factory: a -> B
+default_vs_defend_20260525_231414_r5m1,FACTORY_CAPTURE,2026-05-26T00:13:56+00:00,1436.0,46,default,defend,83804,33540,A,A,Factory: b -> A
+default_vs_defend_20260525_231414_r5m1,FACTORY_CAPTURE,2026-05-26T00:18:37+00:00,1717.0,55,default,defend,93610,40656,A,B,Factory: a -> B
+default_vs_defend_20260525_231414_r5m1,FACTORY_CAPTURE,2026-05-26T00:23:17+00:00,1997.0,64,default,defend,110100,54430,A,A,Factory: b -> A
+default_vs_defend_20260525_231414_r5m1,FACTORY_CAPTURE,2026-05-26T00:29:31+00:00,2372.0,76,default,defend,143840,58006,A,B,Factory: a -> B
+default_vs_defend_20260525_231414_r5m1,FACTORY_CAPTURE,2026-05-26T00:36:48+00:00,2808.0,90,default,defend,148657,76402,A,A,Factory: b -> A
+default_vs_defend_20260525_231414_r5m1,FACTORY_CAPTURE,2026-05-26T00:40:57+00:00,3057.0,98,default,defend,152779,91066,A,B,Factory: a -> B
+default_vs_defend_20260525_231414_r5m1,FACTORY_CAPTURE,2026-05-26T00:44:36+00:00,3276.0,105,default,defend,170442,98291,A,A,Factory: b -> A
+default_vs_defend_20260525_231414_r5m1,FACTORY_CAPTURE,2026-05-26T00:48:14+00:00,3494.0,112,default,defend,188075,108027,A,B,Factory: a -> B
+default_vs_defend_20260525_231414_r5m1,MATCH_END,2026-05-26T00:50:00+00:00,3587.0,115,default,defend,193852,106204,A,B,winner=A +87648
+default_vs_defend_20260525_231414_r5m2,MATCH_START,2026-05-26T00:53:35+00:00,0.0,0,default,defend,0,0,TIE,NEUTRAL,match started
+default_vs_defend_20260525_231414_r5m2,LEAD_CHANGE,2026-05-26T00:57:13+00:00,218.0,7,default,defend,0,8548,B,NEUTRAL,B overtakes A (+8548)
+default_vs_defend_20260525_231414_r5m2,LEAD_CHANGE,2026-05-26T00:58:15+00:00,280.0,9,default,defend,12460,10284,A,NEUTRAL,A overtakes B (+2176)
+default_vs_defend_20260525_231414_r5m2,LEAD_CHANGE,2026-05-26T01:05:31+00:00,716.0,23,default,defend,24112,24772,B,NEUTRAL,B overtakes A (+660)
+default_vs_defend_20260525_231414_r5m2,LEAD_CHANGE,2026-05-26T01:09:10+00:00,935.0,30,default,defend,29572,28580,A,NEUTRAL,A overtakes B (+992)
+default_vs_defend_20260525_231414_r5m2,FACTORY_CAPTURE,2026-05-26T01:10:13+00:00,997.0,32,default,defend,32418,30068,A,B,Factory: neutral -> B
+default_vs_defend_20260525_231414_r5m2,LEAD_CHANGE,2026-05-26T01:11:46+00:00,1091.0,35,default,defend,37613,40326,B,B,B overtakes A (+2713)
+default_vs_defend_20260525_231414_r5m2,FACTORY_CAPTURE,2026-05-26T01:16:27+00:00,1372.0,44,default,defend,42393,58193,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r5m2,FACTORY_CAPTURE,2026-05-26T01:19:34+00:00,1559.0,50,default,defend,51593,63991,B,B,Factory: a -> B
+default_vs_defend_20260525_231414_r5m2,FACTORY_CAPTURE,2026-05-26T01:21:39+00:00,1684.0,54,default,defend,63661,68117,B,B,Factory: neutral -> B
+default_vs_defend_20260525_231414_r5m2,LEAD_CHANGE,2026-05-26T01:22:42+00:00,1747.0,56,default,defend,69936,69605,A,A,A overtakes B (+331)
+default_vs_defend_20260525_231414_r5m2,FACTORY_CAPTURE,2026-05-26T01:22:42+00:00,1747.0,56,default,defend,69936,69605,A,A,Factory: b -> A
+default_vs_defend_20260525_231414_r5m2,FACTORY_CAPTURE,2026-05-26T01:27:54+00:00,2059.0,66,default,defend,90650,71893,A,B,Factory: a -> B
+default_vs_defend_20260525_231414_r5m2,FACTORY_CAPTURE,2026-05-26T01:35:11+00:00,2496.0,80,default,defend,104321,93233,A,A,Factory: b -> A
+default_vs_defend_20260525_231414_r5m2,LEAD_CHANGE,2026-05-26T01:38:50+00:00,2715.0,87,default,defend,103764,104296,B,B,B overtakes A (+532)
+default_vs_defend_20260525_231414_r5m2,FACTORY_CAPTURE,2026-05-26T01:38:50+00:00,2715.0,87,default,defend,103764,104296,B,B,Factory: a -> B
+default_vs_defend_20260525_231414_r5m2,LEAD_CHANGE,2026-05-26T01:39:21+00:00,2746.0,88,default,defend,107136,105784,A,B,A overtakes B (+1352)
+default_vs_defend_20260525_231414_r5m2,LEAD_CHANGE,2026-05-26T01:39:52+00:00,2777.0,89,default,defend,108252,108320,B,B,B overtakes A (+68)
+default_vs_defend_20260525_231414_r5m2,FACTORY_CAPTURE,2026-05-26T01:50:15+00:00,3400.0,109,default,defend,125612,158959,B,A,Factory: b -> A
+default_vs_defend_20260525_231414_r5m2,MATCH_END,2026-05-26T01:53:34+00:00,3589.0,115,default,defend,122362,174073,B,A,winner=B +51711
+attack_vs_defend_20260526_174340_r1m1,MATCH_START,2026-05-26T09:46:56+00:00,0.0,0,attack,defend,0,0,TIE,NEUTRAL,match started
+attack_vs_defend_20260526_174340_r1m1,LEAD_CHANGE,2026-05-26T09:50:34+00:00,218.0,7,attack,defend,0,3100,B,NEUTRAL,B overtakes A (+3100)
+attack_vs_defend_20260526_174340_r1m1,LEAD_CHANGE,2026-05-26T09:56:48+00:00,592.0,19,attack,defend,23826,23804,A,NEUTRAL,A overtakes B (+22)
+attack_vs_defend_20260526_174340_r1m1,LEAD_CHANGE,2026-05-26T09:57:50+00:00,654.0,21,attack,defend,24338,25408,B,NEUTRAL,B overtakes A (+1070)
+attack_vs_defend_20260526_174340_r1m1,LEAD_CHANGE,2026-05-26T09:58:21+00:00,685.0,22,attack,defend,26152,25306,A,NEUTRAL,A overtakes B (+846)
+attack_vs_defend_20260526_174340_r1m1,FACTORY_CAPTURE,2026-05-26T10:02:31+00:00,934.0,30,attack,defend,38776,29368,A,A,Factory: neutral -> A
+attack_vs_defend_20260526_174340_r1m1,FACTORY_CAPTURE,2026-05-26T10:04:04+00:00,1028.0,33,attack,defend,56026,30936,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r1m1,FACTORY_CAPTURE,2026-05-26T10:09:47+00:00,1371.0,44,attack,defend,78110,40290,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r1m1,FACTORY_CAPTURE,2026-05-26T10:14:28+00:00,1652.0,53,attack,defend,91480,44913,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r1m1,FACTORY_CAPTURE,2026-05-26T10:19:09+00:00,1932.0,62,attack,defend,102288,55767,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r1m1,FACTORY_CAPTURE,2026-05-26T10:23:19+00:00,2183.0,70,attack,defend,107626,59201,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r1m1,FACTORY_CAPTURE,2026-05-26T10:36:51+00:00,2995.0,96,attack,defend,147706,99070,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r1m1,FACTORY_CAPTURE,2026-05-26T10:41:32+00:00,3276.0,105,attack,defend,158111,100524,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r1m1,MATCH_END,2026-05-26T10:46:55+00:00,3588.0,115,attack,defend,180750,116889,A,B,winner=A +63861
+attack_vs_defend_20260526_174340_r1m2,MATCH_START,2026-05-26T10:50:34+00:00,0.0,0,attack,defend,0,0,TIE,NEUTRAL,match started
+attack_vs_defend_20260526_174340_r1m2,LEAD_CHANGE,2026-05-26T10:54:43+00:00,249.0,8,attack,defend,4350,12650,B,NEUTRAL,B overtakes A (+8300)
+attack_vs_defend_20260526_174340_r1m2,FACTORY_CAPTURE,2026-05-26T11:06:08+00:00,934.0,30,attack,defend,18666,47082,B,B,Factory: neutral -> B
+attack_vs_defend_20260526_174340_r1m2,FACTORY_CAPTURE,2026-05-26T11:12:54+00:00,1339.0,43,attack,defend,28252,83708,B,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r1m2,FACTORY_CAPTURE,2026-05-26T11:18:36+00:00,1682.0,54,attack,defend,43250,80955,B,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r1m2,FACTORY_CAPTURE,2026-05-26T11:24:51+00:00,2057.0,66,attack,defend,69187,91939,B,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r1m2,LEAD_CHANGE,2026-05-26T11:29:33+00:00,2339.0,75,attack,defend,96575,96213,A,A,A overtakes B (+362)
+attack_vs_defend_20260526_174340_r1m2,LEAD_CHANGE,2026-05-26T11:31:07+00:00,2433.0,78,attack,defend,98750,101932,B,B,B overtakes A (+3182)
+attack_vs_defend_20260526_174340_r1m2,FACTORY_CAPTURE,2026-05-26T11:31:07+00:00,2433.0,78,attack,defend,98750,101932,B,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r1m2,LEAD_CHANGE,2026-05-26T11:32:09+00:00,2495.0,80,attack,defend,103066,101932,A,B,A overtakes B (+1134)
+attack_vs_defend_20260526_174340_r1m2,LEAD_CHANGE,2026-05-26T11:32:40+00:00,2526.0,81,attack,defend,105298,105363,B,B,B overtakes A (+65)
+attack_vs_defend_20260526_174340_r1m2,LEAD_CHANGE,2026-05-26T11:33:11+00:00,2557.0,82,attack,defend,107550,105633,A,B,A overtakes B (+1917)
+attack_vs_defend_20260526_174340_r1m2,FACTORY_CAPTURE,2026-05-26T11:36:19+00:00,2745.0,88,attack,defend,115683,112033,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r1m2,FACTORY_CAPTURE,2026-05-26T11:39:57+00:00,2963.0,95,attack,defend,135938,116930,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r1m2,FACTORY_CAPTURE,2026-05-26T11:45:11+00:00,3276.0,105,attack,defend,158367,120165,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r1m2,FACTORY_CAPTURE,2026-05-26T11:50:23+00:00,3589.0,115,attack,defend,182831,125851,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r1m2,MATCH_END,2026-05-26T11:50:33+00:00,3589.0,115,attack,defend,182831,125851,A,B,winner=A +56980
+attack_vs_defend_20260526_174340_r2m1,MATCH_START,2026-05-26T11:54:14+00:00,0.0,0,attack,defend,0,0,TIE,NEUTRAL,match started
+attack_vs_defend_20260526_174340_r2m1,LEAD_CHANGE,2026-05-26T11:57:52+00:00,218.0,7,attack,defend,6020,6240,B,NEUTRAL,B overtakes A (+220)
+attack_vs_defend_20260526_174340_r2m1,LEAD_CHANGE,2026-05-26T11:58:23+00:00,249.0,8,attack,defend,9830,6860,A,NEUTRAL,A overtakes B (+2970)
+attack_vs_defend_20260526_174340_r2m1,LEAD_CHANGE,2026-05-26T11:58:54+00:00,280.0,9,attack,defend,10790,14040,B,NEUTRAL,B overtakes A (+3250)
+attack_vs_defend_20260526_174340_r2m1,LEAD_CHANGE,2026-05-26T12:02:02+00:00,468.0,15,attack,defend,17230,16680,A,NEUTRAL,A overtakes B (+550)
+attack_vs_defend_20260526_174340_r2m1,FACTORY_CAPTURE,2026-05-26T12:13:59+00:00,1185.0,38,attack,defend,49848,35597,A,B,Factory: neutral -> B
+attack_vs_defend_20260526_174340_r2m1,FACTORY_CAPTURE,2026-05-26T12:18:09+00:00,1435.0,46,attack,defend,63130,47657,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r2m1,FACTORY_CAPTURE,2026-05-26T12:21:47+00:00,1653.0,53,attack,defend,81897,50298,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r2m1,FACTORY_CAPTURE,2026-05-26T12:31:09+00:00,2215.0,71,attack,defend,106678,80634,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r2m1,FACTORY_CAPTURE,2026-05-26T12:43:07+00:00,2933.0,94,attack,defend,152030,98288,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r2m1,FACTORY_CAPTURE,2026-05-26T12:46:46+00:00,3152.0,101,attack,defend,167382,110351,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r2m1,FACTORY_CAPTURE,2026-05-26T12:49:54+00:00,3340.0,107,attack,defend,182208,120527,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r2m1,FACTORY_CAPTURE,2026-05-26T12:52:30+00:00,3496.0,112,attack,defend,190025,125524,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r2m1,MATCH_END,2026-05-26T12:54:13+00:00,3589.0,115,attack,defend,197666,132541,A,A,winner=A +65125
+attack_vs_defend_20260526_174340_r2m2,MATCH_START,2026-05-26T12:57:51+00:00,0.0,0,attack,defend,0,0,TIE,NEUTRAL,match started
+attack_vs_defend_20260526_174340_r2m2,LEAD_CHANGE,2026-05-26T13:01:30+00:00,219.0,7,attack,defend,0,12690,B,NEUTRAL,B overtakes A (+12690)
+attack_vs_defend_20260526_174340_r2m2,FACTORY_CAPTURE,2026-05-26T13:12:56+00:00,905.0,29,attack,defend,21616,47951,B,B,Factory: neutral -> B
+attack_vs_defend_20260526_174340_r2m2,FACTORY_CAPTURE,2026-05-26T13:19:10+00:00,1279.0,41,attack,defend,27894,87277,B,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r2m2,FACTORY_CAPTURE,2026-05-26T13:22:48+00:00,1497.0,48,attack,defend,36112,76361,B,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r2m2,FACTORY_CAPTURE,2026-05-26T13:26:58+00:00,1747.0,56,attack,defend,50678,87849,B,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r2m2,FACTORY_CAPTURE,2026-05-26T13:32:10+00:00,2059.0,66,attack,defend,64713,98956,B,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r2m2,FACTORY_CAPTURE,2026-05-26T13:41:00+00:00,2589.0,83,attack,defend,106020,108572,B,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r2m2,LEAD_CHANGE,2026-05-26T13:42:34+00:00,2683.0,86,attack,defend,111203,108572,A,A,A overtakes B (+2631)
+attack_vs_defend_20260526_174340_r2m2,FACTORY_CAPTURE,2026-05-26T13:50:53+00:00,3182.0,102,attack,defend,155349,121258,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r2m2,FACTORY_CAPTURE,2026-05-26T13:52:27+00:00,3276.0,105,attack,defend,161413,123629,A,B,Factory: neutral -> B
+attack_vs_defend_20260526_174340_r2m2,MATCH_END,2026-05-26T13:57:51+00:00,3588.0,115,attack,defend,171038,136519,A,B,winner=A +34519
+attack_vs_defend_20260526_174340_r3m1,MATCH_START,2026-05-26T14:01:29+00:00,0.0,0,attack,defend,0,0,TIE,NEUTRAL,match started
+attack_vs_defend_20260526_174340_r3m1,LEAD_CHANGE,2026-05-26T14:04:36+00:00,187.0,6,attack,defend,6060,0,A,NEUTRAL,A overtakes B (+6060)
+attack_vs_defend_20260526_174340_r3m1,FACTORY_CAPTURE,2026-05-26T14:16:34+00:00,905.0,29,attack,defend,49728,14544,A,A,Factory: neutral -> A
+attack_vs_defend_20260526_174340_r3m1,FACTORY_CAPTURE,2026-05-26T14:22:48+00:00,1279.0,41,attack,defend,81660,21455,A,B,Factory: neutral -> B
+attack_vs_defend_20260526_174340_r3m1,FACTORY_CAPTURE,2026-05-26T14:30:36+00:00,1747.0,56,attack,defend,101913,37530,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r3m1,FACTORY_CAPTURE,2026-05-26T14:35:17+00:00,2028.0,65,attack,defend,127164,44244,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r3m1,FACTORY_CAPTURE,2026-05-26T14:38:55+00:00,2246.0,72,attack,defend,147195,52569,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r3m1,FACTORY_CAPTURE,2026-05-26T14:42:34+00:00,2465.0,79,attack,defend,153092,55450,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r3m1,FACTORY_CAPTURE,2026-05-26T14:46:12+00:00,2683.0,86,attack,defend,160393,66481,A,A,Factory: neutral -> A
+attack_vs_defend_20260526_174340_r3m1,FACTORY_CAPTURE,2026-05-26T14:47:15+00:00,2746.0,88,attack,defend,163027,67832,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r3m1,FACTORY_CAPTURE,2026-05-26T14:48:17+00:00,2808.0,90,attack,defend,165843,69978,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r3m1,FACTORY_CAPTURE,2026-05-26T14:55:03+00:00,3214.0,103,attack,defend,199190,78331,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r3m1,FACTORY_CAPTURE,2026-05-26T15:00:16+00:00,3526.0,113,attack,defend,224019,90581,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r3m1,MATCH_END,2026-05-26T15:01:29+00:00,3589.0,115,attack,defend,226209,90836,A,A,winner=A +135373
+attack_vs_defend_20260526_174340_r3m2,MATCH_START,2026-05-26T15:05:08+00:00,0.0,0,attack,defend,0,0,TIE,NEUTRAL,match started
+attack_vs_defend_20260526_174340_r3m2,LEAD_CHANGE,2026-05-26T15:08:16+00:00,189.0,6,attack,defend,0,3010,B,NEUTRAL,B overtakes A (+3010)
+attack_vs_defend_20260526_174340_r3m2,LEAD_CHANGE,2026-05-26T15:09:18+00:00,251.0,8,attack,defend,9340,8620,A,NEUTRAL,A overtakes B (+720)
+attack_vs_defend_20260526_174340_r3m2,FACTORY_CAPTURE,2026-05-26T15:19:41+00:00,874.0,28,attack,defend,44726,20341,A,A,Factory: neutral -> A
+attack_vs_defend_20260526_174340_r3m2,FACTORY_CAPTURE,2026-05-26T15:24:53+00:00,1186.0,38,attack,defend,72793,22627,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r3m2,FACTORY_CAPTURE,2026-05-26T15:28:32+00:00,1404.0,45,attack,defend,91565,26415,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r3m2,FACTORY_CAPTURE,2026-05-26T15:33:43+00:00,1716.0,55,attack,defend,101811,37763,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r3m2,FACTORY_CAPTURE,2026-05-26T15:35:17+00:00,1810.0,58,attack,defend,101824,46720,A,B,Factory: neutral -> B
+attack_vs_defend_20260526_174340_r3m2,FACTORY_CAPTURE,2026-05-26T15:37:22+00:00,1935.0,62,attack,defend,108457,60620,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r3m2,FACTORY_CAPTURE,2026-05-26T15:41:32+00:00,2185.0,70,attack,defend,125250,66465,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r3m2,FACTORY_CAPTURE,2026-05-26T15:49:20+00:00,2653.0,85,attack,defend,147853,76700,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r3m2,FACTORY_CAPTURE,2026-05-26T15:53:30+00:00,2902.0,93,attack,defend,169569,78637,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r3m2,FACTORY_CAPTURE,2026-05-26T16:00:46+00:00,3339.0,107,attack,defend,193228,95553,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r3m2,FACTORY_CAPTURE,2026-05-26T16:03:54+00:00,3526.0,113,attack,defend,203071,97532,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r3m2,MATCH_END,2026-05-26T16:05:07+00:00,3589.0,115,attack,defend,207501,98482,A,B,winner=A +109019
+attack_vs_defend_20260526_174340_r4m1,MATCH_START,2026-05-26T16:08:43+00:00,0.0,0,attack,defend,0,0,TIE,NEUTRAL,match started
+attack_vs_defend_20260526_174340_r4m1,LEAD_CHANGE,2026-05-26T16:12:52+00:00,249.0,8,attack,defend,3180,0,A,NEUTRAL,A overtakes B (+3180)
+attack_vs_defend_20260526_174340_r4m1,FACTORY_CAPTURE,2026-05-26T16:25:20+00:00,997.0,32,attack,defend,56892,20154,A,A,Factory: neutral -> A
+attack_vs_defend_20260526_174340_r4m1,FACTORY_CAPTURE,2026-05-26T16:26:54+00:00,1091.0,35,attack,defend,75136,19478,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r4m1,FACTORY_CAPTURE,2026-05-26T16:31:35+00:00,1372.0,44,attack,defend,96467,26445,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r4m1,FACTORY_CAPTURE,2026-05-26T16:35:45+00:00,1622.0,52,attack,defend,100696,33360,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r4m1,FACTORY_CAPTURE,2026-05-26T16:39:54+00:00,1871.0,60,attack,defend,122025,39735,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r4m1,FACTORY_CAPTURE,2026-05-26T16:45:06+00:00,2183.0,70,attack,defend,139348,54300,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r4m1,FACTORY_CAPTURE,2026-05-26T16:48:13+00:00,2370.0,76,attack,defend,143903,60621,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r4m1,FACTORY_CAPTURE,2026-05-26T16:57:04+00:00,2900.0,93,attack,defend,189868,70275,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r4m1,FACTORY_CAPTURE,2026-05-26T17:02:47+00:00,3244.0,104,attack,defend,209119,83478,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r4m1,FACTORY_CAPTURE,2026-05-26T17:07:28+00:00,3525.0,113,attack,defend,240150,88192,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r4m1,MATCH_END,2026-05-26T17:08:42+00:00,3587.0,115,attack,defend,238902,89722,A,B,winner=A +149180
+attack_vs_defend_20260526_174340_r4m2,MATCH_START,2026-05-26T17:12:19+00:00,0.0,0,attack,defend,0,0,TIE,NEUTRAL,match started
+attack_vs_defend_20260526_174340_r4m2,LEAD_CHANGE,2026-05-26T17:15:57+00:00,218.0,7,attack,defend,13808,0,A,NEUTRAL,A overtakes B (+13808)
+attack_vs_defend_20260526_174340_r4m2,LEAD_CHANGE,2026-05-26T17:20:37+00:00,498.0,16,attack,defend,21160,21860,B,NEUTRAL,B overtakes A (+700)
+attack_vs_defend_20260526_174340_r4m2,LEAD_CHANGE,2026-05-26T17:23:44+00:00,685.0,22,attack,defend,24634,23978,A,NEUTRAL,A overtakes B (+656)
+attack_vs_defend_20260526_174340_r4m2,FACTORY_CAPTURE,2026-05-26T17:25:49+00:00,810.0,26,attack,defend,30231,26360,A,A,Factory: neutral -> A
+attack_vs_defend_20260526_174340_r4m2,FACTORY_CAPTURE,2026-05-26T17:26:51+00:00,872.0,28,attack,defend,31571,27655,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r4m2,LEAD_CHANGE,2026-05-26T17:28:56+00:00,997.0,32,attack,defend,37757,38095,B,A,B overtakes A (+338)
+attack_vs_defend_20260526_174340_r4m2,FACTORY_CAPTURE,2026-05-26T17:28:56+00:00,997.0,32,attack,defend,37757,38095,B,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r4m2,LEAD_CHANGE,2026-05-26T17:29:27+00:00,1028.0,33,attack,defend,39195,38963,A,A,A overtakes B (+232)
+attack_vs_defend_20260526_174340_r4m2,FACTORY_CAPTURE,2026-05-26T17:33:06+00:00,1247.0,40,attack,defend,53442,47413,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r4m2,FACTORY_CAPTURE,2026-05-26T17:36:13+00:00,1434.0,46,attack,defend,58067,53055,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r4m2,FACTORY_CAPTURE,2026-05-26T17:41:57+00:00,1778.0,57,attack,defend,73107,67391,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r4m2,FACTORY_CAPTURE,2026-05-26T17:47:40+00:00,2121.0,68,attack,defend,84347,74742,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r4m2,FACTORY_CAPTURE,2026-05-26T17:51:19+00:00,2339.0,75,attack,defend,99928,77755,A,B,Factory: neutral -> B
+attack_vs_defend_20260526_174340_r4m2,FACTORY_CAPTURE,2026-05-26T18:00:40+00:00,2901.0,93,attack,defend,133624,90807,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r4m2,FACTORY_CAPTURE,2026-05-26T18:05:52+00:00,3213.0,103,attack,defend,158547,95578,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r4m2,FACTORY_CAPTURE,2026-05-26T18:08:28+00:00,3369.0,108,attack,defend,171616,102698,A,A,Factory: neutral -> A
+attack_vs_defend_20260526_174340_r4m2,MATCH_END,2026-05-26T18:12:18+00:00,3587.0,115,attack,defend,182502,105485,A,A,winner=A +77017
+attack_vs_defend_20260526_174340_r5m1,MATCH_START,2026-05-26T18:15:56+00:00,0.0,0,attack,defend,0,0,TIE,NEUTRAL,match started
+attack_vs_defend_20260526_174340_r5m1,LEAD_CHANGE,2026-05-26T18:19:34+00:00,218.0,7,attack,defend,0,13748,B,NEUTRAL,B overtakes A (+13748)
+attack_vs_defend_20260526_174340_r5m1,LEAD_CHANGE,2026-05-26T18:27:22+00:00,685.0,22,attack,defend,29360,26436,A,NEUTRAL,A overtakes B (+2924)
+attack_vs_defend_20260526_174340_r5m1,LEAD_CHANGE,2026-05-26T18:27:53+00:00,717.0,23,attack,defend,26004,26870,B,NEUTRAL,B overtakes A (+866)
+attack_vs_defend_20260526_174340_r5m1,LEAD_CHANGE,2026-05-26T18:28:24+00:00,748.0,24,attack,defend,27368,27324,A,NEUTRAL,A overtakes B (+44)
+attack_vs_defend_20260526_174340_r5m1,FACTORY_CAPTURE,2026-05-26T18:29:57+00:00,841.0,27,attack,defend,34126,26180,A,B,Factory: neutral -> B
+attack_vs_defend_20260526_174340_r5m1,FACTORY_CAPTURE,2026-05-26T18:38:48+00:00,1372.0,44,attack,defend,64565,57116,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r5m1,FACTORY_CAPTURE,2026-05-26T18:43:29+00:00,1652.0,53,attack,defend,85710,66366,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r5m1,FACTORY_CAPTURE,2026-05-26T18:44:31+00:00,1715.0,55,attack,defend,90246,69599,A,B,Factory: neutral -> B
+attack_vs_defend_20260526_174340_r5m1,FACTORY_CAPTURE,2026-05-26T18:47:38+00:00,1902.0,61,attack,defend,91416,75386,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r5m1,LEAD_CHANGE,2026-05-26T18:49:45+00:00,2027.0,65,attack,defend,90205,90320,B,A,B overtakes A (+115)
+attack_vs_defend_20260526_174340_r5m1,LEAD_CHANGE,2026-05-26T18:50:16+00:00,2060.0,66,attack,defend,96253,90029,A,A,A overtakes B (+6224)
+attack_vs_defend_20260526_174340_r5m1,FACTORY_CAPTURE,2026-05-26T18:51:18+00:00,2122.0,68,attack,defend,99541,90785,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r5m1,FACTORY_CAPTURE,2026-05-26T18:54:57+00:00,2341.0,75,attack,defend,110426,101706,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r5m1,FACTORY_CAPTURE,2026-05-26T18:57:02+00:00,2466.0,79,attack,defend,116440,108254,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r5m1,FACTORY_CAPTURE,2026-05-26T19:06:25+00:00,3029.0,97,attack,defend,141055,119767,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r5m1,FACTORY_CAPTURE,2026-05-26T19:11:06+00:00,3310.0,106,attack,defend,167128,127856,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r5m1,FACTORY_CAPTURE,2026-05-26T19:15:16+00:00,3560.0,114,attack,defend,186022,135448,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r5m1,MATCH_END,2026-05-26T19:15:55+00:00,3591.0,115,attack,defend,188254,136732,A,A,winner=A +51522
+attack_vs_defend_20260526_174340_r5m2,MATCH_START,2026-05-26T19:19:31+00:00,0.0,0,attack,defend,0,0,TIE,NEUTRAL,match started
+attack_vs_defend_20260526_174340_r5m2,LEAD_CHANGE,2026-05-26T19:22:38+00:00,188.0,6,attack,defend,0,6100,B,NEUTRAL,B overtakes A (+6100)
+attack_vs_defend_20260526_174340_r5m2,FACTORY_CAPTURE,2026-05-26T19:33:01+00:00,811.0,26,attack,defend,18342,39500,B,B,Factory: neutral -> B
+attack_vs_defend_20260526_174340_r5m2,FACTORY_CAPTURE,2026-05-26T19:42:54+00:00,1404.0,45,attack,defend,48100,65842,B,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r5m2,FACTORY_CAPTURE,2026-05-26T19:48:06+00:00,1716.0,55,attack,defend,61940,79022,B,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r5m2,FACTORY_CAPTURE,2026-05-26T19:51:44+00:00,1934.0,62,attack,defend,78064,86645,B,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r5m2,LEAD_CHANGE,2026-05-26T19:54:20+00:00,2090.0,67,attack,defend,89734,89064,A,A,A overtakes B (+670)
+attack_vs_defend_20260526_174340_r5m2,FACTORY_CAPTURE,2026-05-26T19:55:22+00:00,2152.0,69,attack,defend,95447,91364,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r5m2,LEAD_CHANGE,2026-05-26T19:55:53+00:00,2183.0,70,attack,defend,91512,92604,B,B,B overtakes A (+1092)
+attack_vs_defend_20260526_174340_r5m2,LEAD_CHANGE,2026-05-26T19:56:56+00:00,2246.0,72,attack,defend,94364,90220,A,B,A overtakes B (+4144)
+attack_vs_defend_20260526_174340_r5m2,FACTORY_CAPTURE,2026-05-26T19:58:29+00:00,2339.0,75,attack,defend,96636,92280,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r5m2,FACTORY_CAPTURE,2026-05-26T20:01:05+00:00,2495.0,80,attack,defend,114352,95041,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r5m2,FACTORY_CAPTURE,2026-05-26T20:05:15+00:00,2745.0,88,attack,defend,129207,103309,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r5m2,FACTORY_CAPTURE,2026-05-26T20:07:51+00:00,2901.0,93,attack,defend,138043,107323,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r5m2,FACTORY_CAPTURE,2026-05-26T20:12:01+00:00,3151.0,101,attack,defend,158713,117855,A,A,Factory: b -> A
+attack_vs_defend_20260526_174340_r5m2,FACTORY_CAPTURE,2026-05-26T20:16:10+00:00,3400.0,109,attack,defend,178393,121182,A,B,Factory: a -> B
+attack_vs_defend_20260526_174340_r5m2,MATCH_END,2026-05-26T20:19:30+00:00,3587.0,115,attack,defend,181642,127334,A,B,winner=A +54308
