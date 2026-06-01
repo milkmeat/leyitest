@@ -131,12 +131,51 @@ python src/main.py uid_ava_add 40002 20010643 1
 python src/main.py uid_ava_enter 40002 20010643
 ```
 
-### 3.4 创建新账号并更新配置
+### 3.4 准备新账号（uid_copy / uid_setup）
 
-如果需要新增测试账号：
-1. 通过 GM 后台创建账号，获得新 UID
-2. 编辑 `config/accounts.yaml`，在对应联盟的 `active` 列表中添加新账号
-3. 编辑 `config/squads.yaml`，将新账号分配到某个小队
+实际使用中不会从零创建账号，而是通过 `uid_copy` 从一个已有的"模板账号"复制数据，这样新账号直接拥有兵力、科技、英雄等真实状态。
+
+#### 复制单个账号
+
+```bash
+# 将 src_uid 的全部数据复制到 tar_uid
+python src/main.py uid_copy <src_uid> <tar_uid>
+```
+
+#### 创建联盟
+
+```bash
+# 创建一个新联盟（用第一个活跃账号作为创建者）
+python src/main.py uid_create_al <联盟全名> <联盟简称>
+# 例: python src/main.py uid_create_al "TestSquad2026" "TS26"
+```
+
+创建成功后会返回 `aid`（联盟 ID），记下来用于后续加入。
+
+#### 一站式批量准备（推荐）
+
+```bash
+# uid_setup: 对每个 tar_uid 自动执行 copy_player → join_alliance → change_name
+python src/main.py uid_setup <alliance_key> <src_uid> <tar_uid1> [tar_uid2...]
+```
+
+- `alliance_key`: `squads.yaml` 中的联盟 key（如 `ours` 或 `enemy`）
+- `src_uid`: 模板账号 UID（数据来源）
+- `tar_uid...`: 要准备的目标账号列表
+
+示例：
+```bash
+# 用 20010643 作为模板，批量准备 3 个新账号并加入我方联盟
+python src/main.py uid_setup ours 20010643 20010670 20010671 20010672
+```
+
+执行后每个目标账号会：复制模板数据 → 加入对应联盟 → 按小队配置自动改名。
+
+#### 更新配置文件
+
+准备好账号后，编辑以下文件将新 UID 纳入系统：
+1. `config/accounts.yaml` — 在对应联盟的 `active` 列表中添加新 UID
+2. `config/squads.yaml` — 将新 UID 分配到某个小队的 `member_uids` 中
 
 ---
 
