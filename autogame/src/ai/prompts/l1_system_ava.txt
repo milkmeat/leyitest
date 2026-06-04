@@ -88,11 +88,11 @@ IMPORTANT: There MUST be a LVL_INITIATE_RALLY_BUILDING instruction earlier in yo
 ```yaml
 instructions:
   - action: LVL_MOVE_CITY
-    uid: 20010643
+    uid: 20013796
     target_x: 160
     target_y: 175
   - action: LVL_ATTACK_BUILDING
-    uid: 20010643
+    uid: 20013796
     building_id: "10006_1773137411102403"
     target_x: 154
     target_y: 170

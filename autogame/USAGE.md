@@ -66,17 +66,17 @@ profiles:
 
 **账号列表**: `config/accounts.yaml`
 
-- 我方联盟 (TestSquad2026, aid=20000118): 20 个活跃账号 (acc_01 ~ acc_20)
-- 敌方联盟 (PhoenixRise2026, aid=20000119): 20 个活跃账号 (enemy_01 ~ enemy_20)
-- 另有 21 个预备账号可用
+- 我方联盟 (AItest0604A, aid=20000214): 20 个活跃账号 (acc_01 ~ acc_20)
+- 敌方联盟 (AItest0604B, aid=20000215): 20 个活跃账号 (enemy_01 ~ enemy_20)
+- 另有 62 个预备/退役账号可用
 
 **小队划分**: `config/squads.yaml`
 
 我方 4 个小队，每队 5 人：
-- Squad 1 (Alpha): UID 20010643-20010647
-- Squad 2 (Bravo): UID 20010648-20010652
-- Squad 3 (Charlie): UID 20010653-20010657
-- Squad 4 (Delta): UID 20010658-20010662
+- Squad 1 (Alpha): UID 20013796-20013800
+- Squad 2 (Bravo): UID 20013801-20013805
+- Squad 3 (Charlie): UID 20013806-20013810
+- Squad 4 (Delta): UID 20013811-20013815
 
 敌方同样 4 个小队 × 5 人。
 
@@ -126,9 +126,9 @@ python src/main.py uid_ava_join_all 40002
 
 ```bash
 # Step 1: 加入名单（camp_id: 1=我方, 2=敌方）
-python src/main.py uid_ava_add 40002 20010643 1
+python src/main.py uid_ava_add 40002 20013796 1
 # Step 2: 进入战场
-python src/main.py uid_ava_enter 40002 20010643
+python src/main.py uid_ava_enter 40002 20013796
 ```
 
 ### 3.4 准备新账号（uid_copy / uid_setup）
@@ -182,8 +182,8 @@ python src/main.py uid_setup <alliance_key> <src_uid> <tar_uid1> [tar_uid2...]
 
 示例：
 ```bash
-# 用 20010643 作为模板，批量准备 3 个新账号并加入我方联盟
-python src/main.py uid_setup ours 20010643 20010670 20010671 20010672
+# 用 20013796 作为模板，批量准备 3 个新账号并加入我方联盟
+python src/main.py uid_setup ours 20013796 20013820 20013821 20013822
 ```
 
 执行后每个目标账号会：复制模板数据 → 加入对应联盟 → 按小队配置自动改名。
@@ -341,8 +341,8 @@ python src/main.py l2_decide --ava 40001 --l2-prompt attack
 python src/main.py l1_decide 1 --ava 40001
 
 # ── 查看状态 ──
-python src/main.py get_ava_score 20010643 40001
-python src/main.py get_player_info 20010643
+python src/main.py get_ava_score 20013796 40001
+python src/main.py get_player_info 20013796
 
 # ── 战场管理 ──
 python src/main.py uid_ava_create 40002 duration=2

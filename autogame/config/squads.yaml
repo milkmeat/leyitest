@@ -3,49 +3,49 @@
 
 alliances:
   ours:
-    aid: 20000118
-    name: "TestSquad2026"
+    aid: 20000214
+    name: "AItest0604A"
     squads:
       - squad_id: 1
         name: "Alpha"
-        leader_uid: 20010643
-        member_uids: [20010643, 20010644, 20010645, 20010646, 20010647]
+        leader_uid: 20013796
+        member_uids: [20013796, 20013797, 20013798, 20013799, 20013800]
 
       - squad_id: 2
         name: "Bravo"
-        leader_uid: 20010648
-        member_uids: [20010648, 20010649, 20010650, 20010651, 20010652]
+        leader_uid: 20013801
+        member_uids: [20013801, 20013802, 20013803, 20013804, 20013805]
 
       - squad_id: 3
         name: "Charlie"
-        leader_uid: 20010653
-        member_uids: [20010653, 20010654, 20010655, 20010656, 20010657]
+        leader_uid: 20013806
+        member_uids: [20013806, 20013807, 20013808, 20013809, 20013810]
 
       - squad_id: 4
         name: "Delta"
-        leader_uid: 20010658
-        member_uids: [20010658, 20010659, 20010660, 20010661, 20010662]
+        leader_uid: 20013811
+        member_uids: [20013811, 20013812, 20013813, 20013814, 20013815]
 
   enemy:
-    aid: 20000119
-    name: "PhoenixRise2026"
+    aid: 20000215
+    name: "AItest0604B"
     squads:
       - squad_id: 1
         name: "Red-A"
-        leader_uid: 20010668
-        member_uids: [20010668, 20010669, 20010670, 20010671, 20010672]
+        leader_uid: 20013816
+        member_uids: [20013816, 20013817, 20013818, 20013819, 20013820]
 
       - squad_id: 2
         name: "Red-B"
-        leader_uid: 20010673
-        member_uids: [20010673, 20010674, 20010675, 20010676, 20010677]
+        leader_uid: 20013821
+        member_uids: [20013821, 20013822, 20013823, 20013824, 20013825]
 
       - squad_id: 3
         name: "Red-C"
-        leader_uid: 20010678
-        member_uids: [20010678, 20010679, 20010680, 20010681, 20010682]
+        leader_uid: 20013826
+        member_uids: [20013826, 20013827, 20013828, 20013829, 20013830]
 
       - squad_id: 4
         name: "Red-D"
-        leader_uid: 20010683
-        member_uids: [20010683, 20010684, 20010685, 20010686, 20010687]
+        leader_uid: 20013831
+        member_uids: [20013831, 20013832, 20013833, 20013834, 20013835]

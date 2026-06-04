@@ -2,106 +2,147 @@
 # 运行时详细信息（战力、兵种、英雄等）从服务器同步获取，此处只存最小标识
 
 # 源账号: 20010646
-# --- 联盟 A: TestSquad2026 (aid=20000118) — 我方 AI 控制 ---
+# --- 联盟 A: AItest0604A (aid=20000214) — 我方 AI 控制 ---
 accounts:
-  - uid: 20010643
+  - uid: 20013796
     name: "acc_01"
-  - uid: 20010644
+  - uid: 20013797
     name: "acc_02"
-  - uid: 20010645
+  - uid: 20013798
     name: "acc_03"
-  - uid: 20010646
+  - uid: 20013799
     name: "acc_04"
-  - uid: 20010647
+  - uid: 20013800
     name: "acc_05"
-  - uid: 20010648
+  - uid: 20013801
     name: "acc_06"
-  - uid: 20010649
+  - uid: 20013802
     name: "acc_07"
-  - uid: 20010650
+  - uid: 20013803
     name: "acc_08"
-  - uid: 20010651
+  - uid: 20013804
     name: "acc_09"
-  - uid: 20010652
+  - uid: 20013805
     name: "acc_10"
-  - uid: 20010653
+  - uid: 20013806
     name: "acc_11"
-  - uid: 20010654
+  - uid: 20013807
     name: "acc_12"
-  - uid: 20010655
+  - uid: 20013808
     name: "acc_13"
-  - uid: 20010656
+  - uid: 20013809
     name: "acc_14"
-  - uid: 20010657
+  - uid: 20013810
     name: "acc_15"
-  - uid: 20010658
+  - uid: 20013811
     name: "acc_16"
-  - uid: 20010659
+  - uid: 20013812
     name: "acc_17"
-  - uid: 20010660
+  - uid: 20013813
     name: "acc_18"
-  - uid: 20010661
+  - uid: 20013814
     name: "acc_19"
-  - uid: 20010662
+  - uid: 20013815
     name: "acc_20"
 
-# --- 联盟 B: PhoenixRise2026 (aid=20000119) — 对手方 ---
+# --- 联盟 B: AItest0604B (aid=20000215) — 对手方 ---
 enemies:
-  - uid: 20010668
+  - uid: 20013816
     name: "enemy_01"
-  - uid: 20010669
+  - uid: 20013817
     name: "enemy_02"
-  - uid: 20010670
+  - uid: 20013818
     name: "enemy_03"
-  - uid: 20010671
+  - uid: 20013819
     name: "enemy_04"
-  - uid: 20010672
+  - uid: 20013820
     name: "enemy_05"
-  - uid: 20010673
+  - uid: 20013821
     name: "enemy_06"
-  - uid: 20010674
+  - uid: 20013822
     name: "enemy_07"
-  - uid: 20010675
+  - uid: 20013823
     name: "enemy_08"
-  - uid: 20010676
+  - uid: 20013824
     name: "enemy_09"
-  - uid: 20010677
+  - uid: 20013825
     name: "enemy_10"
-  - uid: 20010678
+  - uid: 20013826
     name: "enemy_11"
-  - uid: 20010679
+  - uid: 20013827
     name: "enemy_12"
-  - uid: 20010680
+  - uid: 20013828
     name: "enemy_13"
-  - uid: 20010681
+  - uid: 20013829
     name: "enemy_14"
-  - uid: 20010682
+  - uid: 20013830
     name: "enemy_15"
-  - uid: 20010683
+  - uid: 20013831
     name: "enemy_16"
-  - uid: 20010684
+  - uid: 20013832
     name: "enemy_17"
-  - uid: 20010685
+  - uid: 20013833
     name: "enemy_18"
-  - uid: 20010686
+  - uid: 20013834
     name: "enemy_19"
-  - uid: 20010687
+  - uid: 20013835
     name: "enemy_20"
 
 # 联盟元信息（供代码引用）
 alliances:
   ours:
-    aid: 20000118
+    aid: 20000214
     lvl_aid: 1
-    name: "TestSquad2026"
+    name: "AItest0604A"
   enemy:
-    aid: 20000119
+    aid: 20000215
     lvl_aid: 2
-    name: "PhoenixRise2026"
+    name: "AItest0604B"
 
 # 后备名单（活跃名单外的账号，需要时可直接移回上方）
 reserves:
-  # 旧批次备用账号
+  # 旧批次失效账号（2026-06-04 更换为 20013796-20013835 后退役）
+  - uid: 20010643
+  - uid: 20010644
+  - uid: 20010645
+  - uid: 20010646
+  - uid: 20010647
+  - uid: 20010648
+  - uid: 20010649
+  - uid: 20010650
+  - uid: 20010651
+  - uid: 20010652
+  - uid: 20010653
+  - uid: 20010654
+  - uid: 20010655
+  - uid: 20010656
+  - uid: 20010657
+  - uid: 20010658
+  - uid: 20010659
+  - uid: 20010660
+  - uid: 20010661
+  - uid: 20010662
+  - uid: 20010668
+  - uid: 20010669
+  - uid: 20010670
+  - uid: 20010671
+  - uid: 20010672
+  - uid: 20010673
+  - uid: 20010674
+  - uid: 20010675
+  - uid: 20010676
+  - uid: 20010677
+  - uid: 20010678
+  - uid: 20010679
+  - uid: 20010680
+  - uid: 20010681
+  - uid: 20010682
+  - uid: 20010683
+  - uid: 20010684
+  - uid: 20010685
+  - uid: 20010686
+  - uid: 20010687
+  # 更早批次备用账号
   - uid: 20010413
   - uid: 20010414
   - uid: 20010415

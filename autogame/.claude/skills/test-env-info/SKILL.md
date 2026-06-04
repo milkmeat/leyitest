@@ -29,7 +29,7 @@ environments:
 |------|-----|------|
 | `did` | "self-system" | 设备ID |
 | `sid` | 1 | 服务器ID（test环境只有sid=1） |
-| `aid` | 20000118 | 联盟ID (TestSquad2026，我方) |
+| `aid` | 20000214 | 联盟ID (AItest0604A，我方) |
 | `ksid` | 1 | Kingdom服务器ID |
 | `ava_id` | 0 | AVA战场ID（0=普通地图，非0=战场副本ID） |
 | `castle_lv` | 25 | 城堡等级 |
@@ -86,14 +86,14 @@ AVA战场内的命令字使用 `lvl_` 前缀，与普通地图命令字分离：
 | 行军加速 | - | lvl_use_troop_speed_up_item |
 | 获取战场队伍信息 | - | lvl_battle_login_get |
 
-### 当前活跃 AVA 战场（2026-03-18）
+### AVA 战场示例
 
-**战场 ID**: `lvl_id=29999`
+**战场 ID**: `lvl_id=29999`（示例）
 
 | 项目 | 值 |
 |------|-----|
 | 战场 ID | 29999 |
-| 已进入账号 | enemy_02 (20010669), acc_01 (20010643) |
+| 示例账号 | acc_01 (20013796, 我方), enemy_01 (20013816, 敌方) |
 | 阵营配置 | camp_id=1 (我方), camp_id=2 (敌方) |
 
 ### CLI 命令 - AVA 战场操作
@@ -112,17 +112,17 @@ python src/main.py uid_ava_enter <lvl_id> <uid>
 **完整迁移流程**：
 ```bash
 # 示例：将账号迁移到 lvl_id=29999，阵营 1
-python src/main.py uid_ava_add 29999 20010643 1    # 添加到名单
-python src/main.py uid_ava_enter 29999 20010643     # 进入战场
-python src/main.py uid_ava_status 20010643          # 验证状态
+python src/main.py uid_ava_add 29999 20013796 1    # 添加到名单
+python src/main.py uid_ava_enter 29999 20013796     # 进入战场
+python src/main.py uid_ava_status 20013796          # 验证状态
 ```
 
-### 账号分布状态（2026-03-18）
+### 账号分布状态（2026-06-04）
 
 **当前配置** (`config/accounts.yaml`)：
-- 我方账号: 20个 (acc_01 到 acc_20, UID: 20010643-20010662)
-- 敌方账号: 20个 (enemy_01 到 enemy_20, UID: 20010668-20010687)
-- 备用账号: 21个 (reserves, UID: 20010413-20010432, 20010366, 20010373)
+- 我方账号: 20个 (acc_01 到 acc_20, UID: 20013796-20013815, 联盟 AItest0604A aid=20000214)
+- 敌方账号: 20个 (enemy_01 到 enemy_20, UID: 20013816-20013835, 联盟 AItest0604B aid=20000215)
+- 备用/退役账号: 62个 (reserves, 含旧批次 20010643-20010662 / 20010668-20010687 等)
 
 ---
 

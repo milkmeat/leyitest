@@ -33,7 +33,7 @@ Strict YAML output (saves tokens):
 ```yaml
 instructions:
   - action: LVL_ATTACK_BUILDING
-    uid: 20010643
+    uid: 20013796
     building_id: "10006_1773137411102403"
     building_key: 10006
     target_x: 154

@@ -635,7 +635,7 @@ async def cmd_lvl_get_battle_server_detail(lvl_id_str: str, env: str = None):
     from src.executor.game_api import GameAPIClient
     client = GameAPIClient(env=env)
     try:
-        gm_uid = 20010643
+        gm_uid = 20013796
         lvl_id = int(lvl_id_str)
         resp = await client.lvl_get_battle_server_detail(gm_uid, lvl_id)
         code = _print_ret_code(resp)
@@ -2403,7 +2403,7 @@ async def cmd_uid_ava_create(lvl_id_str: str, *extra: str, env: str = None):
         if event_id:
             overrides["event_id"] = event_id
         # GM 指令用 camp 默认配置中第一个 uid 作为 header 身份
-        gm_uid = 20010643
+        gm_uid = 20013796
         print(f"创建 AVA 战场 lvl_id={lvl_id} duration={duration_hours}h"
               + (f" event_id={event_id}" if event_id else ""))
         resp = await client.send_cmd("create_ava_battle", gm_uid,
