@@ -78,6 +78,8 @@ uid_helper (测试环境账号准备):
   uid_create_al <name> <nick>                   创建联盟
   uid_join_al <aid> <uid1> [uid2...]            加入联盟+改名
   uid_members <aid>                             查看联盟成员
+  uid_leave_al <uid1> [uid2...]                 退出联盟（按 uid 批量）
+  uid_leave_al --aid <aid>                      清空联盟（退出该联盟全部成员）
   uid_setup <alliance_key> <src_uid> <tar_uid...>  一站式账号准备
 
 uid_helper (AVA 战场):
@@ -2167,18 +2169,12 @@ async def cmd_uid_create_al(name: str, nick: str, env: str = None):
                                      name=name, nick=nick)
         code = _print_ret_code(resp)
         if code == 0:
-            # 解析返回的 aid
-            try:
-                items = resp["res_data"][0]["push_list"][0]["data"]
-                for item in items:
-                    if item.get("name") == "svr_alliance_create":
-                        data = _json.loads(item["data"])
-                        aid = data.get("aid", "N/A")
-                        print(f"联盟创建成功: name='{name}' nick='{nick}' aid={aid}")
-                        return
-            except (KeyError, IndexError, TypeError):
-                pass
-            print(f"联盟创建成功 (uid={creator_uid})")
+            # 复用 GameAPIClient 的 aid 解析逻辑
+            aid = client._extract_created_aid(resp)
+            if aid is not None:
+                print(f"联盟创建成功: name='{name}' nick='{nick}' aid={aid}")
+            else:
+                print(f"联盟创建成功 (uid={creator_uid})")
         else:
             print("[FAIL] 创建联盟失败", file=sys.stderr)
     finally:
@@ -2222,20 +2218,10 @@ async def cmd_uid_join_al(aid_str: str, *uid_args: str, env: str = None):
 
         # 4) 验证: 查看成员列表
         any_uid = int(uid_args[0])
-        resp = await client.send_cmd("get_al_members", any_uid,
-                                     header_overrides={"aid": aid})
-        try:
-            items = resp["res_data"][0]["push_list"][0]["data"]
-            for item in items:
-                if item.get("name") == "svr_al_members":
-                    data = _json.loads(item["data"])
-                    count = data.get("count", len(data.get("list", [])))
-                    print(f"\n联盟 {aid} 当前成员数: {count}")
-                    for m in data.get("list", []):
-                        print(f"  uid={m['uid']} {m.get('name', '')}")
-                    break
-        except (KeyError, IndexError, TypeError):
-            pass
+        members = await client.get_alliance_members(any_uid, aid)
+        print(f"\n联盟 {aid} 当前成员数: {len(members)}")
+        for m in members:
+            print(f"  uid={m['uid']} {m.get('name', '')}")
     finally:
         await client.close()
 
@@ -2248,22 +2234,66 @@ async def cmd_uid_members(aid_str: str, env: str = None):
     aid = int(aid_str)
     client = GameAPIClient(env=env)
     try:
-        resp = await client.send_cmd("get_al_members", any_uid,
-                                     header_overrides={"aid": aid})
-        _print_ret_code(resp)
-        try:
-            items = resp["res_data"][0]["push_list"][0]["data"]
-            for item in items:
-                if item.get("name") == "svr_al_members":
-                    data = _json.loads(item["data"])
-                    count = data.get("count", len(data.get("list", [])))
-                    print(f"联盟 {aid} 成员数: {count}")
-                    for m in data.get("list", []):
-                        print(f"  uid={m['uid']} {m.get('name', '')}")
-                    return
-        except (KeyError, IndexError, TypeError):
-            pass
-        _print_json(resp)
+        members = await client.get_alliance_members(any_uid, aid)
+        print(f"联盟 {aid} 成员数: {len(members)}")
+        for m in members:
+            print(f"  uid={m['uid']} {m.get('name', '')}")
+    finally:
+        await client.close()
+
+
+async def cmd_uid_leave_al(*args: str, env: str = None):
+    """退出联盟: uid_leave_al <uid1> [uid2...]  或  uid_leave_al --aid <aid>
+
+    两种形态:
+      1) 按 uid 退出: uid_leave_al <uid1> [uid2...]
+         逐个让指定 uid 离开各自当前所在联盟。
+      2) 清空联盟:   uid_leave_al --aid <aid>
+         先拉取该联盟全部成员，再逐个退出（用于解散/清空联盟）。
+    """
+    from src.executor.game_api import GameAPIClient
+
+    # 解析 --aid 形态
+    target_aid = None
+    rest = list(args)
+    if "--aid" in rest:
+        idx = rest.index("--aid")
+        if idx + 1 >= len(rest):
+            print("用法: uid_leave_al --aid <aid>", file=sys.stderr)
+            sys.exit(1)
+        target_aid = int(rest[idx + 1])
+        rest = rest[:idx] + rest[idx + 2:]
+
+    client = GameAPIClient(env=env)
+    try:
+        # 确定要退出的 uid 列表
+        if target_aid is not None:
+            config = _load_config()
+            viewer_uid = config.accounts.active_uids()[0]
+            members = await client.get_alliance_members(viewer_uid, target_aid)
+            uids = [int(m["uid"]) for m in members if "uid" in m]
+            if not uids:
+                print(f"联盟 {target_aid} 无成员或查询失败")
+                return
+            print(f"联盟 {target_aid} 当前 {len(uids)} 名成员，开始逐个退出...")
+        else:
+            if not rest:
+                print("用法: uid_leave_al <uid1> [uid2...]  或  uid_leave_al --aid <aid>", file=sys.stderr)
+                sys.exit(1)
+            uids = [int(u) for u in rest]
+
+        # 逐个退出
+        ok_count = fail_count = 0
+        for uid in uids:
+            ok = await client.leave_alliance(uid)
+            if ok:
+                ok_count += 1
+                print(f"  uid={uid} 已退出联盟")
+            else:
+                fail_count += 1
+                print(f"  [FAIL] uid={uid} 退出联盟失败", file=sys.stderr)
+
+        print(f"\n=== 完成: {ok_count} 成功, {fail_count} 失败 ===")
     finally:
         await client.close()
 
@@ -2833,6 +2863,7 @@ COMMANDS = {
     "uid_create_al":        (cmd_uid_create_al,         "<name> <nick>",                      "创建联盟"),
     "uid_join_al":          (cmd_uid_join_al,           "<aid> <uid1> [uid2...]",             "加入联盟+改名"),
     "uid_members":          (cmd_uid_members,           "<aid>",                              "查看联盟成员"),
+    "uid_leave_al":         (cmd_uid_leave_al,          "<uid1> [uid2...] | --aid <aid>",     "退出联盟(按uid或清空联盟)"),
     "uid_setup":            (cmd_uid_setup,             "<alliance_key> <src_uid> <tar_uid...>", "一站式账号准备"),
     "uid_ava_create":       (cmd_uid_ava_create,        "<lvl_id> [event_id] [duration=hours]", "GM: 创建AVA临时战场"),
     "uid_ava_add":          (cmd_uid_ava_add,           "<lvl_id> <uid> <camp_id>",           "添加到AVA战场名单"),

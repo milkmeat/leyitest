@@ -148,6 +148,8 @@ python src/main.py uid_copy <src_uid> <tar_uid>
 python src/main.py uid_create_al <name> <nick>        # 创建联盟
 python src/main.py uid_join_al <aid> <uid1> [uid2...] # 加入+改名
 python src/main.py uid_members <aid>                  # 查看成员
+python src/main.py uid_leave_al <uid1> [uid2...]      # 退出联盟（按 uid 批量）
+python src/main.py uid_leave_al --aid <aid>           # 清空联盟（退出全部成员）
 
 # 一站式准备
 python src/main.py uid_setup <alliance_key> <src_uid> <tar_uid...>

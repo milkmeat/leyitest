@@ -554,6 +554,115 @@ class GameAPIClient:
         return await self.send_cmd("add_resource", uid, **overrides)
 
     # ------------------------------------------------------------------
+    # 联盟操作
+    # 模仿 docs/references/game_actions.py 的联盟方法集，异步实现，
+    # 全部委托 send_cmd，参数默认值取自 cmd_config.yaml。
+    # ------------------------------------------------------------------
+
+    async def create_alliance(
+        self, uid: int, name: str, nick: str, desc: str = "desc",
+    ) -> Optional[int]:
+        """创建联盟
+
+        Args:
+            uid:  创建者（盟主）UID
+            name: 联盟名称（5-20 字符）
+            nick: 联盟简称（3-4 字符）
+            desc: 联盟描述
+
+        Returns:
+            创建成功返回联盟 aid，失败返回 None
+        """
+        resp = await self.send_cmd("create_alliance", uid, name=name, nick=nick, desc=desc)
+        code = resp.get("res_header", {}).get("ret_code", -1)
+        if code != 0:
+            return None
+        return self._extract_created_aid(resp)
+
+    async def join_alliance(self, uid: int, target_aid: int) -> bool:
+        """申请加入联盟
+
+        Args:
+            uid:        申请者 UID
+            target_aid: 目标联盟 ID
+
+        Returns:
+            是否成功
+        """
+        resp = await self.send_cmd("join_alliance", uid, target_aid=target_aid)
+        return resp.get("res_header", {}).get("ret_code", -1) == 0
+
+    async def leave_alliance(self, uid: int) -> bool:
+        """离开当前所在联盟
+
+        al_leave 命令无参数，服务器根据 uid 的当前联盟身份处理。
+
+        Args:
+            uid: 退出者 UID
+
+        Returns:
+            是否成功
+        """
+        resp = await self.send_cmd("al_leave", uid)
+        return resp.get("res_header", {}).get("ret_code", -1) == 0
+
+    async def get_aid_by_uid(self, uid: int) -> Optional[int]:
+        """查询玩家当前所在联盟的 aid
+
+        复用 get_player_info（svr_lord_info_new 模块）的结构化字段，
+        比从原始 JSON 正则提取更稳定。
+
+        Returns:
+            联盟 aid，未加入任何联盟时返回 0，查询失败返回 None
+        """
+        info = await self.get_player_info(uid, modules=["svr_lord_info_new"])
+        return info.get("alliance_id")
+
+    async def get_alliance_members(
+        self, viewer_uid: int, aid: int,
+    ) -> List[Dict[str, Any]]:
+        """获取联盟全部成员列表
+
+        Args:
+            viewer_uid: 发起查询的账号 UID（任意已知账号即可）
+            aid:        目标联盟 ID（通过 header 的 aid 字段切换视角）
+
+        Returns:
+            成员 dict 列表（含 uid、name 等），失败返回空列表
+        """
+        resp = await self.send_cmd("get_al_members", viewer_uid, header_overrides={"aid": aid})
+        if resp.get("res_header", {}).get("ret_code", -1) != 0:
+            return []
+        try:
+            for item in resp["res_data"][0]["push_list"][0]["data"]:
+                if item.get("name") == "svr_al_members":
+                    raw = item.get("data", "")
+                    parsed = json.loads(raw) if isinstance(raw, str) else raw
+                    return parsed.get("list", [])
+        except (KeyError, IndexError, TypeError, json.JSONDecodeError) as e:
+            logger.warning("get_alliance_members 响应解析失败 aid=%s: %s", aid, e)
+        return []
+
+    @staticmethod
+    def _extract_created_aid(resp: Dict[str, Any]) -> Optional[int]:
+        """从 create_alliance 的响应中提取新联盟 aid
+
+        服务器在 push_list 中返回 svr_alliance_create（或 svr_alliance）段，
+        其 data 为 JSON 字符串，含 aid 字段。
+        """
+        try:
+            for item in resp["res_data"][0]["push_list"][0]["data"]:
+                if item.get("name") in ("svr_alliance_create", "svr_alliance"):
+                    raw = item.get("data", "")
+                    parsed = json.loads(raw) if isinstance(raw, str) else raw
+                    aid = parsed.get("aid")
+                    if aid is not None:
+                        return int(aid)
+        except (KeyError, IndexError, TypeError, json.JSONDecodeError):
+            pass
+        return None
+
+    # ------------------------------------------------------------------
     # AVA 战场内操作
     # ------------------------------------------------------------------
 

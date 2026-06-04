@@ -152,6 +152,23 @@ python src/main.py uid_create_al <联盟全名> <联盟简称>
 
 创建成功后会返回 `aid`（联盟 ID），记下来用于后续加入。
 
+#### 加入 / 查看 / 退出联盟
+
+```bash
+# 让一个或多个账号加入指定联盟（自动按小队配置改名）
+python src/main.py uid_join_al <aid> <uid1> [uid2...]
+
+# 查看联盟当前成员列表
+python src/main.py uid_members <aid>
+
+# 退出联盟（两种形态）
+python src/main.py uid_leave_al <uid1> [uid2...]   # 按 uid 批量退出各自所在联盟
+python src/main.py uid_leave_al --aid <aid>        # 清空联盟：退出该联盟的全部成员
+```
+
+- `uid_leave_al --aid <aid>` 会先拉取联盟全部成员再逐个退出，适合解散/清空整个联盟。
+- 后端命令字为 `al_leave`（无参数，服务器按 uid 当前联盟身份处理）。
+
 #### 一站式批量准备（推荐）
 
 ```bash
