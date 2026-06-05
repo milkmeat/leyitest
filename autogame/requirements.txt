@@ -13,7 +13,3 @@ uvicorn>=0.27
 # Testing
 pytest>=8.0
 pytest-asyncio>=0.23
-
-# Utilities
-numpy>=1.26         # DBSCAN clustering for L2 view
-scikit-learn>=1.4   # DBSCAN implementation

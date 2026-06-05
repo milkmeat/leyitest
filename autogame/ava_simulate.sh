@@ -22,6 +22,7 @@ V2="attack"
 ROUNDS=1
 DURATION_MINUTES=60
 CSV_FILE="ava_results.csv"
+MATCHES_PER_ROUND=2
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -29,6 +30,7 @@ while [[ $# -gt 0 ]]; do
         --v2) V2="$2"; shift 2 ;;
         --rounds) ROUNDS="$2"; shift 2 ;;
         --duration) DURATION_MINUTES="$2"; shift 2 ;;
+        --matches-per-round) MATCHES_PER_ROUND="$2"; shift 2 ;;
         --csv) CSV_FILE="$2"; shift 2 ;;
         --help|-h)
             echo "用法: ./ava_simulate.sh [OPTIONS]"
@@ -38,18 +40,21 @@ while [[ $# -gt 0 ]]; do
             echo "参数:"
             echo "  --v1 VERSION       第一个 L2 prompt 版本 (默认: $V1)"
             echo "  --v2 VERSION       第二个 L2 prompt 版本 (默认: $V2)"
-            echo "  --rounds N         对战轮数，每轮2场交换阵营 (默认: $ROUNDS)"
+            echo "  --rounds N         对战轮数，每轮交换阵营 (默认: $ROUNDS)"
             echo "  --duration MINUTES 每场对战时长，分钟 (默认: $DURATION_MINUTES)"
+            echo "  --matches-per-round N  每轮场数: 2=交换阵营消除位置偏差, 1=只打一场 (默认: $MATCHES_PER_ROUND)"
             echo "  --csv FILE         结果 CSV 文件路径 (默认: $CSV_FILE)"
             echo "  --help, -h         显示此帮助信息"
             echo ""
             echo "说明:"
-            echo "  每轮包含两场对战（交换 team1/team2 位置），消除阵营位置偏差。"
+            echo "  每轮默认包含两场对战（交换 team1/team2 位置），消除阵营位置偏差。"
+            echo "  设 --matches-per-round 1 则每轮只打一场（Team1=V1, Team2=V2），速度快但带阵营偏差。"
             echo "  每场开始前自动创建新战场、重置账号状态、补给资源。"
             echo "  对战结束后输出积分汇总和胜负统计。"
             echo ""
             echo "示例:"
             echo "  ./ava_simulate.sh --v1 default --v2 attack --rounds 3 --duration 30"
+            echo "  ./ava_simulate.sh --v1 default --v2 attack --duration 15 --matches-per-round 1"
             echo "  ./ava_simulate.sh --v1 aggressive --v2 defensive --csv results.csv"
             exit 0
             ;;
@@ -58,24 +63,32 @@ while [[ $# -gt 0 ]]; do
 done
 
 DURATION_SECONDS=$((DURATION_MINUTES * 60))
-TOTAL_MATCHES=$((ROUNDS * 2))
+
+# 校验 matches-per-round 只能是 1 或 2
+if [[ "$MATCHES_PER_ROUND" != "1" && "$MATCHES_PER_ROUND" != "2" ]]; then
+    echo "ERROR: --matches-per-round 只能是 1 或 2 (当前: $MATCHES_PER_ROUND)" >&2
+    exit 1
+fi
+
+TOTAL_MATCHES=$((ROUNDS * MATCHES_PER_ROUND))
 RUN_TS=$(date +%Y%m%d_%H%M%S)
 
 # ── 配置 ────────────────────────────────────────────────
 CMD="python src/main.py"
-SCORE_UID=20010643
+# UID 必须与 config/accounts.yaml 保持一致（2026-06-04 起新批次 20013796-20013835）
+SCORE_UID=20013796
 
 OUR_UIDS=(
-    20010643 20010644 20010645 20010646 20010647
-    20010648 20010649 20010650 20010651 20010652
-    20010653 20010654 20010655 20010656 20010657
-    20010658 20010659 20010660 20010661 20010662
+    20013796 20013797 20013798 20013799 20013800
+    20013801 20013802 20013803 20013804 20013805
+    20013806 20013807 20013808 20013809 20013810
+    20013811 20013812 20013813 20013814 20013815
 )
 ENEMY_UIDS=(
-    20010668 20010669 20010670 20010671 20010672
-    20010673 20010674 20010675 20010676 20010677
-    20010678 20010679 20010680 20010681 20010682
-    20010683 20010684 20010685 20010686 20010687
+    20013816 20013817 20013818 20013819 20013820
+    20013821 20013822 20013823 20013824 20013825
+    20013826 20013827 20013828 20013829 20013830
+    20013831 20013832 20013833 20013834 20013835
 )
 ALL_UIDS=("${OUR_UIDS[@]}" "${ENEMY_UIDS[@]}")
 SOLDIER_IDS=(4 104 204)
@@ -231,13 +244,16 @@ run_single_match() {
     mkdir -p logs
 
     # 7. 启动双方对战
+    #    stdout/stderr 落盘到 logs/run_team*.log，避免启动错误被静默吞掉
+    local run_log_t1="logs/run_team1_r${round_num}m${match_in_round}.log"
+    local run_log_t2="logs/run_team2_r${round_num}m${match_in_round}.log"
     echo "[Match] Starting battle (${DURATION_MINUTES}min)..."
-    echo "  Team1: --l2-prompt $v_team1"
-    echo "  Team2: --l2-prompt $v_team2"
+    echo "  Team1: --l2-prompt $v_team1  (log: $run_log_t1)"
+    echo "  Team2: --l2-prompt $v_team2  (log: $run_log_t2)"
 
-    $CMD --team 1 run --ava "$ava_id" --l2-prompt "$v_team1" &
+    $CMD --team 1 run --ava "$ava_id" --l2-prompt "$v_team1" > "$run_log_t1" 2>&1 &
     PID1=$!
-    $CMD --team 2 run --ava "$ava_id" --l2-prompt "$v_team2" &
+    $CMD --team 2 run --ava "$ava_id" --l2-prompt "$v_team2" > "$run_log_t2" 2>&1 &
     PID2=$!
 
     # 7b. 启动观察者循环（后台独立进程调用）
@@ -313,9 +329,11 @@ for ((round=1; round<=ROUNDS; round++)); do
     run_single_match $match_idx $round 1 "$V1" "$V2"
     ((match_idx++))
 
-    # Match 2: Team1=V2, Team2=V1 (交换阵营)
-    run_single_match $match_idx $round 2 "$V2" "$V1"
-    ((match_idx++))
+    # Match 2: Team1=V2, Team2=V1 (交换阵营) — 仅当每轮2场时执行
+    if [ "$MATCHES_PER_ROUND" = "2" ]; then
+        run_single_match $match_idx $round 2 "$V2" "$V1"
+        ((match_idx++))
+    fi
 done
 
 # ── 汇总输出 ────────────────────────────────────────────
@@ -352,9 +370,9 @@ for ((i=0; i<match_idx; i++)); do
         v1_score=$s_camp2; v1_loss=$l_t2
     fi
 
-    # 计算 round/match 编号
-    local_round=$(( i / 2 + 1 ))
-    local_match=$(( i % 2 + 1 ))
+    # 计算 round/match 编号（按每轮场数还原）
+    local_round=$(( i / MATCHES_PER_ROUND + 1 ))
+    local_match=$(( i % MATCHES_PER_ROUND + 1 ))
     diff=$((v1_score - v2_score))
 
     if [ $diff -ge 0 ]; then

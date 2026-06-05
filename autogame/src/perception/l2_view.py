@@ -18,9 +18,7 @@ import logging
 import math
 import time
 
-import numpy as np
 from pydantic import BaseModel, Field
-from sklearn.cluster import DBSCAN
 
 from src.config.schemas import AppConfig
 from src.models.building import Building
@@ -105,6 +103,59 @@ class L2GlobalView(BaseModel):
 def _distance(a: tuple[int, int], b: tuple[int, int]) -> float:
     """两点间欧几里得距离"""
     return math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
+
+
+def _dbscan(points: list[tuple[float, float]], eps: float, min_samples: int) -> list[int]:
+    """纯 Python DBSCAN 聚类（欧氏距离）
+
+    替代 sklearn.cluster.DBSCAN，消除对 sklearn/scipy/pandas 的依赖链 —
+    该链在 asyncio 事件循环线程内导入时会触发 Windows 原生栈溢出。
+
+    敌方账号规模 ≤20，纯 Python 实现性能完全够用，且行为与 sklearn 默认
+    DBSCAN 一致：噪声点 label=-1，簇 label 从 0 递增，边界点归入首个触及它的簇。
+
+    Args:
+        points: 坐标列表 [(x, y), ...]
+        eps: 邻域半径（同一簇的最大距离）
+        min_samples: 成为核心点所需的邻域内最小点数（含自身）
+
+    Returns:
+        与 points 等长的 label 列表，-1 表示噪声/散兵
+    """
+    n = len(points)
+    labels = [-1] * n
+    visited = [False] * n
+
+    def neighbors(i: int) -> list[int]:
+        return [j for j in range(n) if math.dist(points[i], points[j]) <= eps]
+
+    cluster_id = -1
+    for i in range(n):
+        if visited[i]:
+            continue
+        visited[i] = True
+        nb = neighbors(i)
+        if len(nb) < min_samples:
+            # 非核心点，暂标为噪声（后续可能被其它核心点吸收为边界点）
+            continue
+        # 开启新簇，做广度扩张
+        cluster_id += 1
+        labels[i] = cluster_id
+        seeds = [j for j in nb if j != i]
+        k = 0
+        while k < len(seeds):
+            j = seeds[k]
+            k += 1
+            if not visited[j]:
+                visited[j] = True
+                nbj = neighbors(j)
+                if len(nbj) >= min_samples:
+                    for x in nbj:
+                        if x not in seeds:
+                            seeds.append(x)
+            if labels[j] == -1:
+                labels[j] = cluster_id
+    return labels
 
 
 # ------------------------------------------------------------------
@@ -346,19 +397,13 @@ class L2ViewBuilder:
             # 敌人太少，全部视为散兵
             return [], len(enemies)
 
-        # 构建坐标矩阵
-        coords = np.array(
-            [[e.city_pos[0], e.city_pos[1]] for e in enemies],
-            dtype=np.float64,
-        )
+        # 构建坐标列表
+        coords: list[tuple[float, float]] = [
+            (float(e.city_pos[0]), float(e.city_pos[1])) for e in enemies
+        ]
 
-        # 运行 DBSCAN
-        db = DBSCAN(
-            eps=self.DBSCAN_EPS,
-            min_samples=self.DBSCAN_MIN_SAMPLES,
-            metric="euclidean",
-        )
-        labels = db.fit_predict(coords)
+        # 运行 DBSCAN（纯 Python，避免 sklearn 导入链在 asyncio 线程内栈溢出）
+        labels = _dbscan(coords, self.DBSCAN_EPS, self.DBSCAN_MIN_SAMPLES)
 
         # 按标签分组
         clusters: dict[int, list[int]] = {}  # label → [index]
@@ -375,18 +420,19 @@ class L2ViewBuilder:
             sorted(clusters.items())
         ):
             cluster_enemies = [enemies[i] for i in indices]
-            cluster_coords = coords[indices]
+            xs = [coords[i][0] for i in indices]
+            ys = [coords[i][1] for i in indices]
 
             # 中心
-            cx = int(cluster_coords[:, 0].mean())
-            cy = int(cluster_coords[:, 1].mean())
+            cx = int(sum(xs) / len(xs))
+            cy = int(sum(ys) / len(ys))
             center = (cx, cy)
 
             # 边界框
-            min_x = int(cluster_coords[:, 0].min())
-            min_y = int(cluster_coords[:, 1].min())
-            max_x = int(cluster_coords[:, 0].max())
-            max_y = int(cluster_coords[:, 1].max())
+            min_x = int(min(xs))
+            min_y = int(min(ys))
+            max_x = int(max(xs))
+            max_y = int(max(ys))
 
             # 总战力 & 战斗中数量
             total_power = sum(e.power for e in cluster_enemies)

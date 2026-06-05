@@ -98,6 +98,12 @@ logs.*
 mock_logs/
 *.log
 
+# AVA 模拟运行产物
+ava_results.csv
+ava_results.csv.old*
+ava_report.html
+_sync_tmp.json
+
 # LLM 密钥配置 (包含 API key，不提交)
 config/llm_secret.yaml
 
