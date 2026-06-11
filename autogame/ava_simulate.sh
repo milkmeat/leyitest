@@ -73,6 +73,39 @@ fi
 TOTAL_MATCHES=$((ROUNDS * MATCHES_PER_ROUND))
 RUN_TS=$(date +%Y%m%d_%H%M%S)
 
+# ── L2 Prompt 版本验证 ────────────────────────────────────────
+L2_AVA_PROMPT_DIR="src/ai/prompts/l2_ava"
+
+validate_l2_prompt_version() {
+    local version="$1"
+    local prompt_file="$L2_AVA_PROMPT_DIR/${version}.txt"
+    
+    if [ ! -f "$prompt_file" ]; then
+        echo "ERROR: L2 AVA prompt 文件不存在: $prompt_file" >&2
+        echo "" >&2
+        echo "可用的 L2 AVA prompt 版本:" >&2
+        if [ -d "$L2_AVA_PROMPT_DIR" ]; then
+            for f in "$L2_AVA_PROMPT_DIR"/*.txt; do
+                if [ -f "$f" ]; then
+                    local name=$(basename "$f" .txt)
+                    echo "  - $name" >&2
+                fi
+            done
+        else
+            echo "  (目录不存在: $L2_AVA_PROMPT_DIR)" >&2
+        fi
+        return 1
+    fi
+    return 0
+}
+
+# 验证 V1 和 V2
+echo "[验证] 检查 L2 AVA prompt 版本..."
+validate_l2_prompt_version "$V1" || exit 1
+validate_l2_prompt_version "$V2" || exit 1
+echo "  [OK] V1=$V1, V2=$V2"
+echo ""
+
 # ── 配置 ────────────────────────────────────────────────
 CMD="python src/main.py"
 # UID 必须与 config/accounts.yaml 保持一致（2026-06-04 起新批次 20013796-20013835）
