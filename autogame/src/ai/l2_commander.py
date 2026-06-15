@@ -68,10 +68,12 @@ class L2Commander:
                     self.system_prompt = f.read()
                 logger.info("L2 AVA prompt loaded: l2_ava/%s.txt", version)
             else:
-                try:
-                    self.system_prompt = _load_prompt("l2_system_ava.txt")
-                    logger.warning("L2 AVA version '%s' not found, fell back to l2_system_ava.txt", version)
-                except FileNotFoundError:
+                default_path = os.path.join(_L2_AVA_DIR, "default.txt")
+                if os.path.isfile(default_path):
+                    with open(default_path, "r", encoding="utf-8") as f:
+                        self.system_prompt = f.read()
+                    logger.warning("L2 AVA version '%s' not found, fell back to l2_ava/default.txt", version)
+                else:
                     logger.warning("L2 AVA prompt not found, using default l2_system.txt")
                     self.system_prompt = _load_prompt("l2_system.txt")
         elif prompt_template:

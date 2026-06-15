@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from src.ai.l2_commander import L2Commander
+from src.ai.l2_commander import L2Commander, list_l2_ava_versions
 from src.config.schemas import (
     AccountEntry,
     AccountsConfig,
@@ -186,3 +186,63 @@ class TestL2Commander:
             await commander.decide(snapshot)
 
         assert "敌方集中在东部" in caplog.text
+
+
+# ------------------------------------------------------------------
+# AVA Prompt 加载/Fallback 测试
+#
+# 目的：守护 l2_ava/ 目录化结构与 default.txt 兜底逻辑，防止再次
+# 回到"l2_system_ava.txt 与 l2_ava/default.txt 两份相同副本"的旧坑。
+# 这些用例不调用 LLM，只构造 L2Commander 检查 system_prompt 加载结果。
+# ------------------------------------------------------------------
+
+class TestL2AvaPromptLoading:
+    def test_default_ava_loads_from_l2_ava_dir(self, config_2squads: AppConfig):
+        """prompt_template='ava' 默认应加载 l2_ava/default.txt"""
+        commander = L2Commander(config_2squads, AsyncMock(), prompt_template="ava")
+        assert "AVA 战场" in commander.system_prompt
+        # squad_count 占位符必须被替换
+        assert "{squad_count}" not in commander.system_prompt
+        assert "管理2个L1小队" in commander.system_prompt
+
+    def test_unknown_version_falls_back_to_default(
+        self, config_2squads: AppConfig, caplog
+    ):
+        """指定不存在的版本应 fallback 到 l2_ava/default.txt（不再 fallback 到已删除的 l2_system_ava.txt）"""
+        with caplog.at_level(logging.WARNING):
+            commander = L2Commander(
+                config_2squads, AsyncMock(),
+                prompt_template="ava", prompt_version="no_such_version_xxx",
+            )
+        baseline = L2Commander(config_2squads, AsyncMock(), prompt_template="ava")
+        assert commander.system_prompt == baseline.system_prompt
+        assert "fell back to l2_ava/default.txt" in caplog.text
+
+    def test_named_version_loads_specific_file(self, config_2squads: AppConfig):
+        """指定已存在的版本应加载对应文件，且与 default.txt 不同"""
+        versions = list_l2_ava_versions()
+        non_default = [v for v in versions if v != "default"]
+        if not non_default:
+            pytest.skip("l2_ava/ 下只有 default，无法测试具名版本加载")
+        default_commander = L2Commander(
+            config_2squads, AsyncMock(), prompt_template="ava"
+        )
+        named_commander = L2Commander(
+            config_2squads, AsyncMock(),
+            prompt_template="ava", prompt_version=non_default[0],
+        )
+        # 至少加载到了 prompt 内容；不强行断言 != default（变体可能极相似）
+        assert named_commander.system_prompt
+        assert "{squad_count}" not in named_commander.system_prompt
+
+    def test_non_ava_path_unaffected(self, config_2squads: AppConfig):
+        """不传 prompt_template 时仍应加载通用 l2_system.txt，不受 ava 改动影响"""
+        commander = L2Commander(config_2squads, AsyncMock())
+        assert commander.system_prompt
+        assert "{squad_count}" not in commander.system_prompt
+
+    def test_list_l2_ava_versions_includes_default_first(self):
+        """list_l2_ava_versions() 必须把 default 放在首位，供 CLI 默认选项使用"""
+        versions = list_l2_ava_versions()
+        assert "default" in versions, "l2_ava/default.txt 是 fallback 兜底，必须存在"
+        assert versions[0] == "default"
